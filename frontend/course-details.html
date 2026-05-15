@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تفاصيل الكورس — Ghawy</title>
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="src/css/main.css" />
+</head>
+
+<body>
+    <!-- ════════════════════════════════════════
+     HEADER / NAV
+    ════════════════════════════════════════ -->
+    <nav class="main-nav" id="mainNav">
+        <a href="index.html" class="nav-logo">
+            <img src="./imgs/ghawi-logo.png" alt="Ghawi" />
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html#features">المميزات</a></li>
+            <li><a href="index.html#reviews">الاراء</a></li>
+            <li><a href="index.html#modules">الكورسات</a></li>
+            <li><a href="index.html#payment">السعر</a></li>
+        </ul>
+        <div class="nav-auth" id="navLoggedOut">
+            <button class="nav-auth-btn ghost" onclick="window.location.href='login.html'">تسجيل الدخول</button>
+            <button class="nav-auth-btn primary" onclick="window.location.href='index.html#payment'">ابدأ الآن</button>
+        </div>
+        <div class="nav-auth" id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
+            <button class="nav-auth-btn danger" onclick="logout()">تسجيل الخروج</button>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-drawer" id="mobileDrawer">
+        <button class="close-drawer" onclick="closeDrawer()">✕</button>
+        <div class="drawer-links">
+            <a href="index.html#features" onclick="closeDrawer()">المميزات</a>
+            <a href="index.html#reviews" onclick="closeDrawer()">الاراء</a>
+            <a href="index.html#modules" onclick="closeDrawer()">الكورسات</a>
+            <a href="index.html#payment" onclick="closeDrawer()">السعر</a>
+        </div>
+        <div class="drawer-auth" id="mobileAuthLoggedOut">
+            <a href="login.html" class="nav-login">تسجيل الدخول</a>
+            <a href="#payment" class="nav-signup btn-glow" onclick="closeDrawer()">ابدأ الآن</a>
+        </div>
+        <div class="drawer-auth" id="mobileAuthLoggedIn" style="display: none">
+            <button class="nav-login danger" onclick="logout(); closeDrawer();">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     COURSE DETAILS CONTENT
+    ════════════════════════════════════════ -->
+    <section class="course-details-section">
+        <div class="container">
+
+            <!-- Back Button -->
+            <a href="index.html#modules" class="cd-back-btn">
+                <i class="fa-solid fa-arrow-right"></i> العودة للكورسات
+            </a>
+
+            <!-- Course Header Info (above the grid) -->
+            <div class="cd-info-area reveal">
+                <h1 class="cd-title" id="cdTitle"></h1>
+
+                <div class="cd-meta-row" id="cdMeta"></div>
+
+                <div class="cd-level-badge">
+                    <span class="cd-level-dot"></span> <span id="cdLevel"></span>
+                </div>
+
+                <div class="cd-course-name" id="cdCourseName"></div>
+            </div>
+
+            <!-- MAIN ROW: Video + Sidebar -->
+            <div class="cd-layout">
+
+                <!-- RIGHT: Video Thumbnail -->
+                <div class="cd-video-area reveal">
+                    <div class="cd-video-thumb">
+                        <img id="cdHeroImg" src="" alt=""
+                            style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;" />
+                        <div class="cd-play-overlay">
+                            <i class="fa-solid fa-circle-play"></i>
+                        </div>
+                        <div class="cd-video-gradient"></div>
+                    </div>
+                    <p class="cd-description" id="cdDescription" style="margin-top: 24px; padding: 0 10px;"></p>
+                </div>
+
+                <!-- LEFT: Sidebar -->
+                <div class="cd-sidebar reveal" style="animation-delay: 0.2s;">
+                    <h3><i class="fa-solid fa-list"></i> محتويات الكورس</h3>
+
+                    <ul class="cd-lessons-list" id="cdLessonsList">
+                        <!-- Dynamically populated -->
+                    </ul>
+
+                    <p class="cd-sidebar-note">اشترك للوصول لجميع الفيديوهات</p>
+
+                    <a href="index.html#payment" class="btn-cta cd-subscribe-btn">
+                        اشترك الآن
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- What you'll learn -->
+            <div class="cd-learn-area reveal">
+                <h3 class="cd-learn-title">هتتعلم إيه في الكورس؟</h3>
+                <ul class="cd-learn-list" id="cdLearnList">
+                    <!-- Dynamically populated -->
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     FOOTER
+    ════════════════════════════════════════ -->
+    <footer style="margin-top: 40px;">
+        <div class="container"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+            <img src="./imgs/ghawi-logo.png" alt="Ghawy Logo" style="height: 40px; width: auto;" />
+            <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--muted);">
+                © 2026 Ghawy. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </footer>
+
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/main.js"></script>
+    <script>
+        // ═══════════════════════════════════════
+        //   Course Data Store
+        // ═══════════════════════════════════════
+        const COURSES = {
+            'prompt-engineering': {
+                title: 'Prompt Engineering',
+                image: './imgs/image_49611d.png',
+                videoCount: 11,
+                duration: '11 ساعة و 54 دقيقة',
+                description: 'كورس Prompt Engineering معمول للي عايز يتقن فن كتابة البرومبتات الاحترافية. هتتعلم إزاي تتحكم في نماذج الذكاء الاصطناعي وتطلّع منها أفضل نتائج ممكنة. من الأساسيات لغاية Context Engineering المتقدم وبناء System Prompts احترافية.',
+                lessons: [
+                    { title: 'مقدمة في هندسة البرومبت', duration: '25 دقيقة' },
+                    { title: 'أساسيات كتابة البرومبت', duration: '1h 10m' },
+                    { title: 'تقنيات الـ Few-Shot Learning', duration: '1h 25m' },
+                    { title: 'Chain of Thought Prompting', duration: '1h 15m' },
+                    { title: 'Context Engineering المتقدم', duration: '1h 30m' },
+                    { title: 'بناء System Prompts احترافية', duration: '1h 05m' },
+                    { title: 'التعامل مع Multi-Modal Prompts', duration: '55 دقيقة' },
+                    { title: 'تحسين الأداء والـ Evaluation', duration: '1h 00m' },
+                    { title: 'الـ Prompt Injection والحماية', duration: '45 دقيقة' },
+                    { title: 'مشاريع تطبيقية - Part 1', duration: '1h 20m' },
+                    { title: 'مشاريع تطبيقية - Part 2', duration: '1h 04m' },
+                ],
+                learnings: [
+                    'كتابة برومبتات احترافية تطلّع أفضل نتائج.',
+                    'فهم تقنيات Few-Shot و Chain of Thought.',
+                    'بناء System Prompts لأي تطبيق ذكاء اصطناعي.',
+                    'التعامل مع Multi-Modal Prompts (صور + نص).',
+                    'حماية التطبيقات من Prompt Injection.',
+                ]
+            },
+            'aaa-core': {
+                title: 'AAA Core',
+                image: './imgs/image_49595e.png',
+                category: 'Business',
+                videoCount: 7,
+                duration: '10 ساعات و 17 دقيقة',
+                description: 'كورس AAA Core هو خريطة الطريق الكاملة لبناء وكالة AI Automation من الصفر. من الموديل للتسعير للتنفيذ والتسويق. هتتعلم كل حاجة محتاجها عشان تبدأ بزنس حقيقي في مجال الـ AI Automation.',
+                lessons: [
+                    { title: 'مقدمة في الـ AAA Model', duration: '30 دقيقة' },
+                    { title: 'بناء الموديل الأول', duration: '1h 45m' },
+                    { title: 'استراتيجيات التسعير', duration: '1h 20m' },
+                    { title: 'بناء وكالة AI Automation', duration: '2h 00m' },
+                    { title: 'إدارة العملاء والمشاريع', duration: '1h 35m' },
+                    { title: 'التسويق وجلب العملاء', duration: '1h 40m' },
+                    { title: 'التنفيذ والـ Delivery', duration: '1h 27m' },
+                ],
+                learnings: [
+                    'بناء وكالة AI Automation كاملة من الصفر.',
+                    'تسعير خدماتك بشكل احترافي.',
+                    'إدارة العملاء والمشاريع بفعالية.',
+                    'التسويق وجلب العملاء بطرق عملية.',
+                    'تنفيذ المشاريع وتسليمها بجودة عالية.',
+                ]
+            },
+            'ai-foundations': {
+                title: 'AI Foundations',
+                image: './imgs/image_49595e.png',
+                category: 'AI Theory',
+                videoCount: 4,
+                duration: '5 ساعات و 1 دقيقة',
+                description: 'كورس AI Foundations هو نقطة البداية الحقيقية لفهم الذكاء الاصطناعي. من تاريخ الـ AI لغاية بناء AI Agent من الصفر. هتفهم الـ Neural Networks والـ LLMs وإزاي التكنولوجيا دي بتشتغل من جوه.',
+                lessons: [
+                    { title: 'تاريخ الذكاء الاصطناعي', duration: '45 دقيقة' },
+                    { title: 'فهم الـ Neural Networks', duration: '1h 20m' },
+                    { title: 'الـ LLMs شرح كامل', duration: '1h 35m' },
+                    { title: 'بناء AI Agent من الصفر', duration: '1h 21m' },
+                ],
+                learnings: [
+                    'فهم تاريخ الذكاء الاصطناعي وتطوره.',
+                    'شرح عمل الـ Neural Networks بالتفصيل.',
+                    'فهم الـ Large Language Models (LLMs).',
+                    'بناء AI Agent عملي من الصفر.',
+                ]
+            },
+            'ai-automation-lab': {
+                title: 'AI Automation Lab',
+                image: './imgs/image_4960ff.jpg',
+                category: 'AI Automation',
+                videoCount: 5,
+                duration: '9 ساعات و 47 دقيقة',
+                description: 'كورس AI Automation Lab معمول للي عايز يتعلّم إزاي يبني أنظمة أوتوميشن متكاملة باستخدام أدوات No-Code مثل n8n و Make. سنقوم بتنفيذ مشاريع حقيقية مثل روبوتات خدمة العملاء، وتأهيل العملاء المحتملين (Lead Qualification)، وربط تطبيقات مختلفة ببعضها باستخدام الذكاء الاصطناعي. فهم كامل للـ Automation وتطبيقاته العملية.',
+                lessons: [
+                    { title: 'مقدمة في الـ Automation', duration: '25 دقيقة' },
+                    { title: 'التعرف على واجهة n8n', duration: '1h 15m' },
+                    { title: 'ربط الـ APIs الأساسية', duration: '2h 30m' },
+                    { title: 'بناء Customer Support Bot', duration: '3h 05m' },
+                    { title: 'معالجة الإيميلات تلقائياً', duration: '2h 32m' },
+                ],
+                learnings: [
+                    'تصميم سير عمل أوتوماتيكي معقد.',
+                    'دمج نماذج اللغات (LLMs) في عملياتك اليومية.',
+                    'معالجة البيانات وتصنيفها بشكل آلي.',
+                    'إنشاء مساعدين ذكيين قادرين على اتخاذ القرارات.',
+                    'بناء Customer Support Bot من الصفر.',
+                ]
+            }
+        };
+
+        // ═══════════════════════════════════════
+        //   Render Course Details
+        // ═══════════════════════════════════════
+        function renderCourse() {
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('course') || 'ai-automation-lab';
+            const course = COURSES[slug];
+
+            if (!course) {
+                document.querySelector('.cd-info-area').innerHTML = '<h1 class="cd-title">الكورس مش موجود</h1>';
+                return;
+            }
+
+            // Title tag
+            document.title = `${course.title} — Ghawy`;
+
+            // Hero image
+            const heroImg = document.getElementById('cdHeroImg');
+            heroImg.src = course.image;
+            heroImg.alt = course.title;
+
+            // Title
+            document.getElementById('cdTitle').textContent = course.title;
+
+            // Meta
+            document.getElementById('cdMeta').innerHTML = `
+                <span><i class="fa-solid fa-video"></i> ${course.videoCount} فيديو</span>
+                <span class="cd-meta-dot">•</span>
+                <span><i class="fa-regular fa-clock"></i> ${course.duration}</span>
+                <span class="cd-meta-dot">•</span>
+                <span class="cd-category-tag">${course.category}</span>
+            `;
+
+            // Level
+            document.getElementById('cdLevel').textContent = course.level;
+
+            // Course name
+            document.getElementById('cdCourseName').innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${course.title}`;
+
+            // Description
+            document.getElementById('cdDescription').textContent = course.description;
+
+            // Lessons sidebar
+            const lessonsList = document.getElementById('cdLessonsList');
+            lessonsList.innerHTML = course.lessons.map(l => `
+                <li class="cd-lesson-item">
+                    <span class="cd-lesson-title"><i class="fa-solid fa-video"></i> ${l.title}</span>
+                    <div class="cd-lesson-right">
+                        <span class="cd-lesson-dur">${l.duration}</span>
+                        <i class="fa-solid fa-lock cd-lesson-lock"></i>
+                    </div>
+                </li>
+            `).join('');
+
+            // Learnings
+            const learnList = document.getElementById('cdLearnList');
+            learnList.innerHTML = course.learnings.map(l => `
+                <li><i class="fa-solid fa-check"></i> ${l}</li>
+            `).join('');
+        }
+
+        renderCourse();
+
+        // ═══════════════════════════════════════
+        //   Standard Page Setup
+        // ═══════════════════════════════════════
+        // Scroll reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08 });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // Auth state
+        function updateAuthUI() {
+            const token = getToken();
+            const out = document.getElementById('navLoggedOut');
+            const inn = document.getElementById('navLoggedIn');
+            if (token) {
+                if (out) out.style.display = 'none';
+                if (inn) inn.style.display = 'flex';
+            } else {
+                if (out) out.style.display = '';
+                if (inn) inn.style.display = 'none';
+            }
+        }
+        updateAuthUI();
+
+        // Scroll-aware nav
+        const mainNav = document.getElementById('mainNav');
+        if (mainNav) {
+            window.addEventListener('scroll', () => {
+                mainNav.classList.toggle('scrolled', window.scrollY > 60);
+            }, { passive: true });
+        }
+
+        // Hamburger
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileDrawer = document.getElementById('mobileDrawer');
+        function closeDrawer() {
+            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+            if (mobileDrawer) mobileDrawer.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                mobileDrawer.classList.toggle('open');
+                document.body.style.overflow = mobileDrawer.classList.contains('open') ? 'hidden' : '';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
+
+
+

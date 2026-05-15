@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Profile — Ghawy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
+    <link rel="stylesheet" href="src/css/dashboard.css"/>
+</head>
+<body>
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="dashSidebar">
+        <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy"/><span>Ghawy</span></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span data-i18n="dashboard">الرئيسية</span></a>
+            <a href="courses.html?v=2" class="nav-item"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="courses">الكورسات</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
+            <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+            <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
+            <a href="profile.html#achievements" class="nav-item active"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
+            <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-user"><div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div><div class="sidebar-user-info"><div class="sidebar-user-name" id="sidebarName">—</div><div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div></div></div>
+        <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+            <div class="topbar-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..."/></div>
+            <div class="topbar-actions">
+
+                <button class="topbar-icon"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
+                <a href="chat.html?v=2" class="topbar-icon"><i class="fa-solid fa-message"></i></a>
+                <div class="topbar-user" id="topbarUser"><div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div><span class="topbar-user-name" id="topbarName">—</span></div>
+            </div>
+        </header>
+        <div class="dash-content">
+            <!-- Cover -->
+            <div class="profile-cover" id="profileCover"></div>
+            <!-- Header -->
+            <div class="profile-header">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar-lg" id="profileAvatarLg"><i class="fa-solid fa-user"></i></div>
+                    <span id="profileOnlineDot" class="profile-online-dot"></span>
+                </div>
+                <div class="profile-info">
+                    <h2 id="profileName">—</h2>
+                    <span class="badge-pill" id="profileBadge"><i class="fa-solid fa-shield"></i> Member</span>
+                    <p class="bio" id="profileBio"></p>
+                </div>
+                <a href="profile-settings.html" class="btn-outline" style="margin-right:auto"><i class="fa-solid fa-pen"></i> <span data-i18n="editProfile">تعديل الملف الشخصي</span></a>
+            </div>
+            <!-- Stats -->
+            <div class="profile-stats" id="profileStats">
+                <div class="profile-stat"><div class="stat-val" id="statLevel">1</div><div class="stat-label">Level</div></div>
+                <div class="profile-stat"><div class="stat-val" id="statXP">0</div><div class="stat-label">XP</div></div>
+                <div class="profile-stat"><div class="stat-val" id="statStreak">0</div><div class="stat-label">Streak</div></div>
+                <div class="profile-stat"><div class="stat-val" id="statCourses">0</div><div class="stat-label">Courses</div></div>
+            </div>
+            <!-- Achievements -->
+            <div id="achievements">
+                <div class="card-header"><h3 class="card-title" data-i18n="achievements">الإنجازات</h3></div>
+                <div class="achievements-grid" id="achievementsGrid">
+                    <div class="achievement unlocked"><div class="ach-icon">🚀</div><div class="ach-name">First Login</div></div>
+                    <div class="achievement unlocked"><div class="ach-icon">📝</div><div class="ach-name">First Post</div></div>
+                    <div class="achievement unlocked"><div class="ach-icon">💬</div><div class="ach-name">Chatterbox</div></div>
+                    <div class="achievement locked"><div class="ach-icon">🔥</div><div class="ach-name">7-Day Streak</div></div>
+                    <div class="achievement locked"><div class="ach-icon">🏆</div><div class="ach-name">Top Student</div></div>
+                    <div class="achievement locked"><div class="ach-icon">⭐</div><div class="ach-name">Course Complete</div></div>
+                    <div class="achievement locked"><div class="ach-icon">🎯</div><div class="ach-name">100% Progress</div></div>
+                    <div class="achievement locked"><div class="ach-icon">💎</div><div class="ach-name">Pro Member</div></div>
+                </div>
+            </div>
+            <!-- Recent Activity — Progress Circles -->
+            <div style="margin-top:48px">
+                <div class="card-header"><h3 class="card-title">Recent Activity</h3></div>
+                <div style="display:flex;gap:60px;justify-content:center;flex-wrap:wrap;padding:36px 0;" id="progressCircles">
+                    <!-- Videos Watched -->
+                    <div style="text-align:center;">
+                        <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
+                            <svg width="160" height="160" viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)" stroke-width="9"/>
+                                <circle id="circleVideos" cx="80" cy="80" r="68" fill="none" stroke="var(--gold)" stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26" stroke-dashoffset="427.26" transform="rotate(-90 80 80)" style="transition:stroke-dashoffset 1.5s ease;"/>
+                            </svg>
+                            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                <span id="pctVideos" style="font-size:1.8rem;font-weight:900;color:var(--gold);">0%</span>
+                                <span id="motVideos" style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Start now!</span>
+                            </div>
+                        </div>
+                        <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Videos Watched</div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <span style="background:var(--gold);color:#000;padding:4px 14px;border-radius:12px;font-size:.78rem;font-weight:800;" id="countVideos">0 videos</span>
+                            <span style="font-size:.78rem;color:var(--text-muted);" id="totalVideos">of 0</span>
+                        </div>
+                    </div>
+                    <!-- Exams Completed -->
+                    <div style="text-align:center;">
+                        <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
+                            <svg width="160" height="160" viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)" stroke-width="9"/>
+                                <circle id="circleExams" cx="80" cy="80" r="68" fill="none" stroke="#22d3ee" stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26" stroke-dashoffset="427.26" transform="rotate(-90 80 80)" style="transition:stroke-dashoffset 1.5s ease;"/>
+                            </svg>
+                            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                <span id="pctExams" style="font-size:1.8rem;font-weight:900;color:#22d3ee;">0%</span>
+                                <span id="motExams" style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Get started!</span>
+                            </div>
+                        </div>
+                        <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Exams Completed</div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <span style="background:#22d3ee;color:#000;padding:4px 14px;border-radius:12px;font-size:.78rem;font-weight:800;" id="countExams">0 exams</span>
+                            <span style="font-size:.78rem;color:var(--text-muted);" id="totalExams">of 0</span>
+                        </div>
+                    </div>
+                    <!-- Overall Level -->
+                    <div style="text-align:center;">
+                        <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
+                            <svg width="160" height="160" viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)" stroke-width="9"/>
+                                <circle id="circleLevel" cx="80" cy="80" r="68" fill="none" stroke="#a855f7" stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26" stroke-dashoffset="427.26" transform="rotate(-90 80 80)" style="transition:stroke-dashoffset 1.5s ease;"/>
+                            </svg>
+                            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                <span id="pctLevel" style="font-size:1.8rem;font-weight:900;color:#a855f7;">0%</span>
+                                <span id="motLevel" style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Let's go!</span>
+                            </div>
+                        </div>
+                        <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Average Score</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="src/js/utils.js"></script>
+<script src="src/js/i18n.js"></script>
+<script src="src/js/profile.js"></script>
+</body>
+</html>
+
+
+
+

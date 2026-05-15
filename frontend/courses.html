@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Courses — Ghawy</title>
+    <meta name="description" content="Browse all available courses on Ghawy"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
+    <link rel="stylesheet" href="src/css/dashboard.css"/>
+</head>
+<body>
+<div class="dash-layout">
+    <!-- SIDEBAR -->
+    <aside class="dash-sidebar" id="dashSidebar">
+        <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy"/><span>Ghawy</span></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span data-i18n="dashboard">الرئيسية</span></a>
+            <a href="courses.html?v=2" class="nav-item active"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="courses">الكورسات</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
+            <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+            <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
+            <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
+            <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-user" id="sidebarUser">
+            <div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div>
+            <div class="sidebar-user-info"><div class="sidebar-user-name" id="sidebarName">—</div><div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div></div>
+        </div>
+        <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+    </aside>
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="dash-main">
+        <!-- TOPBAR -->
+        <header class="dash-topbar">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+            <div class="topbar-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" data-i18n-placeholder="searchCourses" placeholder="ابحث في الكورسات..."/><kbd>⌘K</kbd></div>
+            <div class="topbar-actions">
+
+                <button class="topbar-icon"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
+                <a href="chat.html?v=2" class="topbar-icon"><i class="fa-solid fa-message"></i></a>
+                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                    <div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div>
+                    <span class="topbar-user-name" id="topbarName">—</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="profile.html"><i class="fa-solid fa-user"></i> <span data-i18n="profile">الملف الشخصي</span></a>
+                    <a href="profile-settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
+                    <button class="dd-danger" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
+                </div>
+            </div>
+        </header>
+
+        <div class="dash-content">
+            <div class="breadcrumb">
+                <a href="dashboard.html?v=2"><i class="fa-solid fa-house"></i></a>
+                <i class="fa-solid fa-chevron-right"></i>
+                <span data-i18n="courses">الكورسات</span>
+            </div>
+            <div class="card-header"><h2 class="card-title" style="font-size:1.3rem" data-i18n="allCourses">جميع الكورسات</h2></div>
+            <div class="courses-grid" id="coursesGrid">
+                <div class="empty-state" id="coursesLoading"><div class="spinner-ring" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div><p>Loading courses...</p></div>
+            </div>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        </div>
+    </div>
+</div>
+<script>document.addEventListener('click',e=>{const d=document.getElementById('userDropdown');const u=document.getElementById('topbarUser');if(d&&!d.contains(e.target)&&!u.contains(e.target))d.classList.remove('open')})</script>
+<script src="src/js/utils.js"></script>
+<script src="src/js/i18n.js"></script>
+<script src="src/js/courses.js"></script>
+</body>
+</html>
+
+
+
+

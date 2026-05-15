@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الاشتراك — Ghawy</title>
+  <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png">
+  <link rel="stylesheet" href="src/css/style.css">
+</head>
+
+<body>
+  <nav>
+    <a class="logo" href="index.html">
+      <img src="./imgs/g-icon-logo.png" alt="Ghawy Logo" style="height: 42px; object-fit: contain;">
+    </a>
+    <button class="nav-link danger" onclick="logout()" data-i18n="logout">تسجيل الخروج</button>
+  </nav>
+
+  <div class="header">
+    <h1><span data-i18n="subscriptionPlan">خطة الاشتراك</span></h1>
+    <p data-i18n="oneSubOpensAll">اشتراك واحد يفتح لك جميع المحتويات</p>
+  </div>
+
+  <div class="plan-card">
+    <p class="plan-name" data-i18n="monthlySubscription">اشتراك شهري</p>
+    <div class="new-price">500 <span data-i18n="perMonth">جنيه / شهر</span></div>
+    <p class="usd-price">~60 $ / Month</p>
+    <hr class="divider">
+    <ul class="features">
+      <li>
+        <div class="check">✓</div> <span data-i18n="accessAll">وصول لجميع الكورسات والشروحات</span>
+      </li>
+      <li>
+        <div class="check">✓</div> <span data-i18n="hours">60+ ساعة من المحتوى الحصري</span>
+      </li>
+      <li>
+        <div class="check">✓</div> <span data-i18n="community">مجتمع ومتابعة شخصية</span>
+      </li>
+      <li>
+        <div class="check">✓</div> <span data-i18n="newContent">محتوى جديد بإستمرار</span>
+      </li>
+    </ul>
+    <div id="alert" class="alert"></div>
+    <button class="pay-btn" id="payBtn" onclick="pay()">
+      <span class="btn-text" data-i18n="subscribeNow">انضم الآن 🚀</span>
+      <div class="spinner"></div>
+    </button>
+    <p class="secure-note" data-i18n="securePay">🔒 الدفع آمن 100% عبر Kashier</p>
+  </div>
+
+  <script src="src/js/utils.js"></script>
+  <script src="src/js/i18n.js"></script>
+  <script src="src/js/payment.js"></script>
+</body>
+
+</html>
+
+
+
+

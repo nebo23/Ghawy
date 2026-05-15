@@ -1,0 +1,388 @@
+// ═══ AUTH GUARD ═══
+const token = localStorage.getItem('token');
+if (!token) window.location.href = 'login.html';
+
+const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+async function apiFetch(url, opts = {}) {
+    opts.headers = { ...headers, ...opts.headers };
+    const res = await fetch(API + url, opts);
+    if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+    return res;
+}
+
+// ═══ WELCOME MODAL (after onboarding) ═══
+if (localStorage.getItem('just_onboarded') === 'true') {
+    localStorage.removeItem('just_onboarded');
+    showWelcomeModal();
+}
+
+async function showWelcomeModal() {
+    let avatarHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--gold);">🎉</div>';
+    let name = '';
+    try {
+        const res = await fetch(`${API}/profile/me`, { headers });
+        if (res.ok) {
+            const u = await res.json();
+            name = u.full_name || '';
+            if (u.avatar_url) avatarHtml = `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;"/>`;
+        }
+    } catch(e) {}
+
+    const overlay = document.createElement('div');
+    overlay.className = 'ob-modal-overlay';
+    overlay.innerHTML = `
+        <div style="background:#0a0a0a;border:1px solid rgba(193,255,17,0.2);border-radius:20px;padding:40px;max-width:420px;width:90%;text-align:center;animation:obFadeUp 0.4s ease;">
+            <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
+            <h2 style="font-size:1.4rem;font-weight:900;color:#f1f0ea;margin-bottom:8px;">أهلاً بك في Ghawy!</h2>
+            <div style="width:80px;height:80px;border-radius:50%;margin:16px auto;border:3px solid #c1ff11;overflow:hidden;box-shadow:0 0 20px rgba(193,255,17,0.2);">${avatarHtml}</div>
+            <p style="font-size:1rem;color:#f1f0ea;margin-bottom:6px;">مرحباً ${name}! 👋</p>
+            <p style="font-size:0.85rem;color:#888;margin-bottom:24px;">ابدأ رحلتك بمشاهدة الفيديو التعريفي في قسم Start Here</p>
+            <button onclick="window.location.href='chat.html?v=2&channel=start_here'" style="width:100%;background:#c1ff11;color:#000;border:none;border-radius:12px;padding:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:12px;">🚀 روح لـ Start Here</button>
+            <button onclick="this.closest('.ob-modal-overlay').remove()" style="background:none;border:none;color:#888;font-family:'Cairo',sans-serif;font-size:0.85rem;cursor:pointer;">تخطي</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    // Load onboarding CSS for modal styles
+    if (!document.querySelector('link[href*="onboarding.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'src/css/onboarding.css';
+        document.head.appendChild(link);
+    }
+}
+
+// ═══ LOAD DASHBOARD ═══
+async function loadDashboard() {
+    try {
+        const res = await apiFetch('/dashboard/summary');
+        if (!res.ok) return;
+        const data = await res.json();
+        renderUser(data.user);
+        renderCourses(data.courses);
+        renderPosts(data.recent_posts);
+        renderChatPreview(data.recent_messages);
+    } catch (e) { console.error('Dashboard load error:', e); }
+}
+
+function renderUser(u) {
+    const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setTxt('sidebarName', u.full_name);
+    setTxt('sidebarBadge', u.badge || 'Member');
+    setTxt('topbarName', u.full_name);
+    setTxt('streakCount', u.streak_days || 0);
+
+    // Avatars
+    ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && u.avatar_url) {
+            const fullUrl = u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url;
+            el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+        }
+    });
+}
+
+function renderCourses(courses) {
+    const grid = document.getElementById('coursesGrid');
+    const empty = document.getElementById('coursesEmpty');
+    if (!courses || courses.length === 0) { if (empty) empty.style.display = ''; return; }
+
+    grid.innerHTML = courses.map(c => {
+        const pct = Math.round(c.percent || 0);
+        const thumb = c.thumbnail_url || '';
+        return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'">
+            <div class="course-thumb">${thumb ? `<img src="${thumb}" alt="${c.title}"/>` : ''}<div class="course-thumb-overlay"></div>
+                <div style="position:absolute;top:10px;left:10px;background:var(--gold);color:#000;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:800">AI</div>
+            </div>
+            <div class="course-body">
+                <h3>${c.title}</h3>
+                <div class="course-meta"><i class="fa-solid fa-book"></i> ${c.total_lessons} Lessons</div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="course-progress" style="flex:1"><div class="course-progress-bar" style="width:${pct}%"></div></div>
+                    <span style="font-size:.72rem;color:var(--text-muted)">${pct}%</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderPosts(posts) {
+    const grid = document.getElementById('aiUpdatesGrid');
+    if (!grid || !posts || posts.length === 0) {
+        // Show placeholder AI updates
+        grid.innerHTML = [
+            { icon: '🤖', source: 'OpenAI', title: 'OpenAI launches new reasoning model', desc: 'Stronger, faster and more accurate than ever.', time: '2h ago' },
+            { icon: '🧠', source: 'Anthropic', title: 'Anthropic releases Claude 3.5', desc: 'The most advanced Claude model yet.', time: '5h ago' },
+            { icon: '🔧', source: 'Tools', title: 'Revolutionary AI tool for creators', desc: 'Create, edit and automate like never before.', time: '1d ago' },
+            { icon: '🌐', source: 'Google', title: 'New Gemini features announced', desc: 'Google\'s latest updates will blow your mind.', time: '1d ago' },
+        ].map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=2'">
+            <div class="post-author"><div class="avatar-sm" style="display:flex;align-items:center;justify-content:center;font-size:1rem">${p.icon}</div> ${p.source}</div>
+            <h4>${p.title}</h4>
+            <div class="post-preview">${p.desc}</div>
+            <div class="post-stats"><span>${p.time}</span><span>${p.source}</span></div>
+        </div>`).join('');
+        return;
+    }
+    grid.innerHTML = posts.map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=2'">
+        <div class="post-author"><div class="avatar-sm"></div> ${p.author_name}</div>
+        <h4>${p.title}</h4>
+        <div class="post-stats"><span><i class="fa-solid fa-heart"></i> ${p.likes_count}</span><span>${timeAgo(p.created_at)}</span></div>
+    </div>`).join('');
+}
+
+function renderChatPreview(messages) {
+    const el = document.getElementById('chatPreview');
+    if (!el) return;
+
+    // Show channels with last message
+    const channels = [
+        { name: 'general', icon: '#' },
+        { name: 'ai-tools', icon: '#' },
+        { name: 'projects', icon: '#' },
+    ];
+
+    if (!messages || messages.length === 0) {
+        el.innerHTML = channels.map(ch => `<div class="chat-channel-item" onclick="window.location.href='chat.html?v=2'" style="cursor:pointer">
+            <span class="chat-channel-icon">${ch.icon}</span>
+            <div class="chat-channel-info">
+                <div class="chat-channel-name">${ch.name}</div>
+                <div class="chat-channel-msg">No messages yet</div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:.6rem"></i>
+        </div>`).join('');
+        return;
+    }
+
+    el.innerHTML = messages.map(m => {
+        let avatarHtml = '';
+        if (m.avatar_url) {
+            const fullUrl = m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url;
+            avatarHtml = `<img src="${fullUrl}"/>`;
+        } else {
+            const initials = (m.author_name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            avatarHtml = `<div style="font-size:0.6rem;font-weight:bold;color:var(--gold);">${initials}</div>`;
+        }
+        
+        return `<div class="chat-msg-preview" onclick="window.location.href='chat.html?v=2&channel=${m.channel}'" style="cursor:pointer">
+        <div class="av">${avatarHtml}</div>
+        <div class="info">
+            <div class="name">${m.author_name || 'Unknown'}</div>
+            <div class="txt">${m.content || ''}</div>
+        </div>
+        <span class="time">${timeAgo(m.created_at)}</span>
+    </div>`}).join('');
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function generateInitialsAvatar(name) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 88; canvas.height = 88;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath(); ctx.arc(44, 44, 44, 0, Math.PI * 2); ctx.fill();
+    const initials = (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    ctx.fillStyle = '#c1ff11'; ctx.font = 'bold 36px "Cairo", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(initials, 44, 44 + 4);
+    return canvas.toDataURL();
+}
+
+// ── Notification Panel ──
+function toggleNotifPanel() {
+    const panel = document.getElementById('notifPanel');
+    if(panel) panel.classList.toggle('open');
+}
+
+function renderNotifList(dms) {
+    const list = document.getElementById('notifList');
+    if (!list || !dms) return;
+    const unreadDms = dms.filter(dm => dm.unread_count > 0);
+    if (unreadDms.length === 0) {
+        list.innerHTML = '<div class="notif-empty">No new notifications</div>';
+        return;
+    }
+    list.innerHTML = unreadDms.map(dm => {
+        const u = dm.user;
+        const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
+        const preview = dm.last_message ? dm.last_message.substring(0, 40) + (dm.last_message.length > 40 ? '...' : '') : 'Sent you a message';
+        return `
+        <div class="notif-item" onclick="window.location.href='chat.html?v=2&channel=${dm.channel_name}'">
+            <div class="notif-item-av"><img src="${av}" alt=""></div>
+            <div class="notif-item-body">
+                <div class="notif-item-name">${escHtml(u.full_name)}</div>
+                <div class="notif-item-text">${escHtml(preview)}</div>
+            </div>
+            <div class="notif-item-count">${dm.unread_count}</div>
+        </div>
+        `;
+    }).join('');
+}
+
+async function loadDmList() {
+    try {
+        const res = await apiFetch('/chat/dm/list');
+        if (!res.ok) return;
+        const dms = await res.json();
+
+        let totalUnread = 0;
+        if (dms) dms.forEach(dm => totalUnread += (dm.unread_count || 0));
+        
+        const notifBadge = document.getElementById('notifBadge');
+        const notifDot = document.getElementById('notifDot');
+        
+        if (totalUnread > 0) {
+            if(notifBadge) {
+                notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                notifBadge.style.display = 'flex';
+            }
+            if (notifDot) notifDot.style.display = 'none';
+        } else {
+            if(notifBadge) notifBadge.style.display = 'none';
+            if (notifDot) notifDot.style.display = 'none';
+        }
+
+        renderNotifList(dms);
+    } catch(e) { console.error(e); }
+}
+
+function timeAgo(dt) {
+    if (!dt) return '';
+    if (typeof dt === 'string' && !dt.endsWith('Z') && !dt.includes('+')) dt += 'Z';
+    const diff = (Date.now() - new Date(dt).getTime()) / 1000;
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return Math.floor(diff / 60) + ' دقيقة';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ساعة';
+    return Math.floor(diff / 86400) + ' يوم';
+}
+
+// ═══ ONLINE COUNT ═══
+async function fetchOnlineCount() {
+    try {
+        const res = await apiFetch('/chat/online-count');
+        const data = await res.json();
+        const el = document.getElementById('dashOnlineCount');
+        if (el) el.textContent = data.online_count || 0;
+    } catch (e) {}
+}
+
+// ═══ COUNTDOWN TIMER ═══
+function startCountdown() {
+    const timerEl = document.getElementById('upcomingTimer');
+    if (!timerEl) return;
+    // Set target to next 8 PM today or tomorrow
+    const now = new Date();
+    const target = new Date();
+    target.setHours(20, 0, 0, 0);
+    if (now >= target) target.setDate(target.getDate() + 1);
+
+    setInterval(() => {
+        const diff = Math.max(0, target - Date.now()) / 1000;
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const s = Math.floor(diff % 60);
+        timerEl.innerHTML = `<span class="timer-badge">⏳</span> ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+    }, 1000);
+}
+
+// ═══ TABS ═══
+document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+    });
+});
+
+// ═══ FILTER PILLS ═══
+document.querySelectorAll('.filter-pill').forEach(p => {
+    p.addEventListener('click', () => {
+        document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+    });
+});
+
+// ═══ HAMBURGER ═══
+(function initSidebar() {
+    const hamburger = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!hamburger || !sidebar) return;
+
+    const newHamburger = hamburger.cloneNode(true);
+    hamburger.parentNode.replaceChild(newHamburger, hamburger);
+
+    newHamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('visible');
+        newHamburger.classList.toggle('active');
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('visible');
+            newHamburger.classList.remove('active');
+        });
+    }
+
+    sidebar.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('visible');
+                newHamburger.classList.remove('active');
+            }
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('visible');
+            newHamburger.classList.remove('active');
+        }
+    });
+})();
+
+// ═══ DASHBOARD CHAT SEND ═══
+async function sendDashboardMessage() {
+    const input = document.getElementById('dashChatInput');
+    if (!input) return;
+    const content = input.value.trim();
+    if (!content) return;
+    input.value = '';
+    try {
+        await apiFetch('/chat/messages', {
+            method: 'POST',
+            body: JSON.stringify({ channel: 'general', content })
+        });
+        // Refresh chat preview
+        const res = await apiFetch('/chat/messages?channel=general&limit=5');
+        const msgs = await res.json();
+        renderChatPreview(msgs);
+    } catch (e) { console.error('Send error:', e); }
+}
+
+const dashSendBtn = document.getElementById('dashChatSendBtn');
+if (dashSendBtn) dashSendBtn.addEventListener('click', sendDashboardMessage);
+
+const dashChatInput = document.getElementById('dashChatInput');
+if (dashChatInput) {
+    dashChatInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); sendDashboardMessage(); }
+    });
+}
+
+// ═══ LOGOUT ═══
+function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+
+// ═══ INIT ═══
+loadDashboard();
+fetchOnlineCount();
+loadDmList();
+setInterval(fetchOnlineCount, 30000);
+setInterval(loadDmList, 15000);
+startCountdown();
+
+

@@ -1,0 +1,1936 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+
+<head>
+    <!-- Google Tag Manager -->
+
+    <!-- End Google Tag Manager -->
+    <meta name="facebook-domain-verification" content="55tv3sfjymi4wxun9n6yzq9j16mk1g" />
+    <link rel="preconnect" href="https://fast.wistia.com" />
+    <link rel="preconnect" href="https://fast.wistia.net" />
+    <link rel="dns-prefetch" href="https://fast.wistia.com" />
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ghawy — منصة تعليم الذكاء الاصطناعي</title>
+    <meta name="description"
+        content="Ghawy هو برنامج تدريبي عملي يعلمك كل شيء عن الذكاء الاصطناعي من الصفر، وعن هندسه البرومبت, والاوتوميشن وازاي تجيب اول عميل وتحقق ربح من الذكاء الاصطناعي" />
+    <meta name="keywords"
+        content="ذكاء اصطناعي, AI Automation, وكالة AA, ربح من الانترنت, أوتوميشن, بيزنس تقني, تعليم ذكاء اصطناعي" />
+    <meta name="author" content="Mohamed Salah" />
+    <meta property="og:title" content="Ghawy | ابدأ رحلتك مع عالم الذكاء الاصطناعي" />
+    <meta property="og:description"
+        content="خارطة طريقك لبناء وكالة أوتوميشن ذكية وتحقيق دخل مستدام باستخدام الـ AI." />
+    <meta property="og:image" content="./imgs/ghawi-logo.png" />
+    <meta property="og:url" content="https://ghawy.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ghawy" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ghawy – ابني وكالة AI وابدأ دخل حقيقي" />
+    <meta name="twitter:description"
+        content="برنامج عملي لبناء وكالة AI Automation والحصول على أول عميل بخطوات واضحة وتطبيق عملي." />
+    <meta name="twitter:image" content="./imgs/ghawi-logo.png" />
+
+    <meta name="theme-color" content="#000000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png" />
+    <link rel="stylesheet" href="src/css/main.css">
+    
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WQXDPWM2" height="0" width="0"
+            style="display: none; visibility: hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- ════════════════════════════════════════
+     GLOBAL NAVIGATION
+    ════════════════════════════════════════ -->
+    <nav class="main-nav" id="mainNav">
+        <a href="#top" class="nav-logo" id="navLogo">
+            <img src="./imgs/ghawy-new-logo-transparent.png" alt="Ghawy" />
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#reviews" data-i18n="lp_navReviews">الاراء</a></li>
+            <li><a href="#modules" data-i18n="lp_navCourses">الكورسات</a></li>
+            <li><a href="#features" data-i18n="lp_navFeatures">المميزات</a></li>
+            <li><a href="#payment" data-i18n="lp_navPrice">السعر</a></li>
+        </ul>
+        <div class="nav-auth" id="navAuth">
+            <button id="langToggle" onclick="setLang(getLang() === 'ar' ? 'en' : 'ar')" style="background:transparent;border:1px solid rgba(193,255,17,.2);color:var(--gold);border-radius:8px;padding:6px 14px;font-family:Cairo,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px">EN</button>
+            <!-- Logged out state (default) -->
+            <div id="navLoggedOut">
+                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;" data-i18n="lp_login">تسجيل الدخول</a>
+                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-i18n="lp_startNow">ابدا الان</a>
+            </div>
+            <!-- Logged in state -->
+            <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
+                <button class="nav-auth-btn danger" onclick="logout()" data-i18n="lp_logout">تسجيل الخروج</button>
+            </div>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer" id="mobileDrawer">
+        <a href="#features" onclick="closeDrawer()" data-i18n="lp_navFeatures">المميزات</a>
+        <a href="#reviews" onclick="closeDrawer()" data-i18n="lp_navReviews">الاراء</a>
+        <a href="#modules" onclick="closeDrawer()" data-i18n="lp_navCourses">الكورسات</a>
+        <a href="#payment" onclick="closeDrawer()" data-i18n="lp_navPrice">السعر</a>
+        <div id="mobileAuthLoggedOut">
+            <a href="login.html" onclick="closeDrawer()"
+                style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;" data-i18n="lp_mobileLogin">تسجيل
+                الدخول</a>
+        </div>
+        <div id="mobileAuthLoggedIn" style="display:none">
+            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-i18n="lp_logout">تسجيل الخروج</button>
+        </div>
+        <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()" data-i18n="lp_mobileStart">ابدا الان</a>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     AUTH MODALS
+    ════════════════════════════════════════ -->
+    <!-- Login Modal -->
+    <div class="auth-modal-backdrop" id="loginModal">
+        <div class="auth-modal">
+            <button class="auth-modal-close" onclick="closeAuthModal('login')">✕</button>
+            <h2 class="card-title">تسجيل <span class="gold">الدخول</span></h2>
+            <p class="card-sub">أهلاً بك مجدداً 👋</p>
+            <div id="loginModalAlert" class="modal-alert"></div>
+            <div class="field">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="loginModalEmail" placeholder="example@gmail.com" dir="ltr" />
+            </div>
+            <div class="field">
+                <label>كلمة المرور</label>
+                <div class="password-wrapper">
+                    <input type="password" id="loginModalPassword" placeholder="••••••••" dir="ltr" />
+                    <button type="button" class="toggle-password" onclick="togglePassword('loginModalPassword', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button class="auth-btn" id="loginModalBtn" onclick="modalLogin()">
+                <span class="btn-text">دخول</span>
+                <div class="spinner"></div>
+            </button>
+            <div class="bottom-link">
+                مش عندك حساب؟ <a onclick="switchModal('login','register')">سجّل دلوقتي</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="auth-modal-backdrop" id="registerModal" style="font-family: 'Inter', sans-serif;">
+        <div class="auth-modal"
+            style="background-color: #0a0a0a; border: 1px solid #222; max-width: 400px; padding: 24px; position: relative; direction: rtl;">
+            <div style="direction: ltr; text-align: left;">
+                <button class="auth-modal-close" onclick="closeAuthModal('register')"
+                    style="color: #666; top: 16px; left: 16px; right: auto;">✕</button>
+
+                <!-- Logo -->
+                <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+                    <img src="./imgs/ghawy-logo.png" alt="Ghawy Logo" style="height: 48px; object-fit: contain;">
+                </div>
+
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h2 style="font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px;">Create Your Account
+                    </h2>
+                    <p style="color: #9ca3af; font-size: 14px; margin: 0;">Fill in your details to get started</p>
+                </div>
+
+                <div id="registerModalAlert"
+                    style="display: none; margin-bottom: 16px; padding: 12px; border-radius: 6px; font-size: 14px; text-align: center;">
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" id="registerModalCountry">
+                <input type="hidden" id="registerModalGov">
+                <input type="hidden" id="registerModalDialCode">
+
+                <div style="margin-bottom: 16px;">
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;">Full
+                        Name</label>
+                    <div style="position: relative;">
+                        <div
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888;">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <input type="text" id="registerModalName" placeholder="Enter your full name"
+                            style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px 12px 12px 36px; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#AAFF00'" onblur="this.style.borderColor='#333'">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;">Email
+                        Address</label>
+                    <div style="position: relative;">
+                        <div
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888;">
+                            <i class="fa-regular fa-envelope"></i>
+                        </div>
+                        <input type="email" id="registerModalEmail" placeholder="Enter your email address"
+                            style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px 12px 12px 36px; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#AAFF00'" onblur="this.style.borderColor='#333'">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;">Phone
+                        Number</label>
+                    <div style="display: flex;">
+                        <div
+                            style="background-color: #111; border: 1px solid #333; border-right: none; border-radius: 12px 0 0 12px; padding: 0 12px; display: flex; align-items: center; justify-content: center; width: 90px; color: #d1d5db; font-size: 14px;">
+                            <span id="registerModalFlag" style="margin-right: 8px;">🌍</span>
+                            <span id="registerModalDialText">---</span>
+                        </div>
+                        <input type="tel" id="registerModalPhone" placeholder="Enter your phone number"
+                            style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; border-left: none; color: #fff; padding: 12px 16px; border-radius: 0 12px 12px 0; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            onfocus="this.parentElement.style.borderColor='#AAFF00'"
+                            onblur="this.parentElement.style.borderColor='#333'">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;">Password</label>
+                    <div style="position: relative; margin-bottom: 8px;">
+                        <div
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888;">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <input type="password" id="registerModalPassword" placeholder="Create a strong password"
+                            style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px 36px; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#AAFF00'" onblur="this.style.borderColor='#333'">
+                        <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #888; cursor: pointer;"
+                            onclick="togglePasswordVisibilityModal()">
+                            <i id="registerModalToggleIcon" class="fa-regular fa-eye-slash"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password Strength -->
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 12px;">
+                        <div style="font-size: 10px; color: #9ca3af; width: 100px;">Password Strength:</div>
+                        <div style="flex: 1; display: flex; gap: 4px;">
+                            <div id="regBar1"
+                                style="flex: 1; height: 4px; border-radius: 2px; background-color: #333; transition: background-color 0.3s;">
+                            </div>
+                            <div id="regBar2"
+                                style="flex: 1; height: 4px; border-radius: 2px; background-color: #333; transition: background-color 0.3s;">
+                            </div>
+                            <div id="regBar3"
+                                style="flex: 1; height: 4px; border-radius: 2px; background-color: #333; transition: background-color 0.3s;">
+                            </div>
+                            <div id="regBar4"
+                                style="flex: 1; height: 4px; border-radius: 2px; background-color: #333; transition: background-color 0.3s;">
+                            </div>
+                        </div>
+                        <div id="regStrengthText"
+                            style="font-size: 10px; font-weight: 500; width: 48px; text-align: right; color: #6b7280;">
+                        </div>
+                    </div>
+
+                    <!-- Checkmarks -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div id="regCheckLength"
+                            style="font-size: 12px; color: #666; display: flex; align-items: center;">
+                            <i class="fa-regular fa-circle-check" style="margin-right: 8px;"></i> At least 8 characters
+                        </div>
+                        <div id="regCheckCase"
+                            style="font-size: 12px; color: #666; display: flex; align-items: center;">
+                            <i class="fa-regular fa-circle-check" style="margin-right: 8px;"></i> Contains uppercase and
+                            lowercase
+                        </div>
+                        <div id="regCheckNumber"
+                            style="font-size: 12px; color: #666; display: flex; align-items: center;">
+                            <i class="fa-regular fa-circle-check" style="margin-right: 8px;"></i> Contains number or
+                            special character
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px; display: flex; align-items: center;">
+                        <input type="checkbox" id="regTerms"
+                            style="width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: #AAFF00;">
+                        <label for="regTerms" style="font-size: 12px; color: #9ca3af; cursor: pointer;">
+                            I agree to the <a href="#" style="color: #AAFF00; text-decoration: none;">Terms and
+                                Conditions</a>.
+                        </label>
+                    </div>
+                </div>
+
+                <button id="registerModalBtn" onclick="modalRegister()"
+                    style="width: 100%; background-color: #AAFF00; color: #000; font-weight: bold; padding: 12px; border-radius: 9999px; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: opacity 0.2s;"
+                    disabled>
+                    <span id="regBtnText">Sign Up Now <i class="fa-solid fa-arrow-right"
+                            style="margin-left: 4px;"></i></span>
+                    <div id="regSpinner"
+                        style="display: none; width: 16px; height: 16px; border: 2px solid #000; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;">
+                    </div>
+                </button>
+
+                <!-- Divider -->
+                <div style="display: flex; align-items: center; margin: 24px 0;">
+                    <div style="flex-grow: 1; border-top: 1px solid #222;"></div>
+                    <span style="padding: 0 16px; font-size: 12px; color: #6b7280; font-weight: 500;">OR</span>
+                    <div style="flex-grow: 1; border-top: 1px solid #222;"></div>
+                </div>
+
+                <!-- Google Button -->
+                <button type="button" onclick="window.location.href=`${API}/auth/google/login`"
+                    style="width: 100%; background-color: transparent; border: 1px solid #333; color: #fff; font-weight: 500; padding: 12px; border-radius: 9999px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background-color 0.2s;"
+                    onmouseover="this.style.backgroundColor='#1a1a1a'"
+                    onmouseout="this.style.backgroundColor='transparent'">
+                    <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Sign in with Google
+                </button>
+
+                <div style="margin-top: 24px; text-align: center; font-size: 12px; color: #6b7280;">
+                    Already have an account? <a onclick="switchModal('register','login')"
+                        style="color: #fff; font-weight: 500; cursor: pointer; text-decoration: none;">Log In</a>
+                </div>
+
+            </div> <!-- End LTR wrapper -->
+            <style>
+                @keyframes spin {
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+
+                .reg-check-valid {
+                    color: #AAFF00 !important;
+                }
+
+                .reg-check-valid i {
+                    color: #AAFF00 !important;
+                }
+            </style>
+        </div>
+    </div>
+
+    <!-- URGENCY TOP BAR — REMOVED (countdown timer removed per redesign) -->
+
+    <!-- ════════════════════════════════════════
+     HERO SECTION
+    ════════════════════════════════════════ -->
+    <header class="hero" id="top" dir="ltr">
+        <!-- Marine Blue Glow -->
+        <div class="hero-marine-glow"></div>
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="hero-split">
+
+                <!-- ── LEFT COLUMN: Text ── -->
+                <div class="hero-left">
+
+                    <!-- Top Badge -->
+                    <div class="pre-headline">
+                        <span style="color: var(--green); font-weight: 900; margin-right: 4px;">#1</span>
+                        <span data-i18n="lp_badge">AI Learning Platform In The Arab World</span>
+                    </div>
+
+                    <!-- Main Headline -->
+                    <h1 class="hero-heading-split">
+                        <span class="line-white" data-i18n="lp_heroLine1">Master AI.</span>
+                        <span class="line-white" data-i18n="lp_heroLine2">Build Leverage.</span>
+                        <span class="line-green" data-i18n="lp_heroLine3">Create Freedom.</span>
+                    </h1>
+
+                    <!-- Sub-headline -->
+                    <p class="hero-sub" data-i18n="lp_heroSub">
+                        Practical courses, real projects and a powerful community
+                        to help you master AI and build real income.
+                    </p>
+
+                    <!-- Stats Row -->
+                    <div class="hero-stats-inline">
+                        <div class="hero-stat-inline">
+                            <i class="fa-solid fa-video"></i>
+                            <div>
+                                <span class="stat-num-inline">24+</span>
+                                <span class="stat-lbl-inline" data-i18n="lp_statCourses">Courses</span>
+                            </div>
+                        </div>
+                        <div class="hero-stat-inline">
+                            <i class="fa-solid fa-code-fork"></i>
+                            <div>
+                                <span class="stat-num-inline">100+</span>
+                                <span class="stat-lbl-inline" data-i18n="lp_statProjects">Projects</span>
+                            </div>
+                        </div>
+                        <div class="hero-stat-inline">
+                            <i class="fa-solid fa-users"></i>
+                            <div>
+                                <span class="stat-num-inline">10K+</span>
+                                <span class="stat-lbl-inline" data-i18n="lp_statMembers">Members</span>
+                            </div>
+                        </div>
+                        <div class="hero-stat-inline">
+                            <i class="fa-solid fa-circle-play"></i>
+                            <div>
+                                <span class="stat-num-inline" data-i18n="lp_statLive">Live</span>
+                                <span class="stat-lbl-inline" data-i18n="lp_statSessions">Sessions</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA Buttons -->
+                    <div class="hero-cta-row">
+                        <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
+                            <span data-i18n="lp_joinNow">Join Ghawy Now</span> &nbsp;<i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                        <button class="btn-cta-ghost" id="watchIntroBtn">
+                            <i class="fa-regular fa-circle-play"></i>
+                            &nbsp;<span data-i18n="lp_watchIntro">Watch Intro</span>
+                        </button>
+                    </div>
+
+                </div><!-- /hero-left -->
+
+                <!-- ── RIGHT COLUMN: Video Player ── -->
+                <div class="hero-right">
+                    <div class="vsl-player-box">
+                        <!-- Progress bar at top -->
+                        <div class="vsl-progress-top" id="vslProgress"></div>
+
+                        <!-- Thumbnail overlay -->
+                        <div id="vslOverlay" class="vsl-overlay-img" style="
+                            background-image: url('https://atlas-vsl-cdn.b-cdn.net/thumbnail.png');
+                            background-size: cover;
+                            background-position: center;
+                        "></div>
+
+                        <!-- Unmute Button -->
+                        <button id="customUnmuteBtn" class="custom-unmute-btn" style="z-index:10;">
+                            <span class="icon"><i class="fa-solid fa-volume-high"></i></span>
+                            <span class="text" data-i18n="lp_unmuteBtn">تشغيل الصوت</span>
+                        </button>
+
+                        <!-- Video -->
+                        <video id="mainNativeVsl" playsinline autoplay muted
+                            style="width:100%; height:100%; object-fit:cover; display:block; border-radius: 12px;">
+                            <source src="https://atlas-vsl-cdn.b-cdn.net/vsl.mp4" type="video/mp4" />
+                        </video>
+
+                        <!-- Custom Bottom Controls -->
+                        <div class="vsl-controls">
+                            <button class="vsl-ctrl-btn" id="vslPlayBtn" title="Play/Pause">
+                                <i class="fa-solid fa-play" id="vslPlayIcon"></i>
+                            </button>
+                            <button class="vsl-ctrl-btn" id="vslSkipBtn" title="Skip">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                            <div class="vsl-time" id="vslTime">0:00 / 0:00</div>
+                            <div class="vsl-seek-bar-wrap">
+                                <div class="vsl-seek-track">
+                                    <div class="vsl-seek-fill" id="vslSeekFill"></div>
+                                </div>
+                            </div>
+                            <button class="vsl-ctrl-btn" id="vslLoopBtn" title="Loop">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                            <button class="vsl-ctrl-btn" id="vslPipBtn" title="Picture in Picture">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <button class="vsl-ctrl-btn" id="vslMuteBtn" title="Mute">
+                                <i class="fa-solid fa-volume-high" id="vslVolIcon"></i>
+                            </button>
+                            <button class="vsl-ctrl-btn" id="vslFullBtn" title="Fullscreen">
+                                <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div><!-- /hero-right -->
+
+            </div><!-- /hero-split -->
+
+            <!-- Avatars + Rating Centered Below -->
+            <div class="hero-rating" style="margin-top: 80px;">
+                <div class="hero-avatars">
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=11" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=22" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=33" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=44" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=55" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=66" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=12" alt="" />
+                    <img class="hero-av" src="https://i.pravatar.cc/40?img=13" alt="" />
+                </div>
+                <div class="hero-rating-info" style="direction: rtl;">
+                    <span class="hero-rating-text" data-i18n="lp_ratingText">حاصل علي تقييم <span style="font-weight:bold;color:#fff;">5.0</span>
+                        من اكثر من 30 مراجعة</span>
+                    <div class="hero-stars">
+                        <span class="star">★</span><span class="star">★</span><span class="star">★</span><span
+                            class="star">★</span><span class="star">★</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════
+     VIDEO TESTIMONIALS
+    ════════════════════════════════════════ -->
+
+    <!-- ════════════════════════════════════════
+     PREMIUM VIDEO TESTIMONIALS
+    ════════════════════════════════════════ -->
+    <section class="premium-reviews-section" id="reviews">
+        <div class="pr-parallax-bg"></div>
+        <div class="pr-halo"></div>
+
+        <div class="container">
+            <div class="pr-header">
+                <div class="pr-title-area">
+                    <h2 class="pr-title">
+                        آراء ناس حقيقية
+                        <span class="pr-gradient-text">بدأت من الصفر</span>
+                    </h2>
+                    <p class="pr-subtitle">
+                        متاخدش بكلامنا, اسمع بنفسك من الناس اللي انضمت وحققت أرباح بعد اشتراكها في البرنامج.
+                    </p>
+                </div>
+                <div class="pr-badge">
+                    ⭐ +2,400 طالب سعيد
+                </div>
+            </div>
+
+            <div class="pr-layout" id="prLayout">
+                <!-- Cards will be generated by JS -->
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════
+     COURSE MODULES
+    ════════════════════════════════════════ -->
+    <!-- COURSE MODULES -->
+    <!-- ════════════════════════════════════════
+    <!-- ════════════════════════════════════════
+    COURSE CATALOG SECTION (Swiper Infinite)
+    ════════════════════════════════════════ -->
+    <section class="premium-courses-section" id="modules">
+        <div class="container">
+            <div class="courses-header-wrapper">
+                <div class="courses-title-area">
+                    <span class="neon-subtitle">محتوى الكورس</span>
+                    <h2 class="courses-main-title">ايه اللي هتتعلمه؟</h2>
+                </div>
+                <div class="courses-info-bar">
+                    <div class="info-item"><i class="fa-solid fa-play"></i><span>عدد الدروس: <strong>44</strong></span>
+                    </div>
+                    <div class="info-item"><i class="fa-solid fa-stopwatch"></i><span>المدة الاجمالية: <strong>46h
+                                12m</strong></span></div>
+                </div>
+            </div>
+
+            <!-- Swiper Carousel -->
+            <div class="courses-carousel-wrapper">
+                <button class="carousel-arrow prev" id="cPrevBtn"><i class="fa-solid fa-chevron-right"></i></button>
+
+                <div class="swiper coursesSwiper">
+                    <div class="swiper-wrapper">
+
+                        <!-- CARD 1: Prompt Engineering -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="prompt-engineering">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/image_49611d.png" alt="Prompt Engineering" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>Prompt Engineering</h3>
+                                    <p>إتقان فن كتابة البرومبتات الاحترافية والـ Context Engineering.</p>
+                                    <div class="card-meta">
+                                        <span><i class="fa-solid fa-video"></i> 11 فيديو</span>
+                                        <span><i class="fa-regular fa-clock"></i> 11h 54m</span>
+                                    </div>
+                                    <a href="course-details.html" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 2: AAA Core -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="aaa-core">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/image_49595e.png" alt="AAA Core" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>AAA Core</h3>
+                                    <p>من الصفر — الموديل، الموديل، AAA Automation، وكالة، التسعير، والتنفيذ.</p>
+                                    <div class="card-meta">
+                                        <span><i class="fa-solid fa-video"></i> 7 فيديو</span>
+                                        <span><i class="fa-regular fa-clock"></i> 10h 17m</span>
+                                    </div>
+                                    <a href="course-details.html" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 3: AI Foundations -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="ai-foundations">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/image_49595e.png" alt="AI Foundations" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>AI Foundations</h3>
+                                    <p>فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents.</p>
+                                    <div class="card-meta">
+                                        <span><i class="fa-solid fa-video"></i> 4 فيديو</span>
+                                        <span><i class="fa-regular fa-clock"></i> 5h 01m</span>
+                                    </div>
+                                    <a href="course-details.html" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 4: AI Automation Lab -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="ai-automation-lab">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/image_4960ff.jpg" alt="AI Automation Lab" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>AI Automation Lab</h3>
+                                    <p>بناء أنظمة كاملة باستخدام n8n و Zapier.</p>
+                                    <div class="card-meta">
+                                        <span><i class="fa-solid fa-video"></i> 5 فيديو</span>
+                                        <span><i class="fa-regular fa-clock"></i> 9h 47m</span>
+                                    </div>
+                                    <a href="course-details.html" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /swiper-wrapper -->
+                </div><!-- /swiper -->
+
+                <button class="carousel-arrow next" id="cNextBtn"><i class="fa-solid fa-chevron-left"></i></button>
+            </div><!-- /courses-carousel-wrapper -->
+
+            <div class="courses-bottom-cta">
+                <button class="btn-join-now" onclick="window.location.href='#payment'">انضم الآن</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     ORIGIN STORY
+    ════════════════════════════════════════ -->
+    <section class="story-section">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">القصة وراء غاوي</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title">ليه عملت البروجرام ده؟</h2>
+            </div>
+            <div class="story-flex">
+                <div class="story-content">
+                    <p class="story-body">
+                        انا بدأت اونلاين بيزنس وانا عندي 14 سنه، وكنت زيّك بالظبط, بحاول
+                        ألاقي طريقة أزود بيها دخلي. جربت البرمجة، الجرافيك، التسويق, لكن
+                        كنت دايماً بحس إن الوقت بيسبقني والمنافسة صعبه, لحد ما جربت ابدأ
+                        في الاوتوميشن والAI بس التعلم بنسبالي كان صعب جدا من قلة المصادر
+                        العربية وحتي الاجنبية
+                    </p>
+                    <p class="story-body">إيه المشاكل اللي بدأت استغلها؟</p>
+                    <ul class="pain-points">
+                        <li class="pain-point">
+                            <span class="pain-icon">✕</span> الشركات محتاجة مساعدة بس مش
+                            عارفة تضيف الـ AI ازاي في شغلها
+                        </li>
+                        <li class="pain-point">
+                            <span class="pain-icon">✕</span> الكورسات الموجودة إما اكاديميه
+                            جداً أو فاضية وسطحية من الناحية العملية
+                        </li>
+                        <li class="pain-point">
+                            <span class="pain-icon">✕</span> الناس بتضيع وقتها تتعلم أدوات
+                            من غير ما تعرف تبيعها ولا تفهم البيزنس نفسه
+                        </li>
+                        <li class="pain-point">
+                            <span class="pain-icon">✕</span> سوق الـ AI بينمو بسرعة, الطلب
+                            عالي, ولكن التنفيذ قليل, والمتأخر بيخسر الفرصة
+                        </li>
+                    </ul>
+                    <p class="story-body">
+                        هنا قررت استغل الفرصة واساعد الناس يضيفوا AI في شغلهم واعلمهم ازاي
+                        يعملوا كدا. قدرت أبني
+                        <strong>"AI Agents"</strong> بيشتغلوا 24 ساعة وبيحلوا مشاكل
+                        للشركات ويوفروا وقت ومجهود وفلوس وقدرت احقق ربح وسمعة كبيرة جدا.
+                        من هنا قررت أجمع كل خبرتي في
+                        <strong>وكالتي</strong> عشان أوفر عليك سنين من
+                        التوهان والتشتت.
+                    </p>
+                </div>
+
+                <div class="story-img-box">
+                    <img src="imgs/me.png" alt="محمد صلاح" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     STATS BAR
+    ════════════════════════════════════════ -->
+    <div class="full-stripe stats-bar" id="statsBar">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-num">
+                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-users"></i><span
+                                class="counter-value" data-target="350">0</span>+</span>
+                    </div>
+                    <div class="stat-label">عدد الطلاب</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">
+                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-clock"></i><span
+                                class="counter-value" data-target="60">0</span>+</span>
+                    </div>
+                    <div class="stat-label">ساعات الكورس</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">
+                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-star"></i><span
+                                class="counter-value" data-target="5.0" data-decimals="1">0</span></span>
+                    </div>
+                    <div class="stat-label">التقييمات</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     TOOLS STRIPE
+    ════════════════════════════════════════ -->
+    <div class="full-stripe tools-stripe">
+        <div class="container">
+            <p class="tools-label">المهارات اللي هتتقنها</p>
+        </div>
+        <div class="tools-list">
+            <div class="tools-track">
+                <!-- Copy 1 -->
+                <span class="tool-chip"><span class="icon"><i class="fa-brands fa-openai"></i></span> AI Automation
+                    Agency</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code-fork"></i></span> Workflow
+                    Automation</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code"></i></span> Machine
+                    Learning</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-gem"></i></span> Personal
+                    Branding</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-bullhorn"></i></span> Client
+                    Acquisition</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-pen-fancy"></i></span> Prompt
+                    Engineering</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-microchip"></i></span> AI
+                    Foundations</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-list-check"></i></span> Business
+                    Diagnosis</span>
+                <!-- Copy 2 (seamless loop) -->
+                <span class="tool-chip"><span class="icon"><i class="fa-brands fa-openai"></i></span> AI Automation
+                    Agency</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code-fork"></i></span> Workflow
+                    Automation</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code"></i></span> Machine
+                    Learning</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-gem"></i></span> Personal
+                    Branding</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-bullhorn"></i></span> Client
+                    Acquisition</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-pen-fancy"></i></span> Prompt
+                    Engineering</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-microchip"></i></span> AI
+                    Foundations</span>
+                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-list-check"></i></span> Business
+                    Diagnosis</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     WHY CHOOSE US — FEATURES
+    ════════════════════════════════════════ -->
+    <section class="features-section reveal" id="features">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">لماذا تختارنا؟</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title">منصة متكاملة تقدم لك كل ما تحتاجه</h2>
+                <p class="section-sub">
+                    كل اللي محتاجه عشان تبني وكالة AI Automation ناجحة وتحقق دخل حقيقي — في مكان واحد
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-brands fa-openai"></i></div>
+                    <h4>بناء وكالة AI Automation</h4>
+                    <p>هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                    <h4>هندسة البرومبت</h4>
+                    <p>إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-code-fork"></i></div>
+                    <h4>أوتوميشن بدون كود</h4>
+                    <p>هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                    <h4>جذب العملاء</h4>
+                    <p>هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <h4>أساسيات الـ AI</h4>
+                    <p>فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-phone"></i></div>
+                    <h4>دعم VIP ومتابعة شخصية</h4>
+                    <p>مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     OFFER + URGENCY + VALUE STACK
+    ════════════════════════════════════════ -->
+    <section class="value-stack-section" id="offer">
+        <div class="vs-container">
+            <!-- Glow Effect in Background -->
+            <div class="vs-glow-bg"></div>
+
+            <!-- Header -->
+            <div class="vs-header">
+                <h2 class="vs-main-title">كل اللي هتمتلكه بمجرد دخولك</h2>
+                <p class="vs-subtitle">قيمة حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك</p>
+            </div>
+
+            <!-- Main Product -->
+            <div class="vs-main-product">
+                <div class="vs-product-info">
+                    <div class="vs-product-icon">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                        <h3 class="vs-product-title">البرنامج التدريبي الشامل</h3>
+                        <p class="vs-product-desc">أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف</p>
+                    </div>
+                </div>
+                <div class="vs-product-price" id="vs-price-main">10,000 ج.م</div>
+            </div>
+
+            <!-- Bonus Bundle Container -->
+            <div class="vs-bonus-bundle">
+                <div class="vs-bonus-badge">باقات الهدايا (مجاناً اليوم)</div>
+
+                <div class="vs-bonus-items">
+                    <!-- Item 1 -->
+                    <div class="vs-bonus-item">
+                        <div class="vs-bonus-left">
+                            <div class="vs-bonus-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="vs-bonus-text">
+                                <h4>أداة Perfect Prompt Generator</h4>
+                                <p>أداة ذكية لتوليد البرومبتات الاحترافية بضغطة زر</p>
+                            </div>
+                        </div>
+                        <div class="vs-bonus-price" id="vs-price-1">5,000 ج.م</div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="vs-bonus-item">
+                        <div class="vs-bonus-left">
+                            <div class="vs-bonus-icon"><i class="fa-solid fa-layer-group"></i></div>
+                            <div class="vs-bonus-text">
+                                <h4>أكثر من 2000+ قالب جاهز لبيئة العمل</h4>
+                                <p>نماذج جاهزة للاستخدام في وكالتك أو مشاريعك</p>
+                            </div>
+                        </div>
+                        <div class="vs-bonus-price" id="vs-price-2">2,500 ج.م</div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="vs-bonus-item">
+                        <div class="vs-bonus-left">
+                            <div class="vs-bonus-icon"><i class="fa-solid fa-phone-volume"></i></div>
+                            <div class="vs-bonus-text">
+                                <h4>جروب دعم VIP + مكالمة أسبوعية</h4>
+                                <p>دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك</p>
+                            </div>
+                        </div>
+                        <div class="vs-bonus-price" id="vs-price-3">8,500 ج.م</div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="vs-bonus-item">
+                        <div class="vs-bonus-left">
+                            <div class="vs-bonus-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                            <div class="vs-bonus-text">
+                                <h4>أكثر من 50 ملف PDF ملخص</h4>
+                                <p>خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات</p>
+                            </div>
+                        </div>
+                        <div class="vs-bonus-price" id="vs-price-4">4,000 ج.م</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Anchor -->
+            <div class="vs-pricing-anchor">
+                <div class="vs-total-value-text">القيمة الإجمالية الكاملة للبرنامج والهدايا:</div>
+                <div class="vs-old-price-wrap">
+                    <span class="vs-old-price" id="vs-price-old">30,000 ج.م</span>
+                </div>
+                <div class="vs-invest-text">استثمر اليوم فقط بـ</div>
+
+                <!-- Animated Reveal -->
+                <div class="vs-new-price-reveal" id="vsNewPrice">
+                    <div class="vs-new-price" id="vs-price-new">2,999 <span>ج.م</span></div>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="vs-cta-section">
+                <a href="#payment" class="vs-cta-btn">
+                    <div class="vs-btn-shimmer"></div>
+                    <span>احجز مكانك الان بالخصم</span>
+                </a>
+
+                <!-- Trust Badges -->
+                <div class="vs-trust-badges">
+                    <div class="vs-badge">
+                        <i class="fa-solid fa-lock" style="color: #f59e0b;"></i>
+                        دفع آمن 100%
+                    </div>
+                    <div class="vs-badge">
+                        <i class="fa-solid fa-shield-halved" style="color: #c1ff11;"></i>
+                        ضمان استرداد الأموال
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     GUARANTEE
+    ════════════════════════════════════════ -->
+    <section class="guarantee-section">
+        <div class="container">
+            <div class="guarantee-box">
+                <span class="guarantee-badge"><i class="fa-solid fa-shield-heart"></i></span>
+                <h3>ضمان استرداد 100% | 3 أيام من غير أسئلة</h3>
+                <p>
+                    أنا واثق جداً من قوة المحتوى. لو اشتركت وطبقت اللي في الكورس ومحستش
+                    إنك أخدت قيمة أضعاف اللي دفعته — ابعتلي رسالة خلال 3 أيام وهردلك
+                    فلوسك كاملة. بدون أي أسئلة، بدون أي تعقيد.
+                </p>
+                <div class="guarantee-points">
+                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
+                        استرداد فوري</span>
+                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
+                        لا شروط خفية</span>
+                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
+                        لا تحتاج مبرر</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     SCREENSHOTS
+    ════════════════════════════════════════ -->
+    <section class="screenshots-section">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">نتائج بالأرقام</span>
+                <h2 class="section-title">
+                    مجتمعنا لا يتوقف عن
+                    <span style="color: var(--gold)">تحقيق النتائج</span>
+                </h2>
+                <p class="section-sub">آراء حقيقية من أعضاء المجتمع</p>
+            </div>
+        </div>
+
+        <div class="reviews-marquee-wrapper">
+            <!-- Row 1 scrolls LEFT -->
+            <div class="reviews-row row-left">
+                <div class="reviews-track">
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
+                        </div>
+                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
+                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
+                        </div>
+                        <p class="review-achievement">أسس وكالة stirx.ai</p>
+                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
+                            كورس واحد</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
+                        </div>
+                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
+                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
+                        </div>
+                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
+                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
+                            على قيمة موجودة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
+                        </div>
+                        <p class="review-achievement">أحسن كورس شافه</p>
+                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
+                    </div>
+                    <!-- dup -->
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
+                        </div>
+                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
+                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
+                        </div>
+                        <p class="review-achievement">أسس وكالة stirx.ai</p>
+                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
+                            كورس واحد</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
+                        </div>
+                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
+                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
+                        </div>
+                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
+                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
+                            على قيمة موجودة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
+                        </div>
+                        <p class="review-achievement">أحسن كورس شافه</p>
+                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2 scrolls RIGHT -->
+            <div class="reviews-row row-right">
+                <div class="reviews-track">
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
+                        </div>
+                        <p class="review-achievement">كارير شيفت ناجح</p>
+                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
+                        </div>
+                        <p class="review-achievement">الشرح بسيط وعملي</p>
+                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
+                            ومبسطة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
+                        </div>
+                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
+                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
+                        </div>
+                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
+                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
+                            والتيوتوريال</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
+                        </div>
+                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
+                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
+                            مجتمع ومتابعة شخصية</p>
+                    </div>
+                    <!-- dup -->
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
+                        </div>
+                        <p class="review-achievement">كارير شيفت ناجح</p>
+                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
+                        </div>
+                        <p class="review-achievement">الشرح بسيط وعملي</p>
+                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
+                            ومبسطة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
+                        </div>
+                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
+                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
+                        </div>
+                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
+                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
+                            والتيوتوريال</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
+                        </div>
+                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
+                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
+                            مجتمع ومتابعة شخصية</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3 scrolls LEFT (slower) -->
+            <div class="reviews-row row-left-slow">
+                <div class="reviews-track">
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mahmoud</span>
+                        </div>
+                        <p class="review-achievement">كمية جهد مش طبيعي</p>
+                        <p class="review-text">شهاده لله — شوفت كميه جهد وتعب مش طبيعي واقسم بالله حب الكميونيتي بتاعتك
+                            ودي شهاده قدام ربنا</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">Y</div><span class="reviewer-name">yosuff</span>
+                        </div>
+                        <p class="review-achievement">شرح عملي مش كوبي بيست</p>
+                        <p class="review-text">شرحك جميل وبسيط وبتعيد الحاجة اكتر من مره — مش بس تطبيق كوبي بيست ده غير
+                            اللي عملته معايا</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">أ</div><span class="reviewer-name">أحمد سمير</span>
+                        </div>
+                        <p class="review-achievement">بدأ يحقق دخل محترم</p>
+                        <p class="review-text">الكورس غير حياتي بالكامل — بقيت فاهم كل حاجة وبدأت اشتغل مع عملاء فعليين
+                            وبحقق دخل</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">س</div><span class="reviewer-name">سارة محمد</span>
+                        </div>
+                        <p class="review-achievement">دعم ومتابعة مستمرة</p>
+                        <p class="review-text">الدعم والمتابعة في الكميونيتي حاجة مش طبيعية — أي سؤال بيتجاوب عليه بسرعة
+                            والمجتمع بيساعد بعضه</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ط</div><span class="reviewer-name">طارق حسن</span>
+                        </div>
+                        <p class="review-achievement">أول كورس حسيت حد عايزني أنجح</p>
+                        <p class="review-text">جربت كورسات كتير بس ده أول كورس حسيت فيه إن حد فعلاً عايزني أنجح — الشرح
+                            واضح والخطوات مرتبة</p>
+                    </div>
+                    <!-- dup -->
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mahmoud</span>
+                        </div>
+                        <p class="review-achievement">كمية جهد مش طبيعي</p>
+                        <p class="review-text">شهاده لله — شوفت كميه جهد وتعب مش طبيعي واقسم بالله حب الكميونيتي بتاعتك
+                            ودي شهاده قدام ربنا</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">Y</div><span class="reviewer-name">yosuff</span>
+                        </div>
+                        <p class="review-achievement">شرح عملي مش كوبي بيست</p>
+                        <p class="review-text">شرحك جميل وبسيط وبتعيد الحاجة اكتر من مره — مش بس تطبيق كوبي بيست ده غير
+                            اللي عملته معايا</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">أ</div><span class="reviewer-name">أحمد سمير</span>
+                        </div>
+                        <p class="review-achievement">بدأ يحقق دخل محترم</p>
+                        <p class="review-text">الكورس غير حياتي بالكامل — بقيت فاهم كل حاجة وبدأت اشتغل مع عملاء فعليين
+                            وبحقق دخل</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">س</div><span class="reviewer-name">سارة محمد</span>
+                        </div>
+                        <p class="review-achievement">دعم ومتابعة مستمرة</p>
+                        <p class="review-text">الدعم والمتابعة في الكميونيتي حاجة مش طبيعية — أي سؤال بيتجاوب عليه بسرعة
+                            والمجتمع بيساعد بعضه</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ط</div><span class="reviewer-name">طارق حسن</span>
+                        </div>
+                        <p class="review-achievement">أول كورس حسيت حد عايزني أنجح</p>
+                        <p class="review-text">جربت كورسات كتير بس ده أول كورس حسيت فيه إن حد فعلاً عايزني أنجح — الشرح
+                            واضح والخطوات مرتبة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAYMENT SECTION — Pricing Card
+    ═══════════════════════════════════ -->
+    <section class="pricing-section" id="payment">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">ابدأ دلوقتي</span>
+                <h2 class="section-title">Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
+                <p class="section-sub">Choose the plan that fits your journey.</p>
+            </div>
+
+            <!-- Toggle -->
+            <div class="pricing-toggle-wrapper">
+                <span class="pricing-toggle-label" id="labelMonthly">Monthly</span>
+                <label class="pricing-toggle">
+                    <input type="checkbox" id="pricingToggle">
+                    <span class="pricing-toggle-slider"></span>
+                </label>
+                <span class="pricing-toggle-label" id="labelYearly">Yearly</span>
+                <span class="pricing-save-badge">Save 33%</span>
+            </div>
+
+            <!-- Single Card -->
+            <div class="pricing-card pricing-card-featured">
+                <div class="pricing-card-glow"></div>
+
+                <span class="pricing-badge">🔥 الأكثر مبيعاً</span>
+                <h3 class="pricing-plan-name">اشتراك كامل</h3>
+                <p class="pricing-plan-sub">وصول لكل الكورسات + الدعم + التحديثات</p>
+
+                <div class="pricing-price-block">
+                    <div class="pricing-current">
+                        <span class="pricing-amount" id="priceAmount">500</span>
+                        <div class="pricing-currency-col">
+                            <span class="pricing-currency">EGP</span>
+                            <span class="pricing-period-label" id="pricePeriod">/شهر</span>
+                        </div>
+                    </div>
+                    <span class="pricing-period" id="priceNote">اشتراك شهري — إلغاء في أي وقت</span>
+                </div>
+
+                <div class="pricing-divider"></div>
+
+                <ul class="pricing-features">
+                    <li><i class="fa-solid fa-circle-check"></i> وصول لجميع الكورسات والمحتوى</li>
+                    <li><i class="fa-solid fa-circle-check"></i> +60 ساعة محتوى عملي</li>
+                    <li><i class="fa-solid fa-circle-check"></i> تواصل مباشر مع المدرب والتيم</li>
+                    <li><i class="fa-solid fa-circle-check"></i> محتوى متجدد ومحدّث باستمرار</li>
+                    <li><i class="fa-solid fa-circle-check"></i> جروب دعم VIP خاص</li>
+                    <li><i class="fa-solid fa-circle-check"></i> ضمان استرداد 3 أيام</li>
+                </ul>
+
+                <button class="pricing-cta" id="pricingCta" onclick="handleKashierPayment()">
+                    اشترك الآن
+                </button>
+
+                <a href="https://wa.me/201033903334?text=%D8%AA%D9%85%20%D8%A7%D9%84%D8%AF%D9%81%D8%B9" target="_blank"
+                    class="pricing-whatsapp">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <path
+                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                        <path
+                            d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.845L.057 23.272a.75.75 0 00.921.921l5.427-1.471A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.653-.523-5.168-1.432l-.362-.214-3.75 1.017 1.017-3.75-.214-.362A9.954 9.954 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+                    </svg>
+                    تواصل مع الدعم
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     FAQ
+    ════════════════════════════════════════ -->
+    <section class="faq-section" id="faq">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">الأسئلة الشائعة</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title">كل اللي عايز تعرفه</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-q">
+                        هل هحتاج خبرة سابقة في البرمجة؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        لا خالص, الكورس متصمم من الصفر. الأدوات اللي بنستخدمها زي n8n
+                        وMake هي No-Code مش بتعتمد على كتابة أي كود, وغير كدا انواع
+                        البيانات والحاجات اللي هنحتاجها في البرمجه هنشرحها بالكامل من
+                        الصفر, وعندنا شابتر كامل عن Machine learning للي عايز يتعمق في
+                        البرمجة
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        امتي هبدأ احقق ربح من المجال؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        الأمر بالكامل بيعتمد على مجهودك وتطبيقك, مفيش وقت محدد, بس بعض
+                        المشتركين قدروا يجيبوا أول عميل بعد 14 يوماً من التطبيق وانهاء
+                        الكورس
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        هل الكورس مسجل ولا بث مباشر؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        الكورس متسجل بالكامل بجودة عالية تقدر تشوفه في أي وقت وبالسرعة
+                        اللي تناسبك, بالإضافة لجروب دعم VIP ومكالمات اسبوعية للإجابة على
+                        أسئلتك.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        كيف أستلم الكورس بعد الدفع؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        بمجرد إتمام الدفع بنجاح، سيتم إنشاء حساب لك على منصة Whop وإرسال
+                        بيانات الدخول على رقمك فوراً - الوصول فوري.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        هل يوجد ضمان استرداد الأموال؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        أيوه أكيد. ضمان استرداد 100% خلال 3 أيام من الشراء, بدون أسئلة
+                        وبدون أي تعقيدات.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        هل انا محتاج لاب توب غالي؟<span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-a">
+                        لا نهائي, شغلنا مش تقيل خالص, اي نوع لاب توب عشان تقدر تحضر
+                        ميتينجز وتعمل الاوتوميشن علي n8n مش اكتر.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     FINAL CTA
+    ════════════════════════════════════════ -->
+    <section class="final-cta-section" id="checkout">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow">الخطوة الأخيرة</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title" style="max-width: 600px; margin-inline: auto">
+                    القرار ده ممكن يكون أهم قرار بتاخده في 2026, يا هتبدأ دلوقتي, يا كأن
+                    مفيش حاجه حصلت
+                </h2>
+                <p class="section-sub" style="margin: 0 auto 36px">
+                    سوق الـ AI بينمو بشكل تاريخي كأسرع سوق واكبر ثورة تكنولوجيه في
+                    التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية
+                    والوقت فات.
+                </p>
+                <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta"
+                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
+                    انضم الآن — EGP 2,999 فقط
+                </a>
+                <div class="cta-sub-note" style="margin-top: 18px">
+                    <span class="note-item"><i class="fa-solid fa-users"></i> +350 مشترك</span>
+                    <span class="note-item"><span><i class="fa-solid fa-circle-check"></i> ضمان 3 أيام</span></span>
+                    <span class="note-item"><i class="fa-solid fa-bolt"></i> وصول فوري</span>
+                    <span class="note-item"><i class="fa-solid fa-infinity"></i> دعم مدي الحياة</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     FOOTER
+    ════════════════════════════════════════ -->
+    <footer>
+        <div class="container"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+            <img src="./imgs/ghawy-new-logo-transparent.png" alt="Ghawy Logo" style="height: 100px; width: auto;" />
+            <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--muted);">
+                © 2026 Ghawy. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </footer>
+
+    <!-- ════════════════════════════════════════
+     JAVASCRIPT
+    ════════════════════════════════════════ -->
+
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="src/js/main.js"></script>
+    <script src="src/js/utils.js"></script>
+
+    <script>
+        /* ═══════════════════════════════════════════
+           Navigation & Auth Integration
+        ═══════════════════════════════════════════ */
+
+        // --- Scroll-aware nav ---
+        const mainNav = document.getElementById('mainNav');
+        window.addEventListener('scroll', () => {
+            mainNav.classList.toggle('scrolled', window.scrollY > 60);
+        }, { passive: true });
+
+        // --- Pricing Toggle (Monthly / Yearly) ---
+        const pricingToggle = document.getElementById('pricingToggle');
+        const priceAmount = document.getElementById('priceAmount');
+        const pricePeriod = document.getElementById('pricePeriod');
+        const priceNote = document.getElementById('priceNote');
+        const labelMonthly = document.getElementById('labelMonthly');
+        const labelYearly = document.getElementById('labelYearly');
+
+        function updatePricing() {
+            if (!pricingToggle || !priceAmount) return;
+            const isYearly = pricingToggle.checked;
+            priceAmount.style.opacity = '0';
+            priceAmount.style.transform = 'translateY(8px)';
+            setTimeout(() => {
+                priceAmount.textContent = isYearly ? '333' : '500';
+                if (pricePeriod) pricePeriod.textContent = '/شهر';
+                if (priceNote) priceNote.textContent = isYearly
+                    ? 'تدفع 4,000 جنيه سنوياً بدلاً من 6,000 جنيه'
+                    : 'اشتراك شهري — إلغاء في أي وقت';
+
+                priceAmount.setAttribute('data-egp', priceAmount.textContent);
+                if (priceNote) priceNote.setAttribute('data-egp', priceNote.textContent);
+
+                if (window.applyCurrencyUI) {
+                    window.applyCurrencyUI(localStorage.getItem('user_currency') || 'EGP');
+                }
+                if (labelMonthly) labelMonthly.classList.toggle('active', !isYearly);
+                if (labelYearly) labelYearly.classList.toggle('active', isYearly);
+                priceAmount.style.opacity = '1';
+                priceAmount.style.transform = 'translateY(0)';
+            }, 200);
+        }
+
+        if (pricingToggle) {
+            pricingToggle.addEventListener('change', updatePricing);
+            // Set initial state
+            if (labelMonthly) labelMonthly.classList.add('active');
+        }
+
+        // --- Active nav link highlight ---
+        const navSections = document.querySelectorAll('section[id], header[id]');
+        const navAnchors = document.querySelectorAll('.nav-links a');
+        const observerNav = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navAnchors.forEach(a => a.classList.remove('active'));
+                    const match = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+                    if (match) match.classList.add('active');
+                }
+            });
+        }, { threshold: 0, rootMargin: '-30% 0px -60% 0px' });
+        navSections.forEach(s => observerNav.observe(s));
+
+        // --- Hamburger ---
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileDrawer = document.getElementById('mobileDrawer');
+        function toggleDrawer() {
+            hamburgerBtn.classList.toggle('active');
+            mobileDrawer.classList.toggle('open');
+            document.body.style.overflow = mobileDrawer.classList.contains('open') ? 'hidden' : '';
+        }
+        function closeDrawer() {
+            hamburgerBtn.classList.remove('active');
+            mobileDrawer.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        hamburgerBtn.addEventListener('click', toggleDrawer);
+
+        // --- Auth State ---
+        function updateAuthUI() {
+            const token = getToken();
+            const loggedOut = document.getElementById('navLoggedOut');
+            const loggedIn = document.getElementById('navLoggedIn');
+            const mobileOut = document.getElementById('mobileAuthLoggedOut');
+            const mobileIn = document.getElementById('mobileAuthLoggedIn');
+
+            if (token) {
+                loggedOut.style.display = 'none';
+                loggedIn.style.display = 'flex';
+                if (mobileOut) mobileOut.style.display = 'none';
+                if (mobileIn) mobileIn.style.display = 'block';
+                // Try to decode name from JWT
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const name = payload.full_name || payload.name || payload.sub || '';
+                    // No greeting displayed - only logout button shown
+                } catch (e) {
+                    // silently ignore
+                }
+            } else {
+                loggedOut.style.display = '';
+                loggedIn.style.display = 'none';
+                if (mobileOut) mobileOut.style.display = 'block';
+                if (mobileIn) mobileIn.style.display = 'none';
+            }
+        }
+        updateAuthUI();
+
+        // --- Auth Modals ---
+        function openAuthModal(type) {
+            document.getElementById(type + 'Modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeAuthModal(type) {
+            document.getElementById(type + 'Modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function switchModal(from, to) {
+            closeAuthModal(from);
+            setTimeout(() => openAuthModal(to), 200);
+        }
+        // Close on backdrop click
+        document.querySelectorAll('.auth-modal-backdrop').forEach(bd => {
+            bd.addEventListener('click', e => {
+                if (e.target === bd) {
+                    bd.classList.remove('open');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        // Close on ESC
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.auth-modal-backdrop.open').forEach(bd => {
+                    bd.classList.remove('open');
+                    document.body.style.overflow = '';
+                });
+            }
+        });
+
+        function showModalAlert(id, msg, type) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = `modal-alert ${type}`;
+        }
+        function setModalLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = loading;
+            btn.classList.toggle('loading', loading);
+        }
+
+        async function modalLogin() {
+            const email = document.getElementById('loginModalEmail').value.trim();
+            const password = document.getElementById('loginModalPassword').value;
+            if (!email || !password) { showModalAlert('loginModalAlert', 'من فضلك اكمل كل الحقول', 'error'); return; }
+            setModalLoading('loginModalBtn', true);
+            try {
+                const res = await fetch(`${API}/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    saveToken(data.access_token);
+                    showModalAlert('loginModalAlert', 'تم الدخول بنجاح! ✅', 'success');
+                    setTimeout(() => { closeAuthModal('login'); updateAuthUI(); }, 800);
+                } else {
+                    showModalAlert('loginModalAlert', data.detail || 'إيميل أو باسورد غلط', 'error');
+                }
+            } catch { showModalAlert('loginModalAlert', 'مفيش اتصال بالـ server', 'error'); }
+            finally { setModalLoading('loginModalBtn', false); }
+        }
+
+        let isModalPasswordStrong = false;
+        // IP geolocation and dial code setup is now handled globally by getGeoLocation in main.js
+
+        // Modal Password Logic
+        function togglePasswordVisibilityModal() {
+            const input = document.getElementById('registerModalPassword');
+            const icon = document.getElementById('registerModalToggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye-slash';
+            }
+        }
+
+        document.getElementById('registerModalPassword').addEventListener('input', updateModalSubmitBtn);
+
+        const regTermsEl = document.getElementById('regTerms');
+        if (regTermsEl) {
+            regTermsEl.addEventListener('change', updateModalSubmitBtn);
+        }
+
+        function updateModalSubmitBtn() {
+            const val = document.getElementById('registerModalPassword').value;
+            const hasLength = val.length >= 8;
+            const hasUpperLower = /[a-z]/.test(val) && /[A-Z]/.test(val);
+            const hasNumSpec = /[0-9]/.test(val) || /[^a-zA-Z0-9]/.test(val);
+
+            const upCheck = (id, valid) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const i = el.querySelector('i');
+                if (valid) {
+                    el.classList.add('reg-check-valid');
+                    i.className = 'fa-solid fa-circle-check';
+                } else {
+                    el.classList.remove('reg-check-valid');
+                    i.className = 'fa-regular fa-circle-check';
+                }
+            };
+
+            upCheck('regCheckLength', hasLength);
+            upCheck('regCheckCase', hasUpperLower);
+            upCheck('regCheckNumber', hasNumSpec);
+
+            let score = 0;
+            if (hasLength) score++;
+            if (hasUpperLower) score++;
+            if (hasNumSpec) score++;
+
+            const b1 = document.getElementById('regBar1'), b2 = document.getElementById('regBar2'), b3 = document.getElementById('regBar3'), b4 = document.getElementById('regBar4');
+            const st = document.getElementById('regStrengthText');
+            [b1, b2, b3, b4].forEach(b => { if (b) b.style.backgroundColor = '#333'; });
+
+            if (val.length === 0) {
+                st.innerText = '';
+                isModalPasswordStrong = false;
+            } else if (score === 1) {
+                if (b1) b1.style.backgroundColor = '#ef4444';
+                st.innerText = 'Weak';
+                st.style.color = '#ef4444';
+                isModalPasswordStrong = false;
+            } else if (score === 2) {
+                if (b1) b1.style.backgroundColor = '#eab308';
+                if (b2) b2.style.backgroundColor = '#eab308';
+                st.innerText = 'Medium';
+                st.style.color = '#eab308';
+                isModalPasswordStrong = false;
+            } else if (score === 3) {
+                if (b1) b1.style.backgroundColor = '#AAFF00';
+                if (b2) b2.style.backgroundColor = '#AAFF00';
+                if (b3) b3.style.backgroundColor = '#AAFF00';
+                if (val.length >= 12 && b4) b4.style.backgroundColor = '#AAFF00';
+                st.innerText = 'Strong';
+                st.style.color = '#AAFF00';
+                isModalPasswordStrong = true;
+            }
+
+            const isTermsAgreed = document.getElementById('regTerms') ? document.getElementById('regTerms').checked : false;
+            const btn = document.getElementById('registerModalBtn');
+            if (btn) {
+                const isValid = isModalPasswordStrong && isTermsAgreed;
+                btn.disabled = !isValid;
+                btn.style.opacity = isValid ? '1' : '0.5';
+                btn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            }
+        }
+
+        async function modalRegister() {
+            const isTermsAgreed = document.getElementById('regTerms') ? document.getElementById('regTerms').checked : false;
+            const alertEl = document.getElementById('registerModalAlert');
+            const btn = document.getElementById('registerModalBtn');
+            const txt = document.getElementById('regBtnText');
+            const sp = document.getElementById('regSpinner');
+
+            if (!isModalPasswordStrong || !isTermsAgreed) {
+                alertEl.style.display = 'block';
+                alertEl.style.backgroundColor = 'rgba(153,27,27,0.5)';
+                alertEl.style.color = '#f87171';
+                alertEl.style.border = '1px solid #991b1b';
+                alertEl.innerText = !isTermsAgreed ? 'You must agree to the Terms and Conditions' : 'Please create a strong password';
+                return;
+            }
+
+            const fullName = document.getElementById('registerModalName').value.trim();
+            const email = document.getElementById('registerModalEmail').value.trim();
+            const rawPhone = document.getElementById('registerModalPhone').value.trim();
+            const password = document.getElementById('registerModalPassword').value;
+            const country = document.getElementById('registerModalCountry').value || 'Egypt';
+            const governorate = document.getElementById('registerModalGov').value || 'Unknown';
+            const dialCode = document.getElementById('registerModalDialCode').value || '+20';
+
+            const phone = dialCode + rawPhone;
+
+            if (!fullName || !email || !rawPhone || !password) {
+                alertEl.style.display = 'block';
+                alertEl.style.backgroundColor = 'rgba(153,27,27,0.5)';
+                alertEl.style.color = '#f87171';
+                alertEl.style.border = '1px solid #991b1b';
+                alertEl.innerText = 'Please fill all fields';
+                return;
+            }
+
+            btn.disabled = true;
+            txt.style.display = 'none';
+            sp.style.display = 'block';
+
+            try {
+                const res = await fetch(`${API}/auth/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_name: fullName, email, password, phone, country, governorate })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alertEl.style.display = 'block';
+                    alertEl.style.backgroundColor = 'rgba(21,128,61,0.5)';
+                    alertEl.style.color = '#4ade80';
+                    alertEl.style.border = '1px solid #166534';
+                    alertEl.innerText = 'Account created! Redirecting...';
+                    setTimeout(() => {
+                        closeAuthModal('register');
+                        window.location.href = `verify-email.html?email=${encodeURIComponent(email)}`;
+                    }, 1200);
+                } else {
+                    alertEl.style.display = 'block';
+                    alertEl.style.backgroundColor = 'rgba(153,27,27,0.5)';
+                    alertEl.style.color = '#f87171';
+                    alertEl.style.border = '1px solid #991b1b';
+                    alertEl.innerText = data.detail || 'An error occurred';
+                    btn.disabled = false;
+                    txt.style.display = 'block';
+                    sp.style.display = 'none';
+                }
+            } catch {
+                alertEl.style.display = 'block';
+                alertEl.innerText = 'No server connection';
+                btn.disabled = false;
+                txt.style.display = 'block';
+                sp.style.display = 'none';
+            }
+        }
+
+        // --- Password Toggle ---
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon" style="color: var(--gold);"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
+
+        // Enter key support for modals
+        document.getElementById('loginModalPassword').addEventListener('keydown', e => { if (e.key === 'Enter') modalLogin(); });
+        document.getElementById('registerModalPassword').addEventListener('keydown', e => { if (e.key === 'Enter') modalRegister(); });
+
+        // --- Kashier Payment Handler ---
+        function handleKashierPayment() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = 'register.html';
+                return;
+            }
+            window.location.href = 'payment.html';
+        }
+
+        // --- Scroll Reveal ---
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // Add reveal class to major sections dynamically
+        document.querySelectorAll('.reviews-section, .story-section, .chapters-section, .offer-section, .guarantee-section, .screenshots-section, .faq-section, .final-cta-section, .payment-section').forEach(s => {
+            s.classList.add('reveal');
+            revealObserver.observe(s);
+        });
+
+        // --- Handle Currency & Pricing ---
+        async function setupDynamicPricing() {
+            if (typeof initCurrency !== 'function') return;
+            const currency = await initCurrency();
+            const priceAmount = document.getElementById('priceAmount');
+            const priceCurrency = document.querySelector('.pricing-currency');
+            const finalCta = document.querySelector('.final-cta-section .btn-cta');
+
+            const vsMain = document.getElementById('vs-price-main');
+            const vs1 = document.getElementById('vs-price-1');
+            const vs2 = document.getElementById('vs-price-2');
+            const vs3 = document.getElementById('vs-price-3');
+            const vs4 = document.getElementById('vs-price-4');
+            const vsOld = document.getElementById('vs-price-old');
+            const vsNew = document.getElementById('vs-price-new');
+
+            if (currency === 'USD') {
+                if (priceAmount) priceAmount.innerText = '10';
+                if (priceCurrency) priceCurrency.innerText = 'USD';
+                if (finalCta) finalCta.innerHTML = 'انضم الآن — 60$ فقط';
+
+                if (vsMain) vsMain.innerText = '200 $';
+                if (vs1) vs1.innerText = '100 $';
+                if (vs2) vs2.innerText = '50 $';
+                if (vs3) vs3.innerText = '170 $';
+                if (vs4) vs4.innerText = '80 $';
+                if (vsOld) vsOld.innerText = '600 $';
+                if (vsNew) vsNew.innerHTML = '60 <span>$</span>';
+            } else {
+                if (priceAmount) priceAmount.innerText = '500';
+                if (priceCurrency) priceCurrency.innerText = 'ج.م';
+                if (finalCta) finalCta.innerHTML = 'انضم الآن — ج.م 2,999 فقط';
+
+                if (vsMain) vsMain.innerText = '10,000 ج.م';
+                if (vs1) vs1.innerText = '5,000 ج.م';
+                if (vs2) vs2.innerText = '2,500 ج.م';
+                if (vs3) vs3.innerText = '8,500 ج.م';
+                if (vs4) vs4.innerText = '4,000 ج.م';
+                if (vsOld) vsOld.innerText = '30,000 ج.م';
+                if (vsNew) vsNew.innerHTML = '2,999 <span>ج.م</span>';
+            }
+        }
+        setupDynamicPricing();
+
+        // --- Handle OAuth Token from URL ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+            saveToken(urlToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            if (typeof updateAuthUI === 'function') updateAuthUI();
+        }
+    </script>
+    <script src="src/js/i18n.js"></script>
+</body>
+
+</html>
+
+
+
+

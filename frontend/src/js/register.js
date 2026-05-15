@@ -1,0 +1,227 @@
+let isPasswordStrong = false;
+let isTermsAgreed = false;
+let dialCodeValue = '';
+
+// Password toggle
+function togglePasswordVisibility() {
+  const input = document.getElementById('password');
+  const icon = document.getElementById('toggleIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  }
+}
+
+// Password strength logic
+document.getElementById('password').addEventListener('input', function (e) {
+  const val = e.target.value;
+
+  const hasLength = val.length >= 8;
+  const hasUpperLower = /[a-z]/.test(val) && /[A-Z]/.test(val);
+  const hasNumSpec = /[0-9]/.test(val) || /[^a-zA-Z0-9]/.test(val);
+
+  // Update checks
+  updateCheck('checkLength', hasLength);
+  updateCheck('checkCase', hasUpperLower);
+  updateCheck('checkNumber', hasNumSpec);
+
+  let score = 0;
+  if (hasLength) score++;
+  if (hasUpperLower) score++;
+  if (hasNumSpec) score++;
+
+  const b1 = document.getElementById('bar1');
+  const b2 = document.getElementById('bar2');
+  const b3 = document.getElementById('bar3');
+  const b4 = document.getElementById('bar4');
+  const sText = document.getElementById('strengthText');
+
+  // reset classes
+  [b1, b2, b3, b4].forEach(b => b.className = 'strength-bar flex-1');
+
+  if (val.length === 0) {
+    sText.innerText = '';
+    isPasswordStrong = false;
+  } else if (score === 1) {
+    b1.classList.add('active', 'weak');
+    sText.innerText = 'Weak';
+    sText.className = 'text-[10px] font-medium w-12 text-right text-red-500';
+    isPasswordStrong = false;
+  } else if (score === 2) {
+    b1.classList.add('active', 'medium');
+    b2.classList.add('active', 'medium');
+    sText.innerText = 'Medium';
+    sText.className = 'text-[10px] font-medium w-12 text-right text-yellow-500';
+    isPasswordStrong = false;
+  } else if (score === 3) {
+    b1.classList.add('active', 'strong');
+    b2.classList.add('active', 'strong');
+    b3.classList.add('active', 'strong');
+
+    // Extra bar if very long and strong
+    if (val.length >= 12) {
+      b4.classList.add('active', 'strong');
+    }
+
+    sText.innerText = 'Strong';
+    sText.className = 'text-[10px] font-medium w-12 text-right text-brand';
+    isPasswordStrong = true;
+  }
+
+  updateSubmitButton();
+});
+
+const termsEl = document.getElementById('terms');
+if (termsEl) {
+  termsEl.addEventListener('change', function (e) {
+    isTermsAgreed = e.target.checked;
+    updateSubmitButton();
+  });
+}
+
+function updateSubmitButton() {
+  const submitBtn = document.getElementById('submitRegBtn');
+  if (submitBtn) {
+    submitBtn.disabled = !(isPasswordStrong && isTermsAgreed);
+  }
+}
+
+function updateCheck(id, isValid) {
+  const el = document.getElementById(id);
+  const icon = el.querySelector('i');
+  if (isValid) {
+    el.classList.add('valid');
+    icon.classList.remove('fa-regular', 'fa-circle-check');
+    icon.classList.add('fa-solid', 'fa-circle-check');
+  } else {
+    el.classList.remove('valid');
+    icon.classList.add('fa-regular', 'fa-circle-check');
+    icon.classList.remove('fa-solid');
+  }
+}
+
+// IP Geolocation
+async function getGeoLocation() {
+  const countryInput = document.getElementById('country');
+  const govInput = document.getElementById('governorate');
+  const dialCodeSpan = document.getElementById('dialCode');
+  const flagSpan = document.getElementById('countryFlag');
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    const data = await res.json();
+
+    if (data.error) throw new Error();
+
+    countryInput.value = data.country_name || '';
+    govInput.value = data.region || data.city || 'Unknown';
+    dialCodeValue = data.country_calling_code || '';
+    dialCodeSpan.innerText = dialCodeValue;
+
+    // Set flag emoji
+    if (data.country_code) {
+      flagSpan.innerText = data.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+    }
+  } catch (err) {
+    // defaults
+    dialCodeSpan.innerText = '+20';
+    flagSpan.innerText = '🇪🇬';
+    dialCodeValue = '+20';
+    countryInput.value = 'Egypt';
+    govInput.value = 'Unknown';
+  }
+}
+
+window.onload = getGeoLocation;
+
+function showFormMessage(msg, type) {
+  const alertEl = document.getElementById('formAlert');
+  alertEl.innerText = msg;
+  alertEl.classList.remove('hidden', 'bg-red-900/50', 'text-red-400', 'border-red-800', 'bg-green-900/50', 'text-green-400', 'border-green-800');
+  alertEl.classList.add('border');
+
+  if (type === 'error') {
+    alertEl.classList.add('bg-red-900/50', 'text-red-400', 'border-red-800');
+  } else {
+    alertEl.classList.add('bg-green-900/50', 'text-green-400', 'border-green-800');
+  }
+}
+
+async function submitRegister() {
+  if (!isPasswordStrong) {
+    showFormMessage('Please create a strong password.', 'error');
+    return;
+  }
+  if (!isTermsAgreed) {
+    showFormMessage('You must agree to the Terms and Conditions.', 'error');
+    return;
+  }
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const rawPhone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const country = document.getElementById('country').value.trim();
+  const governorate = document.getElementById('governorate').value.trim();
+
+  const phone = dialCodeValue + rawPhone;
+
+  const btn = document.getElementById('submitRegBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = btn.querySelector('span');
+
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  btnText.classList.add('opacity-0');
+
+  try {
+    // API is assumed to be defined globally from utils.js
+    const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+
+    const res = await fetch(`${apiBase}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        full_name: fullName,
+        email,
+        password,
+        phone,
+        country,
+        governorate
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      showFormMessage('Account created successfully! Redirecting...', 'success');
+      const nextUrl = `verify-email.html?email=${encodeURIComponent(email)}`;
+      setTimeout(() => { window.location.href = nextUrl; }, 1200);
+    } else {
+      showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
+      btn.disabled = false;
+    }
+
+  } catch (e) {
+    showFormMessage('No connection to the server.', 'error');
+    btn.disabled = false;
+  } finally {
+    spinner.classList.add('hidden');
+    btnText.classList.remove('opacity-0');
+  }
+}
+
+function googleSignIn() {
+  // Trigger google sign in flow
+  const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+  window.location.href = `${apiBase}/auth/google/login`;
+}
+

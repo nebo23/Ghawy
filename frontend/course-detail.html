@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Course Detail — Ghawy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
+    <link rel="stylesheet" href="src/css/dashboard.css"/>
+    <style>
+        .cd-grid{display:grid;grid-template-columns:1fr 320px;gap:24px}
+        /* Hero */
+        .cd-hero{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px;position:relative;overflow:hidden;margin-bottom:24px}
+        .cd-hero::before{content:'';position:absolute;top:-40%;right:-20%;width:50%;height:180%;background:radial-gradient(ellipse,rgba(193,255,17,.06),transparent 70%);pointer-events:none}
+        .cd-hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold);color:#000;padding:4px 12px;border-radius:6px;font-size:.75rem;font-weight:800;margin-bottom:16px}
+        .cd-hero p{font-size:.9rem;color:var(--text-secondary);max-width:500px;margin-bottom:16px;line-height:1.6}
+        .cd-stats{display:flex;gap:20px;margin-bottom:20px;font-size:.82rem;color:var(--text-secondary);flex-wrap:wrap}
+        .cd-stats span{display:flex;align-items:center;gap:5px}
+        .cd-stats i{color:var(--gold)}
+        /* Tabs */
+        .cd-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px}
+        .cd-tab{padding:10px 20px;font-size:.85rem;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;transition:all .2s;cursor:pointer}
+        .cd-tab:hover{color:var(--text-secondary)}
+        .cd-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+        /* Curriculum */
+        .curriculum-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .curriculum-header h3{font-size:1rem;font-weight:700}
+        .curriculum-header .lesson-count{font-size:.72rem;background:var(--bg-hover);padding:3px 10px;border-radius:12px;color:var(--text-muted);font-weight:600}
+        .expand-btn{font-size:.78rem;color:var(--gold);font-weight:600;cursor:pointer}
+        .section-block{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+        .section-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;transition:background .15s}
+        .section-header:hover{background:var(--bg-hover)}
+        .section-header .sec-left{display:flex;align-items:center;gap:10px}
+        .section-header .sec-toggle{color:var(--text-muted);font-size:.75rem;transition:transform .2s}
+        .section-header .sec-title{font-size:.9rem;font-weight:700}
+        .section-header .sec-right{display:flex;align-items:center;gap:12px}
+        .section-header .sec-count{font-size:.78rem;color:var(--text-muted)}
+        .section-header .sec-expand{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .15s}
+        .section-header .sec-expand:hover{background:var(--bg-hover)}
+        .section-lessons{border-top:1px solid var(--border);display:none}
+        .section-lessons.open{display:block}
+        .lesson-row{display:flex;align-items:center;gap:12px;padding:12px 18px 12px 32px;border-bottom:1px solid var(--border);transition:background .15s;font-size:.85rem;cursor:pointer}
+        .lesson-row:last-child{border-bottom:none}
+        .lesson-row:hover{background:var(--bg-hover)}
+        .lesson-row .lesson-icon{width:28px;height:28px;border-radius:6px;background:var(--gold-subtle);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--gold);flex-shrink:0}
+        .lesson-row .lesson-title{flex:1;color:var(--text-secondary)}
+        .lesson-row .lesson-dur{font-size:.75rem;color:var(--text-muted);font-family:'IBM Plex Mono',monospace}
+        .lesson-row .lesson-check{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0}
+        .lesson-row .lesson-check.done{background:var(--gold);color:#000}
+        .lesson-row .lesson-check.undone{border:2px solid var(--border-light);color:transparent}
+        /* Sidebar Cards */
+        .cd-side-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+        /* Progress Ring */
+        .progress-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px}
+        .progress-ring{position:relative;width:100px;height:100px}
+        .progress-ring svg{transform:rotate(-90deg)}
+        .progress-ring .track{fill:none;stroke:var(--border-light);stroke-width:8}
+        .progress-ring .fill{fill:none;stroke:var(--gold);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s}
+        .progress-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:var(--gold)}
+        .progress-ring-info{text-align:center}
+        .progress-ring-info h4{font-size:.85rem;font-weight:600;color:var(--text-muted);margin-bottom:2px}
+        .progress-ring-info .pct-text{font-size:.9rem;font-weight:700;color:var(--gold)}
+        .progress-ring-info .lessons-text{font-size:.72rem;color:var(--text-muted)}
+        /* Learn List */
+        .learn-list{list-style:none;padding:0}
+        .learn-list li{display:flex;gap:10px;padding:8px 0;font-size:.82rem;color:var(--text-secondary);line-height:1.5}
+        .learn-list li i{color:var(--gold);margin-top:3px;flex-shrink:0}
+        /* Top Students */
+        .top-student{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.82rem}
+        .top-student .ts-av{width:30px;height:30px;border-radius:50%;background:var(--gold-subtle);border:1px solid var(--gold-border);flex-shrink:0}
+        .top-student .ts-name{flex:1;font-weight:600}
+        .top-student .ts-pct{color:var(--gold);font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:.78rem}
+        /* Search & Filter */
+        .cd-search{display:flex;align-items:center;gap:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;height:36px;margin-bottom:10px}
+        .cd-search i{color:var(--text-muted);font-size:.8rem}
+        .cd-search input{background:none;border:none;outline:none;color:var(--text-primary);font-family:inherit;font-size:.82rem;flex:1}
+        .cd-search input::placeholder{color:var(--text-muted)}
+        /* Live Promo */
+        .cd-live-promo{background:linear-gradient(135deg,rgba(193,255,17,.06),rgba(193,255,17,.02));border:1px solid var(--gold-border);border-radius:var(--radius);padding:20px;text-align:center}
+        .cd-live-promo h4{color:var(--gold);font-size:.95rem;margin-bottom:8px}
+        .cd-live-promo p{font-size:.8rem;color:var(--text-secondary);margin-bottom:14px}
+
+        @media(max-width:1024px){.cd-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div class="dash-layout">
+    <aside class="dash-sidebar" id="dashSidebar">
+        <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy"/><span>Ghawy</span></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span data-i18n="dashboard">الرئيسية</span></a>
+            <a href="courses.html?v=2" class="nav-item active"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="courses">الكورسات</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
+            <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+            <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
+            <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
+            <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
+        </nav>
+        <div class="sidebar-user"><div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div><div class="sidebar-user-info"><div class="sidebar-user-name" id="sidebarName">—</div><div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div></div></div>
+        <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+            <div class="topbar-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" data-i18n-placeholder="searchLessons" placeholder="ابحث في الدروس..."/><kbd>⌘K</kbd></div>
+            <div class="topbar-actions">
+
+                <button class="topbar-icon"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
+                <div class="topbar-user" id="topbarUser"><div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div><span class="topbar-user-name" id="topbarName">—</span></div>
+            </div>
+        </header>
+        <div class="dash-content">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a href="courses.html?v=2"><i class="fa-solid fa-graduation-cap"></i></a>
+                <i class="fa-solid fa-chevron-right"></i>
+                <span id="breadcrumbTitle">Course</span>
+            </div>
+
+            <div class="cd-grid">
+                <div class="cd-grid-main">
+                    <!-- Hero -->
+                    <div class="cd-hero">
+                        <div class="cd-hero-badge"><i class="fa-solid fa-bolt"></i> AI</div>
+                        <p id="courseDesc">Learn how to build smart automations and save 10+ hours every week.</p>
+                        <div class="cd-stats" id="courseStats">
+                            <span><i class="fa-solid fa-book"></i> <span id="statLessons">24</span> Lessons</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                            <span><i class="fa-solid fa-star"></i> 4.8 (1.2K)</span>
+                        </div>
+                        <div class="hero-actions">
+                            <button class="btn-gold" id="continueLearningBtn"><span data-i18n="continueLearning">كمّل التعلم</span> <i class="fa-solid fa-arrow-right"></i></button>
+                            <button class="btn-outline"><i class="fa-solid fa-play"></i> <span data-i18n="previewCourse">معاينة الكورس</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="cd-tabs" id="cdTabs">
+                        <div class="cd-tab active" data-tab="overview" data-i18n="overview">نظرة عامة</div>
+                        <div class="cd-tab" data-tab="curriculum" data-i18n="curriculum">المنهج</div>
+                        <div class="cd-tab" data-tab="projects" data-i18n="projects">مشاريع</div>
+                        <div class="cd-tab" data-tab="resources" data-i18n="resources">مصادر</div>
+                        <div class="cd-tab" data-tab="reviews" data-i18n="reviews">تقييمات</div>
+                    </div>
+
+                    <!-- Curriculum Content -->
+                    <div id="tabOverview">
+                        <div class="cd-side-card">
+                            <div class="side-card-title" data-i18n="aboutThisCourse">عن هذا الكورس</div>
+                            <p style="color:var(--text-secondary);line-height:1.8;font-size:.9rem" id="overviewText">Course overview will be displayed here.</p>
+                        </div>
+                    </div>
+                    <div id="tabCurriculum" style="display:none">
+                        <div class="curriculum-header">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <h3 data-i18n="courseCurriculum">محتوى الكورس</h3>
+                                <span class="lesson-count" id="totalLessonsBadge">24 Lessons</span>
+                            </div>
+                            <span class="expand-btn" id="expandAllBtn" data-i18n="expandAll">توسيع الكل</span>
+                        </div>
+                        <div id="curriculumSections"></div>
+                    </div>
+                    <div id="tabProjects" style="display:none"><div class="cd-side-card"><p style="color:var(--text-muted)">Projects coming soon...</p></div></div>
+                    <div id="tabResources" style="display:none"><div class="cd-side-card"><p style="color:var(--text-muted)">Resources coming soon...</p></div></div>
+                    <div id="tabReviews" style="display:none"><div class="cd-side-card"><p style="color:var(--text-muted)">Reviews coming soon...</p></div></div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="cd-grid-side">
+                    <!-- Progress -->
+                    <div class="cd-side-card">
+                        <div class="side-card-title" data-i18n="yourProgress">تقدمك</div>
+                        <div class="progress-ring-wrap">
+                            <div class="progress-ring">
+                                <svg width="100" height="100" viewBox="0 0 100 100">
+                                    <circle class="track" cx="50" cy="50" r="42"/>
+                                    <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+                                </svg>
+                                <div class="pct" id="cdProgressPct">0%</div>
+                            </div>
+                            <div class="progress-ring-info">
+                                <h4 data-i18n="courseProgress">تقدم الكورس</h4>
+                                <div class="pct-text" id="cdProgressText">0% Complete</div>
+                                <div class="lessons-text" id="cdProgressLessons">Completed 0 of 0 lessons</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar-full"><div class="bar" id="cdProgressBar" style="width:0%"></div></div>
+                        <button class="btn-outline" style="width:100%;justify-content:center;margin-top:8px" id="resumeBtn"><i class="fa-solid fa-play"></i> <span data-i18n="resumeLesson">كمّل من آخر درس</span></button>
+                    </div>
+
+                    <!-- What You'll Learn -->
+                    <div class="cd-side-card">
+                        <div class="side-card-title" data-i18n="whatYoullLearn">هتتعلم إيه</div>
+                        <ul class="learn-list" id="learnList">
+                            <li><i class="fa-solid fa-check"></i> Build smart AI automations from scratch</li>
+                            <li><i class="fa-solid fa-check"></i> Connect APIs and automate workflows</li>
+                            <li><i class="fa-solid fa-check"></i> Deploy AI-powered customer support bots</li>
+                            <li><i class="fa-solid fa-check"></i> Process and classify data automatically</li>
+                        </ul>
+                    </div>
+
+                    <!-- Top Students -->
+                    <div class="cd-side-card">
+                        <div class="card-header" style="margin-bottom:10px">
+                            <div class="side-card-title" style="margin-bottom:0" data-i18n="topStudents">أفضل الطلاب</div>
+                            <a href="#" class="card-link" data-i18n="viewLeaderboard">عرض المتصدرين</a>
+                        </div>
+                        <div id="topStudents">
+                            <div class="top-student"><div class="ts-av"></div><span class="ts-name">—</span><span class="ts-pct">92%</span></div>
+                            <div class="top-student"><div class="ts-av"></div><span class="ts-name">—</span><span class="ts-pct">89%</span></div>
+                            <div class="top-student"><div class="ts-av"></div><span class="ts-name">—</span><span class="ts-pct">88%</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Filter & Search -->
+                    <div class="cd-side-card">
+                        <div class="side-card-title" data-i18n="filterSearch">بحث وتصفية الدروس</div>
+                        <div class="cd-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" data-i18n-placeholder="searchLessons" placeholder="ابحث في الدروس..." id="lessonSearch"/></div>
+                        <div class="filter-pills">
+                            <button class="filter-pill active" data-filter="all">All</button>
+                            <button class="filter-pill" data-filter="video">Videos</button>
+                            <button class="filter-pill" data-filter="quiz">Quizzes</button>
+                            <button class="filter-pill" data-filter="project">Projects</button>
+                            <button class="filter-pill" data-filter="resource">Resources</button>
+                        </div>
+                    </div>
+
+                    <!-- Build With Me Live Promo -->
+                    <div class="cd-live-promo">
+                        <h4 data-i18n="buildWithMeLive">ابني معايا لايف</h4>
+                        <p>Join our live sessions and build real projects with experts.</p>
+                        <button class="btn-gold" style="width:100%;justify-content:center"><i class="fa-regular fa-calendar"></i> View Live Schedule</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="src/js/utils.js"></script>
+<script src="src/js/i18n.js"></script>
+<script>
+const token = getToken();
+if (!token) window.location.href = 'login.html';
+const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+async function apiFetch(url, opts = {}) {
+    opts.headers = { ...hdrs, ...opts.headers };
+    const res = await fetch(API + url, opts);
+    if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+    return res;
+}
+
+// ── Profile ──
+async function loadProfile() {
+    try {
+        const res = await apiFetch('/profile/me');
+        const u = await res.json();
+        const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('streakCount', u.streak_days || 0);
+        ['sidebarAvatar','topbarAvatar'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && u.avatar_url) el.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+        });
+    } catch (e) {}
+}
+
+// ── Course Detail ──
+const courseId = new URLSearchParams(window.location.search).get('id') || 1;
+
+async function loadCourseDetail() {
+    try {
+        const res = await apiFetch(`/courses/${courseId}`);
+        if (!res.ok) return;
+        const course = await res.json();
+
+        document.title = `${course.title} — Ghawy`;
+        document.getElementById('breadcrumbTitle').textContent = course.title;
+        document.getElementById('courseDesc').textContent = course.description || 'Learn how to build smart automations and save 10+ hours every week.';
+        document.getElementById('statLessons').textContent = course.total_lessons;
+        document.getElementById('totalLessonsBadge').textContent = course.total_lessons + ' Lessons';
+        document.getElementById('overviewText').textContent = course.description || '';
+
+        // Render curriculum sections
+        renderCurriculum(course.lessons || []);
+
+        // Load progress
+        const pRes = await apiFetch(`/courses/${courseId}/progress`);
+        const prog = await pRes.json();
+        const pct = Math.round(prog.percent || 0);
+        const completed = prog.completed_lessons || 0;
+
+        document.getElementById('cdProgressPct').textContent = pct + '%';
+        document.getElementById('cdProgressText').textContent = pct + '% Complete';
+        document.getElementById('cdProgressLessons').textContent = `Completed ${completed} of ${course.total_lessons} lessons`;
+        const fillEl = document.getElementById('cdProgressFill');
+        if (fillEl) fillEl.style.strokeDashoffset = 263.9 - (263.9 * pct / 100);
+        const bar = document.getElementById('cdProgressBar');
+        if (bar) bar.style.width = pct + '%';
+
+    } catch (e) { console.error('Course load error:', e); }
+}
+
+function renderCurriculum(lessons) {
+    const container = document.getElementById('curriculumSections');
+    if (!lessons || lessons.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:20px">No lessons available yet.</p>';
+        return;
+    }
+
+    // Group lessons by section_title, preserving order
+    const sectionOrder = [];
+    const sections = {};
+    lessons.forEach((l, i) => {
+        const secTitle = l.section_title || `Section ${Math.floor(i / 4) + 1}`;
+        if (!sections[secTitle]) {
+            sections[secTitle] = [];
+            sectionOrder.push(secTitle);
+        }
+        sections[secTitle].push(l);
+    });
+
+    let html = '';
+    sectionOrder.forEach((secTitle, secIdx) => {
+        const secLessons = sections[secTitle];
+        const isFirst = secIdx === 0;
+        const completedInSec = 0;
+        html += `<div class="section-block">
+            <div class="section-header" onclick="toggleSection(this)">
+                <div class="sec-left">
+                    <i class="fa-solid fa-chevron-right sec-toggle" style="${isFirst ? 'transform:rotate(90deg)' : ''}"></i>
+                    <span class="sec-title">${secIdx + 1}. ${secTitle}</span>
+                </div>
+                <div class="sec-right">
+                    <span class="sec-count">${completedInSec} / ${secLessons.length}</span>
+                    <span class="sec-expand"><i class="fa-solid fa-${isFirst ? 'minus' : 'plus'}"></i></span>
+                </div>
+            </div>
+            <div class="section-lessons${isFirst ? ' open' : ''}">
+                ${secLessons.map(l => {
+                    const mins = l.duration_minutes || 0;
+                    const dur = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+                    return `<div class="lesson-row">
+                        <div class="lesson-icon"><i class="fa-solid fa-play"></i></div>
+                        <span class="lesson-title">${l.title}</span>
+                        <span class="lesson-dur">${dur}</span>
+                        <span class="lesson-check undone"><i class="fa-solid fa-check"></i></span>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function toggleSection(header) {
+    const lessons = header.nextElementSibling;
+    const toggle = header.querySelector('.sec-toggle');
+    lessons.classList.toggle('open');
+    toggle.style.transform = lessons.classList.contains('open') ? 'rotate(90deg)' : '';
+}
+
+// Expand All
+document.getElementById('expandAllBtn').addEventListener('click', () => {
+    const allSections = document.querySelectorAll('.section-lessons');
+    const allClosed = [...allSections].every(s => !s.classList.contains('open'));
+    allSections.forEach(s => {
+        if (allClosed) s.classList.add('open');
+        else s.classList.remove('open');
+    });
+    document.querySelectorAll('.sec-toggle').forEach(t => {
+        t.style.transform = allClosed ? 'rotate(90deg)' : '';
+    });
+    document.getElementById('expandAllBtn').textContent = allClosed ? 'Collapse All' : 'Expand All';
+});
+
+// Tabs
+document.querySelectorAll('.cd-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        ['curriculum','overview','projects','resources','reviews'].forEach(t => {
+            const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+            if (el) el.style.display = t === tabName ? '' : 'none';
+        });
+    });
+});
+
+// Filter pills
+document.querySelectorAll('.filter-pill').forEach(p => {
+    p.addEventListener('click', () => {
+        document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+    });
+});
+
+// Hamburger
+const hamburger = document.getElementById('hamburgerDash');
+const sidebar = document.getElementById('dashSidebar');
+if (hamburger) hamburger.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+// Init
+loadProfile();
+loadCourseDetail();
+</script>
+</body>
+</html>
+
+
+
+
