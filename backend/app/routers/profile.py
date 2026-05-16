@@ -65,6 +65,8 @@ def update_my_profile(
         current_user.avatar_url = data.avatar_url
     if data.social_media_url is not None:
         current_user.social_media_url = data.social_media_url
+    if data.show_social_media is not None:
+        current_user.show_social_media = data.show_social_media
 
     db.commit()
     db.refresh(current_user)
@@ -229,7 +231,8 @@ def get_public_profile(
         "avatar_url": user.avatar_url,
         "selected_avatar": getattr(user, "selected_avatar", None),
         "bio": user.bio,
-        "social_media_url": getattr(user, "social_media_url", None),
+        "social_media_url": getattr(user, "social_media_url", None) if getattr(user, "show_social_media", True) else None,
+        "show_social_media": getattr(user, "show_social_media", True),
         "level": getattr(user, "level", 1) or 1,
         "xp": getattr(user, "xp", 0) or 0,
         "badge": getattr(user, "badge", "Member") or "Member",

@@ -62,6 +62,7 @@ class User(Base):
     badge = Column(String, default="Member")
     birth_date = Column(Date, nullable=True)
     social_media_url = Column(String, nullable=True)
+    show_social_media = Column(Boolean, default=True)
     onboarding_completed = Column(Boolean, default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)

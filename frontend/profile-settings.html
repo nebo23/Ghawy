@@ -61,7 +61,10 @@
                     <div class="form-group">
                         <label for="settingsSocial"><i class="fa-solid fa-link"></i> Social Media Link</label>
                         <input type="url" id="settingsSocial" placeholder="https://instagram.com/your-profile" style="direction:ltr;text-align:left"/>
-                        <p style="font-size:.7rem;color:var(--text-muted);margin-top:4px">Instagram, TikTok, Facebook, etc.</p>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                            <span style="font-size:.75rem;color:var(--text-muted)">Show on profile</span>
+                            <div class="toggle-switch on" id="toggleShowSocial" onclick="this.classList.toggle('on')"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Profile Picture</label>
@@ -138,7 +141,7 @@
 
 <script src="src/js/utils.js"></script>
 <script src="src/js/i18n.js"></script>
-<script src="src/js/profile.js"></script>
+<script src="src/js/profile.js?v=4"></script>
 </body>
 </html>
 
