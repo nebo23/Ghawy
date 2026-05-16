@@ -1,147 +1,210 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Settings — Ghawy</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
-    <link rel="stylesheet" href="src/css/dashboard.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="stylesheet" href="src/css/dashboard.css" />
 </head>
+
 <body>
-<div class="dash-layout">
-    <aside class="dash-sidebar" id="dashSidebar">
-        <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy"/><span>Ghawy</span></div>
-        <nav class="sidebar-nav">
-            <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span data-i18n="dashboard">الرئيسية</span></a>
-            <a href="courses.html?v=2" class="nav-item"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="courses">الكورسات</span></a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
-            <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-            <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
-            <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
-            <a href="profile-settings.html" class="nav-item active"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
-        </nav>
-        <div class="sidebar-user"><div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div><div class="sidebar-user-info"><div class="sidebar-user-name" id="sidebarName">—</div><div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div></div></div>
-        <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
-    </aside>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <div class="dash-main">
-        <header class="dash-topbar">
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
-            <div class="topbar-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..."/></div>
-            <div class="topbar-actions">
+    <div class="dash-layout">
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span
+                        data-i18n="dashboard">الرئيسية</span></a>
+                <a href="courses.html?v=2" class="nav-item"><i class="fa-solid fa-graduation-cap"></i> <span
+                        data-i18n="courses">الكورسات</span></a>
+                <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ?????
+                        (????)</span></a>
+                <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span
+                        data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+                <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span
+                        data-i18n="communityChat">شات المجتمع</span></a>
+                
+                <a href="chat.html?v=2&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
-                <button class="topbar-icon"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
-                <div class="topbar-user" id="topbarUser"><div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div><span class="topbar-user-name" id="topbarName">—</span></div>
-            </div>
-        </header>
-        <div class="dash-content">
-            <div class="settings-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 40px;">
-                <div class="breadcrumb">
-                    <a href="dashboard.html?v=2"><i class="fa-solid fa-house"></i></a>
-                    <i class="fa-solid fa-chevron-right"></i>
-                    <span>Settings</span>
+                <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span
+                        data-i18n="achievements">الإنجازات</span></a>
+                <a href="profile-settings.html" class="nav-item active"><i class="fa-solid fa-gear"></i> <span
+                        data-i18n="settings">الإعدادات</span></a>
+            </nav>
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarName">—</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
                 </div>
-                <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px" data-i18n="settings">الإعدادات</h2>
+            </div>
+            <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count"
+                        id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="dash-main">
+            <header class="dash-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn"
+                    aria-label="Open menu"><span></span><span></span><span></span></button>
+                <div class="topbar-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text"
+                        data-i18n-placeholder="searchGeneral" placeholder="بحث..." /></div>
+                <div class="topbar-actions">
 
-                <!-- Personal Info -->
-                <div class="settings-section">
-                    <h3><i class="fa-solid fa-user"></i> <span data-i18n="personalInfo">المعلومات الشخصية</span></h3>
-                    <div class="form-group">
-                        <label for="settingsName" data-i18n="fullName">الاسم الكامل</label>
-                        <input type="text" id="settingsName" placeholder="Your name"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="settingsBio" data-i18n="bio">نبذة شخصية</label>
-                        <textarea id="settingsBio" placeholder="Tell us about yourself..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="settingsSocial"><i class="fa-solid fa-link"></i> Social Media Link</label>
-                        <input type="url" id="settingsSocial" placeholder="https://instagram.com/your-profile" style="direction:ltr;text-align:left"/>
-                        <p style="font-size:.7rem;color:var(--text-muted);margin-top:4px">Instagram, TikTok, Facebook, etc.</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Profile Picture</label>
-                        <div class="avatar-upload-area" style="display:flex;align-items:center;gap:16px;margin-top:8px">
-                            <div id="avatarPreviewBox" style="width:70px;height:70px;border-radius:50%;background:var(--bg-input);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.5rem;color:var(--text-muted)">
-                                <i class="fa-solid fa-user"></i>
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i class="fa-solid fa-bell"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i class="fa-solid fa-times"></i></button>
                             </div>
-                            <div style="flex:1">
-                                <label for="avatarUploadInput" class="btn-outline" style="cursor:pointer;display:inline-flex;padding:6px 14px;font-size:.8rem"><i class="fa-solid fa-camera"></i> Upload Image</label>
-                                <input type="file" id="avatarUploadInput" accept="image/*" style="display:none"/>
-                                <p style="font-size:.7rem;color:var(--text-muted);margin-top:6px">Recommended size: 256x256px. Max 2MB.</p>
-                                <span id="uploadStatus" style="font-size:.75rem;margin-top:4px;display:block"></span>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No notifications</div>
                             </div>
                         </div>
                     </div>
-                    <button class="btn-gold" id="saveProfileBtn"><i class="fa-solid fa-check"></i> <span data-i18n="saveChanges">حفظ التغييرات</span></button>
-                    <span id="saveStatus" style="margin-right:12px;font-size:.82rem;color:var(--gold);display:none">✓ Saved</span>
+                    <div class="topbar-user" id="topbarUser">
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div><span
+                            class="topbar-user-name" id="topbarName">—</span>
+                    </div>
                 </div>
+            </header>
+            <div class="dash-content">
+                <div class="settings-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 40px;">
+                    <div class="breadcrumb">
+                        <a href="dashboard.html?v=2"><i class="fa-solid fa-house"></i></a>
+                        <i class="fa-solid fa-chevron-right"></i>
+                        <span>Settings</span>
+                    </div>
+                    <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px" data-i18n="settings">الإعدادات</h2>
 
-                <!-- Account -->
-                <div class="settings-section">
-                    <h3><i class="fa-solid fa-shield"></i> <span data-i18n="account">الحساب</span></h3>
-                    <div class="form-group">
-                        <label data-i18n="email">البريد الإلكتروني</label>
-                        <input type="email" id="settingsEmail" readonly/>
+                    <!-- Personal Info -->
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-user"></i> <span data-i18n="personalInfo">المعلومات الشخصية</span>
+                        </h3>
+                        <div class="form-group">
+                            <label for="settingsName" data-i18n="fullName">الاسم الكامل</label>
+                            <input type="text" id="settingsName" placeholder="Your name" />
+                        </div>
+                        <div class="form-group">
+                            <label for="settingsBio" data-i18n="bio">نبذة شخصية</label>
+                            <textarea id="settingsBio" placeholder="Tell us about yourself..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="settingsSocial"><i class="fa-solid fa-link"></i> Social Media Link</label>
+                            <input type="url" id="settingsSocial" placeholder="https://instagram.com/your-profile"
+                                style="direction:ltr;text-align:left" />
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                                <span style="font-size:.75rem;color:var(--text-muted)">show your profile to other
+                                    members</span>
+                                <div class="toggle-switch on" id="toggleShowSocial"
+                                    onclick="this.classList.toggle('on')"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Profile Picture</label>
+                            <div class="avatar-upload-area"
+                                style="display:flex;align-items:center;gap:16px;margin-top:8px">
+                                <div id="avatarPreviewBox"
+                                    style="width:70px;height:70px;border-radius:50%;background:var(--bg-input);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.5rem;color:var(--text-muted)">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div style="flex:1">
+                                    <label for="avatarUploadInput" class="btn-outline"
+                                        style="cursor:pointer;display:inline-flex;padding:6px 14px;font-size:.8rem"><i
+                                            class="fa-solid fa-camera"></i> Upload Image</label>
+                                    <input type="file" id="avatarUploadInput" accept="image/*" style="display:none" />
+                                    <p style="font-size:.7rem;color:var(--text-muted);margin-top:6px">Recommended size:
+                                        256x256px. Max 2MB.</p>
+                                    <span id="uploadStatus"
+                                        style="font-size:.75rem;margin-top:4px;display:block"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-gold" id="saveProfileBtn"><i class="fa-solid fa-check"></i> <span
+                                data-i18n="saveChanges">حفظ التغييرات</span></button>
+                        <span id="saveStatus"
+                            style="margin-right:12px;font-size:.82rem;color:var(--gold);display:none">✓ Saved</span>
                     </div>
-                    <div class="form-group">
-                        <label for="currentPw" data-i18n="currentPassword">كلمة المرور الحالية</label>
-                        <input type="password" id="currentPw" placeholder="••••••••"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="newPw" data-i18n="newPassword">كلمة المرور الجديدة</label>
-                        <input type="password" id="newPw" placeholder="••••••••"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPw" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
-                        <input type="password" id="confirmPw" placeholder="••••••••"/>
-                    </div>
-                    <button class="btn-gold" id="changePwBtn"><i class="fa-solid fa-key"></i> <span data-i18n="changePassword">تغيير كلمة المرور</span></button>
-                    <span id="pwStatus" style="margin-right:12px;font-size:.82rem;display:none"></span>
-                </div>
 
-                <!-- Notifications -->
-                <div class="settings-section">
-                    <h3><i class="fa-solid fa-bell"></i> <span data-i18n="notifications">الإشعارات</span></h3>
-                    <div class="toggle-row"><span data-i18n="emailNotifications">إشعارات البريد</span><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
-                    <div class="toggle-row"><span data-i18n="newCourseAlerts">تنبيهات الكورسات الجديدة</span><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
-                    <div class="toggle-row"><span data-i18n="communityMentions">إشارات المجتمع</span><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
-                    <div class="toggle-row"><span data-i18n="chatNotifications">إشعارات الشات</span><div class="toggle-switch" onclick="this.classList.toggle('on')"></div></div>
-                </div>
+                    <!-- Account -->
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-shield"></i> <span data-i18n="account">الحساب</span></h3>
+                        <div class="form-group">
+                            <label data-i18n="email">البريد الإلكتروني</label>
+                            <input type="email" id="settingsEmail" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label for="currentPw" data-i18n="currentPassword">كلمة المرور الحالية</label>
+                            <input type="password" id="currentPw" placeholder="••••••••" />
+                        </div>
+                        <div class="form-group">
+                            <label for="newPw" data-i18n="newPassword">كلمة المرور الجديدة</label>
+                            <input type="password" id="newPw" placeholder="••••••••" />
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPw" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
+                            <input type="password" id="confirmPw" placeholder="••••••••" />
+                        </div>
+                        <button class="btn-gold" id="changePwBtn"><i class="fa-solid fa-key"></i> <span
+                                data-i18n="changePassword">تغيير كلمة المرور</span></button>
+                        <span id="pwStatus" style="margin-right:12px;font-size:.82rem;display:none"></span>
+                    </div>
 
-                <!-- Danger Zone -->
-                <div class="settings-section" style="border-color:rgba(239,68,68,.2)">
-                    <h3 style="color:var(--red-notif)"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="dangerZone">منطقة الخطر</span></h3>
-                    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:14px" data-i18n="deleteWarning">بمجرد حذف حسابك لا يمكن التراجع عن ذلك.</p>
-                    <button class="btn-danger" id="deleteAccountBtn"><i class="fa-solid fa-trash"></i> <span data-i18n="deleteAccount">حذف الحساب</span></button>
+                    <!-- Notifications -->
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-bell"></i> <span data-i18n="notifications">الإشعارات</span></h3>
+                        <div class="toggle-row"><span data-i18n="emailNotifications">إشعارات البريد</span>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="toggle-row"><span data-i18n="newCourseAlerts">تنبيهات الكورسات الجديدة</span>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="toggle-row"><span data-i18n="communityMentions">إشارات المجتمع</span>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="toggle-row"><span data-i18n="chatNotifications">إشعارات الشات</span>
+                            <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="settings-section" style="border-color:rgba(239,68,68,.2)">
+                        <h3 style="color:var(--red-notif)"><i class="fa-solid fa-triangle-exclamation"></i> <span
+                                data-i18n="dangerZone">منطقة الخطر</span></h3>
+                        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:14px"
+                            data-i18n="deleteWarning">بمجرد حذف حسابك لا يمكن التراجع عن ذلك.</p>
+                        <button class="btn-danger" id="deleteAccountBtn"><i class="fa-solid fa-trash"></i> <span
+                                data-i18n="deleteAccount">حذف الحساب</span></button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal-overlay" id="deleteModal">
-    <div class="modal-box">
-        <h3>⚠️ Delete Account</h3>
-        <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.6">Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.</p>
-        <div class="modal-actions">
-            <button class="btn-outline" onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
-            <button class="btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <h3>⚠️ Delete Account</h3>
+            <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.6">Are you sure you want to delete your
+                account? This action cannot be undone and all your data will be permanently removed.</p>
+            <div class="modal-actions">
+                <button class="btn-outline"
+                    onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
+                <button class="btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script src="src/js/utils.js"></script>
-<script src="src/js/i18n.js"></script>
-<script src="src/js/profile.js"></script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/i18n.js"></script>
+    <script src="src/js/profile.js?v=4"></script>
 </body>
+
 </html>
-
-
-
-

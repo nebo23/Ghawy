@@ -68,6 +68,14 @@ async function loadProfile() {
         if (previewBox && u.avatar_url) previewBox.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
         const socialInput = document.getElementById('settingsSocial');
         if (socialInput) socialInput.value = u.social_media_url || '';
+        const toggleShowSocial = document.getElementById('toggleShowSocial');
+        if (toggleShowSocial) {
+            if (u.show_social_media === false) {
+                toggleShowSocial.classList.remove('on');
+            } else {
+                toggleShowSocial.classList.add('on');
+            }
+        }
 
     } catch (e) { console.error('Profile load error:', e); }
 }
@@ -80,7 +88,9 @@ if (saveBtn) {
             full_name: document.getElementById('settingsName')?.value,
             bio: document.getElementById('settingsBio')?.value,
             social_media_url: document.getElementById('settingsSocial')?.value || null,
+            show_social_media: document.getElementById('toggleShowSocial')?.classList.contains('on') ?? true,
         };
+        console.log("Saving profile data:", data);
         try {
             const res = await apiFetch('/profile/me', { method: 'PUT', body: JSON.stringify(data) });
             const status = document.getElementById('saveStatus');
@@ -91,6 +101,20 @@ if (saveBtn) {
                 if (status) { status.style.display = 'inline'; status.style.color = 'var(--red-notif)'; status.textContent = '✗ Error'; }
             }
         } catch (e) { console.error(e); }
+    });
+}
+
+const toggleShowSocial = document.getElementById('toggleShowSocial');
+if (toggleShowSocial) {
+    toggleShowSocial.addEventListener('click', async () => {
+        // Since the onclick in HTML already toggles 'on', we just read the new state
+        const data = {
+            show_social_media: toggleShowSocial.classList.contains('on')
+        };
+        try {
+            await apiFetch('/profile/me', { method: 'PUT', body: JSON.stringify(data) });
+            // Optionally show a quick save indicator somewhere, or just silently save
+        } catch (e) { console.error('Auto-save toggle error:', e); }
     });
 }
 
