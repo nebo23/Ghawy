@@ -740,6 +740,7 @@ def list_dm_conversations(
                 "is_online": is_online,
             },
             "last_message": last_msg.content if last_msg else None,
+            "last_message_type": last_msg.message_type.value if last_msg and last_msg.message_type else "text",
             "last_message_at": last_msg.created_at.isoformat() if last_msg and last_msg.created_at else None,
             "unread_count": unread_counts.get(ch.id, 0),
         })

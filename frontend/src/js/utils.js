@@ -99,5 +99,109 @@ function startHeartbeat() {
 // Start heartbeat if token exists
 if (getToken()) {
   startHeartbeat();
+  fetchGlobalNotifications();
+  setInterval(fetchGlobalNotifications, 10000); // Poll every 10s
 }
+
+// ─── Global Notifications ──────────────────────────────────────
+async function fetchGlobalNotifications() {
+    // chat.html has its own polling loop for loadDmList which handles this
+    if (window.location.pathname.endsWith('chat.html')) return;
+    
+    const token = getToken();
+    if (!token) return;
+    try {
+        const res = await fetch(`${API}/chat/dm/list`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const dms = await res.json();
+        
+        let totalUnread = 0;
+        dms.forEach(dm => { totalUnread += dm.unread_count; });
+
+        const notifBadge = document.getElementById('notifBadge');
+        const notifDot = document.getElementById('notifDot');
+        
+        if (totalUnread > 0) {
+            if(notifBadge) {
+                notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                notifBadge.style.display = 'flex';
+            }
+            if (notifDot) notifDot.style.display = 'none';
+        } else {
+            if(notifBadge) notifBadge.style.display = 'none';
+            if (notifDot) notifDot.style.display = 'none';
+        }
+        
+        const dmBadge = document.getElementById('dmTotalBadge');
+        if (dmBadge) {
+            if (totalUnread > 0) {
+                dmBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                dmBadge.style.display = '';
+            } else {
+                dmBadge.style.display = 'none';
+            }
+        }
+
+        renderGlobalNotifList(dms);
+    } catch(e) { console.error('Global notif error:', e); }
+}
+
+function renderGlobalNotifList(dms) {
+    const el = document.getElementById('notifList');
+    if (!el) return;
+    
+    if (!dms || dms.length === 0) {
+        el.innerHTML = `<div class="notif-empty">No notifications</div>`;
+        return;
+    }
+    
+    let html = '';
+    const isChat = window.location.pathname.endsWith('chat.html');
+    dms.forEach(dm => {
+        const u = dm.user;
+        const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : '?';
+        
+        let formattedMsg = dm.last_message || '';
+        if (dm.last_message_type === 'image') formattedMsg = '📷 صورة';
+        else if (dm.last_message_type === 'voice') formattedMsg = '🎤 رسالة صوتية';
+        
+        const preview = formattedMsg ? formattedMsg.substring(0, 40) + (formattedMsg.length > 40 ? '...' : '') : 'Sent you a message';
+        
+        const safeName = u.full_name.replace(/'/g, "\\'");
+        const onClickAction = isChat 
+            ? `activeDmUserName='${safeName}'; selectChannel('${dm.channel_name}'); toggleNotifPanel();`
+            : `window.location.href='chat.html?v=2&channel=${dm.channel_name}'`;
+        
+        html += `
+        <div class="notif-item" onclick="${onClickAction}">
+            <div class="notif-item-av"><img src="${av}" onerror="this.src='./imgs/ghawi-logo.png'"/></div>
+            <div class="notif-item-body">
+                <div class="notif-item-name">${u.full_name}</div>
+                <div class="notif-item-text">${preview}</div>
+            </div>
+            ${dm.unread_count > 0 ? `<div class="notif-item-count">${dm.unread_count}</div>` : ''}
+        </div>
+        `;
+    });
+    el.innerHTML = html;
+}
+
+function toggleNotifPanel() {
+    const np = document.getElementById('notifPanel');
+    if (np) np.classList.toggle('open');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  const d = document.getElementById('userDropdown');
+  const u = document.getElementById('topbarUser');
+  if (d && u && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open');
+
+  const np = document.getElementById('notifPanel');
+  const nw = document.getElementById('notifWrapper');
+  if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
+});
+
 
