@@ -60,26 +60,7 @@
 
         @media(max-width:1024px){.dash-grid{grid-template-columns:1fr}}
 
-        /* ── Notifications Panel ── */
-        .notif-wrapper { position: relative; }
-        .notif-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 320px; max-height: 400px; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 9998; display: none; flex-direction: column; overflow: hidden; }
-        .notif-panel.open { display: flex; }
-        .notif-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 10px; border-bottom: 1px solid #282828; }
-        .notif-panel-header h4 { color: #fff; font-size: 1rem; font-weight: 700; margin: 0; }
-        .notif-close-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 4px; }
-        .notif-close-btn:hover { color: #fff; }
-        .notif-panel-list { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .notif-panel-list::-webkit-scrollbar { width: 5px; }
-        .notif-panel-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        .notif-empty { text-align: center; padding: 24px 16px; color: #555; font-size: 0.85rem; }
-        .notif-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
-        .notif-item:hover { background: rgba(255,255,255,0.04); }
-        .notif-item-av { width: 36px; height: 36px; border-radius: 50%; background: #333; flex-shrink: 0; overflow: hidden; }
-        .notif-item-av img { width: 100%; height: 100%; object-fit: cover; }
-        .notif-item-body { flex: 1; min-width: 0; }
-        .notif-item-name { font-size: 0.85rem; font-weight: 600; color: #f1f0ea; }
-        .notif-item-text { font-size: 0.78rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .notif-item-count { background: var(--gold); color: #000; font-size: 0.7rem; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
+
     </style>
 </head>
 <body>
@@ -96,6 +77,9 @@
             <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
             <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
             <a href="chat.html?v=2" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
+            
+            <a href="chat.html?v=2&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+
             <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
             <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
         </nav>
@@ -252,7 +236,7 @@
 <script>document.addEventListener('click',e=>{const d=document.getElementById('userDropdown');const u=document.getElementById('topbarUser');if(d&&!d.contains(e.target)&&!u.contains(e.target))d.classList.remove('open'); const np=document.getElementById('notifPanel');const nw=document.getElementById('notifWrapper');if(np&&nw&&!nw.contains(e.target))np.classList.remove('open');})</script>
 <script src="src/js/utils.js"></script>
 <script src="src/js/i18n.js"></script>
-<script src="src/js/dashboard.js"></script>
+<script src="src/js/dashboard.js?v=3"></script>
 </body>
 </html>
 

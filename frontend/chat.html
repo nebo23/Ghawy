@@ -599,6 +599,9 @@
                         data-i18n="guestOfHonors">ضيوف الشرف</span></a>
                 <a href="chat.html?v=2" class="nav-item active"><i class="fa-solid fa-comments"></i> <span
                         data-i18n="communityChat">شات المجتمع</span></a>
+                
+                <a href="chat.html?v=2&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+
                 <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span
                         data-i18n="achievements">الإنجازات</span></a>
                 <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span
@@ -657,13 +660,6 @@
                         </div>
                     </div>
 
-                    <!-- DIRECT MESSAGES Section -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase; margin-top:8px;">
-                        <span>DIRECT MESSAGES</span>
-                    </div>
-                    <div id="dmList" style="padding:0; display:flex; flex-direction:column; gap:0;">
-                        <!-- DMs populated dynamically -->
-                    </div>
 
                     <!-- POSTS Section -->
                     <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase; margin-top:8px;">
@@ -730,9 +726,13 @@
                 </div>
                 <!-- Center: Feed -->
                 <div class="chat-feed">
-                    <div class="chat-feed-header">
-                        <span class="ch-hash-lg">#</span>
-                        <h3 id="currentChannelName">general</h3>
+                    <div class="chat-feed-header" id="chatFeedHeader">
+                        <span class="ch-hash-lg" id="channelHashIcon">#</span>
+                        <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
+                        <div style="flex:1; min-width:0;">
+                            <h3 id="currentChannelName" style="margin:0;">general</h3>
+                            <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
+                        </div>
                     </div>
                     <div class="chat-feed-messages" id="chatMessages">
                         <div class="chat-empty"><i class="fa-solid fa-comments"></i>
@@ -791,7 +791,7 @@
                         <i class="fa-solid fa-comment-dots"></i> Message
                     </button>
                 </div>
-                <span id="ppUsername" class="pp-username"></span>
+
             </div>
             <!-- Badge -->
             <div id="ppBadge" class="pp-badge"></div>
@@ -862,6 +862,20 @@
             </div>
             <div class="members-list" id="membersListContainer">
                 <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- New Message Modal -->
+    <div class="custom-modal-overlay" id="newDmModal">
+        <div class="new-dm-modal">
+            <div class="new-dm-modal-header">
+                <h3>✏️ رسالة جديدة</h3>
+                <button class="close-members-btn" onclick="closeNewMessageModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="text" id="newDmSearchInput" placeholder="ابحث عن عضو..." onkeyup="filterNewDmMembers()" />
+            <div class="member-list" id="newDmMemberList">
+                <div style="text-align:center; padding:20px; color:#555;">Loading...</div>
             </div>
         </div>
     </div>
@@ -1421,6 +1435,260 @@
             font-size: 0.5rem;
             font-weight: bold;
         }
+        /* ═══ Enhanced DM List ═══ */
+        .dm-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 1px 6px;
+        }
+        .dm-item:hover { background: rgba(255,255,255,0.05); }
+        .dm-item.active {
+            background: rgba(193,255,17,0.08);
+            border-left: 3px solid #c1ff11;
+        }
+        .dm-avatar-wrap { position: relative; flex-shrink: 0; }
+        .dm-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
+        .dm-online-indicator {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 10px; height: 10px;
+            background: #84cc16;
+            border-radius: 50%;
+            border: 2px solid #0a0a0a;
+        }
+        .dm-info-col { flex: 1; min-width: 0; }
+        .dm-info-col .dm-name-text { font-size: 0.82rem; font-weight: 600; color: #f1f0ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dm-info-col .dm-preview {
+            font-size: 0.7rem; color: #888;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+        .dm-meta-col { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+        .dm-meta-col .dm-time-text { font-size: 0.62rem; color: #666; }
+        .dm-unread-badge {
+            background: #84cc16;
+            color: #000;
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .new-dm-btn {
+            background: none;
+            border: none;
+            color: #84cc16;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .new-dm-btn:hover { background: rgba(132,204,22,0.15); transform: scale(1.1); }
+        /* New Message Modal */
+        .new-dm-modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 380px;
+            max-height: 500px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .custom-modal-overlay.open .new-dm-modal {
+            transform: translateY(0) scale(1);
+        }
+        .new-dm-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #282828;
+        }
+        .new-dm-modal-header h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .new-dm-modal input {
+            margin: 12px 16px 8px;
+            padding: 10px 14px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .new-dm-modal input:focus { border-color: #555; }
+        .new-dm-modal .member-list { overflow-y: auto; flex: 1; padding: 0 0 12px; }
+        .new-dm-member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .new-dm-member-item:hover { background: rgba(255,255,255,0.05); }
+        .new-dm-member-av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
+        .new-dm-member-info { flex: 1; min-width: 0; }
+        .new-dm-member-name { font-size: 0.9rem; font-weight: 600; color: #f1f0ea; }
+        .new-dm-member-badge { font-size: 0.7rem; color: #888; }
+        .new-dm-member-online { width: 8px; height: 8px; border-radius: 50%; background: #84cc16; box-shadow: 0 0 6px rgba(132,204,22,0.5); flex-shrink: 0; }
+        /* DM Header */
+        .dm-header-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            overflow: hidden; flex-shrink: 0; position: relative;
+        }
+        .dm-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dm-header-avatar .dm-hdr-dot {
+            position: absolute; bottom: 0; right: 0;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #84cc16; border: 2px solid rgba(0,0,0,0.5);
+        }
+        .dm-header-status { font-size: 0.72rem; color: #84cc16; margin-top: 1px; }
+        .dm-header-status.offline { color: #888; }
+        /* DM Back Button */
+        .dm-back-btn {
+            cursor: pointer;
+            color: #888;
+            margin-right: 8px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .dm-back-btn:hover { color: #c1ff11; }
+        /* DM Inbox */
+        .dm-inbox {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .dm-inbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .dm-inbox-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+        .dm-inbox-new-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(193,255,17,0.1);
+            color: #c1ff11;
+            border: 1px solid rgba(193,255,17,0.2);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .dm-inbox-new-btn:hover { background: rgba(193,255,17,0.2); }
+        .dm-inbox-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 12px;
+        }
+        .dm-inbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 2px;
+        }
+        .dm-inbox-item:hover { background: rgba(255,255,255,0.04); }
+        .dm-inbox-item.has-unread { background: rgba(193,255,17,0.03); }
+        .dm-inbox-av {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .dm-inbox-av img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #333;
+        }
+        .dm-inbox-av .inbox-online-dot {
+            position: absolute;
+            bottom: 1px; right: 1px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #84cc16;
+            border: 2px solid #0a0a0a;
+        }
+        .dm-inbox-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .dm-inbox-name {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #f1f0ea;
+            margin-bottom: 3px;
+        }
+        .dm-inbox-preview {
+            font-size: 0.8rem;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dm-inbox-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .dm-inbox-time {
+            font-size: 0.7rem;
+            color: #666;
+        }
+        .dm-inbox-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+        }
+        .dm-inbox-empty i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            color: #333;
+        }
+        .dm-inbox-empty p {
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
     </style>
     <script>
         const token = getToken();
@@ -1545,52 +1813,58 @@
 
         function selectChannel(name) {
             currentChannel = name;
-            const headerHash = document.querySelector('.chat-feed-header .ch-hash-lg');
+            const headerHash = document.getElementById('channelHashIcon');
             const headerName = document.getElementById('currentChannelName');
             
             // Map start-here to start_here to be consistent
             if (name === 'start-here') name = 'start_here';
             
             const isDm = name.startsWith('dm_');
+            const dmHeaderAvatar = document.getElementById('dmHeaderAvatar');
+            const dmHeaderStatus = document.getElementById('dmHeaderStatus');
 
-            if (name === 'start_here') {
-                headerHash.textContent = ''; headerHash.style.fontSize = '1.2rem';
+            if (name === 'messages') {
+                // Messages Inbox view
+                headerHash.textContent = '✉️'; headerHash.style.fontSize = '1.1rem'; headerHash.style.display = '';
+                headerName.textContent = 'Messages';
+                if (dmHeaderAvatar) dmHeaderAvatar.style.display = 'none';
+                if (dmHeaderStatus) dmHeaderStatus.style.display = 'none';
+            } else if (name === 'start_here') {
+                headerHash.textContent = ''; headerHash.style.fontSize = '1.2rem'; headerHash.style.display = '';
                 headerName.textContent = 'Start Here';
+                if (dmHeaderAvatar) dmHeaderAvatar.style.display = 'none';
+                if (dmHeaderStatus) dmHeaderStatus.style.display = 'none';
             } else if (isDm) {
-                headerHash.textContent = '💬'; headerHash.style.fontSize = '1rem';
-                // Use stored DM user name or fallback
-                headerName.textContent = activeDmUserName || 'Direct Message';
+                headerHash.style.display = 'none';
+                headerName.innerHTML = `<span class="dm-back-btn" onclick="selectChannel('messages')" title="Back to Messages"><i class="fa-solid fa-arrow-left"></i></span> ${escHtml(activeDmUserName || 'Direct Message')}`;
+                updateDmHeader(name);
             } else {
-                headerHash.textContent = '#'; headerHash.style.fontSize = '';
+                headerHash.textContent = '#'; headerHash.style.fontSize = ''; headerHash.style.display = '';
                 headerName.textContent = name;
+                if (dmHeaderAvatar) dmHeaderAvatar.style.display = 'none';
+                if (dmHeaderStatus) dmHeaderStatus.style.display = 'none';
             }
 
             if (isDm) {
                 document.getElementById('chatInput').placeholder = `Message ${activeDmUserName || 'DM'}...`;
-            } else {
+            } else if (name !== 'messages') {
                 document.getElementById('chatInput').placeholder = `Message #${name === 'start_here' ? 'Start Here' : name}`;
             }
             
-            // Clear all active states and inline styles
-            document.querySelectorAll('.ch-item, .comm-sidebar-item, .dm-sidebar-item').forEach(el => {
+            // Clear all active states
+            document.querySelectorAll('.ch-item, .comm-sidebar-item').forEach(el => {
                 el.classList.remove('active');
                 el.style.background = '';
                 el.style.borderLeft = '';
             });
             
-            // Highlight the selected channel
-            const activeCh = document.querySelector(`.ch-item[data-channel="${name}"]`);
+            // Highlight the selected channel in inner sidebar
+            const selectorName = isDm ? 'messages' : name;
+            const activeCh = document.querySelector(`.ch-item[data-channel="${selectorName}"]`);
             if (activeCh) {
                 activeCh.classList.add('active');
                 activeCh.style.background = 'rgba(193,255,17,0.08)';
                 activeCh.style.borderLeft = '3px solid #c1ff11';
-            } else if (isDm) {
-                const activeDm = document.querySelector(`.dm-sidebar-item[data-channel="${name}"]`);
-                if (activeDm) {
-                    activeDm.classList.add('active');
-                    activeDm.style.background = 'rgba(193,255,17,0.08)';
-                    activeDm.style.borderLeft = '3px solid #c1ff11';
-                }
             } else {
                 const activeComm = document.querySelector(`.comm-sidebar-item[data-category="${name}"]`);
                 if (activeComm) {
@@ -1599,22 +1873,37 @@
                     activeComm.style.borderLeft = '3px solid #c1ff11';
                 }
             }
+            
+            // Highlight global sidebar
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+            if (name === 'messages' || isDm) {
+                const msgGlobalNav = document.querySelector('.sidebar-nav .nav-item[href*="channel=messages"]');
+                if (msgGlobalNav) msgGlobalNav.classList.add('active');
+            } else {
+                const commGlobalNav = document.querySelector('.sidebar-nav .nav-item[href="chat.html?v=2"]');
+                if (commGlobalNav) commGlobalNav.classList.add('active');
+            }
 
-            // Update URL so refresh keeps current channel
+            // Update URL
             const newUrl = `${window.location.pathname}?channel=${name}`;
             window.history.replaceState({}, '', newUrl);
             const chatInputBar = document.getElementById('chatInputBar');
             const chatPreviewBar = document.getElementById('chatPreviewBar');
-            if (name === 'start_here') {
+
+            if (name === 'messages') {
                 chatInputBar.style.display = 'none';
-                chatPreviewBar.style.display = 'none';
+                if (chatPreviewBar) chatPreviewBar.style.display = 'none';
+                loadDmInbox();
+            } else if (name === 'start_here') {
+                chatInputBar.style.display = 'none';
+                if (chatPreviewBar) chatPreviewBar.style.display = 'none';
                 loadStartHereContent();
             } else {
                 chatInputBar.style.display = '';
                 loadMessages();
             }
 
-            // If entering a DM, refresh the DM list after messages load (to clear unread dots)
+            // If entering a DM, refresh badge after messages load
             if (isDm) {
                 setTimeout(loadDmList, 2000);
             }
@@ -1684,6 +1973,47 @@
             if (isToday) return `اليوم ${timeStr}`;
             if (isYesterday) return `أمس ${timeStr}`;
             return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} ${timeStr}`;
+        }
+
+        // Short time for DM sidebar
+        function formatDmTime(dt) {
+            if (!dt) return '';
+            if (typeof dt === 'string' && !dt.endsWith('Z') && !dt.includes('+')) dt += 'Z';
+            const d = new Date(dt);
+            const now = new Date();
+            const h = d.getHours(); const m = d.getMinutes();
+            const ampm = h >= 12 ? 'م' : 'ص';
+            const h12 = h % 12 || 12;
+            const timeStr = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+            const isToday = d.toDateString() === now.toDateString();
+            const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+            if (isToday) return timeStr;
+            if (d.toDateString() === yesterday.toDateString()) return 'أمس';
+            return `${d.getDate()}/${d.getMonth() + 1}`;
+        }
+
+        // Update DM chat header with avatar + online status
+        function updateDmHeader(channelName) {
+            const dmHeaderAvatar = document.getElementById('dmHeaderAvatar');
+            const dmHeaderStatus = document.getElementById('dmHeaderStatus');
+            if (!dmHeaderAvatar || !dmHeaderStatus) return;
+            // Find DM data from cached list
+            if (window._cachedDmList) {
+                const dm = window._cachedDmList.find(d => d.channel_name === channelName);
+                if (dm) {
+                    const u = dm.user;
+                    const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
+                    const dotHtml = u.is_online ? '<span class="dm-hdr-dot"></span>' : '';
+                    dmHeaderAvatar.innerHTML = `<img src="${av}" alt=""/>${dotHtml}`;
+                    dmHeaderAvatar.style.display = '';
+                    dmHeaderStatus.textContent = u.is_online ? 'Active now' : 'Offline';
+                    dmHeaderStatus.className = 'dm-header-status' + (u.is_online ? '' : ' offline');
+                    dmHeaderStatus.style.display = '';
+                    return;
+                }
+            }
+            dmHeaderAvatar.style.display = 'none';
+            dmHeaderStatus.style.display = 'none';
         }
 
         function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -1811,6 +2141,7 @@
         }
 
         async function loadMessages() {
+            if (currentChannel === 'messages' || currentChannel === 'start_here') return;
             try {
                 const res = await apiFetch(`/chat/messages?channel=${currentChannel}&limit=50`);
                 const msgs = await res.json();
@@ -2014,7 +2345,7 @@
             fetchOnlineCount();
             loadDmList();
             setInterval(fetchOnlineCount, 30000);
-            setInterval(loadDmList, 15000);
+            setInterval(loadDmList, 30000);
             const urlParams = new URLSearchParams(window.location.search);
             const channelParam = urlParams.get('channel');
             if (channelParam) selectChannel(channelParam);
@@ -2073,9 +2404,8 @@
             dot.className = 'pp-online-dot' + (p.is_online ? ' online' : '');
             dot.title = p.is_online ? 'أونلاين الآن' : 'غير متاح';
 
-            // Name + username
+            // Name
             document.getElementById('ppName').textContent = p.full_name;
-            document.getElementById('ppUsername').textContent = `@${p.username}`;
 
             // Badge
             const badgeEl = document.getElementById('ppBadge');
@@ -2263,11 +2593,26 @@
                 const res = await apiFetch('/chat/dm/list');
                 if (!res.ok) return;
                 const dms = await res.json();
-                const container = document.getElementById('dmList');
 
-                // Calculate total unread for notification bell
+                // Cache for inbox + header
+                window._cachedDmList = dms;
+
+                // Calculate total unread
                 let totalUnread = 0;
                 if (dms) dms.forEach(dm => totalUnread += (dm.unread_count || 0));
+
+                // Update sidebar Messages badge
+                const dmBadge = document.getElementById('dmTotalBadge');
+                if (dmBadge) {
+                    if (totalUnread > 0) {
+                        dmBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                        dmBadge.style.display = '';
+                    } else {
+                        dmBadge.style.display = 'none';
+                    }
+                }
+
+                // Update notification bell badge
                 const notifBadge = document.getElementById('notifBadge');
                 const notifDot = document.getElementById('notifDot');
                 if (totalUnread > 0) {
@@ -2279,71 +2624,138 @@
                     if (notifDot) notifDot.style.display = 'none';
                 }
 
-                // Update notification dropdown list
-                renderNotifList(dms);
-
-                if (!dms || dms.length === 0) {
-                    container.innerHTML = '<div style="padding:8px 16px; color:#555; font-size:0.78rem;">No conversations yet</div>';
-                    return;
+                // Update notification dropdown
+                if (typeof renderGlobalNotifList === 'function') {
+                    renderGlobalNotifList(dms);
                 }
-                container.innerHTML = dms.map(dm => {
-                    const u = dm.user;
-                    const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
-                    const onlineClass = u.is_online ? 'online' : '';
-                    const isActive = currentChannel === dm.channel_name ? 'active' : '';
-                    const unreadDot = (dm.unread_count > 0 && currentChannel !== dm.channel_name) ? '<div class="dm-unread-dot"></div>' : '';
-                    return `
-                    <div class="dm-sidebar-item ${isActive}" data-channel="${dm.channel_name}" onclick="activeDmUserName='${escHtml(u.full_name).replace(/'/g, "\\'")}'; selectChannel('${dm.channel_name}')">
-                        <div class="dm-av">
-                            <img src="${av}" alt="">
-                            <div class="dm-online-dot ${onlineClass}"></div>
-                        </div>
-                        <span class="dm-name">${escHtml(u.full_name)}</span>
-                        ${unreadDot}
-                    </div>
-                    `;
-                }).join('');
+
+                // If currently viewing inbox, refresh it
+                if (currentChannel === 'messages') {
+                    renderInboxList(dms);
+                }
+
+                // Update DM header if currently viewing a DM
+                if (currentChannel.startsWith('dm_')) {
+                    updateDmHeader(currentChannel);
+                }
             } catch(e) { console.error(e); }
         }
 
-        // ── Notification Panel ──
-        function toggleNotifPanel() {
-            const panel = document.getElementById('notifPanel');
-            panel.classList.toggle('open');
+        // ── DM Inbox (WhatsApp-like) ──
+        async function loadDmInbox() {
+            const el = document.getElementById('chatMessages');
+            el.innerHTML = '<div class="dm-inbox"><div class="dm-inbox-header"><h2>Messages</h2><button class="dm-inbox-new-btn" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> رسالة جديدة</button></div><div class="dm-inbox-list" id="dmInboxList"><div style="text-align:center; padding:40px; color:#555;">Loading...</div></div></div>';
+
+            // Fetch fresh data
+            try {
+                const res = await apiFetch('/chat/dm/list');
+                if (!res.ok) return;
+                const dms = await res.json();
+                window._cachedDmList = dms;
+                renderInboxList(dms);
+            } catch(e) { console.error(e); }
         }
 
-        // Close notif panel when clicking outside
-        document.addEventListener('click', (e) => {
-            const wrapper = document.getElementById('notifWrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
-                document.getElementById('notifPanel').classList.remove('open');
-            }
-        });
+        function renderInboxList(dms) {
+            const container = document.getElementById('dmInboxList');
+            if (!container) return;
 
-        function renderNotifList(dms) {
-            const list = document.getElementById('notifList');
-            if (!dms) return;
-            const unreadDms = dms.filter(dm => dm.unread_count > 0);
-            if (unreadDms.length === 0) {
-                list.innerHTML = '<div class="notif-empty">No new notifications</div>';
+            if (!dms || dms.length === 0) {
+                container.innerHTML = `
+                <div class="dm-inbox-empty">
+                    <i class="fa-solid fa-comment-dots"></i>
+                    <p>No conversations yet</p>
+                    <button class="dm-inbox-new-btn" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> Start a conversation</button>
+                </div>`;
                 return;
             }
-            list.innerHTML = unreadDms.map(dm => {
+
+            container.innerHTML = dms.map(dm => {
                 const u = dm.user;
                 const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
-                const preview = dm.last_message ? dm.last_message.substring(0, 40) + (dm.last_message.length > 40 ? '...' : '') : 'Sent you a message';
+                const onlineDot = u.is_online ? '<span class="inbox-online-dot"></span>' : '';
+                const preview = dm.last_message ? (dm.last_message.length > 40 ? dm.last_message.substring(0, 40) + '...' : dm.last_message) : 'Start chatting...';
+                const timeText = formatDmTime(dm.last_message_at);
+                const unreadBadge = dm.unread_count > 0 ? `<span class="dm-unread-badge">${dm.unread_count}</span>` : '';
+                const hasUnread = dm.unread_count > 0 ? 'has-unread' : '';
+
                 return `
-                <div class="notif-item" onclick="activeDmUserName='${escHtml(u.full_name).replace(/'/g, "\\'")}'; selectChannel('${dm.channel_name}'); toggleNotifPanel();">
-                    <div class="notif-item-av"><img src="${av}" alt=""></div>
-                    <div class="notif-item-body">
-                        <div class="notif-item-name">${escHtml(u.full_name)}</div>
-                        <div class="notif-item-text">${escHtml(preview)}</div>
+                <div class="dm-inbox-item ${hasUnread}" onclick="activeDmUserName='${escHtml(u.full_name).replace(/'/g, "\\'")}'; selectChannel('${dm.channel_name}')">
+                    <div class="dm-inbox-av">
+                        <img src="${av}" alt=""/>
+                        ${onlineDot}
                     </div>
-                    <div class="notif-item-count">${dm.unread_count}</div>
+                    <div class="dm-inbox-body">
+                        <div class="dm-inbox-name">${escHtml(u.full_name)}</div>
+                        <div class="dm-inbox-preview">${escHtml(preview)}</div>
+                    </div>
+                    <div class="dm-inbox-meta">
+                        <span class="dm-inbox-time">${timeText}</span>
+                        ${unreadBadge}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── New Message Modal ──
+        let newDmMembers = [];
+
+        async function openNewMessageModal() {
+            const modal = document.getElementById('newDmModal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('open'), 10);
+            document.getElementById('newDmSearchInput').value = '';
+
+            try {
+                const res = await apiFetch('/chat/members');
+                if (res.ok) {
+                    newDmMembers = await res.json();
+                    renderNewDmMembers(newDmMembers);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function closeNewMessageModal() {
+            const modal = document.getElementById('newDmModal');
+            modal.classList.remove('open');
+            setTimeout(() => modal.style.display = 'none', 200);
+        }
+
+        function filterNewDmMembers() {
+            const query = document.getElementById('newDmSearchInput').value.toLowerCase();
+            const filtered = newDmMembers.filter(m => m.full_name.toLowerCase().includes(query));
+            renderNewDmMembers(filtered);
+        }
+
+        function renderNewDmMembers(list) {
+            const container = document.getElementById('newDmMemberList');
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#555;">No members found</div>';
+                return;
+            }
+            container.innerHTML = list.map(m => {
+                const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
+                const onlineDot = m.is_online ? '<div class="new-dm-member-online"></div>' : '';
+                return `
+                <div class="new-dm-member-item" onclick="startNewDm(${m.id}, '${escHtml(m.full_name).replace(/'/g, "\\'")}')">
+                    <img src="${av}" alt="" class="new-dm-member-av"/>
+                    <div class="new-dm-member-info">
+                        <div class="new-dm-member-name">${escHtml(m.full_name)}</div>
+                        <div class="new-dm-member-badge">${escHtml(m.badge)}</div>
+                    </div>
+                    ${onlineDot}
                 </div>
                 `;
             }).join('');
         }
+
+        async function startNewDm(userId, userName) {
+            closeNewMessageModal();
+            activeDmUserName = userName;
+            await openDmChannel(userId);
+        }
+
+
 
     </script>
 </body>

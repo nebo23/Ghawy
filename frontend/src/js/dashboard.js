@@ -155,19 +155,22 @@ function renderChatPreview(messages) {
 
     el.innerHTML = messages.map(m => {
         let avatarHtml = '';
-        if (m.avatar_url) {
-            const fullUrl = m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url;
+        const avUrl = m.avatar_url || m.author_avatar_url;
+        if (avUrl) {
+            const fullUrl = avUrl.startsWith('http') ? avUrl : API + avUrl;
             avatarHtml = `<img src="${fullUrl}"/>`;
         } else {
             const initials = (m.author_name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
             avatarHtml = `<div style="font-size:0.6rem;font-weight:bold;color:var(--gold);">${initials}</div>`;
         }
         
+        let text = formatPreviewText(m.content);
+
         return `<div class="chat-msg-preview" onclick="window.location.href='chat.html?v=2&channel=${m.channel}'" style="cursor:pointer">
         <div class="av">${avatarHtml}</div>
         <div class="info">
             <div class="name">${m.author_name || 'Unknown'}</div>
-            <div class="txt">${m.content || ''}</div>
+            <div class="txt">${escHtml(text)}</div>
         </div>
         <span class="time">${timeAgo(m.created_at)}</span>
     </div>`}).join('');
@@ -188,63 +191,18 @@ function generateInitialsAvatar(name) {
     return canvas.toDataURL();
 }
 
-// ── Notification Panel ──
-function toggleNotifPanel() {
-    const panel = document.getElementById('notifPanel');
-    if(panel) panel.classList.toggle('open');
-}
-
-function renderNotifList(dms) {
-    const list = document.getElementById('notifList');
-    if (!list || !dms) return;
-    const unreadDms = dms.filter(dm => dm.unread_count > 0);
-    if (unreadDms.length === 0) {
-        list.innerHTML = '<div class="notif-empty">No new notifications</div>';
-        return;
+function formatPreviewText(text) {
+    if (!text) return '';
+    if (text.startsWith('[IMAGE|')) return '📷 صورة';
+    if (text.startsWith('[AUDIO|')) return '🎤 رسالة صوتية';
+    if (text.startsWith('[REPLY|')) {
+        const parts = text.split(']');
+        if (parts.length > 1) return '↩️ ' + parts.slice(1).join(']').trim();
     }
-    list.innerHTML = unreadDms.map(dm => {
-        const u = dm.user;
-        const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
-        const preview = dm.last_message ? dm.last_message.substring(0, 40) + (dm.last_message.length > 40 ? '...' : '') : 'Sent you a message';
-        return `
-        <div class="notif-item" onclick="window.location.href='chat.html?v=2&channel=${dm.channel_name}'">
-            <div class="notif-item-av"><img src="${av}" alt=""></div>
-            <div class="notif-item-body">
-                <div class="notif-item-name">${escHtml(u.full_name)}</div>
-                <div class="notif-item-text">${escHtml(preview)}</div>
-            </div>
-            <div class="notif-item-count">${dm.unread_count}</div>
-        </div>
-        `;
-    }).join('');
+    return text;
 }
 
-async function loadDmList() {
-    try {
-        const res = await apiFetch('/chat/dm/list');
-        if (!res.ok) return;
-        const dms = await res.json();
 
-        let totalUnread = 0;
-        if (dms) dms.forEach(dm => totalUnread += (dm.unread_count || 0));
-        
-        const notifBadge = document.getElementById('notifBadge');
-        const notifDot = document.getElementById('notifDot');
-        
-        if (totalUnread > 0) {
-            if(notifBadge) {
-                notifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
-                notifBadge.style.display = 'flex';
-            }
-            if (notifDot) notifDot.style.display = 'none';
-        } else {
-            if(notifBadge) notifBadge.style.display = 'none';
-            if (notifDot) notifDot.style.display = 'none';
-        }
-
-        renderNotifList(dms);
-    } catch(e) { console.error(e); }
-}
 
 function timeAgo(dt) {
     if (!dt) return '';
@@ -358,9 +316,10 @@ async function sendDashboardMessage() {
             body: JSON.stringify({ channel: 'general', content })
         });
         // Refresh chat preview
-        const res = await apiFetch('/chat/messages?channel=general&limit=5');
+        const res = await apiFetch('/chat/messages?channel=general&limit=4');
         const msgs = await res.json();
-        renderChatPreview(msgs);
+        // /chat/messages returns chronological, but dashboard wants reverse chronological
+        renderChatPreview(msgs.reverse());
     } catch (e) { console.error('Send error:', e); }
 }
 
@@ -380,9 +339,7 @@ function logout() { localStorage.removeItem('token'); window.location.href = 'lo
 // ═══ INIT ═══
 loadDashboard();
 fetchOnlineCount();
-loadDmList();
 setInterval(fetchOnlineCount, 30000);
-setInterval(loadDmList, 15000);
 startCountdown();
 
 

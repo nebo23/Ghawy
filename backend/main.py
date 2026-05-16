@@ -46,6 +46,8 @@ def apply_sqlite_compat_migrations():
             conn.execute(text("ALTER TABLE users ADD COLUMN birth_date DATE"))
         if "social_media_url" not in user_columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN social_media_url VARCHAR"))
+        if "show_social_media" not in user_columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN show_social_media BOOLEAN DEFAULT 1"))
         if "onboarding_completed" not in user_columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0"))
         if "selected_avatar" not in user_columns:

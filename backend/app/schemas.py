@@ -38,6 +38,7 @@ class UserProfileUpdate(BaseModel):
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
     social_media_url: Optional[str] = None
+    show_social_media: Optional[bool] = None
 
 class OnboardingUpdate(BaseModel):
     birth_date: Optional[str] = None        # "DD/MM/YYYY" format
@@ -57,6 +58,7 @@ class UserMemberOut(BaseModel):
     badge: str = "Member"
     is_admin: bool = False
     social_media_url: Optional[str] = None
+    show_social_media: bool = True
     created_at: datetime
 
     class Config:
@@ -71,6 +73,7 @@ class PublicProfileOut(BaseModel):
     selected_avatar: Optional[str] = None
     bio: Optional[str] = None
     social_media_url: Optional[str] = None
+    show_social_media: bool = True
     level: int = 1
     xp: int = 0
     badge: str = "Member"
