@@ -8,3 +8,5 @@ python-dotenv
 pydantic[email]
 python-multipart
 aiofiles
+psycopg2-binary
+alembic

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -49,21 +50,21 @@ class User(Base):
     phone = Column(String, unique=True, nullable=True)
     country = Column(String, nullable=True)
     governorate = Column(String, nullable=True)
-    is_active = Column(Boolean, default=False)   # يتفعل بعد الدفع
-    is_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, server_default=text('false'))   # يتفعل بعد الدفع
+    is_verified = Column(Boolean, server_default=text('false'))
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
-    is_admin = Column(Boolean, default=False)
+    is_admin = Column(Boolean, server_default=text('false'))
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
-    level = Column(Integer, default=1)
-    xp = Column(Integer, default=0)
-    streak_days = Column(Integer, default=0)
+    level = Column(Integer, server_default=text('1'))
+    xp = Column(Integer, server_default=text('0'))
+    streak_days = Column(Integer, server_default=text('0'))
     badge = Column(String, default="Member")
     birth_date = Column(Date, nullable=True)
     social_media_url = Column(String, nullable=True)
-    show_social_media = Column(Boolean, default=True)
-    onboarding_completed = Column(Boolean, default=False)
+    show_social_media = Column(Boolean, server_default=text('true'))
+    onboarding_completed = Column(Boolean, server_default=text('false'))
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
 
@@ -76,7 +77,7 @@ class User(Base):
     last_charged_at = Column(DateTime, nullable=True)
     next_charge_at = Column(DateTime, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
 
     # Relationships
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
@@ -99,12 +100,12 @@ class Payment(Base):
     currency = Column(String, default="EGP")
     paypal_order_id = Column(String, nullable=True)       # للـ PayPal
     provider_order_id = Column(String, nullable=True, index=True)  # generic provider order id
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     confirmed_at = Column(DateTime, nullable=True)
 
     # ── Recurring ─────────────────────────────────
-    is_recurring = Column(Boolean, default=False)
-    recurring_cycle = Column(Integer, default=0)  # 0=first payment, 1,2,3...
+    is_recurring = Column(Boolean, server_default=text('false'))
+    recurring_cycle = Column(Integer, server_default=text('0'))  # 0=first payment, 1,2,3...
 
 # ═══════════════════════════════════════════
 #  COMMUNITY — Categories, Posts, Comments, Likes
@@ -118,8 +119,8 @@ class Category(Base):
     slug = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=True)
     emoji = Column(String, default="📁")
-    sort_order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    sort_order = Column(Integer, server_default=text('0'))
+    created_at = Column(DateTime, server_default=func.now())
 
     posts = relationship("Post", back_populates="category")
 
@@ -136,11 +137,11 @@ class Post(Base):
     tag = Column(String, nullable=True)       # e.g. "Help", "Question", "Win"
     tag_color = Column(String, nullable=True)  # e.g. "orange", "blue", "gold"
     image_url = Column(String, nullable=True)
-    like_count = Column(Integer, default=0)
-    comment_count = Column(Integer, default=0)
-    is_pinned = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    like_count = Column(Integer, server_default=text('0'))
+    comment_count = Column(Integer, server_default=text('0'))
+    is_pinned = Column(Boolean, server_default=text('false'))
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     author = relationship("User", back_populates="posts")
     category = relationship("Category", back_populates="posts")
@@ -156,7 +157,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
     body = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
 
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
@@ -169,7 +170,7 @@ class PostLike(Base):
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
 
     post = relationship("Post", back_populates="likes")
 
@@ -185,7 +186,7 @@ class Channel(Base):
     channel_type = Column(Enum(ChannelType), default=ChannelType.GROUP)
     description = Column(Text, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
 
     members = relationship("ChatMember", back_populates="channel", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="channel", cascade="all, delete-orphan")
@@ -198,7 +199,7 @@ class ChatMember(Base):
     channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = Column(Enum(MemberRole), default=MemberRole.MEMBER)
-    joined_at = Column(DateTime, default=datetime.utcnow)
+    joined_at = Column(DateTime, server_default=func.now())
     last_read_at = Column(DateTime, nullable=True)
 
     channel = relationship("Channel", back_populates="members")
@@ -216,9 +217,9 @@ class Message(Base):
     file_name = Column(String, nullable=True)
     file_size = Column(Integer, nullable=True)
     reply_to_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
-    read_count = Column(Integer, default=0)
-    is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    read_count = Column(Integer, server_default=text('0'))
+    is_deleted = Column(Boolean, server_default=text('false'))
+    created_at = Column(DateTime, server_default=func.now())
 
     channel = relationship("Channel", back_populates="messages")
     sender = relationship("User", back_populates="messages")
@@ -232,7 +233,7 @@ class MessageRead(Base):
     id = Column(Integer, primary_key=True, index=True)
     message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    read_at = Column(DateTime, default=datetime.utcnow)
+    read_at = Column(DateTime, server_default=func.now())
 
     message = relationship("Message", back_populates="reads")
     user = relationship("User")
@@ -248,9 +249,9 @@ class Course(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     thumbnail_url = Column(String, nullable=True)
-    total_lessons = Column(Integer, default=0)
-    is_published = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    total_lessons = Column(Integer, server_default=text('0'))
+    is_published = Column(Boolean, server_default=text('false'))
+    created_at = Column(DateTime, server_default=func.now())
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
     progress = relationship("UserCourseProgress", back_populates="course", cascade="all, delete-orphan")
@@ -265,10 +266,10 @@ class Lesson(Base):
     video_url = Column(String, nullable=True)
     content = Column(Text, nullable=True)
     section_title = Column(String, nullable=True)
-    section_order = Column(Integer, default=0)
-    order = Column(Integer, default=0)
-    duration_minutes = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    section_order = Column(Integer, server_default=text('0'))
+    order = Column(Integer, server_default=text('0'))
+    duration_minutes = Column(Integer, server_default=text('0'))
+    created_at = Column(DateTime, server_default=func.now())
 
     course = relationship("Course", back_populates="lessons")
 
@@ -279,9 +280,9 @@ class UserCourseProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
-    completed_lessons = Column(Integer, default=0)
-    percent = Column(Numeric(5, 2), default=0.0)
-    last_accessed = Column(DateTime, default=datetime.utcnow)
+    completed_lessons = Column(Integer, server_default=text('0'))
+    percent = Column(Numeric(5, 2), server_default=text('0.0'))
+    last_accessed = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="course_progress")
     course = relationship("Course", back_populates="progress")
