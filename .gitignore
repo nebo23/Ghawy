@@ -10,4 +10,3 @@ backend/.venv/
 
 # Database & Environment Files
 backend/community.db
-backend/.env
