@@ -8,5 +8,3 @@ __pycache__/
 backend/.venv/
 .venv/
 
-# Database & Environment Files
-backend/community.db
