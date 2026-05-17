@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+import os
 from datetime import datetime
 from app.models import Payment, PaymentMethod, PaymentStatus, User
 from app.schemas import PayPalCreateOrder, PayPalOrderOut, PaymentOut, KashierCreateOrder, KashierOrderOut
@@ -45,8 +47,9 @@ async def paypal_success(
     if not payment:
         raise HTTPException(status_code=404, detail="مش لاقي الأوردر")
 
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
     if payment.status == PaymentStatus.CONFIRMED:
-        return {"message": "Done"}
+        return RedirectResponse(url=f"{frontend_url}/onboarding.html")
 
     capture = await capture_paypal_order(token)
     
@@ -62,12 +65,14 @@ async def paypal_success(
         user.is_active = True
     
     db.commit()
-    return {"message": "Done"}
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    return RedirectResponse(url=f"{frontend_url}/onboarding.html")
 
 # ─── PayPal: إلغاء ───────────────────────────────────────────
 @router.get("/paypal/cancel")
 def paypal_cancel():
-    return {"message": "تم إلغاء الدفع"}
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    return RedirectResponse(url=f"{frontend_url}/payment.html")
 
 from app.services.kashier_manager import create_kashier_payment_url
 import uuid
@@ -110,9 +115,11 @@ def kashier_success(orderId: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="الأوردر مش موجود")
 
     # الـ webhook هو اللي بيأكد فعلاً - الصفحة دي بس للـ redirect
-    return {"message": "Done"}
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    return RedirectResponse(url=f"{frontend_url}/onboarding.html")
 
 # ─── Kashier: لو فشل الدفع ───────────────────────────────────
 @router.get("/kashier/fail")
 def kashier_fail():
-    return {"message": "فشل الدفع ❌"}
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    return RedirectResponse(url=f"{frontend_url}/payment.html?error=failed")

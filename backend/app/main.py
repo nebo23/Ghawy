@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, live
 import os
 import logging
 from sqlalchemy import inspect, text
@@ -322,6 +322,7 @@ app.include_router(dashboard.router)
 app.include_router(courses.router)
 app.include_router(profile.router)
 app.include_router(admin.router)
+app.include_router(live.router)
 
 @app.get("/")
 def root():

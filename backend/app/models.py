@@ -36,6 +36,17 @@ class MemberRole(str, enum.Enum):
     ADMIN = "admin"
     MEMBER = "member"
 
+class LiveSessionStatus(str, enum.Enum):
+    LIVE = "live"
+    UPCOMING = "upcoming"
+    ENDED = "ended"
+    CANCELLED = "cancelled"
+
+class LiveSessionDifficulty(str, enum.Enum):
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
 # ═══════════════════════════════════════════
 #  USER
 # ═══════════════════════════════════════════
@@ -50,23 +61,30 @@ class User(Base):
     phone = Column(String, unique=True, nullable=True)
     country = Column(String, nullable=True)
     governorate = Column(String, nullable=True)
-    is_active = Column(Boolean, server_default=text('false'))   # يتفعل بعد الدفع
-    is_verified = Column(Boolean, server_default=text('false'))
+    is_active = Column(Boolean, server_default=text('false'), default=False)   # يتفعل بعد الدفع
+    is_verified = Column(Boolean, server_default=text('false'), default=False)
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
-    is_admin = Column(Boolean, server_default=text('false'))
+    is_admin = Column(Boolean, server_default=text('false'), default=False)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
-    level = Column(Integer, server_default=text('1'))
-    xp = Column(Integer, server_default=text('0'))
-    streak_days = Column(Integer, server_default=text('0'))
+    level = Column(Integer, server_default=text('1'), default=1)
+    xp = Column(Integer, server_default=text('0'), default=0)
+    streak_days = Column(Integer, server_default=text('0'), default=0)
     badge = Column(String, default="Member")
     birth_date = Column(Date, nullable=True)
     social_media_url = Column(String, nullable=True)
-    show_social_media = Column(Boolean, server_default=text('true'))
-    onboarding_completed = Column(Boolean, server_default=text('false'))
+    show_social_media = Column(Boolean, server_default=text('true'), default=True)
+    onboarding_completed = Column(Boolean, server_default=text('false'), default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
+
+    @property
+    def is_online(self) -> bool:
+        from datetime import datetime, timedelta
+        if self.last_seen:
+            return datetime.utcnow() - self.last_seen <= timedelta(seconds=65)
+        return False
 
     # ── Recurring / Subscription ──────────────────
     card_token = Column(String, nullable=True)
@@ -77,7 +95,7 @@ class User(Base):
     last_charged_at = Column(DateTime, nullable=True)
     next_charge_at = Column(DateTime, nullable=True)
 
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     # Relationships
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
@@ -100,12 +118,12 @@ class Payment(Base):
     currency = Column(String, default="EGP")
     paypal_order_id = Column(String, nullable=True)       # للـ PayPal
     provider_order_id = Column(String, nullable=True, index=True)  # generic provider order id
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     confirmed_at = Column(DateTime, nullable=True)
 
     # ── Recurring ─────────────────────────────────
-    is_recurring = Column(Boolean, server_default=text('false'))
-    recurring_cycle = Column(Integer, server_default=text('0'))  # 0=first payment, 1,2,3...
+    is_recurring = Column(Boolean, server_default=text('false'), default=False)
+    recurring_cycle = Column(Integer, server_default=text('0'), default=0)  # 0=first payment, 1,2,3...
 
 # ═══════════════════════════════════════════
 #  COMMUNITY — Categories, Posts, Comments, Likes
@@ -119,8 +137,8 @@ class Category(Base):
     slug = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=True)
     emoji = Column(String, default="📁")
-    sort_order = Column(Integer, server_default=text('0'))
-    created_at = Column(DateTime, server_default=func.now())
+    sort_order = Column(Integer, server_default=text('0'), default=0)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     posts = relationship("Post", back_populates="category")
 
@@ -137,10 +155,10 @@ class Post(Base):
     tag = Column(String, nullable=True)       # e.g. "Help", "Question", "Win"
     tag_color = Column(String, nullable=True)  # e.g. "orange", "blue", "gold"
     image_url = Column(String, nullable=True)
-    like_count = Column(Integer, server_default=text('0'))
-    comment_count = Column(Integer, server_default=text('0'))
-    is_pinned = Column(Boolean, server_default=text('false'))
-    created_at = Column(DateTime, server_default=func.now())
+    like_count = Column(Integer, server_default=text('0'), default=0)
+    comment_count = Column(Integer, server_default=text('0'), default=0)
+    is_pinned = Column(Boolean, server_default=text('false'), default=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     author = relationship("User", back_populates="posts")
@@ -157,7 +175,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
     body = Column(Text, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
@@ -170,7 +188,7 @@ class PostLike(Base):
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     post = relationship("Post", back_populates="likes")
 
@@ -186,7 +204,7 @@ class Channel(Base):
     channel_type = Column(Enum(ChannelType), default=ChannelType.GROUP)
     description = Column(Text, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     members = relationship("ChatMember", back_populates="channel", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="channel", cascade="all, delete-orphan")
@@ -199,7 +217,7 @@ class ChatMember(Base):
     channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = Column(Enum(MemberRole), default=MemberRole.MEMBER)
-    joined_at = Column(DateTime, server_default=func.now())
+    joined_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     last_read_at = Column(DateTime, nullable=True)
 
     channel = relationship("Channel", back_populates="members")
@@ -217,9 +235,9 @@ class Message(Base):
     file_name = Column(String, nullable=True)
     file_size = Column(Integer, nullable=True)
     reply_to_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
-    read_count = Column(Integer, server_default=text('0'))
-    is_deleted = Column(Boolean, server_default=text('false'))
-    created_at = Column(DateTime, server_default=func.now())
+    read_count = Column(Integer, server_default=text('0'), default=0)
+    is_deleted = Column(Boolean, server_default=text('false'), default=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     channel = relationship("Channel", back_populates="messages")
     sender = relationship("User", back_populates="messages")
@@ -233,7 +251,7 @@ class MessageRead(Base):
     id = Column(Integer, primary_key=True, index=True)
     message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    read_at = Column(DateTime, server_default=func.now())
+    read_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     message = relationship("Message", back_populates="reads")
     user = relationship("User")
@@ -249,9 +267,9 @@ class Course(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     thumbnail_url = Column(String, nullable=True)
-    total_lessons = Column(Integer, server_default=text('0'))
-    is_published = Column(Boolean, server_default=text('false'))
-    created_at = Column(DateTime, server_default=func.now())
+    total_lessons = Column(Integer, server_default=text('0'), default=0)
+    is_published = Column(Boolean, server_default=text('false'), default=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
     progress = relationship("UserCourseProgress", back_populates="course", cascade="all, delete-orphan")
@@ -266,10 +284,10 @@ class Lesson(Base):
     video_url = Column(String, nullable=True)
     content = Column(Text, nullable=True)
     section_title = Column(String, nullable=True)
-    section_order = Column(Integer, server_default=text('0'))
-    order = Column(Integer, server_default=text('0'))
-    duration_minutes = Column(Integer, server_default=text('0'))
-    created_at = Column(DateTime, server_default=func.now())
+    section_order = Column(Integer, server_default=text('0'), default=0)
+    order = Column(Integer, server_default=text('0'), default=0)
+    duration_minutes = Column(Integer, server_default=text('0'), default=0)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     course = relationship("Course", back_populates="lessons")
 
@@ -280,9 +298,117 @@ class UserCourseProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
-    completed_lessons = Column(Integer, server_default=text('0'))
-    percent = Column(Numeric(5, 2), server_default=text('0.0'))
-    last_accessed = Column(DateTime, server_default=func.now())
+    completed_lessons = Column(Integer, server_default=text('0'), default=0)
+    percent = Column(Numeric(5, 2), server_default=text('0.0'), default=0.0)
+    last_accessed = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     user = relationship("User", back_populates="course_progress")
     course = relationship("Course", back_populates="progress")
+
+# ═══════════════════════════════════════════
+#  GUEST OF HONORS
+# ═══════════════════════════════════════════
+
+class Guest(Base):
+    __tablename__ = "guests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    title = Column(String, nullable=False)        # "CEO of OpenAI"
+    company = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
+    avatar_url = Column(String, nullable=True)    # photo URL
+    company_logo = Column(String, nullable=True)  # company logo URL
+    category = Column(String, nullable=True)      # "AI", "Business", etc.
+    is_featured = Column(Boolean, server_default=text('false'), default=False)
+    total_sessions = Column(Integer, server_default=text('0'), default=0)
+    total_attendees = Column(Integer, server_default=text('0'), default=0)
+    rating = Column(Numeric(3,1), server_default=text('0.0'), default=0.0)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    
+    sessions = relationship("GuestSession", back_populates="guest", cascade="all, delete-orphan")
+
+class GuestSession(Base):
+    __tablename__ = "guest_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    guest_id = Column(Integer, ForeignKey("guests.id", ondelete="CASCADE"))
+    title = Column(String, nullable=False)        # "The Future of AI and Humanity"
+    description = Column(Text, nullable=True)
+    session_date = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, server_default=text('60'), default=60)
+    video_url = Column(String, nullable=True)
+    attendees = Column(Integer, server_default=text('0'), default=0)
+    status = Column(String, server_default=text("'upcoming'"), default="upcoming")  # upcoming / past / live
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    
+    guest = relationship("Guest", back_populates="sessions")
+
+# ═══════════════════════════════════════════
+#  BUILD WITH ME (LIVE)
+# ═══════════════════════════════════════════
+
+class LiveSession(Base):
+    __tablename__ = "live_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, unique=True, index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    thumbnail_url = Column(String, nullable=True)
+    instructor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(Enum(LiveSessionStatus), default=LiveSessionStatus.UPCOMING)
+    difficulty = Column(Enum(LiveSessionDifficulty), default=LiveSessionDifficulty.BEGINNER)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
+    stream_url = Column(String, nullable=True)
+    recording_url = Column(String, nullable=True)
+    max_attendees = Column(Integer, server_default=text('0'), default=0) # 0 means unlimited
+    current_viewers = Column(Integer, server_default=text('0'), default=0)
+    is_recording_available = Column(Boolean, server_default=text('false'), default=False)
+    tags = Column(String, nullable=True) # Comma separated
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    
+    instructor = relationship("User", foreign_keys=[instructor_id])
+    bookings = relationship("SessionBooking", back_populates="session", cascade="all, delete-orphan")
+    reminders = relationship("SessionReminder", back_populates="session", cascade="all, delete-orphan")
+    projects = relationship("SessionProject", back_populates="session", cascade="all, delete-orphan")
+
+
+class SessionBooking(Base):
+    __tablename__ = "session_bookings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(Integer, ForeignKey("live_sessions.id", ondelete="CASCADE"), nullable=False)
+    reminder_enabled = Column(Boolean, server_default=text('true'), default=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    
+    user = relationship("User")
+    session = relationship("LiveSession", back_populates="bookings")
+
+
+class SessionReminder(Base):
+    __tablename__ = "session_reminders"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(Integer, ForeignKey("live_sessions.id", ondelete="CASCADE"), nullable=False)
+    reminder_sent = Column(Boolean, server_default=text('false'), default=False)
+    reminder_time = Column(DateTime, nullable=False)
+    
+    user = relationship("User")
+    session = relationship("LiveSession", back_populates="reminders")
+
+
+class SessionProject(Base):
+    __tablename__ = "session_projects"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("live_sessions.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    rating = Column(Numeric(3,1), server_default=text('0.0'), default=0.0)
+    creator_name = Column(String, nullable=False)
+    
+    session = relationship("LiveSession", back_populates="projects")

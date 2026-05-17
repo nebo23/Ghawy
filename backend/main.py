@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession
 from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
@@ -106,13 +106,18 @@ def apply_sqlite_compat_migrations():
                 conn.execute(text("ALTER TABLE posts ADD COLUMN tag_color VARCHAR"))
             if "image_url" not in post_cols:
                 conn.execute(text("ALTER TABLE posts ADD COLUMN image_url VARCHAR"))
-        # Lessons migration
         if inspector.has_table("lessons"):
             lesson_cols = {col["name"] for col in inspector.get_columns("lessons")}
             if "section_title" not in lesson_cols:
                 conn.execute(text("ALTER TABLE lessons ADD COLUMN section_title VARCHAR"))
             if "section_order" not in lesson_cols:
                 conn.execute(text("ALTER TABLE lessons ADD COLUMN section_order INTEGER DEFAULT 0"))
+                
+        # Guests migration
+        if inspector.has_table("guests"):
+            guest_cols = {col["name"] for col in inspector.get_columns("guests")}
+            if "company_logo" not in guest_cols:
+                conn.execute(text("ALTER TABLE guests ADD COLUMN company_logo VARCHAR"))
         conn.commit()
 
 def seed_defaults():
@@ -135,6 +140,46 @@ def seed_defaults():
         # Ensure start-here channel exists even if other channels were already seeded
         if not db.query(Channel).filter(Channel.name == "start-here").first():
             db.add(Channel(name="start-here", channel_type=ChannelType.GROUP, description="Welcome to Ghawy!"))
+            db.commit()
+
+        # Seed Guests
+        if db.query(Guest).count() == 0:
+            guests_data = [
+                {"name": "Sam Altman", "title": "CEO of OpenAI", "company": "OpenAI", 
+                 "bio": "Leading the way in artificial general intelligence and global innovation.",
+                 "is_featured": True, "total_sessions": 12, "total_attendees": 15000, "rating": 4.9,
+                 "category": "AI"},
+                {"name": "Sundar Pichai", "title": "CEO of Google", "company": "Google",
+                 "bio": "Building helpful technology for everyone.",
+                 "is_featured": True, "total_sessions": 8, "total_attendees": 12000, "rating": 4.8,
+                 "category": "Tech"},
+                {"name": "Lex Fridman", "title": "AI Researcher", "company": "MIT",
+                 "bio": "Exploring intelligence, consciousness and the universe.",
+                 "is_featured": True, "total_sessions": 6, "total_attendees": 8000, "rating": 4.9,
+                 "category": "AI"},
+                {"name": "Fei-Fei Li", "title": "AI Pioneer", "company": "Stanford",
+                 "bio": "Advancing AI to benefit humanity.",
+                 "is_featured": True, "total_sessions": 5, "total_attendees": 6000, "rating": 4.8,
+                 "category": "AI"},
+                {"name": "Mark Zuckerberg", "title": "CEO of Meta", "company": "Meta",
+                 "bio": "Building the future beyond imagination.",
+                 "is_featured": True, "total_sessions": 4, "total_attendees": 10000, "rating": 4.7,
+                 "category": "Tech"},
+            ]
+            from datetime import datetime, timedelta
+            for gd in guests_data:
+                g = Guest(**gd)
+                db.add(g)
+                db.commit()
+                db.refresh(g)
+                # Add upcoming session
+                db.add(GuestSession(
+                    guest_id=g.id,
+                    title=f"Live Session with {g.name}",
+                    description=f"An exclusive session with {g.title}",
+                    session_date=datetime.utcnow() + timedelta(days=5),
+                    status="upcoming"
+                ))
             db.commit()
 
         # Seed Courses
@@ -322,6 +367,7 @@ app.include_router(dashboard.router)
 app.include_router(courses.router)
 app.include_router(profile.router)
 app.include_router(admin.router)
+app.include_router(guests.router)
 
 @app.get("/")
 def root():

@@ -594,8 +594,8 @@
                         data-i18n="dashboard">الرئيسية</span></a>
                 <a href="courses.html?v=2" class="nav-item"><i class="fa-solid fa-graduation-cap"></i> <span
                         data-i18n="courses">الكورسات</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
-                <a href="community.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span
+                <a href="build-with-me.html" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span
                         data-i18n="guestOfHonors">ضيوف الشرف</span></a>
                 <a href="chat.html?v=2" class="nav-item active"><i class="fa-solid fa-comments"></i> <span
                         data-i18n="communityChat">شات المجتمع</span></a>
@@ -2546,7 +2546,7 @@
                 // Simple logic for @handle from email or name
                 const handle = m.email ? '@' + m.email.split('@')[0] : '@' + m.full_name.replace(/\s+/g,'').toLowerCase();
                 // Randomly assign online status for demo if no real time available (or just check m.is_online if available)
-                const isOnline = m.is_online || Math.random() > 0.5;
+                const isOnline = m.is_online === true;
                 const dotClass = isOnline ? 'online' : 'offline';
                 
                 return `

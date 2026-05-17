@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
     created_at: datetime
+    is_online: bool = False
 
     class Config:
         from_attributes = True
