@@ -38,7 +38,7 @@ async function showWelcomeModal() {
             <div style="width:80px;height:80px;border-radius:50%;margin:16px auto;border:3px solid #c1ff11;overflow:hidden;box-shadow:0 0 20px rgba(193,255,17,0.2);">${avatarHtml}</div>
             <p style="font-size:1rem;color:#f1f0ea;margin-bottom:6px;">مرحباً ${name}! 👋</p>
             <p style="font-size:0.85rem;color:#888;margin-bottom:24px;">ابدأ رحلتك بمشاهدة الفيديو التعريفي في قسم Start Here</p>
-            <button onclick="window.location.href='chat.html?v=2&channel=start_here'" style="width:100%;background:#c1ff11;color:#000;border:none;border-radius:12px;padding:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:12px;">🚀 روح لـ Start Here</button>
+            <button onclick="window.location.href='chat.html?v=4&channel=start_here'" style="width:100%;background:#c1ff11;color:#000;border:none;border-radius:12px;padding:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:12px;">🚀 روح لـ Start Here</button>
             <button onclick="this.closest('.ob-modal-overlay').remove()" style="background:none;border:none;color:#888;font-family:'Cairo',sans-serif;font-size:0.85rem;cursor:pointer;">تخطي</button>
         </div>
     `;
@@ -115,7 +115,7 @@ function renderPosts(posts) {
             { icon: '🧠', source: 'Anthropic', title: 'Anthropic releases Claude 3.5', desc: 'The most advanced Claude model yet.', time: '5h ago' },
             { icon: '🔧', source: 'Tools', title: 'Revolutionary AI tool for creators', desc: 'Create, edit and automate like never before.', time: '1d ago' },
             { icon: '🌐', source: 'Google', title: 'New Gemini features announced', desc: 'Google\'s latest updates will blow your mind.', time: '1d ago' },
-        ].map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=2'">
+        ].map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=4'">
             <div class="post-author"><div class="avatar-sm" style="display:flex;align-items:center;justify-content:center;font-size:1rem">${p.icon}</div> ${p.source}</div>
             <h4>${p.title}</h4>
             <div class="post-preview">${p.desc}</div>
@@ -123,7 +123,7 @@ function renderPosts(posts) {
         </div>`).join('');
         return;
     }
-    grid.innerHTML = posts.map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=2'">
+    grid.innerHTML = posts.map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=4'">
         <div class="post-author"><div class="avatar-sm"></div> ${p.author_name}</div>
         <h4>${p.title}</h4>
         <div class="post-stats"><span><i class="fa-solid fa-heart"></i> ${p.likes_count}</span><span>${timeAgo(p.created_at)}</span></div>
@@ -142,7 +142,7 @@ function renderChatPreview(messages) {
     ];
 
     if (!messages || messages.length === 0) {
-        el.innerHTML = channels.map(ch => `<div class="chat-channel-item" onclick="window.location.href='chat.html?v=2'" style="cursor:pointer">
+        el.innerHTML = channels.map(ch => `<div class="chat-channel-item" onclick="window.location.href='chat.html?v=4'" style="cursor:pointer">
             <span class="chat-channel-icon">${ch.icon}</span>
             <div class="chat-channel-info">
                 <div class="chat-channel-name">${ch.name}</div>
@@ -166,7 +166,7 @@ function renderChatPreview(messages) {
         
         let text = formatPreviewText(m.content);
 
-        return `<div class="chat-msg-preview" onclick="window.location.href='chat.html?v=2&channel=${m.channel}'" style="cursor:pointer">
+        return `<div class="chat-msg-preview" onclick="window.location.href='chat.html?v=4&channel=${m.channel}'" style="cursor:pointer">
         <div class="av">${avatarHtml}</div>
         <div class="info">
             <div class="name">${m.author_name || 'Unknown'}</div>

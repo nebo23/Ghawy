@@ -597,10 +597,10 @@
                 <a href="build-with-me.html" class="nav-item"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">???? ????? (????)</span></a>
                 <a href="guest-of-honors.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span
                         data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                <a href="chat.html?v=2" class="nav-item active"><i class="fa-solid fa-comments"></i> <span
+                <a href="chat.html?v=4" class="nav-item active"><i class="fa-solid fa-comments"></i> <span
                         data-i18n="communityChat">شات المجتمع</span></a>
                 
-                <a href="chat.html?v=2&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+                <a href="chat.html?v=4&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
                 <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span
                         data-i18n="achievements">الإنجازات</span></a>
@@ -1850,6 +1850,17 @@
             } else if (name !== 'messages') {
                 document.getElementById('chatInput').placeholder = `Message #${name === 'start_here' ? 'Start Here' : name}`;
             }
+
+            const chatChannelsEl = document.querySelector('.chat-channels');
+            const chatFeedHeader = document.getElementById('chatFeedHeader');
+
+            if (name === 'messages' || isDm) {
+                if (chatChannelsEl) chatChannelsEl.style.display = 'none';
+                if (chatFeedHeader) chatFeedHeader.style.display = 'none';
+            } else {
+                if (chatChannelsEl) chatChannelsEl.style.display = 'flex';
+                if (chatFeedHeader) chatFeedHeader.style.display = 'flex';
+            }
             
             // Clear all active states
             document.querySelectorAll('.ch-item, .comm-sidebar-item').forEach(el => {
@@ -1880,7 +1891,7 @@
                 const msgGlobalNav = document.querySelector('.sidebar-nav .nav-item[href*="channel=messages"]');
                 if (msgGlobalNav) msgGlobalNav.classList.add('active');
             } else {
-                const commGlobalNav = document.querySelector('.sidebar-nav .nav-item[href="chat.html?v=2"]');
+                const commGlobalNav = document.querySelector('.sidebar-nav .nav-item[href="chat.html?v=4"]');
                 if (commGlobalNav) commGlobalNav.classList.add('active');
             }
 

@@ -172,7 +172,7 @@ function renderGlobalNotifList(dms) {
         const safeName = u.full_name.replace(/'/g, "\\'");
         const onClickAction = isChat 
             ? `activeDmUserName='${safeName}'; selectChannel('${dm.channel_name}'); toggleNotifPanel();`
-            : `window.location.href='chat.html?v=2&channel=${dm.channel_name}'`;
+            : `window.location.href='chat.html?v=4&channel=${dm.channel_name}'`;
         
         html += `
         <div class="notif-item" onclick="${onClickAction}">
