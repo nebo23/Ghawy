@@ -85,25 +85,37 @@ async def kashier_webhook(request: Request, db: Session = Depends(get_db)):
                 user.is_active = True
 
                 # ── Save card token for recurring (first payment only) ──
-                card_token = body.get("cardToken") or body.get("card_token")
-                shopper_ref = body.get("shopperReference") or body.get("shopper_reference")
+                card_token = (
+                    body.get("cardToken") or 
+                    body.get("card_token") or 
+                    body.get("token") or
+                    body.get("CardToken")
+                )
+                shopper_ref = (
+                    body.get("shopperReference") or 
+                    body.get("shopper_reference") or
+                    body.get("ShopperReference")
+                )
 
-                if card_token and not user.card_token:
-                    user.card_token = card_token
-                    user.shopper_reference = shopper_ref
-                    user.subscription_start = datetime.utcnow()
-                    user.subscription_end = datetime.utcnow() + timedelta(days=30)
-                    user.next_charge_at = datetime.utcnow() + timedelta(days=30)
-                    user.last_charged_at = datetime.utcnow()
-                    logger.info(
-                        "✅ Token saved for user %s: %s...",
-                        user.id, card_token[:10],
-                    )
+                if card_token:
+                    if not user.card_token:
+                        user.card_token = card_token
+                        user.shopper_reference = shopper_ref
+                        user.subscription_start = datetime.utcnow()
+                        user.subscription_end = datetime.utcnow() + timedelta(days=30)
+                        user.next_charge_at = datetime.utcnow() + timedelta(days=30)
+                        user.last_charged_at = datetime.utcnow()
+                        user.subscription_type = "monthly"
+                        logger.info(
+                            "✅ Token saved for user %s: %s...",
+                            user.id, card_token[:8],
+                        )
                 else:
                     logger.warning(
                         "⚠️ No card token received for user %s | body keys: %s",
                         user.id, list(body.keys()),
                     )
+                    logger.warning("Full body: %s", body)
  
             db.commit()
  

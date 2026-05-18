@@ -76,6 +76,29 @@
 .toast.success{border-color:#84cc16}
 .toast.error{border-color:#ef4444}
 @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* Recurring Panel */
+.recurring-panel { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; margin: 0 32px 24px; overflow: hidden; }
+.recurring-panel-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #fff; font-weight: 600; background: rgba(255,255,255,.02); border-bottom: 1px solid #2a2a2a; }
+.recurring-panel-header:hover { background: rgba(255,255,255,.05); }
+.recurring-panel-body { padding: 24px; }
+.recurring-stats { display: flex; gap: 32px; margin-bottom: 24px; }
+.rec-stat { display: flex; flex-direction: column; gap: 4px; }
+.rec-num { font-size: 1.5rem; font-weight: 700; color: #fff; }
+.rec-label { font-size: 12px; color: #888; }
+.btn-trigger-recurring { background: #84cc16; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; }
+/* Subscription Badge */
+.sub-badge { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 500; white-space: nowrap; }
+.sub-badge.monthly { background: rgba(132,204,22,0.1); color: #84cc16; }
+.sub-badge.yearly { background: rgba(59,130,246,0.1); color: #60a5fa; }
+.sub-badge.none { color: #555; }
+/* Charge Info */
+.charge-info { display: flex; flex-direction: column; gap: 2px; }
+.charge-date { font-size: 13px; color: #ccc; }
+.charge-days { font-size: 11px; color: #888; }
+.charge-days.overdue { color: #ef4444; font-weight: 600; }
+.charge-days.soon { color: #f59e0b; font-weight: 600; }
+/* Failed Badge */
+.failed-badge { background: rgba(239,68,68,0.15); color: #ef4444; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: default; }
 /* Pagination */
 .pagination{display:flex;justify-content:center;gap:8px;padding:24px}
 .page-btn{background:#1a1a1a;border:1px solid #333;color:#aaa;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:inherit}
@@ -85,8 +108,8 @@
   .team-stats{grid-template-columns:repeat(2,1fr);padding:16px}
   .team-toolbar{flex-wrap:wrap;padding:0 16px 16px}
   .team-table-wrap{padding:0 16px}
-  .team-table th:nth-child(3),.team-table td:nth-child(3),
-  .team-table th:nth-child(4),.team-table td:nth-child(4){display:none}
+  .team-table th:nth-child(5),.team-table td:nth-child(5),
+  .team-table th:nth-child(6),.team-table td:nth-child(6){display:none}
 }
     </style>
 </head>
@@ -176,12 +199,39 @@
                 </select>
                 <button class="btn-add-member" onclick="openAddModal()">+ Add Member</button>
             </div>
+            
+            <!-- Recurring Status Panel -->
+            <div class="recurring-panel">
+              <div class="recurring-panel-header" onclick="toggleRecurringPanel()">
+                <span>💳 Recurring Subscriptions Overview</span>
+                <span id="recurring-toggle">▼</span>
+              </div>
+              <div class="recurring-panel-body" id="recurring-body" style="display:none">
+                <div class="recurring-stats">
+                  <div class="rec-stat">
+                    <div class="rec-num" id="rec-total">—</div>
+                    <div class="rec-label">Total Subscribers</div>
+                  </div>
+                  <div class="rec-stat">
+                    <div class="rec-num" id="rec-due" style="color:#ef4444">—</div>
+                    <div class="rec-label">Due Now</div>
+                  </div>
+                  <div class="rec-stat">
+                    <div class="rec-num" id="rec-soon" style="color:#f59e0b">—</div>
+                    <div class="rec-label">Due in 7 Days</div>
+                  </div>
+                </div>
+                <button class="btn-trigger-recurring" onclick="triggerRecurring()">
+                  ⚡ Run Recurring Charges Now
+                </button>
+              </div>
+            </div>
 
             <!-- Table -->
             <div class="team-table-wrap">
                 <table class="team-table">
-                    <thead><tr><th>Member</th><th>Email</th><th>Phone</th><th>Country</th><th>Joined</th><th>Status</th><th>Role</th><th>Actions</th></tr></thead>
-                    <tbody id="users-tbody"><tr><td colspan="8" style="text-align:center;color:#888;padding:40px">Loading...</td></tr></tbody>
+                    <thead><tr><th>Member</th><th>Email</th><th>Phone</th><th>Country</th><th>Joined</th><th>Subscription</th><th>Next Charge</th><th>Status</th><th>Role</th><th>Actions</th></tr></thead>
+                    <tbody id="users-tbody"><tr><td colspan="10" style="text-align:center;color:#888;padding:40px">Loading...</td></tr></tbody>
                 </table>
             </div>
             <div class="pagination" id="pagination"></div>

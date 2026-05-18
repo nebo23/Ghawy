@@ -69,12 +69,38 @@ function renderTable() {
   const tbody = document.getElementById('users-tbody');
 
   if (paginated.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = paginated.map(user => `
+  tbody.innerHTML = paginated.map(user => {
+    // Subscription type cell
+    const subType = user.subscription_type || null;
+    const subCell = subType 
+      ? `<span class="sub-badge ${subType}">${subType === 'monthly' ? '📅 Monthly' : '📆 Yearly'}</span>`
+      : `<span class="sub-badge none">—</span>`;
+
+    // Next charge cell
+    let chargeCell = '—';
+    if (user.next_charge_at) {
+      const nextDate = new Date(user.next_charge_at);
+      const days = user.days_until_charge;
+      const isOverdue = days !== null && days < 0;
+      const isSoon = days !== null && days <= 3 && days >= 0;
+      
+      chargeCell = `
+        <div class="charge-info">
+          <div class="charge-date">${nextDate.toLocaleDateString('en', {month:'short', day:'numeric', year:'numeric'})}</div>
+          <div class="charge-days ${isOverdue ? 'overdue' : isSoon ? 'soon' : ''}">
+            ${isOverdue ? '⚠️ Overdue' : isSoon ? `⚡ ${days}d left` : `${days}d`}
+          </div>
+        </div>`;
+    } else if (user.has_card_token) {
+      chargeCell = '<span style="color:#888">Token saved</span>';
+    }
+
+    return `
     <tr>
       <td>
         <div class="member-cell">
@@ -88,7 +114,14 @@ function renderTable() {
       <td class="text-secondary">${escapeHtml(user.email)}</td>
       <td class="text-secondary">${user.phone || '—'}</td>
       <td class="text-secondary">${user.country || '—'}</td>
-      <td class="text-secondary">${formatDate(user.created_at)}</td>
+      <td>
+        <div style="font-size:13px">${formatDate(user.created_at)}</div>
+        ${user.subscription_start ? 
+          `<div style="font-size:11px;color:#84cc16">💳 Since ${formatDate(user.subscription_start)}</div>` 
+          : ''}
+      </td>
+      <td>${subCell}</td>
+      <td>${chargeCell}</td>
       <td>
         <label class="t-switch">
           <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleActive(${user.id}, this)"/>
@@ -102,14 +135,61 @@ function renderTable() {
       </td>
       <td>
         <div class="action-btns">
+          ${user.failed_charge_count > 0 ? 
+            `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)">⚠️${user.failed_charge_count}</span>` 
+            : ''}
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password">🔑</button>
           <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete">🗑️</button>
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 
   renderPagination();
+}
+
+// ── Recurring Panel ──────────────────────────────────
+async function loadRecurringStatus() {
+  try {
+    const res = await fetch(API + '/admin/recurring-status', { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    document.getElementById('rec-total').textContent = data.total_subscribers;
+    document.getElementById('rec-due').textContent = data.due_now;
+    document.getElementById('rec-soon').textContent = data.upcoming_7_days;
+  } catch(e) {}
+}
+
+function toggleRecurringPanel() {
+  const body = document.getElementById('recurring-body');
+  const toggle = document.getElementById('recurring-toggle');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    toggle.textContent = '▲';
+    loadRecurringStatus();
+  } else {
+    body.style.display = 'none';
+    toggle.textContent = '▼';
+  }
+}
+
+async function triggerRecurring() {
+  if (!confirm('Run recurring charges for all due users now?')) return;
+  try {
+    const res = await fetch(API + '/admin/trigger-recurring', {
+      method: 'POST',
+      headers
+    });
+    const data = await res.json();
+    showToast(
+      `✅ Done: ${data.charged} charged, ${data.failed} failed, ${data.total_due} total due`,
+      data.failed > 0 ? 'error' : 'success'
+    );
+    await loadUsers();
+    await loadRecurringStatus();
+  } catch(e) {
+    showToast('❌ Failed to trigger recurring', 'error');
+  }
 }
 
 // ── Search & Filter ──────────────────────────────────

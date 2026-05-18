@@ -94,6 +94,7 @@ class User(Base):
     subscription_end = Column(DateTime, nullable=True)
     last_charged_at = Column(DateTime, nullable=True)
     next_charge_at = Column(DateTime, nullable=True)
+    failed_charge_count = Column(Integer, server_default=text('0'), default=0)
 
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 

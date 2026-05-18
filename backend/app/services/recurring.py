@@ -51,6 +51,7 @@ async def charge_user(user: User, db: Session) -> bool:
             result = response.json()
 
         if result.get("status") == "SUCCESS":
+            user.failed_charge_count = 0  # reset on success
             # Count existing recurring payments for cycle number
             cycle = (
                 db.query(Payment)
@@ -76,14 +77,15 @@ async def charge_user(user: User, db: Session) -> bool:
             db.add(new_payment)
 
             # Update user subscription dates
+            days_to_add = 30 if user.subscription_type == "monthly" else 365
             user.last_charged_at = datetime.utcnow()
-            user.next_charge_at = datetime.utcnow() + timedelta(days=30)
-            user.subscription_end = datetime.utcnow() + timedelta(days=30)
+            user.next_charge_at = datetime.utcnow() + timedelta(days=days_to_add)
+            user.subscription_end = user.next_charge_at
             db.commit()
 
             logger.info(
-                "✅ Recurring charge SUCCESS | user_id=%s email=%s amount=%s EGP timestamp=%s",
-                user.id, user.email, amount, datetime.utcnow().isoformat(),
+                "✅ Recurring charge SUCCESS | user_id=%s email=%s amount=%s EGP timestamp=%s cycle=%s",
+                user.id, user.email, amount, datetime.utcnow().isoformat(), cycle + 1
             )
             return True
 
@@ -92,7 +94,10 @@ async def charge_user(user: User, db: Session) -> bool:
                 "❌ Recurring charge FAILED | user_id=%s email=%s amount=%s EGP result=%s timestamp=%s",
                 user.id, user.email, amount, result, datetime.utcnow().isoformat(),
             )
-            user.is_active = False
+            user.failed_charge_count = (user.failed_charge_count or 0) + 1
+            if user.failed_charge_count >= 3:
+                user.is_active = False
+                logger.warning("🚫 User %s deactivated after 3 failed charges", user.id)
             db.commit()
             return False
 
@@ -111,14 +116,16 @@ async def run_recurring_charges(db: Session) -> dict:
     users_due = (
         db.query(User)
         .filter(
-            User.card_token != None,
+            User.card_token.isnot(None),
+            User.card_token != "",
             User.is_active == True,
+            User.next_charge_at.isnot(None),
             User.next_charge_at <= now,
         )
         .all()
     )
 
-    results = {"charged": 0, "failed": 0, "total": len(users_due)}
+    results = {"charged": 0, "failed": 0, "skipped": 0, "total_due": len(users_due), "timestamp": datetime.utcnow().isoformat()}
     logger.info("🔄 Running recurring charges: %d users due", len(users_due))
 
     for user in users_due:
