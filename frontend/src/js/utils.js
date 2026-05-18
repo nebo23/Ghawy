@@ -101,6 +101,18 @@ if (getToken()) {
   startHeartbeat();
   fetchGlobalNotifications();
   setInterval(fetchGlobalNotifications, 10000); // Poll every 10s
+
+  // Hide admin-only sidebar links for non-admins
+  (async function hideAdminLinks() {
+    try {
+      const res = await fetch(`${API}/profile/me`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+      if (!res.ok) return;
+      const u = await res.json();
+      if (!u.is_admin) {
+        document.querySelectorAll('[data-admin-only="true"]').forEach(el => el.style.display = 'none');
+      }
+    } catch(e) {}
+  })();
 }
 
 // ─── Global Notifications ──────────────────────────────────────
