@@ -11,8 +11,52 @@ let currentPage = 1;
 const LIMIT = 20;
 let selectedUserId = null;
 
+// ═══ TAB SWITCHING ═══
+let paymentsLoaded = false;
+let analyticsLoaded = false;
+
+function initTabs() {
+  const tabs = document.querySelectorAll('.team-section-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+  const breadcrumb = document.getElementById('page-breadcrumb');
+  const heading = document.getElementById('page-heading');
+
+  const titleMap = {
+    'users': 'Team Dashboard',
+    'payments': 'Payments Dashboard',
+    'analytics': 'Analytics Dashboard'
+  };
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.style.display = 'none');
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      document.getElementById(`tab-${target}`).style.display = 'block';
+
+      if (breadcrumb && heading && titleMap[target]) {
+        breadcrumb.textContent = titleMap[target];
+        heading.textContent = titleMap[target];
+      }
+
+      if (target === 'payments' && !paymentsLoaded) {
+        loadPaymentsTab();
+        paymentsLoaded = true;
+      }
+      if (target === 'analytics' && !analyticsLoaded) {
+        loadAnalyticsTab();
+        analyticsLoaded = true;
+      }
+    });
+  });
+}
+
 // ── Load ────────────────────────────────────────────
 async function loadTeamPage() {
+  // Initialize tabs
+  initTabs();
+
   // Load sidebar user info
   try {
     const res = await fetch(API + '/profile/me', { headers });
@@ -414,6 +458,389 @@ document.querySelectorAll('.modal-overlay-team').forEach(overlay => {
     if (e.target === overlay) overlay.style.display = 'none';
   });
 });
+
+
+// ══════════════════════════════════════════════════════════
+//  PAYMENTS TAB
+// ══════════════════════════════════════════════════════════
+
+let payCurrentPage = 1;
+const PAY_LIMIT = 20;
+let paySearchTimeout;
+
+async function loadPaymentsTab() {
+  await Promise.all([loadPaymentStats(), loadPayments()]);
+  initPaymentFilters();
+}
+
+function initPaymentFilters() {
+  const searchInput = document.getElementById('pay-search');
+  const statusFilter = document.getElementById('pay-status-filter');
+  const methodFilter = document.getElementById('pay-method-filter');
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(paySearchTimeout);
+    paySearchTimeout = setTimeout(() => { payCurrentPage = 1; loadPayments(); }, 400);
+  });
+  statusFilter.addEventListener('change', () => { payCurrentPage = 1; loadPayments(); });
+  methodFilter.addEventListener('change', () => { payCurrentPage = 1; loadPayments(); });
+}
+
+async function loadPaymentStats() {
+  try {
+    const res = await fetch(API + '/admin/payments/stats', { headers });
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('pay-stat-revenue').textContent = `EGP ${Number(d.total_revenue || 0).toLocaleString()}`;
+    document.getElementById('pay-stat-month').textContent = `EGP ${Number(d.this_month || 0).toLocaleString()}`;
+    document.getElementById('pay-stat-failed').textContent = d.failed_count || 0;
+    document.getElementById('pay-stat-pending').textContent = d.pending_count || 0;
+  } catch(e) {}
+}
+
+async function loadPayments() {
+  const tbody = document.getElementById('payments-tbody');
+  // Skeleton
+  tbody.innerHTML = Array.from({length: 3}, () => `
+    <tr class="skeleton-row">
+      <td><div class="skeleton-bar" style="width:120px"></div></td>
+      <td><div class="skeleton-bar" style="width:100px"></div></td>
+      <td><div class="skeleton-bar" style="width:70px"></div></td>
+      <td><div class="skeleton-bar" style="width:60px"></div></td>
+      <td><div class="skeleton-bar" style="width:50px"></div></td>
+      <td><div class="skeleton-bar" style="width:80px"></div></td>
+      <td><div class="skeleton-bar" style="width:60px"></div></td>
+    </tr>
+  `).join('');
+
+  const search = document.getElementById('pay-search').value;
+  const status = document.getElementById('pay-status-filter').value;
+  const method = document.getElementById('pay-method-filter').value;
+
+  try {
+    const params = new URLSearchParams({ page: payCurrentPage, limit: PAY_LIMIT });
+    if (search) params.set('search', search);
+    if (status !== 'all') params.set('status', status);
+    if (method !== 'all') params.set('method', method);
+
+    const res = await fetch(`${API}/admin/payments?${params}`, { headers });
+    if (!res.ok) { showToast('❌ Failed to load payments', 'error'); return; }
+    const data = await res.json();
+
+    if (!data.payments || data.payments.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="7">
+          <div class="payments-empty">
+            <div><i data-lucide="receipt" style="width:48px;height:48px;stroke:#555;"></i></div>
+            <p>No payments found</p>
+          </div>
+        </td></tr>`;
+      document.getElementById('payments-pagination').innerHTML = '';
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+      return;
+    }
+
+    tbody.innerHTML = data.payments.map(p => {
+      const dateFormatted = p.date ? new Date(p.date).toLocaleDateString('en', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const statusClass = p.status || 'pending';
+      const statusLabel = (p.status || 'pending').charAt(0).toUpperCase() + (p.status || 'pending').slice(1);
+      const methodLabel = (p.method || '').charAt(0).toUpperCase() + (p.method || '').slice(1);
+      const refShort = p.reference ? (p.reference.length > 12 ? p.reference.slice(0, 12) + '…' : p.reference) : '—';
+      const refFull = p.reference || '';
+
+      let actionBtns = '';
+      if (p.status === 'failed') {
+        actionBtns = `<button class="pay-action-btn retry" onclick="retryPayment(${p.id})" title="Retry">↺ Retry</button>`;
+      } else if (p.status === 'paid') {
+        actionBtns = `<button class="pay-action-btn refund" onclick="refundPayment(${p.id})" title="Refund">↩ Refund</button>`;
+      }
+
+      return `
+      <tr>
+        <td>
+          <div class="member-cell">
+            <div style="width:32px;height:32px;border-radius:50%;background:#2a2a2a;display:flex;align-items:center;justify-content:center;color:#888;font-size:13px;font-weight:600;flex-shrink:0;">${(p.member_name || '?').charAt(0).toUpperCase()}</div>
+            <span style="color:#fff;font-size:14px;">${escapeHtml(p.member_name || 'Unknown')}</span>
+          </div>
+        </td>
+        <td style="color:#888;font-size:13px;">${dateFormatted}</td>
+        <td style="color:#fff;font-weight:600;">EGP ${Number(p.amount || 0).toLocaleString()}</td>
+        <td style="color:#888;">${methodLabel}</td>
+        <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+        <td>
+          <div class="ref-cell">
+            <span>${refShort}</span>
+            ${refFull ? `<button class="copy-btn" onclick="copyRef('${escapeHtml(refFull)}')" title="Copy reference"><i data-lucide="copy" style="width:14px;height:14px;"></i></button>` : ''}
+          </div>
+        </td>
+        <td>${actionBtns}</td>
+      </tr>`;
+    }).join('');
+
+    // Pagination
+    renderPaymentsPagination(data.page, data.pages);
+    setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+  } catch(e) {
+    showToast('❌ Failed to load payments', 'error');
+  }
+}
+
+function renderPaymentsPagination(current, total) {
+  const el = document.getElementById('payments-pagination');
+  if (total <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 1; i <= total; i++) {
+    html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="goToPayPage(${i})">${i}</button>`;
+  }
+  el.innerHTML = html;
+}
+
+function goToPayPage(page) {
+  payCurrentPage = page;
+  loadPayments();
+}
+
+function copyRef(ref) {
+  navigator.clipboard.writeText(ref).then(() => showToast('📋 Reference copied', 'success'));
+}
+
+async function retryPayment(id) {
+  try {
+    const res = await fetch(`${API}/admin/payments/${id}/retry`, { method: 'POST', headers });
+    if (res.ok) {
+      showToast('↺ Payment retry initiated', 'success');
+      await loadPayments();
+      await loadPaymentStats();
+    } else {
+      const d = await res.json();
+      showToast(`❌ ${d.detail || 'Retry failed'}`, 'error');
+    }
+  } catch(e) {
+    showToast('❌ Network error', 'error');
+  }
+}
+
+async function refundPayment(id) {
+  try {
+    const res = await fetch(`${API}/admin/payments/${id}/refund`, { method: 'POST', headers });
+    if (res.ok) {
+      showToast('↩ Payment refunded', 'success');
+      await loadPayments();
+      await loadPaymentStats();
+    } else {
+      const d = await res.json();
+      showToast(`❌ ${d.detail || 'Refund failed'}`, 'error');
+    }
+  } catch(e) {
+    showToast('❌ Network error', 'error');
+  }
+}
+
+function exportPaymentsCSV() {
+  const search = document.getElementById('pay-search').value;
+  const status = document.getElementById('pay-status-filter').value;
+  const method = document.getElementById('pay-method-filter').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status !== 'all') params.set('status', status);
+  if (method !== 'all') params.set('method', method);
+
+  const url = `${API}/admin/payments/export-csv?${params}`;
+  fetch(url, { headers }).then(r => r.blob()).then(blob => {
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `ghawy_payments_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+    showToast('⬇ CSV exported', 'success');
+  }).catch(() => showToast('❌ Export failed', 'error'));
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  ANALYTICS TAB
+// ══════════════════════════════════════════════════════════
+
+let analyticsRange = '30d';
+let chartMembers = null;
+let chartRevenue = null;
+let chartSubs = null;
+
+async function loadAnalyticsTab() {
+  // Set Chart.js defaults
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = '#2a2a2a';
+    Chart.defaults.font.family = 'inherit';
+  }
+
+  initRangeButtons();
+  await refreshAnalytics();
+}
+
+function initRangeButtons() {
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      analyticsRange = btn.dataset.range;
+      refreshAnalytics();
+    });
+  });
+}
+
+async function refreshAnalytics() {
+  await Promise.all([
+    loadKPIs(),
+    loadMembersChart(),
+    loadRevenueChart(),
+    loadSubsChart()
+  ]);
+}
+
+async function loadKPIs() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/kpis?range=${analyticsRange}`, { headers });
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('kpi-total-members').textContent = d.total_members || 0;
+    document.getElementById('kpi-growth-rate').textContent = `${(d.growth_rate || 0).toFixed(1)}%`;
+    document.getElementById('kpi-total-revenue').textContent = `EGP ${Number(d.total_revenue || 0).toLocaleString()}`;
+    document.getElementById('kpi-churn-rate').textContent = `${(d.churn_rate || 0).toFixed(1)}%`;
+  } catch(e) {}
+}
+
+async function loadMembersChart() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/members-over-time?range=${analyticsRange}`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    const labels = data.map(d => d.date);
+    const values = data.map(d => d.count);
+
+    if (chartMembers) chartMembers.destroy();
+    const ctx = document.getElementById('chart-members').getContext('2d');
+    chartMembers = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'New Members',
+          data: values,
+          backgroundColor: '#3f8ff9',
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 32,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+    document.getElementById('chart-members').parentElement.style.height = '260px';
+  } catch(e) {}
+}
+
+async function loadRevenueChart() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/revenue-over-time?range=${analyticsRange}`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    const labels = data.map(d => d.date);
+    const values = data.map(d => d.amount);
+    const totalRev = values.reduce((a, b) => a + b, 0);
+
+    document.getElementById('revenue-total-label').textContent = `Total: EGP ${totalRev.toLocaleString()}`;
+
+    if (chartRevenue) chartRevenue.destroy();
+    const ctx = document.getElementById('chart-revenue').getContext('2d');
+    chartRevenue = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue',
+          data: values,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: '#22c55e',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+    document.getElementById('chart-revenue').parentElement.style.height = '260px';
+  } catch(e) {}
+}
+
+async function loadSubsChart() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/subscription-breakdown`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    const total = (data.monthly || 0) + (data.yearly || 0) + (data.none || 0);
+
+    if (chartSubs) chartSubs.destroy();
+    const ctx = document.getElementById('chart-subs').getContext('2d');
+    chartSubs = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Monthly', 'Yearly', 'None'],
+        datasets: [{
+          data: [data.monthly || 0, data.yearly || 0, data.none || 0],
+          backgroundColor: ['#3f8ff9', '#f59e0b', '#333'],
+          borderWidth: 0,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+          }
+        }
+      },
+      plugins: [{
+        id: 'centerText',
+        beforeDraw(chart) {
+          const { ctx, chartArea } = chart;
+          const centerX = (chartArea.left + chartArea.right) / 2;
+          const centerY = (chartArea.top + chartArea.bottom) / 2;
+          ctx.save();
+          ctx.font = 'bold 28px inherit';
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(total, centerX, centerY);
+          ctx.restore();
+        }
+      }]
+    });
+  } catch(e) {}
+}
+
 
 // ═══ HAMBURGER ═══
 (function initSidebar() {

@@ -3,12 +3,17 @@ Admin-only endpoints for manual operations like triggering recurring charges.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func as sql_func
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from passlib.context import CryptContext
+from starlette.responses import StreamingResponse
+from datetime import datetime, timedelta
+import csv
+import io
 
 from app.database import get_db
-from app.models import User
+from app.models import User, Payment, PaymentStatus, PaymentMethod
 from app.routers.users import get_current_user
 from app.services.recurring import run_recurring_charges
 
@@ -314,3 +319,385 @@ def reset_password(
     db.commit()
 
     return {"message": f"Password reset successfully for {user.full_name}"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  PAYMENTS ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+def _map_status_to_display(status_val):
+    """Map DB payment status to display string."""
+    mapping = {
+        "confirmed": "paid",
+        "rejected": "failed",
+        "pending": "pending",
+        "refunded": "refunded",
+    }
+    s = status_val.value if hasattr(status_val, 'value') else str(status_val)
+    return mapping.get(s, s)
+
+
+def _map_filter_to_db(status_filter):
+    """Map display status filter to DB enum value."""
+    mapping = {
+        "paid": "confirmed",
+        "failed": "rejected",
+        "pending": "pending",
+        "refunded": "refunded",
+    }
+    return mapping.get(status_filter, None)
+
+
+@router.get("/payments")
+def list_payments(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    method: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List payments with pagination, search and filters."""
+    require_admin(current_user)
+
+    query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
+
+    # Search filter
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (User.full_name.ilike(search_term)) |
+            (Payment.provider_order_id.ilike(search_term)) |
+            (Payment.paypal_order_id.ilike(search_term))
+        )
+
+    # Status filter
+    if status and status != "all":
+        db_status = _map_filter_to_db(status)
+        if db_status:
+            query = query.filter(Payment.status == db_status)
+
+    # Method filter
+    if method and method != "all":
+        query = query.filter(Payment.method == method)
+
+    # Count total
+    total = query.count()
+    pages = max(1, (total + limit - 1) // limit)
+
+    # Paginate
+    payments = query.order_by(Payment.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+
+    result = []
+    for payment, user in payments:
+        result.append({
+            "id": payment.id,
+            "member_name": user.full_name if user else "Unknown",
+            "member_avatar": user.avatar_url if user else None,
+            "email": user.email if user else "",
+            "date": payment.created_at.isoformat() if payment.created_at else None,
+            "amount": float(payment.amount) if payment.amount else 0,
+            "currency": payment.currency or "EGP",
+            "method": payment.method.value if payment.method else "",
+            "status": _map_status_to_display(payment.status),
+            "reference": payment.provider_order_id or payment.paypal_order_id or str(payment.id),
+        })
+
+    return {"payments": result, "total": total, "page": page, "pages": pages}
+
+
+@router.get("/payments/stats")
+def payment_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Aggregate payment statistics."""
+    require_admin(current_user)
+
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    total_revenue = db.query(sql_func.coalesce(sql_func.sum(Payment.amount), 0)).filter(
+        Payment.status == PaymentStatus.CONFIRMED
+    ).scalar()
+
+    this_month = db.query(sql_func.coalesce(sql_func.sum(Payment.amount), 0)).filter(
+        Payment.status == PaymentStatus.CONFIRMED,
+        Payment.created_at >= month_start
+    ).scalar()
+
+    failed_count = db.query(sql_func.count(Payment.id)).filter(
+        Payment.status == PaymentStatus.REJECTED
+    ).scalar()
+
+    pending_count = db.query(sql_func.count(Payment.id)).filter(
+        Payment.status == PaymentStatus.PENDING
+    ).scalar()
+
+    return {
+        "total_revenue": float(total_revenue),
+        "this_month": float(this_month),
+        "failed_count": failed_count,
+        "pending_count": pending_count,
+    }
+
+
+@router.get("/payments/export-csv")
+def export_payments_csv(
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    method: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export filtered payments as CSV."""
+    require_admin(current_user)
+
+    query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (User.full_name.ilike(search_term)) |
+            (Payment.provider_order_id.ilike(search_term)) |
+            (Payment.paypal_order_id.ilike(search_term))
+        )
+
+    if status and status != "all":
+        db_status = _map_filter_to_db(status)
+        if db_status:
+            query = query.filter(Payment.status == db_status)
+
+    if method and method != "all":
+        query = query.filter(Payment.method == method)
+
+    payments = query.order_by(Payment.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Member Name", "Email", "Date", "Amount", "Currency", "Method", "Status", "Reference"])
+
+    for payment, user in payments:
+        writer.writerow([
+            payment.id,
+            user.full_name if user else "Unknown",
+            user.email if user else "",
+            payment.created_at.isoformat() if payment.created_at else "",
+            float(payment.amount) if payment.amount else 0,
+            payment.currency or "EGP",
+            payment.method.value if payment.method else "",
+            _map_status_to_display(payment.status),
+            payment.provider_order_id or payment.paypal_order_id or str(payment.id),
+        ])
+
+    output.seek(0)
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=ghawy_payments_{today}.csv"},
+    )
+
+
+@router.post("/payments/{payment_id}/retry")
+def retry_payment(
+    payment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retry a failed payment."""
+    require_admin(current_user)
+
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if payment.status != PaymentStatus.REJECTED:
+        raise HTTPException(status_code=400, detail="Only failed payments can be retried")
+
+    payment.status = PaymentStatus.PENDING
+    db.commit()
+    return {"message": "retried"}
+
+
+@router.post("/payments/{payment_id}/refund")
+def refund_payment(
+    payment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark a paid payment as refunded."""
+    require_admin(current_user)
+
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if payment.status != PaymentStatus.CONFIRMED:
+        raise HTTPException(status_code=400, detail="Only paid payments can be refunded")
+
+    payment.status = PaymentStatus.REFUNDED
+    db.commit()
+    return {"message": "refunded"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  ANALYTICS ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+def _parse_range(range_str: str) -> datetime:
+    """Parse range string to a start datetime."""
+    now = datetime.utcnow()
+    mapping = {
+        "7d": timedelta(days=7),
+        "30d": timedelta(days=30),
+        "90d": timedelta(days=90),
+        "6mo": timedelta(days=180),
+        "1yr": timedelta(days=365),
+    }
+    delta = mapping.get(range_str, timedelta(days=30))
+    return now - delta
+
+
+@router.get("/analytics/kpis")
+def analytics_kpis(
+    range: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """KPI metrics for the analytics dashboard."""
+    require_admin(current_user)
+
+    now = datetime.utcnow()
+    start = _parse_range(range)
+    period_length = now - start
+    prev_start = start - period_length
+
+    total_members = db.query(sql_func.count(User.id)).scalar()
+
+    new_this_period = db.query(sql_func.count(User.id)).filter(
+        User.created_at >= start
+    ).scalar()
+
+    new_prev_period = db.query(sql_func.count(User.id)).filter(
+        User.created_at >= prev_start,
+        User.created_at < start
+    ).scalar()
+
+    growth_rate = 0.0
+    if new_prev_period > 0:
+        growth_rate = ((new_this_period - new_prev_period) / new_prev_period) * 100
+    elif new_this_period > 0:
+        growth_rate = 100.0
+
+    total_revenue = float(db.query(
+        sql_func.coalesce(sql_func.sum(Payment.amount), 0)
+    ).filter(Payment.status == PaymentStatus.CONFIRMED).scalar())
+
+    # Churn: users deactivated (is_active=False) as % of total
+    inactive_count = db.query(sql_func.count(User.id)).filter(
+        User.is_active == False
+    ).scalar()
+    churn_rate = (inactive_count / total_members * 100) if total_members > 0 else 0.0
+
+    return {
+        "total_members": total_members,
+        "growth_rate": round(growth_rate, 1),
+        "total_revenue": total_revenue,
+        "churn_rate": round(churn_rate, 1),
+    }
+
+
+@router.get("/analytics/members-over-time")
+def members_over_time(
+    range: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Daily new member signups for the given range."""
+    require_admin(current_user)
+
+    start = _parse_range(range)
+    now = datetime.utcnow()
+
+    users = db.query(User).filter(User.created_at >= start).all()
+
+    # Group by date
+    counts = {}
+    d = start.date()
+    while d <= now.date():
+        counts[d.isoformat()] = 0
+        d += timedelta(days=1)
+
+    for u in users:
+        if u.created_at:
+            day = u.created_at.date().isoformat()
+            if day in counts:
+                counts[day] += 1
+
+    return [{"date": date, "count": count} for date, count in sorted(counts.items())]
+
+
+@router.get("/analytics/revenue-over-time")
+def revenue_over_time(
+    range: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Daily revenue from confirmed payments for the given range."""
+    require_admin(current_user)
+
+    start = _parse_range(range)
+    now = datetime.utcnow()
+
+    payments = db.query(Payment).filter(
+        Payment.status == PaymentStatus.CONFIRMED,
+        Payment.created_at >= start
+    ).all()
+
+    # Group by date
+    amounts = {}
+    d = start.date()
+    while d <= now.date():
+        amounts[d.isoformat()] = 0.0
+        d += timedelta(days=1)
+
+    for p in payments:
+        if p.created_at:
+            day = p.created_at.date().isoformat()
+            if day in amounts:
+                amounts[day] += float(p.amount) if p.amount else 0
+
+    return [{"date": date, "amount": round(amt, 2)} for date, amt in sorted(amounts.items())]
+
+
+@router.get("/analytics/subscription-breakdown")
+def subscription_breakdown(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Breakdown of subscription types across all users."""
+    require_admin(current_user)
+
+    monthly = db.query(sql_func.count(User.id)).filter(
+        User.subscription_type == "monthly",
+        User.card_token.isnot(None),
+        User.card_token != ""
+    ).scalar()
+
+    yearly = db.query(sql_func.count(User.id)).filter(
+        User.subscription_type == "yearly",
+        User.card_token.isnot(None),
+        User.card_token != ""
+    ).scalar()
+
+    total = db.query(sql_func.count(User.id)).scalar()
+    none_count = total - monthly - yearly
+
+    return {
+        "monthly": monthly,
+        "yearly": yearly,
+        "none": none_count,
+    }
+

@@ -14,11 +14,13 @@ Base = declarative_base()
 class PaymentMethod(str, enum.Enum):
     PAYPAL = "paypal"
     KASHIER = "kashier"
+    MANUAL = "manual"
 
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
+    REFUNDED = "refunded"
 
 class ChannelType(str, enum.Enum):
     GROUP = "group"

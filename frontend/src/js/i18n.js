@@ -6,6 +6,7 @@ const translations = {
   ar: {
     // Navigation
     dashboard: "الرئيسية",
+    teamDashboard: "Team Dashboard",
     courses: "الكورسات",
     buildWithMe: "ابني معايا (لايف)",
     guestOfHonors: "ضيوف الشرف",
@@ -205,6 +206,7 @@ const translations = {
   en: {
     // Navigation
     dashboard: "Dashboard",
+    teamDashboard: "Team Dashboard",
     courses: "Courses",
     buildWithMe: "Build With Me (Live)",
     guestOfHonors: "Guest of Honors",

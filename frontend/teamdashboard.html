@@ -18,13 +18,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css" />
+  <link rel="stylesheet" href="src/css/team.css?v=2" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      padding: 24px 32px
+      padding: 0 0 24px;
     }
 
     .stat-card {
@@ -61,7 +62,7 @@
     .team-toolbar {
       display: flex;
       gap: 12px;
-      padding: 0 32px 20px;
+      padding: 0 0 20px;
       align-items: center
     }
 
@@ -125,7 +126,6 @@
     }
 
     .team-table-wrap {
-      padding: 0 32px;
       overflow-x: auto
     }
 
@@ -598,20 +598,22 @@
       font-weight: 700
     }
 
+    /* Tabs — now styled via team.css */
+
     /* Mobile */
     @media(max-width:768px) {
       .team-stats {
         grid-template-columns: repeat(2, 1fr);
-        padding: 16px
+        padding: 16px 0
       }
 
       .team-toolbar {
         flex-wrap: wrap;
-        padding: 0 16px 16px
+        padding: 0 0 16px
       }
 
       .team-table-wrap {
-        padding: 0 16px
+        overflow-x: auto
       }
 
       .team-table th:nth-child(5),
@@ -639,17 +641,17 @@
             data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
         <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
             data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-        <a href="chat.html?v=4" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+        <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
             data-i18n="communityChat">شات المجتمع</span></a>
-        <a href="chat.html?v=4&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct
+        <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct
             Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
             style="display:none; margin-left:auto; margin-right:4px;"></span></a>
         <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
             data-i18n="achievements">الإنجازات</span></a>
         <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
             data-i18n="settings">الإعدادات</span></a>
-        <a href="team.html" class="nav-item active" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i>
-          <span>Team</span></a>
+        <a href="teamdashboard.html?v=2" class="nav-item active" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i>
+          <span data-i18n='teamDashboard'>Team Dashboard</span></a>
       </nav>
       <div class="sidebar-user" id="sidebarUser">
         <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
@@ -688,7 +690,7 @@
               </div>
             </div>
           </div>
-          <a href="chat.html?v=4" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+          <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
           <div class="topbar-user" id="topbarUser"
             onclick="document.getElementById('userDropdown').classList.toggle('open')">
             <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
@@ -709,10 +711,36 @@
         <!-- Page Header -->
         <div style="padding:0 32px 0">
           <div class="breadcrumb"><a href="dashboard.html?v=2"><i data-lucide="layout-grid" class="nav-icon"></i></a><i
-              class="fa-solid fa-chevron-right"></i><span>Team Management</span></div>
-          <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px">Team Management</h1>
+              class="fa-solid fa-chevron-right"></i><span id="page-breadcrumb">Team Dashboard</span></div>
+          <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px" id="page-heading">Team Dashboard</h1>
           <p style="color:#888;font-size:.85rem;margin-bottom:0">Manage members, roles and access for your community</p>
         </div>
+
+        <!-- Team Layout: Sections Sidebar + Content -->
+        <div class="team-layout">
+
+          <!-- Sections Sidebar -->
+          <nav class="team-sections-nav">
+            <div class="team-sections-label">Sections</div>
+            <button class="team-section-btn active" data-tab="users">
+              <i data-lucide="users" style="width:18px;height:18px;"></i>
+              <span>Users</span>
+            </button>
+            <button class="team-section-btn" data-tab="payments">
+              <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
+              <span>Payments</span>
+            </button>
+            <button class="team-section-btn" data-tab="analytics">
+              <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
+              <span>Analytics</span>
+            </button>
+          </nav>
+
+          <!-- Tab Content Area -->
+          <div class="team-content-area">
+
+        <!-- Tab Content: Users -->
+        <div id="tab-users" class="tab-panel">
 
         <!-- Stats -->
         <div class="team-stats">
@@ -809,6 +837,168 @@
           </table>
         </div>
         <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- Tab Content: Payments -->
+        <div id="tab-payments" class="tab-panel" style="display:none;">
+          <!-- Payment Stats -->
+          <div class="payments-stats">
+            <div class="pay-stat-card">
+              <div class="pay-stat-icon" style="background:rgba(34,197,94,0.1)">
+                <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
+              </div>
+              <div>
+                <div class="pay-stat-number" id="pay-stat-revenue">—</div>
+                <div class="pay-stat-label">Total Revenue</div>
+              </div>
+            </div>
+            <div class="pay-stat-card">
+              <div class="pay-stat-icon" style="background:rgba(63,143,249,0.1)">
+                <i data-lucide="calendar" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
+              </div>
+              <div>
+                <div class="pay-stat-number" id="pay-stat-month">—</div>
+                <div class="pay-stat-label">This Month</div>
+              </div>
+            </div>
+            <div class="pay-stat-card">
+              <div class="pay-stat-icon" style="background:rgba(239,68,68,0.1)">
+                <i data-lucide="x-circle" style="width:24px;height:24px;stroke:#ef4444;"></i>
+              </div>
+              <div>
+                <div class="pay-stat-number" id="pay-stat-failed">—</div>
+                <div class="pay-stat-label">Failed</div>
+              </div>
+            </div>
+            <div class="pay-stat-card">
+              <div class="pay-stat-icon" style="background:rgba(245,158,11,0.1)">
+                <i data-lucide="clock" style="width:24px;height:24px;stroke:#f59e0b;"></i>
+              </div>
+              <div>
+                <div class="pay-stat-number" id="pay-stat-pending">—</div>
+                <div class="pay-stat-label">Pending</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Filters -->
+          <div class="payments-toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="pay-search" placeholder="Search by name or reference..." />
+            </div>
+            <select id="pay-status-filter">
+              <option value="all">All Status</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="pending">Pending</option>
+              <option value="refunded">Refunded</option>
+            </select>
+            <select id="pay-method-filter">
+              <option value="all">All Methods</option>
+              <option value="kashier">Kashier</option>
+              <option value="paypal">PayPal</option>
+              <option value="manual">Manual</option>
+            </select>
+            <button class="btn-export" onclick="exportPaymentsCSV()">
+              <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
+            </button>
+          </div>
+
+          <!-- Payments Table -->
+          <div class="payments-table-wrap">
+            <table class="payments-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payments-tbody"></tbody>
+            </table>
+          </div>
+          <div class="payments-pagination" id="payments-pagination"></div>
+        </div>
+
+        <!-- Tab Content: Analytics -->
+        <div id="tab-analytics" class="tab-panel" style="display:none;">
+          <!-- Time Range -->
+          <div class="analytics-range">
+            <button class="range-btn" data-range="7d">7 Days</button>
+            <button class="range-btn active" data-range="30d">30 Days</button>
+            <button class="range-btn" data-range="90d">90 Days</button>
+            <button class="range-btn" data-range="6mo">6 Months</button>
+            <button class="range-btn" data-range="1yr">1 Year</button>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="analytics-kpis">
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:rgba(63,143,249,0.1)">
+                <i data-lucide="users" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
+              </div>
+              <div>
+                <div class="kpi-number" id="kpi-total-members">—</div>
+                <div class="kpi-label">Total Members</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:rgba(34,197,94,0.1)">
+                <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
+              </div>
+              <div>
+                <div class="kpi-number" id="kpi-growth-rate">—</div>
+                <div class="kpi-label">Growth Rate</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:rgba(245,158,11,0.1)">
+                <i data-lucide="dollar-sign" style="width:24px;height:24px;stroke:#f59e0b;"></i>
+              </div>
+              <div>
+                <div class="kpi-number" id="kpi-total-revenue">—</div>
+                <div class="kpi-label">Total Revenue</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:rgba(239,68,68,0.1)">
+                <i data-lucide="user-minus" style="width:24px;height:24px;stroke:#ef4444;"></i>
+              </div>
+              <div>
+                <div class="kpi-number" id="kpi-churn-rate">—</div>
+                <div class="kpi-label">Churn Rate</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>New Members</h3>
+              <div class="chart-subtitle">Signups over the selected period</div>
+              <div class="chart-canvas-wrap"><canvas id="chart-members"></canvas></div>
+            </div>
+          </div>
+          <div class="charts-grid-2col">
+            <div class="chart-card">
+              <h3>Revenue (EGP)</h3>
+              <div class="chart-subtitle" id="revenue-total-label">Total: —</div>
+              <div class="chart-canvas-wrap"><canvas id="chart-revenue"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h3>Subscription Types</h3>
+              <div class="chart-subtitle">Current distribution</div>
+              <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas id="chart-subs"></canvas></div>
+            </div>
+          </div>
+        </div>
+          </div><!-- end team-content-area -->
+        </div><!-- end team-layout -->
       </div>
     </div>
   </div>
@@ -875,10 +1065,9 @@
   <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
   <script src="src/js/utils.js"></script>
   <script src="src/js/i18n.js"></script>
-  <script src="src/js/team.js"></script>
-
-  
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+  <script src="src/js/team.js?v=2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
 
 </html>
