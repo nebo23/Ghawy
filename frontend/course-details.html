@@ -2,6 +2,10 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <!-- CACHE BUSTER -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>تفاصيل الكورس — Ghawy</title>
@@ -12,6 +16,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="src/css/main.css" />
+    
 </head>
 
 <body>
@@ -266,7 +271,7 @@
 
             // Meta
             document.getElementById('cdMeta').innerHTML = `
-                <span><i class="fa-solid fa-video"></i> ${course.videoCount} فيديو</span>
+                <span><i data-lucide="play-circle" class="nav-icon"></i> ${course.videoCount} فيديو</span>
                 <span class="cd-meta-dot">•</span>
                 <span><i class="fa-regular fa-clock"></i> ${course.duration}</span>
                 <span class="cd-meta-dot">•</span>
@@ -277,7 +282,7 @@
             document.getElementById('cdLevel').textContent = course.level;
 
             // Course name
-            document.getElementById('cdCourseName').innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${course.title}`;
+            document.getElementById('cdCourseName').innerHTML = `<i data-lucide="presentation" class="nav-icon"></i> ${course.title}`;
 
             // Description
             document.getElementById('cdDescription').textContent = course.description;
@@ -286,7 +291,7 @@
             const lessonsList = document.getElementById('cdLessonsList');
             lessonsList.innerHTML = course.lessons.map(l => `
                 <li class="cd-lesson-item">
-                    <span class="cd-lesson-title"><i class="fa-solid fa-video"></i> ${l.title}</span>
+                    <span class="cd-lesson-title"><i data-lucide="play-circle" class="nav-icon"></i> ${l.title}</span>
                     <div class="cd-lesson-right">
                         <span class="cd-lesson-dur">${l.duration}</span>
                         <i class="fa-solid fa-lock cd-lesson-lock"></i>
@@ -297,7 +302,7 @@
             // Learnings
             const learnList = document.getElementById('cdLearnList');
             learnList.innerHTML = course.learnings.map(l => `
-                <li><i class="fa-solid fa-check"></i> ${l}</li>
+                <li><i data-lucide="check" size="16"></i> ${l}</li>
             `).join('');
         }
 
@@ -356,6 +361,9 @@
             });
         }
     </script>
+
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
 
 </html>

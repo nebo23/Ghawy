@@ -34,7 +34,7 @@
   right: -40px;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(132, 204, 22, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(63, 143, 249, 0.1) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #84cc16;
+  color: #3f8ff9;
   font-weight: 700;
   font-size: 0.85rem;
   margin-bottom: 12px;
@@ -64,7 +64,7 @@
 }
 
 .bwm-hero h1 .accent {
-  color: #84cc16;
+  color: #3f8ff9;
 }
 
 .bwm-hero p {
@@ -102,8 +102,8 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(132, 204, 22, 0.1);
-  color: #84cc16;
+  background: rgba(63, 143, 249, 0.1);
+  color: #3f8ff9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -156,8 +156,8 @@
 }
 
 .bwm-tabs .tab.active, .bwm-tabs .tab:hover {
-  color: #84cc16;
-  border-bottom-color: #84cc16;
+  color: #3f8ff9;
+  border-bottom-color: #3f8ff9;
 }
 
 /* Tab Content */
@@ -189,7 +189,7 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, #84cc16, transparent);
+  background: linear-gradient(90deg, #3f8ff9, transparent);
 }
 
 .live-image-col {
@@ -337,13 +337,13 @@
 }
 
 .what-we-build li i {
-  color: #84cc16;
+  color: #3f8ff9;
   margin-top: 3px;
 }
 
 .btn-primary {
   width: 100%;
-  background: #84cc16;
+  background: #3f8ff9;
   color: #000;
   border: none;
   border-radius: 8px;
@@ -413,7 +413,7 @@
 
 .date-block .month {
   font-size: 0.75rem;
-  color: #84cc16;
+  color: #3f8ff9;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -463,8 +463,8 @@
 
 .btn-reminder {
   background: transparent;
-  border: 1px solid #84cc16;
-  color: #84cc16;
+  border: 1px solid #3f8ff9;
+  color: #3f8ff9;
   border-radius: 6px;
   padding: 8px 16px;
   font-weight: 600;
@@ -477,11 +477,11 @@
 }
 
 .btn-reminder:hover {
-  background: rgba(132, 204, 22, 0.1);
+  background: rgba(63, 143, 249, 0.1);
 }
 
 .btn-reminder.active {
-  background: #84cc16;
+  background: #3f8ff9;
   color: #000;
 }
 
@@ -513,7 +513,7 @@
   font-size: 0.8rem;
   cursor: pointer;
 }
-.btn-text:hover { color: #84cc16; }
+.btn-text:hover { color: #3f8ff9; }
 
 /* Calendar */
 .calendar-nav {
@@ -558,8 +558,8 @@
 }
 
 .cal-day.active {
-  background: rgba(132, 204, 22, 0.1);
-  border-color: #84cc16;
+  background: rgba(63, 143, 249, 0.1);
+  border-color: #3f8ff9;
 }
 
 .cal-day .name {
@@ -578,7 +578,7 @@
 }
 
 .cal-day.active .name, .cal-day.active .num {
-  color: #84cc16;
+  color: #3f8ff9;
 }
 
 .schedule-list {
@@ -600,7 +600,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #84cc16;
+  background: #3f8ff9;
 }
 
 .schedule-item.live::before {
@@ -614,7 +614,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
-  color: #84cc16;
+  color: #3f8ff9;
 }
 
 .schedule-status.live { color: #ef4444; }
@@ -636,7 +636,7 @@
 .btn-icon-sm {
   background: none;
   border: none;
-  color: #84cc16;
+  color: #3f8ff9;
   cursor: pointer;
   padding: 4px;
 }
@@ -665,8 +665,8 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(132, 204, 22, 0.1);
-  color: #84cc16;
+  background: rgba(63, 143, 249, 0.1);
+  color: #3f8ff9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -716,7 +716,7 @@
   right: -20px;
   width: 100px;
   height: 100px;
-  background: radial-gradient(circle, rgba(132, 204, 22, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(63, 143, 249, 0.15) 0%, transparent 70%);
 }
 
 .bwm-cta-widget h3 {
@@ -735,7 +735,7 @@
   width: 100%;
   background: transparent;
   border: 1px solid #333;
-  color: #84cc16;
+  color: #3f8ff9;
   border-radius: 8px;
   padding: 10px;
   font-weight: 600;
@@ -749,7 +749,7 @@
 }
 
 .btn-outline-accent:hover {
-  border-color: #84cc16;
+  border-color: #3f8ff9;
 }
 
 @keyframes pulse {

@@ -18,10 +18,10 @@
   margin-bottom: 16px;
 }
 
-.accent { color: #84cc16; }
+.accent { color: #3f8ff9; }
 
 .goh-breadcrumb {
-  color: #84cc16;
+  color: #3f8ff9;
   font-weight: 700;
   font-size: 0.85rem;
   margin-bottom: 12px;
@@ -63,8 +63,8 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  background: rgba(132, 204, 22, 0.15);
-  color: #84cc16;
+  background: rgba(63, 143, 249, 0.15);
+  color: #3f8ff9;
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -78,7 +78,7 @@
   object-fit: cover;
   margin: 16px auto;
   display: block;
-  border: 3px solid #84cc16;
+  border: 3px solid #3f8ff9;
 }
 
 .featured-name {
@@ -89,7 +89,7 @@
 
 .featured-title {
   text-align: center;
-  color: #84cc16;
+  color: #3f8ff9;
   font-size: 0.85rem;
   margin-bottom: 12px;
 }
@@ -127,7 +127,7 @@
 
 .btn-watch {
   width: 100%;
-  background: #84cc16;
+  background: #3f8ff9;
   color: #000;
   border: none;
   border-radius: 8px;
@@ -194,8 +194,8 @@
 }
 
 .btn-suggest:hover {
-  border-color: #84cc16;
-  color: #84cc16;
+  border-color: #3f8ff9;
+  color: #3f8ff9;
 }
 
 /* Tabs */
@@ -221,8 +221,8 @@
 }
 
 .tab.active, .tab:hover {
-  color: #84cc16;
-  border-bottom-color: #84cc16;
+  color: #3f8ff9;
+  border-bottom-color: #3f8ff9;
 }
 
 .category-filter {
@@ -248,7 +248,7 @@
 }
 
 .view-all {
-  color: #84cc16;
+  color: #3f8ff9;
   font-size: 0.85rem;
   text-decoration: none;
   font-weight: 600;
@@ -285,9 +285,9 @@
 }
 
 .goh-scroll-btn:hover {
-  background: #84cc16;
+  background: #3f8ff9;
   color: #000;
-  border-color: #84cc16;
+  border-color: #3f8ff9;
 }
 
 .guest-card {
@@ -306,7 +306,7 @@
 }
 
 .guest-card:hover {
-  border-color: #84cc16;
+  border-color: #3f8ff9;
   transform: translateY(-4px);
 }
 
@@ -349,8 +349,8 @@
 .btn-view-profile {
   width: 100%;
   background: transparent;
-  border: 1px solid #84cc16;
-  color: #84cc16;
+  border: 1px solid #3f8ff9;
+  color: #3f8ff9;
   border-radius: 6px;
   padding: 8px;
   cursor: pointer;
@@ -360,7 +360,7 @@
 }
 
 .guest-card:hover .btn-view-profile {
-  background: #84cc16;
+  background: #3f8ff9;
   color: #000;
 }
 
@@ -384,7 +384,7 @@
   cursor: pointer;
 }
 
-.session-card:hover { border-color: #84cc16; }
+.session-card:hover { border-color: #3f8ff9; }
 
 .session-date-badge {
   background: #2a2a2a;
@@ -395,7 +395,7 @@
   min-width: 55px;
 }
 
-.session-date-badge .month { display: block; font-size: 11px; color: #84cc16; font-weight: 700; }
+.session-date-badge .month { display: block; font-size: 11px; color: #3f8ff9; font-weight: 700; }
 .session-date-badge .day { display: block; font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; margin-top: 4px; }
 
 .session-info {
@@ -412,7 +412,7 @@
   text-transform: uppercase;
 }
 
-.session-status.upcoming { background: rgba(132,204,22,0.15); color: #84cc16; }
+.session-status.upcoming { background: rgba(63,143,249,0.15); color: #3f8ff9; }
 .session-status.past { background: rgba(255,255,255,0.1); color: #888; }
 .session-status.live { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 

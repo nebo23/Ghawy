@@ -117,7 +117,7 @@ function renderTable() {
       <td>
         <div style="font-size:13px">${formatDate(user.created_at)}</div>
         ${user.subscription_start ? 
-          `<div style="font-size:11px;color:#84cc16">💳 Since ${formatDate(user.subscription_start)}</div>` 
+          `<div style="font-size:11px;color:#3f8ff9">💳 Since ${formatDate(user.subscription_start)}</div>` 
           : ''}
       </td>
       <td>${subCell}</td>
@@ -129,23 +129,24 @@ function renderTable() {
         </label>
       </td>
       <td>
-        <span class="role-badge ${user.is_admin ? 'admin' : 'member'}" onclick="toggleAdmin(${user.id})" style="cursor:pointer" title="Click to toggle role">
-          ${user.is_admin ? '🛡️ Admin' : '👤 Member'}
+        <span class="role-badge ${user.is_admin ? 'admin' : 'member'}" onclick="toggleAdmin(${user.id})" style="cursor:pointer; display:inline-flex; align-items:center;" title="Click to toggle role">
+          ${user.is_admin ? '<i data-lucide="shield-check" style="width:14px;height:14px;margin-right:4px;"></i> Admin' : '<i data-lucide="user" style="width:14px;height:14px;margin-right:4px;"></i> Member'}
         </span>
       </td>
       <td>
         <div class="action-btns">
           ${user.failed_charge_count > 0 ? 
-            `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)">⚠️${user.failed_charge_count}</span>` 
+            `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)"><i data-lucide="alert-triangle" style="width:12px;height:12px;margin-right:2px;"></i>${user.failed_charge_count}</span>` 
             : ''}
-          <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password">🔑</button>
-          <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete">🗑️</button>
+          <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
+          <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
         </div>
       </td>
     </tr>
   `}).join('');
 
   renderPagination();
+  setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
 }
 
 // ── Recurring Panel ──────────────────────────────────

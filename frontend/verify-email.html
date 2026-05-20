@@ -2,11 +2,16 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <!-- CACHE BUSTER -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تأكيد البريد — Ghawy</title>
   <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png">
   <link rel="stylesheet" href="src/css/style.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 
 <body>
@@ -47,6 +52,10 @@
   <script src="src/js/utils.js"></script>
   <script src="src/js/i18n.js"></script>
   <script src="src/js/verify-email.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+</script>
 </body>
 
 </html>

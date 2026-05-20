@@ -85,7 +85,7 @@ function renderSessions(sessions, tab, container) {
         sessions.forEach(s => {
             html += `
                 <div class="section-title">
-                    <span><span style="color:#84cc16;">●</span> 1 Live Session</span>
+                    <span><span style="color:#3f8ff9;">●</span> 1 Live Session</span>
                 </div>
                 <div class="live-session-card">
                     <div class="badge-live">Live Now</div>
@@ -101,7 +101,7 @@ function renderSessions(sessions, tab, container) {
                             <img src="${s.instructor?.avatar_url || 'https://ui-avatars.com/api/?name=' + (s.instructor?.name || 'I')}" alt="Instructor">
                             <div>
                                 <div class="instructor-name">${s.instructor?.name || 'Instructor'}</div>
-                                <div class="instructor-title"><i class="fa-solid fa-circle-check" style="color:#84cc16;"></i> Verified Expert</div>
+                                <div class="instructor-title"><i class="fa-solid fa-circle-check" style="color:#3f8ff9;"></i> Verified Expert</div>
                             </div>
                         </div>
 

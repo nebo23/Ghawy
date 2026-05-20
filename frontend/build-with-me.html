@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
+    <!-- CACHE BUSTER -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Build With Me (Live) — Ghawy</title>
@@ -12,6 +16,7 @@
     <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
     <link rel="stylesheet" href="src/css/dashboard.css"/>
     <link rel="stylesheet" href="src/css/bwm.css"/>
+    
 </head>
 <body>
 <div class="dash-layout">
@@ -22,18 +27,18 @@
             <span>Ghawy</span>
         </div>
         <nav class="sidebar-nav">
-            <a href="dashboard.html?v=2" class="nav-item"><i class="fa-solid fa-house"></i> <span data-i18n="dashboard">الرئيسية</span></a>
-            <a href="courses.html?v=2" class="nav-item"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="courses">الكورسات</span></a>
-            <a href="build-with-me.html" class="nav-item active"><i class="fa-solid fa-video"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
-            <a href="guest-of-honors.html?v=2" class="nav-item"><i class="fa-solid fa-star"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-            <a href="chat.html?v=4" class="nav-item"><i class="fa-solid fa-comments"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
-            <a href="chat.html?v=4&channel=messages" class="nav-item"><i class="fa-solid fa-envelope"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-            <a href="profile.html#achievements" class="nav-item"><i class="fa-solid fa-trophy"></i> <span data-i18n="achievements">الإنجازات</span></a>
-            <a href="profile-settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
-            <a href="team.html" class="nav-item" data-admin-only="true"><i class="fa-solid fa-users-gear"></i> <span>Team</span></a>
+            <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span data-i18n="dashboard">الرئيسية</span></a>
+            <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span data-i18n="courses">الكورسات</span></a>
+            <a href="build-with-me.html" class="nav-item active"><i data-lucide="play-circle" class="nav-icon"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
+            <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+            <a href="chat.html?v=4" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
+            <a href="chat.html?v=4&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+            <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span data-i18n="achievements">الإنجازات</span></a>
+            <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
+            <a href="team.html" class="nav-item" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i> <span>Team</span></a>
         </nav>
         <div class="sidebar-user" id="sidebarUser">
-            <div class="sidebar-user-avatar" id="sidebarAvatar"><i class="fa-solid fa-user"></i></div>
+            <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
             <div class="sidebar-user-info">
                 <div class="sidebar-user-name" id="sidebarName">—</div>
                 <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
@@ -56,17 +61,17 @@
                 <span></span><span></span><span></span>
             </button>
             <div class="topbar-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
+                <i data-lucide="search" size="16"></i>
                 <input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..." id="topbarSearchInput"/>
                 <kbd>⌘K</kbd>
             </div>
             <div class="topbar-actions">
                 <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i class="fa-solid fa-bell"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
+                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
                     <div class="notif-panel" id="notifPanel">
                         <div class="notif-panel-header">
                             <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i class="fa-solid fa-xmark"></i></button>
+                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x" size="16"></i></button>
                         </div>
                         <div class="notif-panel-list" id="notifList">
                             <div class="notif-empty">No new notifications</div>
@@ -75,14 +80,14 @@
                 </div>
                 <a href="chat.html?v=4" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
                 <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
                     <span class="topbar-user-name" id="topbarName">—</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                    <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                 </div>
                 <div class="user-dropdown" id="userDropdown">
-                    <a href="profile.html"><i class="fa-solid fa-user"></i> <span data-i18n="profile">الملف الشخصي</span></a>
-                    <a href="profile-settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">الإعدادات</span></a>
-                    <button class="dd-danger" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
+                    <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="profile">الملف الشخصي</span></a>
+                    <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
+                    <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
                 </div>
             </div>
         </header>
@@ -101,7 +106,7 @@
                         
                         <div class="bwm-stats">
                             <div class="stat-box">
-                                <div class="stat-icon"><i class="fa-solid fa-video"></i></div>
+                                <div class="stat-icon"><i data-lucide="play-circle" class="nav-icon"></i></div>
                                 <div class="stat-info">
                                     <span class="stat-label">Live Sessions</span>
                                     <span class="stat-value" id="statSessions">0</span>
@@ -162,7 +167,7 @@
                         <div class="calendar-nav">
                             <button class="cal-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
                             <span class="cal-month">May 2024</span>
-                            <button class="cal-nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                            <button class="cal-nav-btn"><i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button>
                         </div>
                         <div class="calendar-days" id="calendarDays">
                             <!-- Populated via JS -->
@@ -230,5 +235,8 @@
     if (hb) hb.addEventListener('click', () => { sb.classList.toggle('open'); ov.classList.toggle('visible'); });
     if (ov) ov.addEventListener('click', () => { sb.classList.remove('open'); ov.classList.remove('visible'); });
 </script>
+
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
 </html>

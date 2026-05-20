@@ -2,6 +2,10 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <!-- CACHE BUSTER -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
@@ -38,6 +42,7 @@
     <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png" />
     <link rel="stylesheet" href="src/css/main.css">
     
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 
 <body>
@@ -366,7 +371,7 @@
                     <!-- Stats Row -->
                     <div class="hero-stats-inline">
                         <div class="hero-stat-inline">
-                            <i class="fa-solid fa-video"></i>
+                            <i data-lucide="play-circle" class="nav-icon"></i>
                             <div>
                                 <span class="stat-num-inline">24+</span>
                                 <span class="stat-lbl-inline" data-i18n="lp_statCourses">Courses</span>
@@ -428,14 +433,14 @@
                         </button>
 
                         <!-- Video -->
-                        <video id="mainNativeVsl" playsinline autoplay muted
+                        <video id="mainNativeVsl" playsinline autoplay muted loop
                             style="width:100%; height:100%; object-fit:cover; display:block; border-radius: 12px;">
                             <source src="https://atlas-vsl-cdn.b-cdn.net/vsl.mp4" type="video/mp4" />
                         </video>
 
                         <!-- Custom Bottom Controls -->
                         <div class="vsl-controls">
-                            <button class="vsl-ctrl-btn" id="vslPlayBtn" title="Play/Pause">
+                            button class="vsl-ctrl-btn" id="vslPlayBtn" title="Play/Pause">
                                 <i class="fa-solid fa-play" id="vslPlayIcon"></i>
                             </button>
                             <button class="vsl-ctrl-btn" id="vslSkipBtn" title="Skip">
@@ -447,9 +452,6 @@
                                     <div class="vsl-seek-fill" id="vslSeekFill"></div>
                                 </div>
                             </div>
-                            <button class="vsl-ctrl-btn" id="vslLoopBtn" title="Loop">
-                                <i class="fa-solid fa-rotate"></i>
-                            </button>
                             <button class="vsl-ctrl-btn" id="vslPipBtn" title="Picture in Picture">
                                 <i class="fa-solid fa-expand"></i>
                             </button>
@@ -529,7 +531,6 @@
     ════════════════════════════════════════ -->
     <!-- COURSE MODULES -->
     <!-- ════════════════════════════════════════
-    <!-- ════════════════════════════════════════
     COURSE CATALOG SECTION (Swiper Infinite)
     ════════════════════════════════════════ -->
     <section class="premium-courses-section" id="modules">
@@ -549,7 +550,7 @@
 
             <!-- Swiper Carousel -->
             <div class="courses-carousel-wrapper">
-                <button class="carousel-arrow prev" id="cPrevBtn"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="carousel-arrow prev" id="cPrevBtn"><i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button>
 
                 <div class="swiper coursesSwiper">
                     <div class="swiper-wrapper">
@@ -564,7 +565,7 @@
                                     <h3>Prompt Engineering</h3>
                                     <p>إتقان فن كتابة البرومبتات الاحترافية والـ Context Engineering.</p>
                                     <div class="card-meta">
-                                        <span><i class="fa-solid fa-video"></i> 11 فيديو</span>
+                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 11 فيديو</span>
                                         <span><i class="fa-regular fa-clock"></i> 11h 54m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
@@ -585,7 +586,7 @@
                                     <h3>AAA Core</h3>
                                     <p>من الصفر — الموديل، الموديل، AAA Automation، وكالة، التسعير، والتنفيذ.</p>
                                     <div class="card-meta">
-                                        <span><i class="fa-solid fa-video"></i> 7 فيديو</span>
+                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 7 فيديو</span>
                                         <span><i class="fa-regular fa-clock"></i> 10h 17m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
@@ -606,7 +607,7 @@
                                     <h3>AI Foundations</h3>
                                     <p>فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents.</p>
                                     <div class="card-meta">
-                                        <span><i class="fa-solid fa-video"></i> 4 فيديو</span>
+                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 4 فيديو</span>
                                         <span><i class="fa-regular fa-clock"></i> 5h 01m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
@@ -627,7 +628,7 @@
                                     <h3>AI Automation Lab</h3>
                                     <p>بناء أنظمة كاملة باستخدام n8n و Zapier.</p>
                                     <div class="card-meta">
-                                        <span><i class="fa-solid fa-video"></i> 5 فيديو</span>
+                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 5 فيديو</span>
                                         <span><i class="fa-regular fa-clock"></i> 9h 47m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
@@ -850,7 +851,7 @@
             <div class="vs-main-product">
                 <div class="vs-product-info">
                     <div class="vs-product-icon">
-                        <i class="fa-solid fa-graduation-cap"></i>
+                        <i data-lucide="presentation" class="nav-icon"></i>
                     </div>
                     <div>
                         <h3 class="vs-product-title">البرنامج التدريبي الشامل</h3>
@@ -1914,6 +1915,10 @@
         }
     </script>
     <script src="src/js/i18n.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+</script>
 </body>
 
 </html>
