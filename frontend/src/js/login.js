@@ -3,6 +3,19 @@
   const t = getToken();
   if (!t) return;
   try {
+    const profileRes = await fetch(`${API}/profile/me`, {
+      headers: { 'Authorization': `Bearer ${t}` }
+    });
+    if (!profileRes.ok) {
+      localStorage.removeItem('token');
+      return;
+    }
+    const profile = await profileRes.json();
+    if (!profile.is_active) {
+      window.location.href = 'payment.html';
+      return;
+    }
+
     const res = await fetch(`${API}/profile/onboarding-status`, {
       headers: { 'Authorization': `Bearer ${t}` }
     });
@@ -14,7 +27,7 @@
       localStorage.removeItem('token');
     }
   } catch(e) {
-    window.location.href = 'dashboard.html';
+    localStorage.removeItem('token');
   }
 })();
 
@@ -43,6 +56,15 @@ async function login() {
       showAlert('تم الدخول بنجاح! ✅ جاري تحويلك...', 'success');
       // Check onboarding status before redirect
       try {
+        const profileRes = await fetch(`${API}/profile/me`, {
+          headers: { 'Authorization': `Bearer ${data.access_token}` }
+        });
+        const profile = await profileRes.json();
+        if (!profile.is_active) {
+          setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
+          return;
+        }
+
         const statusRes = await fetch(`${API}/profile/onboarding-status`, {
           headers: { 'Authorization': `Bearer ${data.access_token}` }
         });
@@ -50,7 +72,8 @@ async function login() {
         const redirect = statusData.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
         setTimeout(() => { window.location.href = redirect; }, 1200);
       } catch(e) {
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        // Fallback if onboarding status fails but login succeeded
+        setTimeout(() => { window.location.href = 'onboarding.html'; }, 1200);
       }
     } else {
       showAlert(data.detail || 'إيميل أو باسورد غلط', 'error');

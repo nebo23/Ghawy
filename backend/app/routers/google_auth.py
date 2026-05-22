@@ -84,7 +84,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             country=country,
             governorate=governorate,
             is_verified=True,
-            is_active=True
+            is_active=False
         )
         db.add(user)
         db.commit()
@@ -98,4 +98,92 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     )
     
     frontend_url = "http://127.0.0.1:5500"
+    if not user.is_active:
+        return RedirectResponse(f"{frontend_url}/payment.html?token={access_token}")
     return RedirectResponse(f"{frontend_url}/dashboard.html?token={access_token}")
+
+# ══════════════════════════════════════════════════════════
+#  INVITE TOKEN ENDPOINTS (Manual Payment Flow)
+# ══════════════════════════════════════════════════════════
+
+from pydantic import BaseModel, EmailStr
+from ..models import ManualPaymentRequest, Payment
+from fastapi import HTTPException
+from ..routers.users import create_token, hash_password
+
+class InviteRegisterReq(BaseModel):
+    token: str
+    password: str
+
+@router.get("/auth/invite/{token}")
+def check_invite_token(token: str, db: Session = Depends(get_db)):
+    """Validate invite token before showing register page."""
+    req = db.query(ManualPaymentRequest).filter(
+        ManualPaymentRequest.invite_token == token
+    ).first()
+    
+    if not req:
+        raise HTTPException(status_code=404, detail="Invalid token")
+    if req.status != "approved":
+        raise HTTPException(status_code=400, detail="Request not approved")
+    
+    now = datetime.utcnow()
+    if not req.invite_expires_at or now > req.invite_expires_at:
+        raise HTTPException(status_code=410, detail="Token expired. Please contact support.")
+        
+    return {
+        "valid": True,
+        "email": req.email,
+        "full_name": req.full_name
+    }
+
+@router.post("/auth/register-with-invite")
+def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db)):
+    """Register a new user using a valid invite token."""
+    req = db.query(ManualPaymentRequest).filter(
+        ManualPaymentRequest.invite_token == data.token
+    ).first()
+    
+    if not req or req.status != "approved":
+        raise HTTPException(status_code=400, detail="Invalid or unapproved token")
+        
+    now = datetime.utcnow()
+    if not req.invite_expires_at or now > req.invite_expires_at:
+        raise HTTPException(status_code=410, detail="Token expired")
+        
+    # Check if user already exists
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    # Create User
+    new_user = User(
+        full_name=req.full_name,
+        email=req.email,
+        hashed_password=hash_password(data.password),
+        phone=req.phone,
+        is_active=True,
+        is_verified=True,
+        subscription_type="monthly"
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Create Payment record for the manual payment
+    payment = Payment(
+        user_id=new_user.id,
+        method="manual",
+        status="confirmed",
+        amount=req.amount or 0,
+        currency="EGP",
+        provider_order_id=f"MANUAL-{req.id}"
+    )
+    db.add(payment)
+    
+    # Invalidate token
+    req.invite_token = None
+    db.commit()
+    
+    # Return JWT
+    return create_token(new_user)

@@ -103,9 +103,15 @@
     </div>
 
     <!-- Header -->
-    <div class="text-center mb-8">
+    <div class="text-center mb-8" id="default-header">
       <h1 class="text-2xl font-bold mb-2" data-i18n="register">إنشاء حساب</h1>
       <p class="text-gray-400 text-sm" data-i18n="createAccountSub">سجّل الآن وابدأ رحلتك مع الـ AI</p>
+    </div>
+    
+    <!-- Invite Header (hidden by default) -->
+    <div class="text-center mb-8" id="invite-header" style="display: none;">
+      <h1 class="text-2xl font-bold mb-2 text-[#3f8ff9]">Set Your Password</h1>
+      <p class="text-gray-400 text-sm">Welcome back! Set a password to complete your account setup.</p>
     </div>
 
     <div id="formAlert" class="hidden mb-4 p-3 rounded text-sm text-center"></div>
@@ -140,7 +146,7 @@
       </div>
 
       <!-- Phone Number -->
-      <div class="mb-4">
+      <div class="mb-4" id="phone-section">
         <label class="block text-xs font-medium text-gray-400 mb-1">Phone Number</label>
         <div class="flex">
           <div class="input-field flex items-center px-3 rounded-l-xl border-r-0 text-sm w-24 justify-center bg-[#111]">
@@ -155,7 +161,7 @@
 
       <!-- Password -->
       <div class="mb-6">
-        <label class="block text-xs font-medium text-gray-400 mb-1">Password</label>
+        <label id="password-label" class="block text-xs font-medium text-gray-400 mb-1">Password</label>
         <div class="relative mb-2">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fa-solid fa-lock input-icon"></i>
@@ -211,14 +217,14 @@
       </button>
 
       <!-- Divider -->
-      <div class="flex items-center my-6">
+      <div id="social-divider" class="flex items-center my-6">
         <div class="flex-grow border-t border-gray-800"></div>
         <span class="px-4 text-xs text-gray-500 font-medium">OR</span>
         <div class="flex-grow border-t border-gray-800"></div>
       </div>
 
       <!-- Google Button -->
-      <button type="button" onclick="googleSignIn()"
+      <button type="button" id="google-btn" onclick="googleSignIn()"
         class="w-full bg-transparent border border-gray-800 hover:bg-[#1a1a1a] text-white font-medium py-3 rounded-full transition-colors flex justify-center items-center gap-2">
         <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path fill="#4285F4"
@@ -235,7 +241,7 @@
 
     </form>
 
-    <div class="mt-6 text-center text-xs text-gray-500">
+    <div id="login-footer" class="mt-6 text-center text-xs text-gray-500">
       <span data-i18n="alreadyHaveAccount">عندك حساب بالفعل؟</span> <a href="login.html"
         class="text-white font-medium hover:text-brand transition-colors" data-i18n="loginNow">سجّل دخولك</a>
     </div>

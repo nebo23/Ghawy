@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, live
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, live, posts, manual_payments
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, PostReaction, CommentReaction, ManualPaymentRequest
 from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
@@ -113,6 +113,57 @@ def apply_sqlite_compat_migrations():
                 conn.execute(text("ALTER TABLE lessons ADD COLUMN section_title VARCHAR"))
             if "section_order" not in lesson_cols:
                 conn.execute(text("ALTER TABLE lessons ADD COLUMN section_order INTEGER DEFAULT 0"))
+        # ── Post reactions tables migration ──
+        if not inspector.has_table("post_reactions"):
+            conn.execute(text("""
+                CREATE TABLE post_reactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    emoji VARCHAR NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(post_id, user_id, emoji)
+                )
+            """))
+        if not inspector.has_table("comment_reactions"):
+            conn.execute(text("""
+                CREATE TABLE comment_reactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    emoji VARCHAR NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(comment_id, user_id, emoji)
+                )
+            """))
+        # Post tags column
+        if inspector.has_table("posts"):
+            post_cols2 = {col["name"] for col in inspector.get_columns("posts")}
+            if "tags" not in post_cols2:
+                conn.execute(text("ALTER TABLE posts ADD COLUMN tags VARCHAR"))
+        
+        # ── Manual Payment Requests (Instapay) ──
+        if not inspector.has_table("manual_payment_requests"):
+            conn.execute(text("""
+                CREATE TABLE manual_payment_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    full_name VARCHAR NOT NULL,
+                    email VARCHAR NOT NULL,
+                    phone VARCHAR,
+                    receipt_url VARCHAR NOT NULL,
+                    amount NUMERIC(12, 2),
+                    notes TEXT,
+                    status VARCHAR DEFAULT 'pending',
+                    invite_token VARCHAR UNIQUE,
+                    invite_sent_at DATETIME,
+                    invite_expires_at DATETIME,
+                    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                    reviewed_at DATETIME,
+                    rejection_reason VARCHAR,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
         conn.commit()
 
 def seed_defaults():
@@ -323,6 +374,8 @@ app.include_router(courses.router)
 app.include_router(profile.router)
 app.include_router(admin.router)
 app.include_router(live.router)
+app.include_router(posts.router)
+app.include_router(manual_payments.router)
 
 @app.get("/")
 def root():
@@ -345,6 +398,15 @@ def delete_payment(payment_id: int, db: Session = Depends(get_db)):
     db.delete(payment)
     db.commit()
     return {"message": "Payment deleted successfully"}
+
+@app.get("/config/payment-info")
+def get_payment_info():
+    """Public endpoint to get payment details for manual flow."""
+    return {
+        "instapay_number": os.getenv("INSTAPAY_NUMBER", "01000000000"),
+        "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "2500"),
+        "currency": "EGP"
+    }
 
 # ── Scheduler (recurring charges) ──────────────────────────
 try:

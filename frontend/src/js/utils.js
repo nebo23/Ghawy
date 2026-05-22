@@ -37,6 +37,37 @@ function logout() {
   window.location.href = 'login.html';
 }
 
+// ─── Auth Guard ─────────────────────────────────────────────
+async function enforceAuthGuard() {
+  const currentPath = window.location.pathname;
+  const communityPages = ['dashboard.html', 'chat.html', 'courses.html', 'course-detail.html', 'build-with-me.html', 'guest-of-honors.html', 'teamdashboard.html', 'profile.html', 'profile-settings.html'];
+  const isCommunityPage = communityPages.some(p => currentPath.endsWith(p));
+
+  if (!isCommunityPage) return;
+
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/profile/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const u = await res.json();
+      if (!u.is_active) {
+        window.location.href = 'payment.html';
+      }
+    } else {
+      logout();
+    }
+  } catch(e) {}
+}
+
+enforceAuthGuard();
+
 async function initCurrency() {
   const cachedCurrency = localStorage.getItem('user_currency');
   if (cachedCurrency) {

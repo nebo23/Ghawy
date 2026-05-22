@@ -23,17 +23,21 @@ function initTabs() {
 
   const titleMap = {
     'users': 'Team Dashboard',
-    'payments': 'Payments Dashboard',
-    'analytics': 'Analytics Dashboard'
+    'payments': 'Payments & Subscriptions',
+    'analytics': 'Platform Analytics',
+    'pending-requests': 'Pending Requests'
   };
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.style.display = 'none');
       tab.classList.add('active');
+
       const target = tab.dataset.tab;
-      document.getElementById(`tab-${target}`).style.display = 'block';
+      panels.forEach(p => p.style.display = 'none');
+      
+      const targetPanel = document.getElementById(`tab-${target}`);
+      if (targetPanel) targetPanel.style.display = 'block';
 
       if (breadcrumb && heading && titleMap[target]) {
         breadcrumb.textContent = titleMap[target];
@@ -47,6 +51,10 @@ function initTabs() {
       if (target === 'analytics' && !analyticsLoaded) {
         loadAnalyticsTab();
         analyticsLoaded = true;
+      }
+      if (target === 'pending-requests') {
+        mprCurrentPage = 1;
+        loadPendingRequestsTab();
       }
     });
   });
@@ -77,6 +85,30 @@ async function loadTeamPage() {
     }
   } catch (e) {}
   await loadUsers();
+  
+  // Set up listeners for Users tab
+  document.getElementById('search-input')?.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') { currentPage = 1; loadUsersTab(); }
+  });
+  document.getElementById('status-filter')?.addEventListener('change', () => {
+    currentPage = 1; loadUsersTab();
+  });
+  document.getElementById('role-filter')?.addEventListener('change', () => {
+    currentPage = 1; loadUsersTab();
+  });
+
+  // Set up listeners for Payments tab
+  document.getElementById('pay-search')?.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') { payCurrentPage = 1; loadPaymentsTab(); }
+  });
+  document.getElementById('pay-status-filter')?.addEventListener('change', () => {
+    payCurrentPage = 1; loadPaymentsTab();
+  });
+  document.getElementById('pay-method-filter')?.addEventListener('change', () => {
+    payCurrentPage = 1; loadPaymentsTab();
+  });
+
+  loadManualPaymentStats(); // fetch badge count
 }
 
 async function loadUsers() {
@@ -841,6 +873,241 @@ async function loadSubsChart() {
   } catch(e) {}
 }
 
+
+// ═══ PENDING REQUESTS (Manual Payments) ═══
+
+let mprCurrentPage = 1;
+let currentRejectId = null;
+
+async function authFetch(url, options = {}) {
+  options.headers = { ...headers, ...(options.headers || {}) };
+  return fetch(url, options);
+}
+
+async function loadManualPaymentStats() {
+  try {
+    const res = await authFetch(`${API}/manual-payments/stats`);
+    if (res.ok) {
+      const data = await res.json();
+      const badge = document.getElementById('pending-badge');
+      if (data.pending_count > 0) {
+        badge.innerText = data.pending_count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (e) {}
+}
+
+async function loadPendingRequestsTab() {
+  const container = document.getElementById('mpr-cards-container');
+  container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>`;
+  
+  const status = document.getElementById('mpr-status-filter').value;
+  
+  try {
+    const res = await authFetch(`${API}/manual-payments?status=${status}&page=${mprCurrentPage}&limit=12`);
+    if (!res.ok) throw new Error("Failed to load requests");
+    const data = await res.json();
+    
+    // Update labels and badges
+    document.getElementById('mpr-count-label').innerText = `(${data.total})`;
+    const badge = document.getElementById('pending-badge');
+    if (data.counts.pending > 0) {
+      badge.innerText = data.counts.pending;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+    
+    if (data.requests.length === 0) {
+      container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">No requests found.</div>`;
+      document.getElementById('mpr-pagination').innerHTML = '';
+      return;
+    }
+    
+    renderMprCards(data.requests, container);
+    renderMprPagination(data.page, data.pages);
+    
+  } catch (e) {
+    container.innerHTML = `<div style="padding: 40px; text-align: center; color: #ef4444; grid-column: 1 / -1;">Error loading requests</div>`;
+  }
+}
+
+function renderMprCards(requests, container) {
+  container.innerHTML = '';
+  
+  requests.forEach(req => {
+    const d = new Date(req.created_at);
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    let statusClass = 'pending';
+    if (req.status === 'approved') statusClass = 'approved';
+    if (req.status === 'rejected') statusClass = 'rejected';
+    
+    let actionsHtml = '';
+    
+    if (req.status === 'pending') {
+      actionsHtml = `
+        <button class="mpr-btn-approve" onclick="approveRequest(${req.id})"><i data-lucide="check"></i> Approve</button>
+        <button class="mpr-btn-reject" onclick="rejectRequestPrompt(${req.id})"><i data-lucide="x"></i> Reject</button>
+      `;
+    } else if (req.status === 'approved') {
+      actionsHtml = `
+        <button class="mpr-btn-outline" onclick="resendInvite(${req.id})"><i data-lucide="mail"></i> Resend Invite</button>
+      `;
+    } else if (req.status === 'rejected') {
+      actionsHtml = `
+        <div class="mpr-reject-reason" title="${req.rejection_reason || ''}">
+          Reason: ${req.rejection_reason || 'N/A'}
+        </div>
+      `;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'mpr-card';
+    card.innerHTML = `
+      <div class="mpr-card-header">
+        <div class="mpr-user-info">
+          <div class="mpr-name">${req.full_name}</div>
+          <div class="mpr-email">${req.email}</div>
+          <div class="mpr-phone">${req.phone || 'No phone'}</div>
+        </div>
+        <div class="mpr-status-badge ${statusClass}">${req.status.toUpperCase()}</div>
+      </div>
+      
+      <div class="mpr-details">
+        <div class="mpr-detail-row">
+          <span>Amount</span>
+          <strong>${req.amount ? req.amount + ' EGP' : '--'}</strong>
+        </div>
+        <div class="mpr-detail-row">
+          <span>Date</span>
+          <strong>${dateStr}</strong>
+        </div>
+        <div class="mpr-detail-row">
+          <span>Ref ID</span>
+          <strong>#${req.id}</strong>
+        </div>
+      </div>
+      
+      <div class="mpr-receipt" onclick="openLightbox('${API}${req.receipt_url}')">
+        <i data-lucide="image"></i> View Receipt
+      </div>
+      
+      <div class="mpr-actions">
+        ${actionsHtml}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+  lucide.createIcons();
+}
+
+function renderMprPagination(page, pages) {
+  const p = document.getElementById('mpr-pagination');
+  p.innerHTML = '';
+  if (pages <= 1) return;
+  
+  if (page > 1) {
+    const b = document.createElement('button');
+    b.innerText = 'Prev';
+    b.onclick = () => { mprCurrentPage--; loadPendingRequestsTab(); };
+    p.appendChild(b);
+  }
+  
+  const span = document.createElement('span');
+  span.innerText = `Page ${page} of ${pages}`;
+  p.appendChild(span);
+  
+  if (page < pages) {
+    const b = document.createElement('button');
+    b.innerText = 'Next';
+    b.onclick = () => { mprCurrentPage++; loadPendingRequestsTab(); };
+    p.appendChild(b);
+  }
+}
+
+async function approveRequest(id) {
+  try {
+    const res = await authFetch(`${API}/manual-payments/${id}/approve`, { method: 'POST' });
+    if (res.ok) {
+      showToast("Request approved! Email sent to user.", "success");
+      loadPendingRequestsTab();
+      loadManualPaymentStats();
+    } else {
+      const data = await res.json();
+      showToast(data.detail || "Error approving request", "error");
+    }
+  } catch (e) {
+    showToast("Network error", "error");
+  }
+}
+
+function rejectRequestPrompt(id) {
+  currentRejectId = id;
+  document.getElementById('reject-reason').value = '';
+  openModal('reject-modal');
+}
+
+async function submitRejectRequest() {
+  const reason = document.getElementById('reject-reason').value.trim();
+  if (!reason) {
+    showToast("Please provide a reason", "error");
+    return;
+  }
+  
+  try {
+    const res = await authFetch(`${API}/manual-payments/${currentRejectId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    
+    if (res.ok) {
+      showToast("Request rejected. Email sent.", "success");
+      closeModal('reject-modal');
+      loadPendingRequestsTab();
+      loadManualPaymentStats();
+    } else {
+      const data = await res.json();
+      showToast(data.detail || "Error rejecting request", "error");
+    }
+  } catch (e) {
+    showToast("Network error", "error");
+  }
+}
+
+async function resendInvite(id) {
+  try {
+    const res = await authFetch(`${API}/manual-payments/${id}/resend-invite`, { method: 'POST' });
+    if (res.ok) {
+      showToast("Invite resent successfully!", "success");
+    } else {
+      const data = await res.json();
+      showToast(data.detail || "Error resending invite", "error");
+    }
+  } catch (e) {
+    showToast("Network error", "error");
+  }
+}
+
+// Lightbox logic
+function openLightbox(url) {
+  const lb = document.getElementById('receipt-lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = url;
+  lb.style.display = 'flex';
+}
+
+function closeLightbox(e) {
+  // Only close if clicking outside the image or on the close button
+  if (e.target.id === 'receipt-lightbox' || e.target.classList.contains('lightbox-close')) {
+    document.getElementById('receipt-lightbox').style.display = 'none';
+    document.getElementById('lightbox-img').src = '';
+  }
+}
 
 // ═══ HAMBURGER ═══
 (function initSidebar() {

@@ -568,13 +568,14 @@ def list_channel_members(
     result = []
     for m in members:
         user = db.query(User).filter(User.id == m.user_id).first()
-        result.append({
-            "user_id": m.user_id,
-            "role": m.role.value,
-            "joined_at": m.joined_at.isoformat() if m.joined_at else None,
-            "full_name": user.full_name if user else "Unknown",
-            "avatar_url": user.avatar_url if user else None,
-        })
+        if user and user.is_active:
+            result.append({
+                "user_id": m.user_id,
+                "role": m.role.value,
+                "joined_at": m.joined_at.isoformat() if m.joined_at else None,
+                "full_name": user.full_name,
+                "avatar_url": user.avatar_url,
+            })
     return result
 
 
@@ -760,7 +761,7 @@ def list_active_members(
     five_min_ago = datetime.utcnow() - timedelta(minutes=5)
     users = (
         db.query(User)
-        .filter(User.id != current_user.id, User.is_verified == True)
+        .filter(User.id != current_user.id, User.is_verified == True, User.is_active == True)
         .order_by(User.full_name)
         .all()
     )

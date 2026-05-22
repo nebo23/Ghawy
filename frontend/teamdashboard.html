@@ -724,16 +724,21 @@
             <div class="team-sections-label">Sections</div>
             <button class="team-section-btn active" data-tab="users">
               <i data-lucide="users" style="width:18px;height:18px;"></i>
-              <span>Users</span>
-            </button>
-            <button class="team-section-btn" data-tab="payments">
-              <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
-              <span>Payments</span>
-            </button>
-            <button class="team-section-btn" data-tab="analytics">
-              <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
-              <span>Analytics</span>
-            </button>
+              <span class="tab-label">Members</span>
+          </button>
+          <button class="team-section-btn" data-tab="payments">
+            <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
+            <span class="tab-label">Payments</span>
+          </button>
+          <button class="team-section-btn" data-tab="pending-requests">
+            <i data-lucide="inbox" style="width:18px;height:18px;"></i>
+            <span class="tab-label">Pending Requests</span>
+            <span class="pending-badge" id="pending-badge" style="display:none">0</span>
+          </button>
+          <button class="team-section-btn" data-tab="analytics">
+            <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
+            <span class="tab-label">Analytics</span>
+          </button>
           </nav>
 
           <!-- Tab Content Area -->
@@ -997,6 +1002,25 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab Content: Pending Requests -->
+        <div id="tab-pending-requests" class="tab-panel" style="display:none;">
+          <div class="mpr-filter-bar">
+            <h3>Manual Payment Requests <span id="mpr-count-label" class="mpr-count-label"></span></h3>
+            <select id="mpr-status-filter" onchange="loadPendingRequestsTab()">
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          
+          <!-- Cards Container -->
+          <div id="mpr-cards-container" class="mpr-cards-grid">
+            <div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>
+          </div>
+          <div class="pagination" id="mpr-pagination"></div>
+        </div>
           </div><!-- end team-content-area -->
         </div><!-- end team-layout -->
       </div>
@@ -1058,6 +1082,34 @@
       <div class="modal-footer-team"><button class="btn-cancel-team"
           onclick="closeModal('delete-modal')">Cancel</button><button class="btn-confirm-team danger"
           onclick="submitDelete()">Delete</button></div>
+    </div>
+  </div>
+
+  <!-- Rejection Modal -->
+  <div class="modal-overlay-team" id="reject-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>❌ Reject Payment Request</h3><button class="modal-close-team" onclick="closeModal('reject-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg">
+          <label>Rejection Reason *</label>
+          <textarea id="reject-reason" rows="3" placeholder="e.g. Receipt is blurry, amount doesn't match..." style="width: 100%; background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; font-family: inherit; resize: none;"></textarea>
+        </div>
+        <p style="color:#aaa;font-size:12px;margin-top:8px;">This reason will be sent to the user via email.</p>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('reject-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="submitRejectRequest()">Reject Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Lightbox -->
+  <div class="receipt-lightbox" id="receipt-lightbox" style="display:none" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="Receipt">
+      <button class="lightbox-close" onclick="closeLightbox(event)">✕</button>
     </div>
   </div>
 

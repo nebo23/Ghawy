@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay with Instapay — Ghawy</title>
+  <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png">
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Base styles -->
+  <link rel="stylesheet" href="src/css/main.css">
+
+  <!-- Specific page styles -->
+  <link rel="stylesheet" href="src/css/pay.css">
+</head>
+
+<body>
+
+  <!-- Background ambient glow matching the main theme -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Header -->
+  <header class="pay-header">
+    <img src="./imgs/g-icon-logo.png" alt="Ghawy Logo" class="pay-logo">
+    <a href="index.html" class="pay-back-link">
+      <i data-lucide="arrow-left"></i> Back to Home
+    </a>
+  </header>
+
+  <main class="pay-container">
+
+    <!-- Step 1 & 2 Wrapper (Form View) -->
+    <div id="pay-form-view">
+      <div class="pay-title-section text-center">
+        <h1>Join Ghawy via Instapay</h1>
+        <p>Complete your payment securely and submit your receipt to get instant access.</p>
+      </div>
+
+      <div class="pay-steps-grid">
+
+        <!-- Step 1: Transfer Info -->
+        <div class="pay-card step-card">
+          <div class="step-badge">Step 1</div>
+          <h2>Transfer the amount</h2>
+          <p class="step-desc">Send the exact amount via Instapay to the number below. Keep the receipt screenshot.</p>
+
+          <div class="payment-info-box">
+            <div class="pi-label">Amount Due</div>
+            <div class="pi-amount"><span id="display-price">500</span> <span class="pi-currency">EGP</span></div>
+          </div>
+
+          <div class="payment-info-box">
+            <div class="pi-label">Instapay Number</div>
+            <div class="pi-copy-wrap">
+              <div class="pi-number" id="display-instapay">01019381981</div>
+              <button class="pi-copy-btn" id="copy-instapay-btn" onclick="copyInstapay()">
+                <i data-lucide="copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="pi-warning">
+            <i data-lucide="info"></i> Please make sure to screenshot the successful transfer screen.
+          </div>
+        </div>
+
+        <!-- Step 2: Upload Receipt -->
+        <div class="pay-card step-card">
+          <div class="step-badge">Step 2</div>
+          <h2>Submit your receipt</h2>
+          <p class="step-desc">Fill in your details and upload the payment screenshot.</p>
+
+          <form id="pay-submit-form" onsubmit="event.preventDefault(); submitPayment();">
+
+            <div class="form-group">
+              <label for="pay-fullname">Full Name *</label>
+              <input type="text" id="pay-fullname" placeholder="Ahmed Mohamed" required>
+            </div>
+
+            <div class="form-group">
+              <label for="pay-email">Email Address *</label>
+              <input type="email" id="pay-email" placeholder="ahmed@example.com" required>
+            </div>
+
+            <div class="form-group">
+              <label for="pay-phone">Phone Number</label>
+              <input type="text" id="pay-phone" placeholder="01000000000">
+            </div>
+
+            <div class="form-group">
+              <label>Receipt Screenshot *</label>
+              <div class="file-drop-area" id="file-drop-area" onclick="document.getElementById('pay-receipt').click()">
+                <i data-lucide="upload-cloud" class="upload-icon"></i>
+                <div class="upload-text">Click or drag receipt here</div>
+                <div class="upload-hint">JPG, PNG, PDF (Max 5MB)</div>
+                <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf" required
+                  hidden>
+
+                <!-- Preview area (hidden by default) -->
+                <div class="file-preview" id="file-preview" style="display:none;">
+                  <i data-lucide="image"></i>
+                  <span id="file-name-display">filename.jpg</span>
+                  <button type="button" class="file-remove-btn" onclick="event.stopPropagation(); removeFile();">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="pay-submit-btn" id="pay-submit-btn">
+              <span>Submit Payment</span>
+              <div class="btn-spinner" id="btn-spinner" style="display:none;"></div>
+            </button>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div id="pay-success-view" class="pay-card success-card" style="display:none;">
+      <div class="success-icon-wrap">
+        <i data-lucide="check-circle" class="success-icon"></i>
+      </div>
+      <h2>Request Submitted!</h2>
+      <p>Thank you for your payment. Our team will review your receipt shortly.</p>
+
+      <div class="success-details">
+        <p><strong>Reference ID:</strong> <span id="success-ref">---</span></p>
+        <p>Once approved, we will send an invite link to <strong><span id="success-email">your email</span></strong> so
+          you can set your password and log in.</p>
+      </div>
+
+      <p class="success-footer">Usually takes less than 12 hours.</p>
+
+      <a href="index.html" class="pay-home-btn">Return to Homepage</a>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="src/js/utils.js"></script>
+  <script src="src/js/pay.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+
+</html>

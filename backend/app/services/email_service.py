@@ -1,6 +1,8 @@
 import os
 import smtplib
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -9,7 +11,8 @@ ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 
-def send_verification_email(to_email: str, code: str) -> None:
+def _get_smtp_config():
+    """Return SMTP configuration from environment variables."""
     smtp_host = os.getenv("SMTP_HOST")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_user = os.getenv("SMTP_USER")
@@ -19,17 +22,175 @@ def send_verification_email(to_email: str, code: str) -> None:
     if not smtp_host or not smtp_user or not smtp_password:
         raise RuntimeError("SMTP settings are missing. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD in .env")
 
-    message = EmailMessage()
-    message["Subject"] = "Your verification code"
-    message["From"] = smtp_from
-    message["To"] = to_email
-    message.set_content(
-        f"Your verification code is: {code}\n\n"
-        "This code expires in 15 minutes.\n"
-        "If you did not request this, ignore this email."
-    )
+    return smtp_host, smtp_port, smtp_user, smtp_password, smtp_from
+
+
+def _send_email(to_email: str, subject: str, body_text: str, body_html: str = None) -> None:
+    """Generic email sender. If body_html is provided, sends multipart."""
+    smtp_host, smtp_port, smtp_user, smtp_password, smtp_from = _get_smtp_config()
+
+    if body_html:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = smtp_from
+        message["To"] = to_email
+        message.attach(MIMEText(body_text, "plain"))
+        message.attach(MIMEText(body_html, "html"))
+    else:
+        message = EmailMessage()
+        message["Subject"] = subject
+        message["From"] = smtp_from
+        message["To"] = to_email
+        message.set_content(body_text)
 
     with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
         server.starttls()
         server.login(smtp_user, smtp_password)
         server.send_message(message)
+
+
+def send_verification_email(to_email: str, code: str) -> None:
+    _send_email(
+        to_email=to_email,
+        subject="Your verification code",
+        body_text=(
+            f"Your verification code is: {code}\n\n"
+            "This code expires in 15 minutes.\n"
+            "If you did not request this, ignore this email."
+        ),
+    )
+
+
+# ═══════════════════════════════════════════════════════
+#  MANUAL PAYMENT EMAILS
+# ═══════════════════════════════════════════════════════
+
+def send_admin_payment_notification(
+    full_name: str,
+    email: str,
+    phone: str,
+    amount: float,
+    created_at: str,
+) -> None:
+    """Notify admin team about a new manual payment submission."""
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@ghawy.com")
+
+    body_text = (
+        f"🔔 New payment request — {full_name}\n\n"
+        f"A new manual payment request has been submitted.\n\n"
+        f"Name: {full_name}\n"
+        f"Email: {email}\n"
+        f"Phone: {phone or 'N/A'}\n"
+        f"Amount: {amount or 'N/A'} EGP\n"
+        f"Submitted: {created_at}\n\n"
+        f"Review it here: {frontend_url}/teamdashboard.html#pending-requests"
+    )
+
+    body_html = f"""
+    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
+        <h2 style="color: #fff; margin: 0 0 20px;">🔔 New Payment Request</h2>
+        <p style="color: #aaa; margin: 0 0 20px;">A new manual payment request has been submitted.</p>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Name</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{full_name}</td></tr>
+            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Email</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{email}</td></tr>
+            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Phone</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{phone or 'N/A'}</td></tr>
+            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Amount</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{amount or 'N/A'} EGP</td></tr>
+            <tr><td style="color: #888; padding: 8px 0;">Submitted</td><td style="color: #fff; padding: 8px 0; text-align: right;">{created_at}</td></tr>
+        </table>
+        <a href="{frontend_url}/teamdashboard.html#pending-requests" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Review Now →</a>
+    </div>
+    """
+
+    _send_email(
+        to_email=admin_email,
+        subject=f"🔔 New payment request — {full_name}",
+        body_text=body_text,
+        body_html=body_html,
+    )
+
+
+def send_payment_approval_email(
+    to_email: str,
+    full_name: str,
+    registration_url: str,
+) -> None:
+    """Send approval + invite link to user after admin approves their payment."""
+    body_text = (
+        f"Hi {full_name},\n\n"
+        "Your payment has been verified! You're one step away from joining Ghawy.\n\n"
+        "Click the link below to set your password and get instant access:\n\n"
+        f"{registration_url}\n\n"
+        "This link expires in 48 hours.\n\n"
+        "See you inside,\n"
+        "The Ghawy Team"
+    )
+
+    body_html = f"""
+    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="font-size: 48px; margin-bottom: 8px;">🎉</div>
+            <h2 style="color: #fff; margin: 0;">You're in!</h2>
+        </div>
+        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
+        <p style="color: #ccc; line-height: 1.6;">Your payment has been verified! You're one step away from joining Ghawy.</p>
+        <p style="color: #ccc; line-height: 1.6;">Click the button below to set your password and get instant access:</p>
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="{registration_url}" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px;">Complete Registration →</a>
+        </div>
+        <p style="color: #888; font-size: 13px; text-align: center;">This link expires in 48 hours.</p>
+        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
+        <p style="color: #888; font-size: 13px;">See you inside,<br>The Ghawy Team</p>
+    </div>
+    """
+
+    _send_email(
+        to_email=to_email,
+        subject="You're in! Complete your Ghawy registration 🎉",
+        body_text=body_text,
+        body_html=body_html,
+    )
+
+
+def send_payment_rejection_email(
+    to_email: str,
+    full_name: str,
+    rejection_reason: str,
+) -> None:
+    """Notify user that their payment request was rejected."""
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+
+    body_text = (
+        f"Hi {full_name},\n\n"
+        "Unfortunately we couldn't verify your payment.\n\n"
+        f"Reason: {rejection_reason}\n\n"
+        "If you believe this is a mistake, please reply to this email "
+        "or resubmit with a clearer receipt.\n\n"
+        f"Try again: {frontend_url}/pay.html\n\n"
+        "The Ghawy Team"
+    )
+
+    body_html = f"""
+    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
+        <h2 style="color: #fff; margin: 0 0 20px;">Update on your payment request</h2>
+        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
+        <p style="color: #ccc; line-height: 1.6;">Unfortunately we couldn't verify your payment.</p>
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #ef4444; margin: 0; font-weight: 600;">Reason:</p>
+            <p style="color: #fca5a5; margin: 8px 0 0;">{rejection_reason}</p>
+        </div>
+        <p style="color: #ccc; line-height: 1.6;">If you believe this is a mistake, please reply to this email or resubmit with a clearer receipt.</p>
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="{frontend_url}/pay.html" style="display: inline-block; background: #2a2a2a; color: #fff; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none; border: 1px solid #333;">Try Again →</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
+        <p style="color: #888; font-size: 13px;">The Ghawy Team</p>
+    </div>
+    """
+
+    _send_email(
+        to_email=to_email,
+        subject="Update on your Ghawy payment request",
+        body_text=body_text,
+        body_html=body_html,
+    )

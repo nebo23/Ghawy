@@ -195,7 +195,7 @@ def get_all_users(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    users = db.query(User).all()
+    users = db.query(User).filter(User.is_active == True).all()
     return users
 
 

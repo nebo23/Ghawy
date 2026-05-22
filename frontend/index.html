@@ -41,7 +41,7 @@
         rel="stylesheet" />
     <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png" />
     <link rel="stylesheet" href="src/css/main.css">
-    
+
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 
@@ -61,11 +61,14 @@
             <li><a href="#payment" data-i18n="lp_navPrice">السعر</a></li>
         </ul>
         <div class="nav-auth" id="navAuth">
-            <button id="langToggle" onclick="setLang(getLang() === 'ar' ? 'en' : 'ar')" style="background:transparent;border:1px solid rgba(193,255,17,.2);color:var(--gold);border-radius:8px;padding:6px 14px;font-family:Cairo,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px">EN</button>
+            <button id="langToggle" onclick="setLang(getLang() === 'ar' ? 'en' : 'ar')"
+                style="background:transparent;border:1px solid rgba(193,255,17,.2);color:var(--gold);border-radius:8px;padding:6px 14px;font-family:Cairo,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px">EN</button>
             <!-- Logged out state (default) -->
             <div id="navLoggedOut">
-                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;" data-i18n="lp_login">تسجيل الدخول</a>
-                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-i18n="lp_startNow">ابدا الان</a>
+                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;"
+                    data-i18n="lp_login">تسجيل الدخول</a>
+                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;"
+                    data-i18n="lp_startNow">ابدا الان</a>
             </div>
             <!-- Logged in state -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
@@ -85,13 +88,16 @@
         <a href="#payment" onclick="closeDrawer()" data-i18n="lp_navPrice">السعر</a>
         <div id="mobileAuthLoggedOut">
             <a href="login.html" onclick="closeDrawer()"
-                style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;" data-i18n="lp_mobileLogin">تسجيل
+                style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;"
+                data-i18n="lp_mobileLogin">تسجيل
                 الدخول</a>
         </div>
         <div id="mobileAuthLoggedIn" style="display:none">
-            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-i18n="lp_logout">تسجيل الخروج</button>
+            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-i18n="lp_logout">تسجيل
+                الخروج</button>
         </div>
-        <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()" data-i18n="lp_mobileStart">ابدا الان</a>
+        <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()"
+            data-i18n="lp_mobileStart">ابدا الان</a>
     </div>
 
     <!-- ════════════════════════════════════════
@@ -403,7 +409,8 @@
                     <!-- CTA Buttons -->
                     <div class="hero-cta-row">
                         <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
-                            <span data-i18n="lp_joinNow">Join Ghawy Now</span> &nbsp;<i class="fa-solid fa-arrow-right"></i>
+                            <span data-i18n="lp_joinNow">Join Ghawy Now</span> &nbsp;<i
+                                class="fa-solid fa-arrow-right"></i>
                         </a>
                         <button class="btn-cta-ghost" id="watchIntroBtn">
                             <i class="fa-regular fa-circle-play"></i>
@@ -480,7 +487,8 @@
                     <img class="hero-av" src="https://i.pravatar.cc/40?img=13" alt="" />
                 </div>
                 <div class="hero-rating-info" style="direction: rtl;">
-                    <span class="hero-rating-text" data-i18n="lp_ratingText">حاصل علي تقييم <span style="font-weight:bold;color:#fff;">5.0</span>
+                    <span class="hero-rating-text" data-i18n="lp_ratingText">حاصل علي تقييم <span
+                            style="font-weight:bold;color:#fff;">5.0</span>
                         من اكثر من 30 مراجعة</span>
                     <div class="hero-stars">
                         <span class="star">★</span><span class="star">★</span><span class="star">★</span><span
@@ -491,10 +499,6 @@
 
         </div>
     </header>
-
-    <!-- ════════════════════════════════════════
-     VIDEO TESTIMONIALS
-    ════════════════════════════════════════ -->
 
     <!-- ════════════════════════════════════════
      PREMIUM VIDEO TESTIMONIALS
@@ -525,11 +529,6 @@
         </div>
     </section>
 
-
-    <!-- ════════════════════════════════════════
-     COURSE MODULES
-    ════════════════════════════════════════ -->
-    <!-- COURSE MODULES -->
     <!-- ════════════════════════════════════════
     COURSE CATALOG SECTION (Swiper Infinite)
     ════════════════════════════════════════ -->
@@ -550,7 +549,8 @@
 
             <!-- Swiper Carousel -->
             <div class="courses-carousel-wrapper">
-                <button class="carousel-arrow prev" id="cPrevBtn"><i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button>
+                <button class="carousel-arrow prev" id="cPrevBtn"><i data-lucide="chevron-right"
+                        style="width:12px;height:12px;"></i></button>
 
                 <div class="swiper coursesSwiper">
                     <div class="swiper-wrapper">
@@ -1916,13 +1916,9 @@
     </script>
     <script src="src/js/i18n.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
 </body>
 
 </html>
-
-
-
-

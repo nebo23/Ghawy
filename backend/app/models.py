@@ -49,6 +49,11 @@ class LiveSessionDifficulty(str, enum.Enum):
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
 
+class PaymentRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
 # ═══════════════════════════════════════════
 #  USER
 # ═══════════════════════════════════════════
@@ -157,6 +162,7 @@ class Post(Base):
     body = Column(Text, nullable=False)
     tag = Column(String, nullable=True)       # e.g. "Help", "Question", "Win"
     tag_color = Column(String, nullable=True)  # e.g. "orange", "blue", "gold"
+    tags = Column(String, nullable=True)       # comma-separated tags e.g. "Make.com,n8n,Zapier"
     image_url = Column(String, nullable=True)
     like_count = Column(Integer, server_default=text('0'), default=0)
     comment_count = Column(Integer, server_default=text('0'), default=0)
@@ -168,6 +174,7 @@ class Post(Base):
     category = relationship("Category", back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
     likes = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
+    reactions = relationship("PostReaction", back_populates="post", cascade="all, delete-orphan")
 
 
 class Comment(Base):
@@ -183,6 +190,7 @@ class Comment(Base):
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
     replies = relationship("Comment", backref="parent", remote_side=[id])
+    reactions = relationship("CommentReaction", back_populates="comment", cascade="all, delete-orphan")
 
 
 class PostLike(Base):
@@ -194,6 +202,30 @@ class PostLike(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     post = relationship("Post", back_populates="likes")
+
+
+class PostReaction(Base):
+    __tablename__ = "post_reactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji = Column(String, nullable=False)  # "👍" | "❤️" | "😮" | "🔥" | "👏"
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    post = relationship("Post", back_populates="reactions")
+
+
+class CommentReaction(Base):
+    __tablename__ = "comment_reactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    comment_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    comment = relationship("Comment", back_populates="reactions")
 
 # ═══════════════════════════════════════════
 #  CHAT — Channels, Members, Messages
@@ -415,3 +447,27 @@ class SessionProject(Base):
     creator_name = Column(String, nullable=False)
     
     session = relationship("LiveSession", back_populates="projects")
+
+# ═══════════════════════════════════════════
+#  MANUAL PAYMENT REQUESTS (Instapay)
+# ═══════════════════════════════════════════
+
+class ManualPaymentRequest(Base):
+    __tablename__ = "manual_payment_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=True)
+    receipt_url = Column(String, nullable=False)       # uploaded screenshot path
+    amount = Column(Numeric(12, 2), nullable=True)     # optional, what they claim to have paid
+    notes = Column(Text, nullable=True)                # any notes from user
+    status = Column(String, default="pending")         # pending | approved | rejected
+    invite_token = Column(String, nullable=True, unique=True)  # one-time registration token
+    invite_sent_at = Column(DateTime, nullable=True)
+    invite_expires_at = Column(DateTime, nullable=True)        # token valid for 48 hours
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+

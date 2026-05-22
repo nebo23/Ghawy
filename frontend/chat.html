@@ -771,10 +771,97 @@
                     </div>
                     <input type="file" id="fileInput" accept="image/*" style="display:none" />
                 </div>
+                <!-- Right Sidebar (shown only in posts mode) -->
+                <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
+                    <div class="comm-rs-panel" id="rsActiveNow">
+                        <h4><span class="rs-dot"></span> ACTIVE NOW</h4>
+                        <div class="comm-active-avatars" id="rsActiveAvatars"></div>
+                    </div>
+                    <div class="comm-rs-panel" id="rsTopTopics">
+                        <h4><span class="rs-dot"></span> TOP TOPICS</h4>
+                        <div id="rsTopTopicsList"></div>
+                    </div>
+                    <div class="comm-rs-panel" id="rsPinned">
+                        <h4>PINNED MESSAGES</h4>
+                        <div id="rsPinnedList"></div>
+                    </div>
+                    <div class="comm-cta-card">
+                        <h5>Introduce Yourself 👋</h5>
+                        <p>New here? Introduce yourself to the community!</p>
+                        <button class="comm-cta-btn" onclick="selectChannel('introduce-yourself')">Post Introduction</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- New Post Modal -->
+    <div class="comm-modal-overlay" id="newPostModal" style="display:none">
+        <div class="comm-modal-card">
+            <div class="comm-modal-header">
+                <h3 id="newPostModalTitle">Create Post</h3>
+                <button onclick="closeNewPostModal()">✕</button>
+            </div>
+            <div class="comm-modal-body">
+                <div>
+                    <input class="comm-modal-input" id="postTitleInput" placeholder="Post title *" maxlength="120" />
+                    <div style="text-align:right; font-size:0.72rem; color:#5a5648; margin-top:4px;"><span id="titleCharCount">0</span>/120</div>
+                </div>
+                <textarea class="comm-modal-textarea" id="postBodyInput" placeholder="Write your post... *" rows="5"></textarea>
+                <div>
+                    <label style="font-size:0.82rem; color:#888; display:block; margin-bottom:6px;">Tags (press Enter or comma to add)</label>
+                    <div class="comm-tags-input-wrap" id="tagsInputWrap" onclick="document.getElementById('tagsInput').focus()">
+                        <input class="comm-tags-input" id="tagsInput" placeholder="e.g. Make.com, n8n, Zapier" />
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.82rem; color:#888; display:block; margin-bottom:6px;">Attach Image (optional, max 5MB)</label>
+                    <div class="comm-image-upload-area" id="postImageUploadArea" onclick="document.getElementById('postImageInput').click()">
+                        📎 Click to choose image or drag & drop
+                    </div>
+                    <input type="file" id="postImageInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" />
+                    <div id="postImagePreview" style="display:none" class="comm-image-preview"></div>
+                </div>
+            </div>
+            <div class="comm-modal-footer">
+                <button class="comm-btn-cancel" onclick="closeNewPostModal()">Cancel</button>
+                <button class="comm-btn-post" id="submitPostBtn" onclick="submitNewPost()">Post →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div class="comm-modal-overlay" id="editPostModal" style="display:none">
+        <div class="comm-modal-card">
+            <div class="comm-modal-header">
+                <h3>Edit Post</h3>
+                <button onclick="closeEditPostModal()">✕</button>
+            </div>
+            <div class="comm-modal-body">
+                <input class="comm-modal-input" id="editPostTitle" placeholder="Post title *" maxlength="120" />
+                <textarea class="comm-modal-textarea" id="editPostBody" placeholder="Post body *" rows="5"></textarea>
+            </div>
+            <div class="comm-modal-footer">
+                <button class="comm-btn-cancel" onclick="closeEditPostModal()">Cancel</button>
+                <button class="comm-btn-post" id="saveEditPostBtn" onclick="saveEditPost()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="comm-confirm-overlay" id="confirmDeleteModal" style="display:none">
+        <div class="comm-confirm-card">
+            <h4 id="confirmDeleteTitle">Delete Post?</h4>
+            <p id="confirmDeleteMsg">This action cannot be undone.</p>
+            <div class="comm-confirm-actions">
+                <button class="comm-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="comm-confirm-delete" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <div class="lightbox-overlay" id="lightbox"><img id="lightboxImg" src="" alt="" /></div>
+
 
     <!-- User Profile Panel -->
     <div id="profilePanel" class="profile-panel">
@@ -1709,6 +1796,20 @@
         let isRecording = false;
         let ws = null;
 
+        // ── Post-mode state ──
+        const POST_CHANNELS = ['announcements','introduce-yourself','wins','workflows-help','share-your-build','general-questions','hiring-opportunities'];
+        let postMode = false;
+        let postSort = 'latest';
+        let postPage = 1;
+        let postTotalPages = 1;
+        let postsCache = {};
+        let currentUserAvatar = '';
+        let currentUserIsAdmin = false;
+        let newPostTags = [];
+        let newPostFile = null;
+        let editingPostId = null;
+
+
         // ── WebSocket Connection ──
         function connectWS() {
             if (!token) return;
@@ -1733,6 +1834,19 @@
                     } else if (msg.event === 'user_online' || msg.event === 'user_offline') {
                         fetchOnlineCount();
                         loadDmList();
+                    } else if (msg.event === 'new_post' && postMode) {
+                        // Prepend new post to feed if we're viewing that channel
+                        if (msg.data && msg.data.channel === currentChannel && msg.data.author && msg.data.author.id !== currentUserId) {
+                            prependPostCard(msg.data);
+                        }
+                    } else if (msg.event === 'new_comment' && postMode) {
+                        // Refresh inline comments if open for that post
+                        if (msg.data && msg.data.post_id) {
+                            const section = document.getElementById(`comments-section-${msg.data.post_id}`);
+                            if (section && section.style.display !== 'none') {
+                                loadInlineComments(msg.data.post_id);
+                            }
+                        }
                     }
                 } catch (err) { console.error('WS parse error', err); }
             };
@@ -1796,6 +1910,8 @@
                 const res = await apiFetch('/profile/me');
                 const u = await res.json();
                 currentUserId = u.id;
+                currentUserAvatar = u.avatar_url || '';
+                currentUserIsAdmin = u.is_admin || false;
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
                 s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('streakCount', u.streak_days || 0);
                 ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
@@ -1824,13 +1940,18 @@
             
             // Map start-here to start_here to be consistent
             if (name === 'start-here') name = 'start_here';
+            currentChannel = name;
             
             const isDm = name.startsWith('dm_');
+            const isPostChannel = POST_CHANNELS.includes(name);
             const dmHeaderAvatar = document.getElementById('dmHeaderAvatar');
             const dmHeaderStatus = document.getElementById('dmHeaderStatus');
+            const rightSidebar = document.getElementById('commRightSidebar');
+
+            // Determine post mode
+            postMode = isPostChannel;
 
             if (name === 'messages') {
-                // Messages Inbox view
                 headerHash.textContent = '✉️'; headerHash.style.fontSize = '1.1rem'; headerHash.style.display = '';
                 headerName.textContent = 'Messages';
                 if (dmHeaderAvatar) dmHeaderAvatar.style.display = 'none';
@@ -1846,14 +1967,14 @@
                 updateDmHeader(name);
             } else {
                 headerHash.textContent = '#'; headerHash.style.fontSize = ''; headerHash.style.display = '';
-                headerName.textContent = name;
+                headerName.textContent = name.replace(/-/g, ' ');
                 if (dmHeaderAvatar) dmHeaderAvatar.style.display = 'none';
                 if (dmHeaderStatus) dmHeaderStatus.style.display = 'none';
             }
 
             if (isDm) {
                 document.getElementById('chatInput').placeholder = `Message ${activeDmUserName || 'DM'}...`;
-            } else if (name !== 'messages') {
+            } else if (name !== 'messages' && !isPostChannel) {
                 document.getElementById('chatInput').placeholder = `Message #${name === 'start_here' ? 'Start Here' : name}`;
             }
 
@@ -1906,18 +2027,51 @@
             window.history.replaceState({}, '', newUrl);
             const chatInputBar = document.getElementById('chatInputBar');
             const chatPreviewBar = document.getElementById('chatPreviewBar');
+            const chatReplyBar = document.getElementById('chatReplyBar');
 
-            if (name === 'messages') {
+            // ── SWITCH MODE ──
+            if (isPostChannel) {
+                // POST MODE
                 chatInputBar.style.display = 'none';
                 if (chatPreviewBar) chatPreviewBar.style.display = 'none';
-                loadDmInbox();
-            } else if (name === 'start_here') {
-                chatInputBar.style.display = 'none';
-                if (chatPreviewBar) chatPreviewBar.style.display = 'none';
-                loadStartHereContent();
+                if (chatReplyBar) chatReplyBar.style.display = 'none';
+                if (rightSidebar && window.innerWidth > 768) rightSidebar.style.display = 'flex';
+
+                // Add + New Post button to feed header
+                if (chatFeedHeader && !chatFeedHeader.querySelector('.comm-new-post-btn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'comm-new-post-btn';
+                    btn.id = 'newPostHeaderBtn';
+                    btn.innerHTML = '+ New Post';
+                    btn.onclick = openNewPostModal;
+                    chatFeedHeader.appendChild(btn);
+                } else if (chatFeedHeader) {
+                    const existing = chatFeedHeader.querySelector('.comm-new-post-btn');
+                    if (existing) existing.style.display = 'flex';
+                }
+
+                postSort = 'latest';
+                postPage = 1;
+                loadPostsFeed();
+                loadRightSidebar();
             } else {
-                chatInputBar.style.display = '';
-                loadMessages();
+                // CHAT MODE
+                if (rightSidebar) rightSidebar.style.display = 'none';
+                const existingBtn = document.querySelector('.comm-new-post-btn');
+                if (existingBtn) existingBtn.style.display = 'none';
+
+                if (name === 'messages') {
+                    chatInputBar.style.display = 'none';
+                    if (chatPreviewBar) chatPreviewBar.style.display = 'none';
+                    loadDmInbox();
+                } else if (name === 'start_here') {
+                    chatInputBar.style.display = 'none';
+                    if (chatPreviewBar) chatPreviewBar.style.display = 'none';
+                    loadStartHereContent();
+                } else {
+                    chatInputBar.style.display = '';
+                    loadMessages();
+                }
             }
 
             // If entering a DM, refresh badge after messages load
@@ -2772,9 +2926,769 @@
             await openDmChannel(userId);
         }
 
+        // ══════════════════════════════════════════════════════════════
+        //  POSTS ENGINE
+        // ══════════════════════════════════════════════════════════════
 
+        const EMOJIS = ['👍','❤️','😮','🔥','👏'];
+
+        function commToast(msg) {
+            let t = document.createElement('div');
+            t.className = 'comm-toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => { t.remove(); }, 2500);
+        }
+
+        function getAvatarSrc(author) {
+            if (!author) return '';
+            if (author.avatar_url) return author.avatar_url.startsWith('http') ? author.avatar_url : API + author.avatar_url;
+            if (author.selected_avatar) return author.selected_avatar;
+            return '';
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function avatarHtml(author, size) {
+            const s = size || 36;
+            const src = getAvatarSrc(author);
+            if (src) return `<img src="${src}" alt="" style="width:${s}px;height:${s}px;border-radius:50%;object-fit:cover;flex-shrink:0;">`;
+            const initials = getInitials(author?.full_name);
+            return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:${s*0.38}px;font-weight:700;color:var(--gold,#c1ff11);flex-shrink:0;">${initials}</div>`;
+        }
+
+        // ── Load Posts Feed ──
+        async function loadPostsFeed() {
+            const el = document.getElementById('chatMessages');
+            el.innerHTML = '<div class="comm-loading" style="padding:40px;text-align:center;color:#5a5648;">Loading posts...</div>';
+
+            try {
+                const res = await apiFetch(`/posts/${currentChannel}?sort=${postSort}&page=${postPage}&limit=20`);
+                const data = await res.json();
+                postTotalPages = data.pages || 1;
+
+                // Build sort tabs + post cards
+                let html = `<div class="comm-sort-tabs">
+                    <button class="comm-sort-tab ${postSort==='latest'?'active':''}" onclick="changePostSort('latest')">🕐 Latest</button>
+                    <button class="comm-sort-tab ${postSort==='top'?'active':''}" onclick="changePostSort('top')">🔥 Top</button>
+                </div>
+                <div id="postsFeedList" style="padding:16px 24px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1;">`;
+
+                if (data.posts && data.posts.length > 0) {
+                    for (const p of data.posts) {
+                        postsCache[p.id] = p;
+                        html += renderPostCard(p);
+                    }
+                } else {
+                    html += `<div class="comm-empty-state">
+                        <div class="comm-empty-icon">✍️</div>
+                        <p style="color:#5a5648;">No posts yet in this channel. Be the first to post!</p>
+                    </div>`;
+                }
+
+                html += '</div>';
+
+                // Pagination
+                if (postTotalPages > 1) {
+                    html += '<div class="comm-pagination">';
+                    html += `<button ${postPage <= 1 ? 'disabled' : ''} onclick="changePostPage(${postPage - 1})">← Prev</button>`;
+                    for (let i = 1; i <= Math.min(postTotalPages, 5); i++) {
+                        html += `<button class="${i === postPage ? 'active' : ''}" onclick="changePostPage(${i})">${i}</button>`;
+                    }
+                    html += `<button ${postPage >= postTotalPages ? 'disabled' : ''} onclick="changePostPage(${postPage + 1})">Next →</button>`;
+                    html += '</div>';
+                }
+
+                el.innerHTML = html;
+            } catch (e) {
+                console.error('Failed to load posts', e);
+                el.innerHTML = '<div class="comm-empty-state"><p style="color:#ef4444;">Failed to load posts. Try again.</p></div>';
+            }
+        }
+
+        function changePostSort(s) {
+            postSort = s;
+            postPage = 1;
+            loadPostsFeed();
+        }
+
+        function changePostPage(p) {
+            if (p < 1 || p > postTotalPages) return;
+            postPage = p;
+            loadPostsFeed();
+        }
+
+        // ── Render a Single Post Card ──
+        function renderPostCard(p) {
+            const a = p.author || {};
+            const isOwn = a.id === currentUserId;
+            const canManage = isOwn || currentUserIsAdmin;
+            const badgeCls = getBadgeClass(a.badge);
+
+            // Tags
+            let tagsHtml = '';
+            if (p.tags && p.tags.length) {
+                tagsHtml = p.tags.map(t => `<span class="comm-tag-pill" style="cursor:default;">${escHtml(t)}</span>`).join('');
+            } else if (p.tag) {
+                tagsHtml = `<span class="comm-tag-pill" style="cursor:default;">${escHtml(p.tag)}</span>`;
+            }
+
+            // Body text (truncate if > 200 chars)
+            const needsTrunc = p.body && p.body.length > 200;
+            const bodyClass = needsTrunc ? 'comm-post-content truncated' : 'comm-post-content';
+            const seeMoreBtn = needsTrunc ? `<button class="comm-see-more" onclick="toggleSeeMore(this)">See more</button>` : '';
+
+            // Image
+            const imageUrl = p.image_url ? (p.image_url.startsWith('http') ? p.image_url : API + p.image_url) : '';
+            const imageHtml = imageUrl ? `<img src="${imageUrl}" class="comm-post-image" style="width:100%;max-height:400px;object-fit:cover;border-radius:10px;margin-top:12px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);" onclick="openLightbox('${imageUrl}')" alt="">` : '';
+
+            // Pinned badge
+            const pinnedBadge = p.is_pinned ? '<span class="comm-post-pinned-badge">📌 Pinned</span> ' : '';
+
+            // Reactions bar
+            let reactionsHtml = buildReactionsBar(p.reaction_counts || {}, p.user_reactions || [], p.id, 'post');
+
+            // Menu
+            let menuHtml = '';
+            if (canManage) {
+                menuHtml = `<div class="comm-post-menu">
+                    <button style="background:none;border:none;color:#5a5648;font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background 0.15s;" onclick="togglePostMenu(${p.id})" title="More">⋯</button>
+                    <div class="comm-post-dropdown" id="postMenu-${p.id}">
+                        <button onclick="openEditPostModal(${p.id})"><i class="fa-solid fa-pen" style="font-size:0.75rem;"></i> Edit</button>
+                        ${currentUserIsAdmin ? `<button onclick="togglePinPost(${p.id})"><i class="fa-solid fa-thumbtack" style="font-size:0.75rem;"></i> ${p.is_pinned ? 'Unpin' : 'Pin'}</button>` : ''}
+                        <button class="danger" onclick="confirmDeletePost(${p.id})"><i class="fa-solid fa-trash" style="font-size:0.75rem;"></i> Delete</button>
+                    </div>
+                </div>`;
+            }
+
+            return `<div class="comm-post-card" id="post-${p.id}" data-post-id="${p.id}">
+                <div style="display:flex;align-items:flex-start;gap:12px;">
+                    ${avatarHtml(a, 40)}
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            ${pinnedBadge}
+                            <span style="font-weight:700;font-size:0.88rem;color:#f1f0ea;">${escHtml(a.full_name || 'User')}</span>
+                            <span class="msg-badge ${badgeCls}" style="font-size:0.6rem;">${escHtml(a.badge || 'Member')}</span>
+                            <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
+                        </div>
+                        <h4 style="font-size:1rem;font-weight:700;color:#f1f0ea;margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
+                        <div class="${bodyClass}" style="font-size:0.88rem;color:#b8b8b8;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
+                        ${seeMoreBtn}
+                        ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${tagsHtml}</div>` : ''}
+                        ${imageHtml}
+                    </div>
+                    ${menuHtml}
+                </div>
+                <div class="comm-post-footer">
+                    ${reactionsHtml}
+                    <button class="comm-comments-toggle" onclick="toggleInlineComments(${p.id})">
+                        💬 <span id="comment-count-${p.id}">${p.comment_count || 0}</span> Comments
+                    </button>
+                </div>
+                <div id="comments-section-${p.id}" style="display:none;"></div>
+            </div>`;
+        }
+
+        function buildReactionsBar(counts, userReacts, entityId, type) {
+            let html = '<div class="comm-reactions-bar">';
+            for (const emoji of EMOJIS) {
+                const count = counts[emoji] || 0;
+                const isActive = userReacts.includes(emoji);
+                if (count > 0) {
+                    html += `<button class="comm-reaction-btn ${isActive ? 'active' : ''}" onclick="toggleReaction(${entityId},'${emoji}','${type}')">
+                        <span>${emoji}</span><span class="r-count">${count}</span>
+                    </button>`;
+                }
+            }
+            // Add reaction button with picker
+            html += `<div class="comm-add-reaction-btn" onclick="toggleEmojiPicker(event, ${entityId}, '${type}')">
+                😊+
+                <div class="comm-emoji-picker" id="picker-${type}-${entityId}">
+                    ${EMOJIS.map(e => `<button onclick="event.stopPropagation();toggleReaction(${entityId},'${e}','${type}')">${e}</button>`).join('')}
+                </div>
+            </div>`;
+            html += '</div>';
+            return html;
+        }
+
+        function toggleEmojiPicker(e, entityId, type) {
+            e.stopPropagation();
+            const picker = document.getElementById(`picker-${type}-${entityId}`);
+            if (picker) picker.classList.toggle('open');
+            // Close on outside click
+            setTimeout(() => {
+                const handler = (ev) => {
+                    if (!picker.contains(ev.target)) {
+                        picker.classList.remove('open');
+                        document.removeEventListener('click', handler);
+                    }
+                };
+                document.addEventListener('click', handler);
+            }, 10);
+        }
+
+        // ── See More Toggle ──
+        function toggleSeeMore(btn) {
+            const content = btn.previousElementSibling;
+            if (!content) return;
+            if (content.classList.contains('truncated')) {
+                content.classList.remove('truncated');
+                content.classList.add('expanded');
+                btn.textContent = 'See less';
+            } else {
+                content.classList.remove('expanded');
+                content.classList.add('truncated');
+                btn.textContent = 'See more';
+            }
+        }
+
+        // ── Reactions (Optimistic UI) ──
+        async function toggleReaction(entityId, emoji, type) {
+            // Close any open picker
+            document.querySelectorAll('.comm-emoji-picker.open').forEach(p => p.classList.remove('open'));
+
+            const url = type === 'post' ? `/posts/${entityId}/react` : `/posts/comments/${entityId}/react`;
+            try {
+                const res = await apiFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ emoji }),
+                });
+                const data = await res.json();
+
+                // Update the card's reactions bar
+                const card = type === 'post' ? document.getElementById(`post-${entityId}`) : document.getElementById(`comment-${entityId}`);
+                if (card) {
+                    const bar = card.querySelector('.comm-reactions-bar');
+                    if (bar) {
+                        bar.outerHTML = buildReactionsBar(data.reaction_counts, data.user_reactions, entityId, type);
+                    }
+                }
+
+                // Update cached post data
+                if (type === 'post' && postsCache[entityId]) {
+                    postsCache[entityId].reaction_counts = data.reaction_counts;
+                    postsCache[entityId].user_reactions = data.user_reactions;
+                }
+            } catch (e) {
+                console.error('Reaction failed', e);
+            }
+        }
+
+        // ── Post Menu ──
+        function togglePostMenu(postId) {
+            const menu = document.getElementById(`postMenu-${postId}`);
+            document.querySelectorAll('.comm-post-dropdown.open').forEach(m => {
+                if (m !== menu) m.classList.remove('open');
+            });
+            menu.classList.toggle('open');
+            setTimeout(() => {
+                const handler = (ev) => {
+                    if (!menu.contains(ev.target)) {
+                        menu.classList.remove('open');
+                        document.removeEventListener('click', handler);
+                    }
+                };
+                document.addEventListener('click', handler);
+            }, 10);
+        }
+
+        // ── Inline Comments ──
+        async function toggleInlineComments(postId) {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (!section) return;
+            if (section.style.display !== 'none') {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            section.innerHTML = '<div class="comm-inline-comments"><div style="text-align:center;padding:12px;color:#5a5648;font-size:0.82rem;">Loading comments...</div></div>';
+            await loadInlineComments(postId);
+        }
+
+        async function loadInlineComments(postId) {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (!section) return;
+            try {
+                const res = await apiFetch(`/posts/${postId}/comments`);
+                const comments = await res.json();
+
+                let html = '<div class="comm-inline-comments">';
+                if (comments.length === 0) {
+                    html += '<div style="font-size:0.82rem;color:#5a5648;padding:4px 0;">No comments yet. Be the first!</div>';
+                }
+                for (const c of comments) {
+                    html += renderInlineComment(c, postId);
+                    if (c.replies && c.replies.length) {
+                        html += '<div class="comm-replies-list">';
+                        for (const r of c.replies) {
+                            html += renderInlineComment(r, postId, true);
+                        }
+                        html += '</div>';
+                    }
+                }
+
+                // Comment input
+                const avSrc = currentUserAvatar ? (currentUserAvatar.startsWith('http') ? currentUserAvatar : API + currentUserAvatar) : '';
+                const avImg = avSrc ? `<img src="${avSrc}" alt="">` : `<div style="width:28px;height:28px;border-radius:50%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);"></div>`;
+                html += `<div class="comm-inline-comment-input">
+                    ${avImg}
+                    <input type="text" id="comment-input-${postId}" placeholder="Write a comment..." onkeydown="if(event.key==='Enter'){submitInlineComment(${postId});}" />
+                    <button onclick="submitInlineComment(${postId})">Post</button>
+                </div>`;
+                html += '</div>';
+                section.innerHTML = html;
+
+                // Update comment count
+                const countEl = document.getElementById(`comment-count-${postId}`);
+                if (countEl && postsCache[postId]) {
+                    countEl.textContent = postsCache[postId].comment_count || comments.length;
+                }
+            } catch (e) {
+                console.error('Failed to load comments', e);
+                section.innerHTML = '<div class="comm-inline-comments"><div style="color:#ef4444;font-size:0.82rem;">Failed to load comments.</div></div>';
+            }
+        }
+
+        function renderInlineComment(c, postId, isReply) {
+            const a = c.author || {};
+            const canManage = a.id === currentUserId || currentUserIsAdmin;
+            let reactionsHtml = buildReactionsBar(c.reaction_counts || {}, c.user_reactions || [], c.id, 'comment');
+
+            let actionsHtml = `<div class="comm-inline-comment-actions">
+                ${reactionsHtml}
+                ${!isReply ? `<button onclick="showReplyInput(${postId}, ${c.id})">Reply</button>` : ''}
+                ${canManage ? `<button class="danger" style="color:#ef4444;" onclick="confirmDeleteComment(${postId}, ${c.id})">Delete</button>` : ''}
+            </div>`;
+
+            return `<div class="comm-inline-comment" id="comment-${c.id}">
+                ${avatarHtml(a, 28)}
+                <div class="comm-inline-comment-body">
+                    <div class="comm-inline-comment-header">
+                        <span class="comm-inline-comment-author">${escHtml(a.full_name || 'User')}</span>
+                        <span class="comm-inline-comment-time">${c.time_ago || ''}</span>
+                    </div>
+                    <div class="comm-inline-comment-text">${escHtml(c.body || '')}</div>
+                    ${actionsHtml}
+                    <div id="reply-input-${c.id}" style="display:none;"></div>
+                </div>
+            </div>`;
+        }
+
+        function showReplyInput(postId, commentId) {
+            const container = document.getElementById(`reply-input-${commentId}`);
+            if (!container) return;
+            if (container.style.display !== 'none') { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            container.innerHTML = `<div class="comm-reply-input-row">
+                <input type="text" id="reply-text-${commentId}" placeholder="Write a reply..." onkeydown="if(event.key==='Enter'){submitReply(${postId},${commentId});}" />
+                <button onclick="submitReply(${postId},${commentId})">Reply</button>
+            </div>`;
+            document.getElementById(`reply-text-${commentId}`)?.focus();
+        }
+
+        async function submitInlineComment(postId) {
+            const input = document.getElementById(`comment-input-${postId}`);
+            if (!input || !input.value.trim()) return;
+            const body = input.value.trim();
+            input.value = '';
+            input.disabled = true;
+            try {
+                await apiFetch(`/posts/${postId}/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify({ body }),
+                });
+                // Update comment count
+                if (postsCache[postId]) postsCache[postId].comment_count = (postsCache[postId].comment_count || 0) + 1;
+                const countEl = document.getElementById(`comment-count-${postId}`);
+                if (countEl) countEl.textContent = postsCache[postId]?.comment_count || '';
+                await loadInlineComments(postId);
+            } catch (e) {
+                console.error('Failed to post comment', e);
+                commToast('Failed to post comment');
+            }
+            input.disabled = false;
+        }
+
+        async function submitReply(postId, parentId) {
+            const input = document.getElementById(`reply-text-${parentId}`);
+            if (!input || !input.value.trim()) return;
+            const body = input.value.trim();
+            input.value = '';
+            try {
+                await apiFetch(`/posts/${postId}/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify({ body, parent_id: parentId }),
+                });
+                if (postsCache[postId]) postsCache[postId].comment_count = (postsCache[postId].comment_count || 0) + 1;
+                const countEl = document.getElementById(`comment-count-${postId}`);
+                if (countEl) countEl.textContent = postsCache[postId]?.comment_count || '';
+                await loadInlineComments(postId);
+            } catch (e) {
+                console.error('Failed to post reply', e);
+                commToast('Failed to post reply');
+            }
+        }
+
+        // ── New Post Modal ──
+        function openNewPostModal() {
+            newPostTags = [];
+            newPostFile = null;
+            const modal = document.getElementById('newPostModal');
+            modal.style.display = 'flex';
+            document.getElementById('postTitleInput').value = '';
+            document.getElementById('postBodyInput').value = '';
+            document.getElementById('titleCharCount').textContent = '0';
+            document.getElementById('tagsInputWrap').innerHTML = '<input class="comm-tags-input" id="tagsInput" placeholder="e.g. Make.com, n8n, Zapier" />';
+            document.getElementById('postImagePreview').style.display = 'none';
+            document.getElementById('postImagePreview').innerHTML = '';
+            initTagsInput();
+            initPostImageUpload();
+            document.getElementById('postTitleInput').focus();
+        }
+
+        function closeNewPostModal() {
+            document.getElementById('newPostModal').style.display = 'none';
+        }
+
+        function initTagsInput() {
+            const input = document.getElementById('tagsInput');
+            if (!input) return;
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const val = input.value.replace(/,/g, '').trim();
+                    if (val && !newPostTags.includes(val) && newPostTags.length < 5) {
+                        newPostTags.push(val);
+                        renderTagPills();
+                    }
+                    input.value = '';
+                }
+            });
+        }
+
+        function renderTagPills() {
+            const wrap = document.getElementById('tagsInputWrap');
+            if (!wrap) return;
+            wrap.innerHTML = newPostTags.map((t, i) =>
+                `<span class="comm-tag-pill">${escHtml(t)} <span class="tag-remove" onclick="removeTag(${i})">×</span></span>`
+            ).join('') + '<input class="comm-tags-input" id="tagsInput" placeholder="Add tag..." />';
+            initTagsInput();
+            document.getElementById('tagsInput')?.focus();
+        }
+
+        function removeTag(idx) {
+            newPostTags.splice(idx, 1);
+            renderTagPills();
+        }
+
+        function initPostImageUpload() {
+            const fileInput = document.getElementById('postImageInput');
+            if (!fileInput) return;
+            fileInput.value = '';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { commToast('Image must be under 5MB'); return; }
+                newPostFile = file;
+                const preview = document.getElementById('postImagePreview');
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    preview.innerHTML = `<img src="${re.target.result}" alt=""><button class="remove-preview" onclick="removePostImage()">×</button>`;
+                    preview.style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            };
+
+            // Title char counter
+            document.getElementById('postTitleInput').oninput = (e) => {
+                document.getElementById('titleCharCount').textContent = e.target.value.length;
+            };
+        }
+
+        function removePostImage() {
+            newPostFile = null;
+            document.getElementById('postImagePreview').style.display = 'none';
+            document.getElementById('postImagePreview').innerHTML = '';
+            document.getElementById('postImageInput').value = '';
+        }
+
+        async function submitNewPost() {
+            const title = document.getElementById('postTitleInput').value.trim();
+            const body = document.getElementById('postBodyInput').value.trim();
+            if (!title) { commToast('Title is required'); return; }
+            if (!body || body.length < 10) { commToast('Body must be at least 10 characters'); return; }
+
+            const btn = document.getElementById('submitPostBtn');
+            btn.disabled = true;
+            btn.textContent = 'Posting...';
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('body', body);
+            formData.append('tags', newPostTags.join(','));
+            if (newPostFile) formData.append('image', newPostFile);
+
+            try {
+                const res = await fetch(API + `/posts/${currentChannel}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData,
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    commToast(err.detail || 'Failed to create post');
+                    return;
+                }
+                const post = await res.json();
+                postsCache[post.id] = post;
+                closeNewPostModal();
+                commToast('Post created! ✨');
+                postSort = 'latest';
+                postPage = 1;
+                loadPostsFeed();
+            } catch (e) {
+                console.error('Create post error', e);
+                commToast('Failed to create post');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Post →';
+            }
+        }
+
+        function prependPostCard(postData) {
+            postsCache[postData.id] = postData;
+            const list = document.getElementById('postsFeedList');
+            if (!list) return;
+            // Remove empty state if present
+            const empty = list.querySelector('.comm-empty-state');
+            if (empty) empty.remove();
+            const temp = document.createElement('div');
+            temp.innerHTML = renderPostCard(postData);
+            const card = temp.firstElementChild;
+            card.style.animation = 'commSlideDown 0.3s ease';
+            list.prepend(card);
+        }
+
+        // ── Edit Post ──
+        function openEditPostModal(postId) {
+            editingPostId = postId;
+            document.querySelectorAll('.comm-post-dropdown.open').forEach(m => m.classList.remove('open'));
+            const p = postsCache[postId];
+            if (!p) return;
+            document.getElementById('editPostTitle').value = p.title || '';
+            document.getElementById('editPostBody').value = p.body || '';
+            document.getElementById('editPostModal').style.display = 'flex';
+        }
+
+        function closeEditPostModal() {
+            document.getElementById('editPostModal').style.display = 'none';
+            editingPostId = null;
+        }
+
+        async function saveEditPost() {
+            if (!editingPostId) return;
+            const title = document.getElementById('editPostTitle').value.trim();
+            const body = document.getElementById('editPostBody').value.trim();
+            if (!title) { commToast('Title is required'); return; }
+            if (!body || body.length < 10) { commToast('Body must be at least 10 characters'); return; }
+
+            const btn = document.getElementById('saveEditPostBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const res = await apiFetch(`/posts/${currentChannel}/${editingPostId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ title, body }),
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    commToast(err.detail || 'Failed to edit post');
+                    return;
+                }
+                const updatedPost = await res.json();
+                postsCache[editingPostId] = updatedPost;
+                // Re-render the card in place
+                const card = document.getElementById(`post-${editingPostId}`);
+                if (card) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = renderPostCard(updatedPost);
+                    card.replaceWith(temp.firstElementChild);
+                }
+                closeEditPostModal();
+                commToast('Post updated! ✅');
+            } catch (e) {
+                console.error('Edit post error', e);
+                commToast('Failed to edit post');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        }
+
+        // ── Delete Post (Custom Modal) ──
+        let pendingDeleteAction = null;
+
+        function confirmDeletePost(postId) {
+            document.querySelectorAll('.comm-post-dropdown.open').forEach(m => m.classList.remove('open'));
+            document.getElementById('confirmDeleteTitle').textContent = 'Delete Post?';
+            document.getElementById('confirmDeleteMsg').textContent = 'This post and all its comments will be permanently deleted.';
+            const modal = document.getElementById('confirmDeleteModal');
+            modal.style.display = 'flex';
+            pendingDeleteAction = async () => {
+                try {
+                    await apiFetch(`/posts/${currentChannel}/${postId}`, { method: 'DELETE' });
+                    const card = document.getElementById(`post-${postId}`);
+                    if (card) { card.style.transition = 'opacity 0.3s'; card.style.opacity = '0'; setTimeout(() => card.remove(), 300); }
+                    delete postsCache[postId];
+                    commToast('Post deleted');
+                } catch (e) {
+                    commToast('Failed to delete post');
+                }
+            };
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                if (pendingDeleteAction) await pendingDeleteAction();
+                closeConfirmModal();
+            };
+        }
+
+        function confirmDeleteComment(postId, commentId) {
+            document.getElementById('confirmDeleteTitle').textContent = 'Delete Comment?';
+            document.getElementById('confirmDeleteMsg').textContent = 'This comment will be permanently deleted.';
+            const modal = document.getElementById('confirmDeleteModal');
+            modal.style.display = 'flex';
+            pendingDeleteAction = async () => {
+                try {
+                    await apiFetch(`/posts/${postId}/comments/${commentId}`, { method: 'DELETE' });
+                    if (postsCache[postId]) postsCache[postId].comment_count = Math.max((postsCache[postId].comment_count || 0) - 1, 0);
+                    const countEl = document.getElementById(`comment-count-${postId}`);
+                    if (countEl) countEl.textContent = postsCache[postId]?.comment_count || 0;
+                    await loadInlineComments(postId);
+                    commToast('Comment deleted');
+                } catch (e) {
+                    commToast('Failed to delete comment');
+                }
+            };
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                if (pendingDeleteAction) await pendingDeleteAction();
+                closeConfirmModal();
+            };
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmDeleteModal').style.display = 'none';
+            pendingDeleteAction = null;
+        }
+
+        // ── Pin / Unpin ──
+        async function togglePinPost(postId) {
+            document.querySelectorAll('.comm-post-dropdown.open').forEach(m => m.classList.remove('open'));
+            try {
+                const res = await apiFetch(`/posts/${currentChannel}/${postId}/pin`, { method: 'PATCH' });
+                const data = await res.json();
+                if (postsCache[postId]) postsCache[postId].is_pinned = data.is_pinned;
+                commToast(data.is_pinned ? 'Post pinned 📌' : 'Post unpinned');
+                loadPostsFeed();
+                loadRightSidebar();
+            } catch (e) {
+                commToast('Failed to toggle pin');
+            }
+        }
+
+        // ── Lightbox ──
+        function openLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lightboxImg');
+            if (lb && img) {
+                img.src = src;
+                lb.classList.add('open');
+                lb.style.display = 'flex';
+            }
+        }
+
+        // ── Right Sidebar ──
+        async function loadRightSidebar() {
+            // Active Now (use online users)
+            try {
+                const res = await apiFetch('/chat/members');
+                if (res.ok) {
+                    const members = await res.json();
+                    const online = members.filter(m => m.is_online).slice(0, 8);
+                    const avatarsEl = document.getElementById('rsActiveAvatars');
+                    if (avatarsEl) {
+                        if (online.length === 0) {
+                            avatarsEl.innerHTML = '<span style="font-size:0.78rem;color:#5a5648;">No one online</span>';
+                        } else {
+                            avatarsEl.innerHTML = online.map(m => {
+                                const src = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : '';
+                                return src ? `<img src="${src}" alt="${escHtml(m.full_name)}" title="${escHtml(m.full_name)}">` :
+                                    `<div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;border:2px solid #0a0a0a;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--gold,#c1ff11);margin-left:-8px;" title="${escHtml(m.full_name)}">${getInitials(m.full_name)}</div>`;
+                            }).join('');
+                            if (members.filter(m => m.is_online).length > 8) {
+                                avatarsEl.innerHTML += `<span class="comm-active-more">+${members.filter(m => m.is_online).length - 8}</span>`;
+                            }
+                        }
+                    }
+                }
+            } catch (e) { }
+
+            // Top Topics
+            try {
+                const res = await apiFetch(`/posts/${currentChannel}/top-topics`);
+                if (res.ok) {
+                    const topics = await res.json();
+                    const el = document.getElementById('rsTopTopicsList');
+                    if (el) {
+                        if (topics.length === 0) {
+                            el.innerHTML = '<span style="font-size:0.78rem;color:#5a5648;">No topics yet</span>';
+                        } else {
+                            el.innerHTML = topics.map(t =>
+                                `<div class="comm-topic-item"><span class="comm-topic-name">${escHtml(t.tag)}</span><span class="comm-topic-count">${t.count} posts</span></div>`
+                            ).join('');
+                        }
+                    }
+                }
+            } catch (e) { }
+
+            // Pinned
+            try {
+                const res = await apiFetch(`/posts/${currentChannel}/pinned`);
+                if (res.ok) {
+                    const pinned = await res.json();
+                    const el = document.getElementById('rsPinnedList');
+                    if (el) {
+                        if (pinned.length === 0) {
+                            el.innerHTML = '<span style="font-size:0.78rem;color:#5a5648;">No pinned posts</span>';
+                        } else {
+                            el.innerHTML = pinned.slice(0, 5).map(p => {
+                                const a = p.author || {};
+                                const avSrc = getAvatarSrc(a);
+                                const avHtml = avSrc ? `<img src="${avSrc}" alt="">` : `<div style="width:20px;height:20px;border-radius:50%;background:#1a1a1a;font-size:0.55rem;display:flex;align-items:center;justify-content:center;color:var(--gold,#c1ff11);font-weight:700;">${getInitials(a.full_name)}</div>`;
+                                return `<div class="comm-pinned-item" onclick="scrollToPost(${p.id})">
+                                    <div class="comm-pinned-author">${avHtml}<span class="comm-pinned-author-name">${escHtml(a.full_name || '')}</span><span class="comm-pinned-author-time">${p.time_ago || ''}</span></div>
+                                    <div class="comm-pinned-text">${escHtml(p.title || '')}</div>
+                                </div>`;
+                            }).join('');
+                        }
+                    }
+                }
+            } catch (e) { }
+        }
+
+        function scrollToPost(postId) {
+            const card = document.getElementById(`post-${postId}`);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.style.boxShadow = '0 0 0 2px rgba(193,255,17,0.4)';
+                setTimeout(() => { card.style.boxShadow = ''; }, 2000);
+            }
+        }
 
     </script>
+
 
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>

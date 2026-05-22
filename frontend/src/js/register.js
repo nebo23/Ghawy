@@ -1,6 +1,7 @@
 let isPasswordStrong = false;
 let isTermsAgreed = false;
 let dialCodeValue = '';
+let inviteToken = null;
 
 // Password toggle
 function togglePasswordVisibility() {
@@ -140,7 +141,59 @@ async function getGeoLocation() {
   }
 }
 
-window.onload = getGeoLocation;
+async function initInviteFlow() {
+  const urlParams = new URLSearchParams(window.location.search);
+  inviteToken = urlParams.get('token');
+
+  if (!inviteToken) {
+    getGeoLocation();
+    return; // Normal flow
+  }
+
+  // Invite flow
+  try {
+    const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+    const res = await fetch(`${apiBase}/auth/invite/${inviteToken}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      showFormMessage(data.detail || 'Invalid or expired invite link', 'error');
+      // Disable form
+      document.getElementById('registerForm').style.pointerEvents = 'none';
+      document.getElementById('registerForm').style.opacity = '0.5';
+      return;
+    }
+
+    // Prefill data
+    const nameInput = document.getElementById('fullName');
+    const emailInput = document.getElementById('email');
+    
+    nameInput.value = data.full_name;
+    nameInput.readOnly = true;
+    nameInput.classList.add('opacity-50', 'cursor-not-allowed');
+    
+    emailInput.value = data.email;
+    emailInput.readOnly = true;
+    emailInput.classList.add('opacity-50', 'cursor-not-allowed');
+
+    // UI Changes
+    document.getElementById('default-header').style.display = 'none';
+    document.getElementById('invite-header').style.display = 'block';
+    
+    document.getElementById('phone-section').style.display = 'none';
+    document.getElementById('social-divider').style.display = 'none';
+    document.getElementById('google-btn').style.display = 'none';
+    document.getElementById('login-footer').style.display = 'none';
+    
+    document.getElementById('password-label').innerText = 'Set Your Password';
+    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'Complete Setup <i class="fa-solid fa-arrow-right ml-1"></i>';
+
+  } catch (err) {
+    showFormMessage('Failed to verify invite link', 'error');
+  }
+}
+
+window.onload = initInviteFlow;
 
 function showFormMessage(msg, type) {
   const alertEl = document.getElementById('formAlert');
@@ -186,28 +239,57 @@ async function submitRegister() {
     // API is assumed to be defined globally from utils.js
     const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
 
-    const res = await fetch(`${apiBase}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        full_name: fullName,
-        email,
-        password,
-        phone,
-        country,
-        governorate
-      })
-    });
+    if (inviteToken) {
+      // Invite flow submit
+      const res = await fetch(`${apiBase}/auth/register-with-invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: inviteToken,
+          password: password
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      showFormMessage('Account created successfully! Redirecting...', 'success');
-      const nextUrl = `verify-email.html?email=${encodeURIComponent(email)}`;
-      setTimeout(() => { window.location.href = nextUrl; }, 1200);
+      if (res.ok) {
+        showFormMessage('Setup complete! Redirecting...', 'success');
+        // Save token and go straight to onboarding
+        if (data.access_token) {
+          localStorage.setItem('ghawy_token', data.access_token);
+          setTimeout(() => { window.location.href = 'onboarding.html'; }, 1200);
+        } else {
+          setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        }
+      } else {
+        showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+      }
     } else {
-      showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
-      btn.disabled = false;
+      // Normal flow submit
+      const res = await fetch(`${apiBase}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: fullName,
+          email,
+          password,
+          phone,
+          country,
+          governorate
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showFormMessage('Account created successfully! Redirecting...', 'success');
+        const nextUrl = `verify-email.html?email=${encodeURIComponent(email)}`;
+        setTimeout(() => { window.location.href = nextUrl; }, 1200);
+      } else {
+        showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+      }
     }
 
   } catch (e) {
