@@ -601,7 +601,7 @@ async function loadPayments() {
           </div>
         </td>
         <td style="color:#888;font-size:13px;">${dateFormatted}</td>
-        <td style="color:#fff;font-weight:600;">EGP ${Number(p.amount || 0).toLocaleString()}</td>
+        <td style="color:#fff;font-weight:600;">${p.currency || 'EGP'} ${Number(p.amount || 0).toLocaleString()}</td>
         <td style="color:#888;">${methodLabel}</td>
         <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
         <td>
@@ -618,7 +618,8 @@ async function loadPayments() {
     renderPaymentsPagination(data.page, data.pages);
     setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
   } catch(e) {
-    showToast('❌ Failed to load payments', 'error');
+    console.error(e);
+    showToast('❌ Failed to load payments: ' + e.message, 'error');
   }
 }
 

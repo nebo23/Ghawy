@@ -18,6 +18,14 @@ import uuid
 # ─── Kashier: إنشاء أوردر ────────────────────────────────────
 @router.post("/kashier/create")
 def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Delete old pending Kashier payments for this user so they don't pile up in the admin dashboard
+    db.query(Payment).filter(
+        Payment.user_id == current_user.id,
+        Payment.method == PaymentMethod.KASHIER,
+        Payment.status == PaymentStatus.PENDING
+    ).delete(synchronize_session=False)
+    db.commit()
+
     order_id = f"ORD-{current_user.id}-{uuid.uuid4().hex[:8].upper()}"
 
     result = create_kashier_payment_url(
