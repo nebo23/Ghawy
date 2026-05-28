@@ -61,6 +61,7 @@ class UserMemberOut(BaseModel):
     badge: str = "Member"
     is_admin: bool = False
     is_active: bool = False
+    onboarding_completed: bool = False
     social_media_url: Optional[str] = None
     show_social_media: bool = True
     created_at: datetime

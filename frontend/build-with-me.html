@@ -19,6 +19,12 @@
     
 <script>
   (function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var urlToken = urlParams.get("token");
+    if (urlToken) {
+      localStorage.setItem("token", urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     var t = localStorage.getItem("token");
     if (!t) {
       window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));

@@ -120,7 +120,8 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "id": user.id,
             "email": user.email,
             "full_name": user.full_name,
-            "has_completed_onboarding": user.onboarding_completed,
+            "is_active": user.is_active,
+            "onboarding_completed": user.onboarding_completed,
             "avatar_url": user.avatar_url
         }
     }

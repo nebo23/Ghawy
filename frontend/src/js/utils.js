@@ -55,18 +55,81 @@ async function enforceAuthGuard() {
     const res = await fetch(`${API}/profile/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+
+    if (res.status === 401) {
+      logout();
+      return;
+    }
+
+    if (res.status === 403) {
+      // المستخدم موجود بس مش active — وجهه للدفع
+      window.location.href = 'payment.html';
+      return;
+    }
+
     if (res.ok) {
       const u = await res.json();
       if (!u.is_active || u.subscription_type === 'none') {
         window.location.href = 'payment.html';
+        return;
       }
-    } else {
-      logout();
+      // لو active بس لسه مكملش الـ onboarding — وجهه هناك
+      if (!u.onboarding_completed && !currentPath.endsWith('onboarding.html')) {
+        window.location.href = 'onboarding.html';
+        return;
+      }
     }
   } catch(e) {}
 }
 
 enforceAuthGuard();
+
+// ─── Require Active User (used by page-level guards) ────────
+async function requireActiveUser() {
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'login.html';
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${API}/profile/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.status === 401) {
+      logout();
+      return null;
+    }
+
+    if (res.status === 403) {
+      window.location.href = 'payment.html';
+      return null;
+    }
+
+    if (!res.ok) return null;
+
+    const user = await res.json();
+
+    if (!user.is_active) {
+      window.location.href = 'payment.html';
+      return null;
+    }
+
+    // لو active بس مكملش الـ onboarding — وجهه يكمل البروفايل
+    if (!user.onboarding_completed) {
+      const currentPath = window.location.pathname;
+      if (!currentPath.endsWith('onboarding.html')) {
+        window.location.href = 'onboarding.html';
+        return null;
+      }
+    }
+
+    return user;
+  } catch(e) {
+    return null;
+  }
+}
 
 async function initCurrency() {
   const cachedCurrency = localStorage.getItem('user_currency');

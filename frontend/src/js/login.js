@@ -1,34 +1,54 @@
 // لو عنده token بالفعل — وجهه للصفحة المناسبة
 (async function checkExistingToken() {
+  // Fail-safe: extract token if it got caught in the redirect param (e.g. from cached dashboard.html)
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectParam = urlParams.get('redirect');
+  if (redirectParam && redirectParam.includes('token=')) {
+    try {
+      const redirectSearch = redirectParam.split('?')[1];
+      if (redirectSearch) {
+        const nestedParams = new URLSearchParams(redirectSearch);
+        const nestedToken = nestedParams.get('token');
+        if (nestedToken) {
+          localStorage.setItem('token', nestedToken);
+          // Redirect to the clean page without the token in URL
+          window.location.href = redirectParam.split('?')[0];
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+
   const t = getToken();
   if (!t) return;
   try {
     const profileRes = await fetch(`${API}/profile/me`, {
       headers: { 'Authorization': `Bearer ${t}` }
     });
-    if (!profileRes.ok) {
+
+    // Token فاسد أو منتهي
+    if (profileRes.status === 401) {
       localStorage.removeItem('token');
       return;
     }
-    const profile = await profileRes.json();
-    if (!profile.is_active) {
-      // المستخدم عنده حساب بس مش مفعل — يروح يدفع
+
+    // المستخدم مش active — وجهه للدفع
+    if (profileRes.status === 403) {
       window.location.href = 'payment.html';
       return;
     }
 
-    const res = await fetch(`${API}/profile/onboarding-status`, {
-      headers: { 'Authorization': `Bearer ${t}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      window.location.href = data.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
-    } else {
-      // Onboarding status failed but token is valid — go to main page
-      window.location.href = 'index.html';
+    if (!profileRes.ok) return;
+
+    const profile = await profileRes.json();
+    if (!profile.is_active) {
+      window.location.href = 'payment.html';
+      return;
     }
+
+    window.location.href = profile.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
   } catch(e) {
-    // Network error — don't remove token, just stay on login page
+    // Network error — stay on login page
   }
 })();
 
@@ -54,28 +74,33 @@ async function login() {
 
     if (res.ok) {
       saveToken(data.access_token);
-      showAlert('تم الدخول بنجاح! ✅ جاري تحويلك...', 'success');
-      // Check onboarding status before redirect
-      try {
-        const profileRes = await fetch(`${API}/profile/me`, {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-        const profile = await profileRes.json();
-        if (!profile.is_active) {
-          setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
-          return;
-        }
 
-        const statusRes = await fetch(`${API}/profile/onboarding-status`, {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-        const statusData = await statusRes.json();
-        const redirect = statusData.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
-        setTimeout(() => { window.location.href = redirect; }, 1200);
-      } catch(e) {
-        // Fallback if onboarding status fails but login succeeded
-        setTimeout(() => { window.location.href = 'onboarding.html'; }, 1200);
+      // حفظ بيانات اليوزر في localStorage
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
       }
+
+      showAlert('تم الدخول بنجاح! ✅ جاري تحويلك...', 'success');
+
+      let redirect = 'onboarding.html';
+      
+      // أولاً: لو في رابط رجوع (redirect parameter) نستخدمه (بشرط ما يكونش تسجيل دخول أو رجوع غير آمن)
+      const urlParams = new URLSearchParams(window.location.search);
+      let redirectParam = urlParams.get('redirect');
+      if (redirectParam && !redirectParam.includes('login') && redirectParam.startsWith('/')) {
+        redirect = redirectParam.split('?')[0]; // نأخذ الرابط النظيف بدون توكنات
+      } else {
+        // ثانياً: لو مفيش، نحدد بناءً على حالة الحساب
+        if (data.user) {
+          if (!data.user.is_active) {
+            redirect = 'payment.html';
+          } else if (data.user.onboarding_completed) {
+            redirect = 'dashboard.html';
+          }
+        }
+      }
+
+      setTimeout(() => { window.location.href = redirect; }, 1200);
     } else {
       showAlert(data.detail || 'إيميل أو باسورد غلط', 'error');
     }
@@ -88,4 +113,3 @@ async function login() {
 }
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
-
