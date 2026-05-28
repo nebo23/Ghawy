@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession
 from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
@@ -161,6 +161,42 @@ def apply_sqlite_compat_migrations():
                     reviewed_at DATETIME,
                     rejection_reason VARCHAR,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+        # ── Lesson Cloudflare columns ──
+        if inspector.has_table("lessons"):
+            lesson_cols = {col["name"] for col in inspector.get_columns("lessons")}
+            if "cloudflare_video_id" not in lesson_cols:
+                conn.execute(text("ALTER TABLE lessons ADD COLUMN cloudflare_video_id VARCHAR"))
+            if "video_status" not in lesson_cols:
+                conn.execute(text("ALTER TABLE lessons ADD COLUMN video_status VARCHAR DEFAULT 'pending'"))
+            if "pdf_url" not in lesson_cols:
+                conn.execute(text("ALTER TABLE lessons ADD COLUMN pdf_url VARCHAR"))
+
+        # ── LiveSession new columns ──
+        if inspector.has_table("live_sessions"):
+            ls_cols = {col["name"] for col in inspector.get_columns("live_sessions")}
+            if "youtube_url" not in ls_cols:
+                conn.execute(text("ALTER TABLE live_sessions ADD COLUMN youtube_url VARCHAR"))
+            if "zoom_url" not in ls_cols:
+                conn.execute(text("ALTER TABLE live_sessions ADD COLUMN zoom_url VARCHAR"))
+            if "is_published" not in ls_cols:
+                conn.execute(text("ALTER TABLE live_sessions ADD COLUMN is_published BOOLEAN DEFAULT 0"))
+            if "created_by" not in ls_cols:
+                conn.execute(text("ALTER TABLE live_sessions ADD COLUMN created_by INTEGER"))
+            if "scheduled_at" not in ls_cols:
+                conn.execute(text("ALTER TABLE live_sessions ADD COLUMN scheduled_at DATETIME"))
+
+        # ── LiveAttendee table ──
+        if not inspector.has_table("live_attendees"):
+            conn.execute(text("""
+                CREATE TABLE live_attendees (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(session_id, user_id)
                 )
             """))
 
@@ -416,6 +452,7 @@ app.include_router(admin.router)
 app.include_router(guests.router)
 app.include_router(posts.router)
 app.include_router(manual_payments.router)
+app.include_router(live.router)
 
 @app.get("/")
 def root():

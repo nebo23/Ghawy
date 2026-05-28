@@ -226,6 +226,12 @@ def get_current_active_member(current_user: User = Depends(get_current_user)) ->
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="حسابك غير مفعل أو ليس لديك اشتراك")
     return current_user
 
+def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency that ensures the current user is an admin."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+    return current_user
+
 # ─── Get All Users (Community Members) ───────────────────────
 @router.get("", response_model=list[UserOut])
 def get_all_users(

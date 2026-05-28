@@ -1,0 +1,325 @@
+/* ═══════════════════════════════════════════
+   ADMIN COURSES — Shared Styles
+   ═══════════════════════════════════════════ */
+
+/* ── Lesson Table ─────────────────────────── */
+.lessons-table-wrap {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.lessons-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.lessons-table th {
+  text-align: left;
+  padding: 14px 16px;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  border-bottom: 1px solid #1e1e1e;
+  background: #0d0d0d;
+}
+.lessons-table td {
+  padding: 14px 16px;
+  color: #ccc;
+  font-size: 14px;
+  border-bottom: 1px solid #1a1a1a;
+  vertical-align: middle;
+}
+.lessons-table tr:last-child td { border-bottom: none; }
+.lessons-table tr:hover td { background: rgba(63,143,249,0.03); }
+
+/* ── Status Badges ────────────────────────── */
+.video-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.video-badge.pending { background: rgba(255,255,255,0.06); color: #888; }
+.video-badge.processing { background: rgba(63,143,249,0.12); color: #3f8ff9; }
+.video-badge.ready { background: rgba(34,197,94,0.12); color: #22c55e; }
+.video-badge.error { background: rgba(239,68,68,0.12); color: #ef4444; }
+
+.video-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.video-badge.pending .dot { background: #888; }
+.video-badge.processing .dot { background: #3f8ff9; animation: pulse-dot 1.5s ease infinite; }
+.video-badge.ready .dot { background: #22c55e; }
+.video-badge.error .dot { background: #ef4444; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Action Buttons ───────────────────────── */
+.lesson-actions {
+  display: flex;
+  gap: 6px;
+}
+.lesson-action-btn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lesson-action-btn:hover { border-color: #3f8ff9; color: #3f8ff9; }
+.lesson-action-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
+.lesson-action-btn.pdf { color: #f59e0b; border-color: #f59e0b33; }
+.lesson-action-btn.pdf:hover { background: rgba(245,158,11,.08); }
+
+/* ── Upload Progress ──────────────────────── */
+.upload-progress-wrap {
+  margin: 12px 0;
+  display: none;
+}
+.upload-progress-bar {
+  height: 6px;
+  background: #1e1e1e;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3f8ff9, #6bb5ff);
+  border-radius: 3px;
+  transition: width .3s;
+  width: 0%;
+}
+.upload-progress-text {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* ── Modal ────────────────────────────────── */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.admin-modal-overlay.active { display: flex; }
+.admin-modal {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  width: 480px;
+  max-width: 95vw;
+  padding: 28px;
+  color: #fff;
+}
+.admin-modal h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+}
+.admin-modal label {
+  display: block;
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+.admin-modal input,
+.admin-modal select,
+.admin-modal textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s;
+}
+.admin-modal input:focus,
+.admin-modal textarea:focus {
+  border-color: #3f8ff9;
+}
+.admin-modal textarea { resize: vertical; min-height: 80px; }
+.admin-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all .2s;
+}
+.modal-btn.primary {
+  background: #3f8ff9;
+  color: #000;
+}
+.modal-btn.primary:hover { background: #5aa0ff; }
+.modal-btn.secondary {
+  background: #1e1e1e;
+  color: #ccc;
+}
+.modal-btn.secondary:hover { background: #2a2a2a; }
+.modal-btn.danger {
+  background: rgba(239,68,68,.15);
+  color: #ef4444;
+}
+.modal-btn.danger:hover { background: rgba(239,68,68,.25); }
+
+/* ── File Drop Zone ───────────────────────── */
+.file-drop-zone {
+  border: 2px dashed #2a2a2a;
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  color: #666;
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: 8px;
+}
+.file-drop-zone:hover,
+.file-drop-zone.dragover {
+  border-color: #3f8ff9;
+  background: rgba(63,143,249,.04);
+  color: #3f8ff9;
+}
+.file-drop-zone .drop-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.file-drop-zone .drop-text {
+  font-size: 14px;
+}
+.file-drop-zone .drop-hint {
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+}
+
+/* ── Add Button ───────────────────────────── */
+.add-lesson-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #3f8ff9;
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.add-lesson-btn:hover { background: #5aa0ff; }
+
+/* ── Empty State ──────────────────────────── */
+.lessons-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #555;
+}
+.lessons-empty i { font-size: 32px; margin-bottom: 12px; display: block; color: #333; }
+.lessons-empty p { font-size: 14px; }
+
+/* ── Skeleton ─────────────────────────────── */
+.lesson-skeleton {
+  padding: 14px 16px;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.skel-block {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: skel-shine 1.5s infinite;
+}
+@keyframes skel-shine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Confirm Modal ────────────────────────── */
+.confirm-modal-body {
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* ── Section header ───────────────────────── */
+.course-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.course-admin-header h2 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin: 0;
+}
+
+/* ── Course info cards ────────────────────── */
+.course-info-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.course-info-card {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  padding: 16px;
+}
+.course-info-card .info-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.course-info-card .info-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 768px) {
+  .lessons-table th:nth-child(3),
+  .lessons-table td:nth-child(3) { display: none; }
+  .admin-modal { padding: 20px; }
+  .course-admin-header { flex-direction: column; align-items: flex-start; }
+}

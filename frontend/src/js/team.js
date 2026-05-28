@@ -30,7 +30,8 @@ function initTabs() {
     'users': 'Team Dashboard',
     'payments': 'Payments & Subscriptions',
     'analytics': 'Platform Analytics',
-    'pending-requests': 'Pending Requests'
+    'pending-requests': 'Pending Requests',
+    'live-sessions': 'Live Sessions'
   };
 
   tabs.forEach(tab => {
@@ -60,6 +61,9 @@ function initTabs() {
       if (target === 'pending-requests') {
         mprCurrentPage = 1;
         loadPendingRequestsTab();
+      }
+      if (target === 'live-sessions') {
+        loadLiveSessionsTab();
       }
     });
   });
@@ -1146,3 +1150,241 @@ function closeLightbox(e) {
 
 // ═══ INIT ═══
 document.addEventListener('DOMContentLoaded', loadTeamPage);
+
+// ═══════════════════════════════════════════════════════
+//  LIVE SESSIONS TAB
+// ═══════════════════════════════════════════════════════
+
+let liveSessionsCache = [];
+
+async function loadLiveSessionsTab() {
+  const tbody = document.getElementById('live-sessions-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>';
+
+  try {
+    const res = await fetch(API + '/admin/live/sessions', { headers });
+    if (!res.ok) throw new Error('Failed to load');
+    const sessions = await res.json();
+    liveSessionsCache = sessions;
+
+    if (!sessions.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">📺 No sessions yet. Click "+ Add Session" to create one.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sessions.map(s => {
+      const dt = s.scheduled_at ? new Date(s.scheduled_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBD';
+      return `
+      <tr>
+        <td style="color:#fff;font-weight:500;">${escapeHtmlTeam(s.title)}</td>
+        <td style="color:#888;">${dt}</td>
+        <td>
+          <label class="t-switch">
+            <input type="checkbox" ${s.is_published ? 'checked' : ''} onchange="togglePublishSession(${s.id}, this.checked)">
+            <span class="t-slider"></span>
+          </label>
+        </td>
+        <td>
+          <button class="btn-action" onclick="viewAttendees(${s.id})" style="font-size:13px;">
+            👥 ${s.attendee_count || 0}
+          </button>
+        </td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-action" onclick="notifySession(${s.id})" title="Notify all">📧</button>
+            <button class="btn-action" onclick="openEditSessionModal(${s.id})" title="Edit">✏️</button>
+            <button class="btn-action delete" onclick="openDeleteSessionModal(${s.id})" title="Delete">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#ef4444;">Failed to load sessions</td></tr>';
+  }
+}
+
+function escapeHtmlTeam(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Add Session ─────────────────────────────────────
+function openAddSessionModal() {
+  document.getElementById('session-title').value = '';
+  document.getElementById('session-desc').value = '';
+  document.getElementById('session-datetime').value = '';
+  document.getElementById('session-youtube').value = '';
+  document.getElementById('session-zoom').value = '';
+  document.getElementById('add-session-modal').style.display = 'flex';
+}
+
+async function submitAddSession() {
+  const title = document.getElementById('session-title').value.trim();
+  if (!title) return showToast('Title is required', 'error');
+
+  const dt = document.getElementById('session-datetime').value;
+  const body = {
+    title,
+    description: document.getElementById('session-desc').value.trim() || null,
+    scheduled_at: dt ? new Date(dt).toISOString() : null,
+    youtube_url: document.getElementById('session-youtube').value.trim() || null,
+    zoom_url: document.getElementById('session-zoom').value.trim() || null,
+  };
+
+  try {
+    const res = await fetch(API + '/admin/live/sessions', { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
+    showToast('Session created ✅', 'success');
+    closeModal('add-session-modal');
+    loadLiveSessionsTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── Edit Session ────────────────────────────────────
+function openEditSessionModal(id) {
+  const s = liveSessionsCache.find(s => s.id === id);
+  if (!s) return;
+  document.getElementById('edit-session-id').value = id;
+  document.getElementById('edit-session-title').value = s.title || '';
+  document.getElementById('edit-session-desc').value = s.description || '';
+  if (s.scheduled_at) {
+    const d = new Date(s.scheduled_at);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('edit-session-datetime').value = local;
+  } else {
+    document.getElementById('edit-session-datetime').value = '';
+  }
+  document.getElementById('edit-session-youtube').value = s.youtube_url || '';
+  document.getElementById('edit-session-zoom').value = s.zoom_url || '';
+  document.getElementById('edit-session-modal').style.display = 'flex';
+}
+
+async function submitEditSession() {
+  const id = document.getElementById('edit-session-id').value;
+  const dt = document.getElementById('edit-session-datetime').value;
+  const body = {
+    title: document.getElementById('edit-session-title').value.trim(),
+    description: document.getElementById('edit-session-desc').value.trim() || null,
+    scheduled_at: dt ? new Date(dt).toISOString() : null,
+    youtube_url: document.getElementById('edit-session-youtube').value.trim() || null,
+    zoom_url: document.getElementById('edit-session-zoom').value.trim() || null,
+  };
+
+  try {
+    const res = await fetch(API + `/admin/live/sessions/${id}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Session updated ✅', 'success');
+    closeModal('edit-session-modal');
+    loadLiveSessionsTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── Toggle Publish ──────────────────────────────────
+async function togglePublishSession(id, checked) {
+  try {
+    const res = await fetch(API + `/admin/live/sessions/${id}`, {
+      method: 'PATCH', headers, body: JSON.stringify({ is_published: checked })
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast(checked ? 'Session published ✅' : 'Session unpublished', 'success');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+    loadLiveSessionsTab(); // revert
+  }
+}
+
+// ─── Delete Session ──────────────────────────────────
+function openDeleteSessionModal(id) {
+  document.getElementById('delete-session-id').value = id;
+  document.getElementById('delete-session-modal').style.display = 'flex';
+}
+
+async function confirmDeleteSession() {
+  const id = document.getElementById('delete-session-id').value;
+  try {
+    const res = await fetch(API + `/admin/live/sessions/${id}`, { method: 'DELETE', headers });
+    if (!res.ok && res.status !== 204) throw new Error('Failed');
+    showToast('Session deleted ✅', 'success');
+    closeModal('delete-session-modal');
+    loadLiveSessionsTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── Notify ──────────────────────────────────────────
+async function notifySession(id) {
+  const s = liveSessionsCache.find(s => s.id === id);
+  if (!s) return;
+  // Custom confirm via toast-style approach
+  if (!window._confirmNotify) {
+    window._confirmNotify = true;
+    showToast(`Click Notify again to confirm sending email to all users for "${s.title}"`, 'info');
+    window._notifyId = id;
+    setTimeout(() => { window._confirmNotify = false; }, 5000);
+    return;
+  }
+  if (window._notifyId !== id) {
+    window._confirmNotify = false;
+    return notifySession(id);
+  }
+  window._confirmNotify = false;
+
+  try {
+    showToast('Sending notifications...', 'info');
+    const res = await fetch(API + `/admin/live/sessions/${id}/notify`, { method: 'POST', headers });
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    showToast(`📧 Sent ${data.sent} emails (${data.errors} errors)`, 'success');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── View Attendees ──────────────────────────────────
+async function viewAttendees(sessionId) {
+  const listEl = document.getElementById('attendees-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Loading...</div>';
+  document.getElementById('attendees-modal').style.display = 'flex';
+
+  try {
+    const res = await fetch(API + `/admin/live/sessions/${sessionId}/attendees`, { headers });
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+
+    if (!data.attendees || !data.attendees.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#555;">No attendees yet</div>';
+    } else {
+      listEl.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="border-bottom:1px solid #2a2a2a;">
+            <th style="text-align:left;padding:8px;color:#888;">Name</th>
+            <th style="text-align:left;padding:8px;color:#888;">Email</th>
+            <th style="text-align:left;padding:8px;color:#888;">Registered</th>
+          </tr></thead>
+          <tbody>${data.attendees.map(a => `
+            <tr style="border-bottom:1px solid #1e1e1e;">
+              <td style="padding:8px;color:#fff;">${escapeHtmlTeam(a.full_name)}</td>
+              <td style="padding:8px;color:#888;">${a.email}</td>
+              <td style="padding:8px;color:#555;">${new Date(a.registered_at).toLocaleDateString()}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div style="color:#888;font-size:12px;margin-top:8px;">Total: ${data.total}</div>`;
+    }
+
+    // CSV export button
+    const csvBtn = document.getElementById('export-csv-btn');
+    csvBtn.onclick = () => {
+      window.open(API + `/admin/live/sessions/${sessionId}/attendees?export=csv`, '_blank');
+    };
+  } catch (e) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Failed to load attendees</div>';
+  }
+}

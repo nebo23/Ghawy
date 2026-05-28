@@ -763,6 +763,10 @@
             <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
             <span class="tab-label">Analytics</span>
           </button>
+          <button class="team-section-btn" data-tab="live-sessions">
+            <i data-lucide="radio" style="width:18px;height:18px;"></i>
+            <span class="tab-label">Live Sessions</span>
+          </button>
           </nav>
 
           <!-- Tab Content Area -->
@@ -1044,6 +1048,29 @@
           </div>
           <div class="pagination" id="mpr-pagination"></div>
         </div>
+
+        <!-- Tab Content: Live Sessions -->
+        <div id="tab-live-sessions" class="tab-panel" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <h3 style="margin:0;color:#fff;">📺 Live Sessions</h3>
+            <button class="btn-add-member" onclick="openAddSessionModal()">+ Add Session</button>
+          </div>
+          <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+            <table class="team-table" id="live-sessions-table">
+              <thead><tr>
+                <th>Title</th>
+                <th>Scheduled</th>
+                <th>Published</th>
+                <th>Attendees</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="live-sessions-body">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
           </div><!-- end team-content-area -->
         </div><!-- end team-layout -->
       </div>
@@ -1133,6 +1160,79 @@
     <div class="lightbox-content">
       <img id="lightbox-img" src="" alt="Receipt">
       <button class="lightbox-close" onclick="closeLightbox(event)">✕</button>
+    </div>
+  </div>
+
+  <!-- Add Live Session Modal -->
+  <div class="modal-overlay-team" id="add-session-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>📺 Add Live Session</h3><button class="modal-close-team" onclick="closeModal('add-session-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg"><label>Title *</label><input type="text" id="session-title" placeholder="e.g. Build an AI Agent Live"/></div>
+        <div class="fg"><label>Description</label><textarea id="session-desc" rows="3" placeholder="Session description..." style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
+        <div class="fg"><label>Scheduled At *</label><input type="datetime-local" id="session-datetime" style="color-scheme:dark;"/></div>
+        <div class="fg"><label>YouTube URL</label><input type="url" id="session-youtube" placeholder="https://youtube.com/..."/></div>
+        <div class="fg"><label>Zoom URL</label><input type="url" id="session-zoom" placeholder="https://zoom.us/..."/></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-session-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitAddSession()">Create Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Live Session Modal -->
+  <div class="modal-overlay-team" id="edit-session-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>✏️ Edit Session</h3><button class="modal-close-team" onclick="closeModal('edit-session-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="edit-session-id"/>
+        <div class="fg"><label>Title</label><input type="text" id="edit-session-title"/></div>
+        <div class="fg"><label>Description</label><textarea id="edit-session-desc" rows="3" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
+        <div class="fg"><label>Scheduled At</label><input type="datetime-local" id="edit-session-datetime" style="color-scheme:dark;"/></div>
+        <div class="fg"><label>YouTube URL</label><input type="url" id="edit-session-youtube"/></div>
+        <div class="fg"><label>Zoom URL</label><input type="url" id="edit-session-zoom"/></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('edit-session-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitEditSession()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Session Confirm Modal -->
+  <div class="modal-overlay-team" id="delete-session-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🗑️ Delete Session</h3><button class="modal-close-team" onclick="closeModal('delete-session-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this session? This action cannot be undone.</p>
+        <input type="hidden" id="delete-session-id"/>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('delete-session-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="confirmDeleteSession()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendees Modal -->
+  <div class="modal-overlay-team" id="attendees-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>👥 Attendees</h3><button class="modal-close-team" onclick="closeModal('attendees-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div id="attendees-list" style="max-height:400px;overflow-y:auto;">Loading...</div>
+        <div style="text-align:right;margin-top:12px;">
+          <button class="btn-confirm-team" id="export-csv-btn" style="background:#1e1e1e;color:#ccc;font-weight:600;">📥 Export CSV</button>
+        </div>
+      </div>
     </div>
   </div>
 

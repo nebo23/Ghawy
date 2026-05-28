@@ -295,6 +295,9 @@ class LessonOut(BaseModel):
     section_order: int = 0
     order: int
     duration_minutes: int
+    cloudflare_video_id: Optional[str] = None
+    video_status: str = "pending"
+    pdf_url: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -335,9 +338,46 @@ class LessonCreate(BaseModel):
     order: int = 0
     duration_minutes: int = 0
 
+class AdminLessonCreate(BaseModel):
+    title: str
+    section_title: Optional[str] = None
+    order: int = 0
+    duration_minutes: int = 0
+
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    section_title: Optional[str] = None
+    order: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    pdf_url: Optional[str] = None
+
 class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
     total_lessons: int = 0
     is_published: bool = False
+
+class CourseUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    is_published: Optional[bool] = None
+
+# ─── Live Session Schemas ────────────────────────────────────
+
+class LiveSessionCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    scheduled_at: Optional[str] = None  # ISO 8601 datetime string
+    youtube_url: Optional[str] = None
+    zoom_url: Optional[str] = None
+
+class LiveSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    youtube_url: Optional[str] = None
+    zoom_url: Optional[str] = None
+    is_published: Optional[bool] = None
+

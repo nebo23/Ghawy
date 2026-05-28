@@ -325,6 +325,11 @@ class Lesson(Base):
     section_order = Column(Integer, server_default=text('0'), default=0)
     order = Column(Integer, server_default=text('0'), default=0)
     duration_minutes = Column(Integer, server_default=text('0'), default=0)
+    # Cloudflare Stream
+    cloudflare_video_id = Column(String, nullable=True)
+    video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
+    # PDF attachment
+    pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     course = relationship("Course", back_populates="lessons")
@@ -394,23 +399,31 @@ class LiveSession(Base):
     slug = Column(String, unique=True, index=True, nullable=False)
     description = Column(Text, nullable=True)
     thumbnail_url = Column(String, nullable=True)
-    instructor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    instructor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     status = Column(Enum(LiveSessionStatus), default=LiveSessionStatus.UPCOMING)
     difficulty = Column(Enum(LiveSessionDifficulty), default=LiveSessionDifficulty.BEGINNER)
-    start_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
     stream_url = Column(String, nullable=True)
     recording_url = Column(String, nullable=True)
-    max_attendees = Column(Integer, server_default=text('0'), default=0) # 0 means unlimited
+    max_attendees = Column(Integer, server_default=text('0'), default=0)
     current_viewers = Column(Integer, server_default=text('0'), default=0)
     is_recording_available = Column(Boolean, server_default=text('false'), default=False)
-    tags = Column(String, nullable=True) # Comma separated
+    tags = Column(String, nullable=True)
+    # New fields for scheduled live sessions
+    youtube_url = Column(String, nullable=True)
+    zoom_url = Column(String, nullable=True)
+    is_published = Column(Boolean, server_default=text('false'), default=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    scheduled_at = Column(DateTime, nullable=True)  # primary scheduled time
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     
     instructor = relationship("User", foreign_keys=[instructor_id])
+    creator = relationship("User", foreign_keys=[created_by])
     bookings = relationship("SessionBooking", back_populates="session", cascade="all, delete-orphan")
     reminders = relationship("SessionReminder", back_populates="session", cascade="all, delete-orphan")
     projects = relationship("SessionProject", back_populates="session", cascade="all, delete-orphan")
+    attendees = relationship("LiveAttendee", back_populates="session", cascade="all, delete-orphan")
 
 
 class SessionBooking(Base):
@@ -450,6 +463,19 @@ class SessionProject(Base):
     creator_name = Column(String, nullable=False)
     
     session = relationship("LiveSession", back_populates="projects")
+
+
+class LiveAttendee(Base):
+    __tablename__ = "live_attendees"
+    __table_args__ = (UniqueConstraint('session_id', 'user_id'),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("live_sessions.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    registered_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    session = relationship("LiveSession", back_populates="attendees")
+    user = relationship("User")
 
 # ═══════════════════════════════════════════
 #  MANUAL PAYMENT REQUESTS (Instapay)

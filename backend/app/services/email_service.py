@@ -194,3 +194,57 @@ def send_payment_rejection_email(
         body_text=body_text,
         body_html=body_html,
     )
+
+
+# ═══════════════════════════════════════════════════════
+#  LIVE SESSION NOTIFICATION
+# ═══════════════════════════════════════════════════════
+
+def send_live_session_notification(
+    to_email: str,
+    full_name: str,
+    session_title: str,
+    scheduled_at: str,
+    description: str = "",
+) -> None:
+    """Notify a subscriber about an upcoming live session."""
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+
+    body_text = (
+        f"Hi {full_name},\n\n"
+        f"📺 New live session announced!\n\n"
+        f"Title: {session_title}\n"
+        f"When: {scheduled_at}\n"
+        f"{('Description: ' + description + chr(10)) if description else ''}\n"
+        f"Register here: {frontend_url}/build-with-me.html\n\n"
+        "See you there!\n"
+        "The Ghawy Team"
+    )
+
+    body_html = f"""
+    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="font-size: 48px; margin-bottom: 8px;">📺</div>
+            <h2 style="color: #fff; margin: 0;">New Live Session!</h2>
+        </div>
+        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
+        <p style="color: #ccc; line-height: 1.6;">We have a new live session coming up!</p>
+        <div style="background: rgba(63, 143, 249, 0.08); border: 1px solid rgba(63, 143, 249, 0.25); border-radius: 10px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #fff; margin: 0 0 8px;">{session_title}</h3>
+            <p style="color: #3f8ff9; font-weight: 600; margin: 0 0 8px;">🗓 {scheduled_at}</p>
+            {'<p style="color: #aaa; margin: 0;">' + description + '</p>' if description else ''}
+        </div>
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="{frontend_url}/build-with-me.html" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px;">Register Now →</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
+        <p style="color: #888; font-size: 13px;">See you there!<br>The Ghawy Team</p>
+    </div>
+    """
+
+    _send_email(
+        to_email=to_email,
+        subject=f"📺 New Live Session: {session_title}",
+        body_text=body_text,
+        body_html=body_html,
+    )
