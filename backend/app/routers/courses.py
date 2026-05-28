@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models import User, Course, Lesson, UserCourseProgress
-from app.routers.users import get_current_user
+from app.routers.users import get_current_user, get_current_active_member
 from app.schemas import CourseOut, CourseDetailOut, CourseCreate, LessonCreate, LessonOut, UserCourseProgressOut, CourseProgressUpdate
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
@@ -20,7 +20,7 @@ def get_course_detail(course_id: int, db: Session = Depends(get_db)):
     return course
 
 @router.get("/{course_id}/progress", response_model=UserCourseProgressOut)
-def get_course_progress(course_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_course_progress(course_id: int, current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
     progress = db.query(UserCourseProgress).filter(
         UserCourseProgress.course_id == course_id,
         UserCourseProgress.user_id == current_user.id
@@ -30,7 +30,7 @@ def get_course_progress(course_id: int, current_user: User = Depends(get_current
     return progress
 
 @router.post("/{course_id}/progress", response_model=UserCourseProgressOut)
-def update_course_progress(course_id: int, data: CourseProgressUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_course_progress(course_id: int, data: CourseProgressUpdate, current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -61,7 +61,7 @@ def update_course_progress(course_id: int, data: CourseProgressUpdate, current_u
     return progress
 
 # Admin only endpoints
-def get_admin_user(current_user: User = Depends(get_current_user)):
+def get_admin_user(current_user: User = Depends(get_current_active_member)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized")
     return current_user

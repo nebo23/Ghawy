@@ -62,13 +62,15 @@
         </ul>
         <div class="nav-auth" id="navAuth">
             <button id="langToggle" onclick="setLang(getLang() === 'ar' ? 'en' : 'ar')"
-                style="background:transparent;border:1px solid rgba(193,255,17,.2);color:var(--gold);border-radius:8px;padding:6px 14px;font-family:Cairo,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px">EN</button>
+                style="background:#2a2a2a;border:none;color:#ffffff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:Cairo,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px;line-height:1;">
+                EN
+            </button>
             <!-- Logged out state (default) -->
             <div id="navLoggedOut">
-                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;"
-                    data-i18n="lp_login">تسجيل الدخول</a>
                 <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;"
                     data-i18n="lp_startNow">ابدا الان</a>
+                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;"
+                    data-i18n="lp_login">تسجيل الدخول</a>
             </div>
             <!-- Logged in state -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
@@ -89,8 +91,7 @@
         <div id="mobileAuthLoggedOut">
             <a href="login.html" onclick="closeDrawer()"
                 style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;"
-                data-i18n="lp_mobileLogin">تسجيل
-                الدخول</a>
+                data-i18n="lp_mobileLogin">تسجيل الدخول</a>
         </div>
         <div id="mobileAuthLoggedIn" style="display:none">
             <button onclick="closeDrawer();logout()" style="color:var(--red)" data-i18n="lp_logout">تسجيل
@@ -108,7 +109,7 @@
         <div class="auth-modal">
             <button class="auth-modal-close" onclick="closeAuthModal('login')">✕</button>
             <h2 class="card-title">تسجيل <span class="gold">الدخول</span></h2>
-            <p class="card-sub">أهلاً بك مجدداً 👋</p>
+            <p class="card-sub">أهلاً بك مجدداً</p>
             <div id="loginModalAlert" class="modal-alert"></div>
             <div class="field">
                 <label>البريد الإلكتروني</label>
@@ -377,7 +378,7 @@
                     <!-- Stats Row -->
                     <div class="hero-stats-inline">
                         <div class="hero-stat-inline">
-                            <i data-lucide="play-circle" class="nav-icon"></i>
+                            <i class="fa-solid fa-video"></i>
                             <div>
                                 <span class="stat-num-inline">24+</span>
                                 <span class="stat-lbl-inline" data-i18n="lp_statCourses">Courses</span>
@@ -408,7 +409,9 @@
 
                     <!-- CTA Buttons -->
                     <div class="hero-cta-row">
-                        <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
+                        <a href="javascript:void(0)"
+                            onclick="handleKashierPayment()"
+                            class="btn-cta btn-cta-solid">
                             <span data-i18n="lp_joinNow">Join Ghawy Now</span> &nbsp;<i
                                 class="fa-solid fa-arrow-right"></i>
                         </a>
@@ -417,14 +420,19 @@
                             &nbsp;<span data-i18n="lp_watchIntro">Watch Intro</span>
                         </button>
                     </div>
+                    <!-- INSTAPAY OPTION -->
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-start;">
+                        <a href="javascript:void(0)" onclick="window.location.href='pay.html'"
+                            style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
+                            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+                        </a>
+                    </div>
 
                 </div><!-- /hero-left -->
 
                 <!-- ── RIGHT COLUMN: Video Player ── -->
                 <div class="hero-right">
                     <div class="vsl-player-box">
-                        <!-- Progress bar at top -->
-                        <div class="vsl-progress-top" id="vslProgress"></div>
 
                         <!-- Thumbnail overlay -->
                         <div id="vslOverlay" class="vsl-overlay-img" style="
@@ -549,8 +557,7 @@
 
             <!-- Swiper Carousel -->
             <div class="courses-carousel-wrapper">
-                <button class="carousel-arrow prev" id="cPrevBtn"><i data-lucide="chevron-right"
-                        style="width:12px;height:12px;"></i></button>
+                <button class="carousel-arrow prev" id="cPrevBtn"><i class="fa-solid fa-chevron-right"></i></button>
 
                 <div class="swiper coursesSwiper">
                     <div class="swiper-wrapper">
@@ -563,10 +570,12 @@
                                 </div>
                                 <div class="card-content">
                                     <h3>Prompt Engineering</h3>
-                                    <p>إتقان فن كتابة البرومبتات الاحترافية والـ Context Engineering.</p>
-                                    <div class="card-meta">
-                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 11 فيديو</span>
-                                        <span><i class="fa-regular fa-clock"></i> 11h 54m</span>
+
+                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 11
+                                            فيديو</span>
+                                        <span class="cd-meta-dot">•</span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 11h 54m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
@@ -584,10 +593,12 @@
                                 </div>
                                 <div class="card-content">
                                     <h3>AAA Core</h3>
-                                    <p>من الصفر — الموديل، الموديل، AAA Automation، وكالة، التسعير، والتنفيذ.</p>
-                                    <div class="card-meta">
-                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 7 فيديو</span>
-                                        <span><i class="fa-regular fa-clock"></i> 10h 17m</span>
+
+                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 7
+                                            فيديو</span>
+                                        <span class="cd-meta-dot">•</span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 10h 17m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
@@ -605,10 +616,12 @@
                                 </div>
                                 <div class="card-content">
                                     <h3>AI Foundations</h3>
-                                    <p>فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents.</p>
-                                    <div class="card-meta">
-                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 4 فيديو</span>
-                                        <span><i class="fa-regular fa-clock"></i> 5h 01m</span>
+
+                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 4
+                                            فيديو</span>
+                                        <span class="cd-meta-dot">•</span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 5h 01m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
@@ -626,10 +639,12 @@
                                 </div>
                                 <div class="card-content">
                                     <h3>AI Automation Lab</h3>
-                                    <p>بناء أنظمة كاملة باستخدام n8n و Zapier.</p>
-                                    <div class="card-meta">
-                                        <span><i data-lucide="play-circle" class="nav-icon"></i> 5 فيديو</span>
-                                        <span><i class="fa-regular fa-clock"></i> 9h 47m</span>
+
+                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 5
+                                            فيديو</span>
+                                        <span class="cd-meta-dot">•</span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 9h 47m</span>
                                     </div>
                                     <a href="course-details.html" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
@@ -1336,9 +1351,27 @@
                     <li><i class="fa-solid fa-circle-check"></i> ضمان استرداد 3 أيام</li>
                 </ul>
 
-                <button class="pricing-cta" id="pricingCta" onclick="handleKashierPayment()">
+                <button class="pricing-cta" id="pricingCta"
+                    onclick="handleKashierPayment()">
                     اشترك الآن
                 </button>
+
+                <!-- INSTAPAY OPTION -->
+                <div style="margin-top: 12px; margin-bottom: 16px; display: flex; justify-content: center;">
+                    <a href="javascript:void(0)" onclick="handleInstapayPayment()"
+                        style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
+                        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span>الدفع عن طريق انستاباي / فودافون كاش &rarr;</span>
+                    </a>
+                </div>
 
                 <a href="https://wa.me/201033903334?text=%D8%AA%D9%85%20%D8%A7%D9%84%D8%AF%D9%81%D8%B9" target="_blank"
                     class="pricing-whatsapp">
@@ -1445,10 +1478,27 @@
                     التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية
                     والوقت فات.
                 </p>
-                <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta"
-                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
+                <a href="javascript:void(0)"
+                    onclick="handleKashierPayment()"
+                    class="btn-cta" style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
                     انضم الآن — EGP 2,999 فقط
                 </a>
+                <!-- INSTAPAY OPTION -->
+                <div style="margin-top: 16px; display: flex; justify-content: center;">
+                    <a href="javascript:void(0)" onclick="handleInstapayPayment()"
+                        style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
+                        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span>الدفع عن طريق انستاباي / فودافون كاش &rarr;</span>
+                    </a>
+                </div>
                 <div class="cta-sub-note" style="margin-top: 18px">
                     <span class="note-item"><i class="fa-solid fa-users"></i> +350 مشترك</span>
                     <span class="note-item"><span><i class="fa-solid fa-circle-check"></i> ضمان 3 أيام</span></span>
@@ -1462,13 +1512,76 @@
     <!-- ════════════════════════════════════════
      FOOTER
     ════════════════════════════════════════ -->
-    <footer>
-        <div class="container"
-            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
-            <img src="./imgs/ghawy-new-logo-transparent.png" alt="Ghawy Logo" style="height: 100px; width: auto;" />
-            <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--muted);">
-                © 2026 Ghawy. جميع الحقوق محفوظة.
-            </p>
+    <footer
+        style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px; direction: rtl;">
+        <div class="container">
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
+                <!-- Brand Info -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">عن غاوي</h3>
+                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;">
+                        منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">روابط سريعة</h3>
+                    <a href="index.html#modules" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'"
+                        onmouseout="this.style.color='#9ca3af'">الكورسات</a>
+                    <a href="index.html#reviews" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">آراء
+                        المشتركين</a>
+                    <a href="index.html#features" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'"
+                        onmouseout="this.style.color='#9ca3af'">المميزات</a>
+                    <a href="index.html#checkout" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'"
+                        onmouseout="this.style.color='#9ca3af'">الأسعار</a>
+                </div>
+
+                <!-- Legal / Policies -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">الشروط والسياسات
+                    </h3>
+                    <a href="terms.html" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">الشروط
+                        والأحكام</a>
+                    <a href="terms.html#privacy" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">سياسة
+                        الخصوصية</a>
+                </div>
+
+                <!-- Contact -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;">تواصل معنا</h3>
+                    <a href="mailto:support@ghawy.com"
+                        style="color: #9ca3af; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: color 0.3s; width: fit-content;"
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">
+                        <i class="fa-regular fa-envelope"></i> <span dir="ltr">support@ghawy.com</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="footer-bottom">
+                <p class="footer-copy">
+                    © 2026 Ghawy. جميع الحقوق محفوظة.
+                </p>
+                <div class="social-icons">
+                    <a href="https://instagram.com/ghawy_official" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-instagram" style="font-size: 1.2rem;"></i>
+                    </a>
+                    <a href="https://facebook.com/ghawyofficial" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-facebook-f" style="font-size: 1.2rem;"></i>
+                    </a>
+                    <a href="https://tiktok.com/@ghawy_official" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-tiktok" style="font-size: 1.2rem;"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
 
@@ -1561,31 +1674,62 @@
         hamburgerBtn.addEventListener('click', toggleDrawer);
 
         // --- Auth State ---
-        function updateAuthUI() {
+        async function updateAuthUI() {
             const token = getToken();
             const loggedOut = document.getElementById('navLoggedOut');
             const loggedIn = document.getElementById('navLoggedIn');
             const mobileOut = document.getElementById('mobileAuthLoggedOut');
             const mobileIn = document.getElementById('mobileAuthLoggedIn');
+            const mobileCta = document.querySelector('.mobile-cta');
+            const heroJoinText = document.querySelector('.btn-cta-solid span');
+            const heroJoinBtn = document.querySelector('.btn-cta-solid');
+            const coursesBottomCtaBtn = document.querySelector('.btn-join-now');
 
             if (token) {
                 loggedOut.style.display = 'none';
                 loggedIn.style.display = 'flex';
                 if (mobileOut) mobileOut.style.display = 'none';
                 if (mobileIn) mobileIn.style.display = 'block';
-                // Try to decode name from JWT
+                if (mobileCta) mobileCta.style.display = 'none';
+
+                // Check if user is actually subscribed/active
+                let isSubscribed = false;
                 try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const name = payload.full_name || payload.name || payload.sub || '';
-                    // No greeting displayed - only logout button shown
-                } catch (e) {
-                    // silently ignore
+                    const res = await fetch(`${API}/profile/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const profile = await res.json();
+                        isSubscribed = profile.is_active && profile.subscription_type !== 'none';
+                    }
+                } catch(e) {
+                    // Network error — assume not subscribed to be safe
+                }
+
+                if (isSubscribed) {
+                    // Subscribed user → go to dashboard
+                    if (heroJoinText) heroJoinText.innerText = 'الذهاب للوحة التحكم';
+                    if (heroJoinBtn) heroJoinBtn.onclick = (e) => { e.preventDefault(); window.location.href = 'dashboard.html'; };
+                    if (coursesBottomCtaBtn) {
+                        coursesBottomCtaBtn.innerText = 'الذهاب للوحة التحكم';
+                        coursesBottomCtaBtn.onclick = () => window.location.href = 'dashboard.html';
+                    }
+                } else {
+                    // Logged in but NOT subscribed → go to payment
+                    if (heroJoinText) heroJoinText.innerText = 'اشترك الآن';
+                    if (heroJoinBtn) heroJoinBtn.onclick = (e) => { e.preventDefault(); window.location.href = 'payment.html'; };
+                    if (coursesBottomCtaBtn) {
+                        coursesBottomCtaBtn.innerText = 'اشترك الآن';
+                        coursesBottomCtaBtn.onclick = () => window.location.href = 'payment.html';
+                    }
                 }
             } else {
                 loggedOut.style.display = '';
                 loggedIn.style.display = 'none';
                 if (mobileOut) mobileOut.style.display = 'block';
                 if (mobileIn) mobileIn.style.display = 'none';
+                if (mobileCta) mobileCta.style.display = 'block';
+                if (heroJoinText) heroJoinText.innerText = 'Join Ghawy Now';
             }
         }
         updateAuthUI();
@@ -1842,6 +1986,16 @@
                 return;
             }
             window.location.href = 'payment.html';
+        }
+
+        // --- Instapay Payment Handler ---
+        function handleInstapayPayment() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = 'register.html';
+                return;
+            }
+            window.location.href = 'pay.html';
         }
 
         // --- Scroll Reveal ---

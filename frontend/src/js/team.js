@@ -1,3 +1,8 @@
+(async () => {
+  const user = await requireActiveUser();
+  if (!user) return;
+})();
+
 // ═══ AUTH GUARD ═══
 const token = localStorage.getItem('token');
 if (!token) window.location.href = 'login.html';
@@ -1033,7 +1038,13 @@ async function approveRequest(id) {
   try {
     const res = await authFetch(`${API}/manual-payments/${id}/approve`, { method: 'POST' });
     if (res.ok) {
-      showToast("Request approved! Email sent to user.", "success");
+      const data = await res.json();
+      if (data.whatsapp_url) {
+        window.open(data.whatsapp_url, '_blank');
+        showToast("تم الموافقة! جاري فتح واتساب...", "success");
+      } else {
+        showToast("Request approved! No phone number provided for WhatsApp.", "success");
+      }
       loadPendingRequestsTab();
       loadManualPaymentStats();
     } else {

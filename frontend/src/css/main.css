@@ -128,18 +128,6 @@ a {
     pointer-events: none;
 }
 
-/* تنسيق شريط التقدم اللي فوق لو لسه عايزه */
-#vslProgress {
-    height: 4px;
-    background: #c1ff11;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 20;
-    width: 0%;
-    transition: width 0.1s linear;
-}
-
 .plyr--video .plyr__control--overlaid {
     background: rgba(193, 255, 17, 0.9);
     color: #000;
@@ -4551,6 +4539,10 @@ footer a:hover {
     gap: 5px;
 }
 
+.course-card-meta span:last-child {
+    margin-right: auto;
+}
+
 .course-card-meta i {
     color: var(--gold);
     font-size: 0.7rem;
@@ -4823,9 +4815,14 @@ footer a:hover {
     color: var(--muted-light);
 }
 
+.cd-meta-row span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .cd-meta-row i {
     color: var(--gold);
-    margin-left: 4px;
 }
 
 .cd-meta-dot {
@@ -4870,38 +4867,121 @@ footer a:hover {
     margin-bottom: 30px;
 }
 
-.cd-learn-area {
-    margin-top: 40px;
+/* ════════════════════════════════════════════════════════
+        BEFORE VS AFTER
+════════════════════════════════════════════════════════ */
+.cd-comparison-area {
+    margin-top: 48px;
     padding-top: 30px;
     border-top: 1px solid var(--border);
 }
-
 .cd-learn-title {
     font-size: 1.4rem;
     font-weight: 800;
     color: var(--white);
     margin-bottom: 20px;
 }
-
-.cd-learn-list {
+.cd-comparison-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+.cd-comp-col {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+}
+.cd-comp-col.before-col {
+    border-top: 4px solid var(--red);
+}
+.cd-comp-col.after-col {
+    border-top: 4px solid var(--green);
+}
+.cd-comp-col h4 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.cd-comp-col.before-col h4 {
+    color: var(--red);
+}
+.cd-comp-col.after-col h4 {
+    color: var(--green);
+}
+.cd-comp-list {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
-
-.cd-learn-list li {
+.cd-comp-list li {
+    position: relative;
+    padding-right: 28px;
     color: var(--white);
     font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    line-height: 1.6;
+}
+.cd-comp-list li::before {
+    content: "\f00d";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    right: 0;
+    top: 2px;
+    color: var(--red);
+}
+.cd-comp-col.after-col .cd-comp-list li::before {
+    content: "\f00c";
+    color: var(--green);
 }
 
-.cd-learn-list li i {
-    color: var(--gold);
-    font-size: 0.85rem;
+@media (max-width: 768px) {
+    .cd-comparison-table {
+        grid-template-columns: 1fr;
+    }
 }
+
+/* ════════════════════════════════════════════════════════
+        MINI BEFORE VS AFTER (CARDS)
+════════════════════════════════════════════════════════ */
+.mini-comp-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mini-comp-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+.mini-comp-row i {
+    margin-top: 3px;
+    font-size: 0.8rem;
+}
+.mini-comp-row.before {
+    color: var(--muted-light);
+}
+.mini-comp-row.before i {
+    color: var(--red);
+}
+.mini-comp-row.after {
+    color: var(--white);
+}
+.mini-comp-row.after i {
+    color: var(--green);
+}
+
 
 @media (max-width: 900px) {
     .cd-layout {
@@ -4922,6 +5002,10 @@ footer a:hover {
     background: var(--bg);
     color: var(--white);
     direction: rtl;
+}
+
+.premium-courses-section .container {
+    max-width: 1350px;
 }
 
 .courses-header-wrapper {
@@ -5038,7 +5122,7 @@ footer a:hover {
     /* match tallest card */
     scroll-snap-align: start;
     flex-shrink: 0;
-    margin: 10px 6px;
+    margin: 10px 0px;
 }
 
 .premium-course-card:hover {
@@ -5121,7 +5205,7 @@ footer a:hover {
 }
 
 .card-content {
-    padding: 24px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -5146,6 +5230,7 @@ footer a:hover {
 .card-meta {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 15px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -5154,9 +5239,18 @@ footer a:hover {
     color: var(--white);
 }
 
+.card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-meta span:last-child {
+    margin-right: auto;
+}
+
 .card-meta i {
     color: var(--gold);
-    margin-left: 5px;
 }
 
 /* Accordion internal List */
@@ -6871,5 +6965,56 @@ footer a:hover {
 
     .vs-new-price {
         font-size: 3rem;
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+        FOOTER ADJUSTMENTS
+   ════════════════════════════════════════════════════════ */
+.footer-bottom {
+    border-top: 1px solid #222;
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    direction: rtl;
+}
+
+.footer-copy {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.social-icons {
+    display: flex;
+    gap: 12px;
+}
+
+.social-icon {
+    color: #fff;
+    background: #1a1a1a;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background-color: #3f8ff9;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .footer-bottom {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
     }
 }

@@ -1,3 +1,8 @@
+(async () => {
+  const user = await requireActiveUser();
+  if (!user) return;
+})();
+
 /**
  * Build With Me (Live) - Frontend Logic
  */

@@ -1,3 +1,8 @@
+(async () => {
+  const user = await requireActiveUser();
+  if (!user) return;
+})();
+
 const token = localStorage.getItem('token');
 if (!token) window.location.href = 'login.html';
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };

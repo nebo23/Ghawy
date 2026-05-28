@@ -119,12 +119,23 @@
 
             </div>
 
-            <!-- What you'll learn -->
-            <div class="cd-learn-area reveal">
-                <h3 class="cd-learn-title">هتتعلم إيه في الكورس؟</h3>
-                <ul class="cd-learn-list" id="cdLearnList">
-                    <!-- Dynamically populated -->
-                </ul>
+            <!-- Before / After Comparison -->
+            <div class="cd-comparison-area reveal">
+                <h3 class="cd-learn-title">مقارنة: قبل وبعد الكورس</h3>
+                <div class="cd-comparison-table">
+                    <div class="cd-comp-col before-col">
+                        <h4><i class="fa-solid fa-xmark"></i> قبل الكورس</h4>
+                        <ul class="cd-comp-list" id="cdBeforeList">
+                            <!-- Dynamically populated -->
+                        </ul>
+                    </div>
+                    <div class="cd-comp-col after-col">
+                        <h4><i class="fa-solid fa-check"></i> بعد الكورس</h4>
+                        <ul class="cd-comp-list" id="cdAfterList">
+                            <!-- Dynamically populated -->
+                        </ul>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -133,13 +144,59 @@
     <!-- ════════════════════════════════════════
      FOOTER
     ════════════════════════════════════════ -->
-    <footer style="margin-top: 40px;">
-        <div class="container"
-            style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
-            <img src="./imgs/ghawi-logo.png" alt="Ghawy Logo" style="height: 40px; width: auto;" />
-            <p style="margin-bottom: 10px; font-size: 0.8rem; color: var(--muted);">
-                © 2026 Ghawy. جميع الحقوق محفوظة.
-            </p>
+    <footer style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px; direction: rtl;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
+                <!-- Brand Info -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">عن غاوي</h3>
+                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;">
+                        منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">روابط سريعة</h3>
+                    <a href="index.html#modules" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">الكورسات</a>
+                    <a href="index.html#reviews" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">آراء المشتركين</a>
+                    <a href="index.html#features" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">المميزات</a>
+                    <a href="index.html#checkout" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">الأسعار</a>
+                </div>
+
+                <!-- Legal / Policies -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">الشروط والسياسات</h3>
+                    <a href="terms.html" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">الشروط والأحكام</a>
+                    <a href="terms.html#privacy" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">سياسة الخصوصية</a>
+                </div>
+
+                <!-- Contact -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;">تواصل معنا</h3>
+                    <a href="mailto:support@ghawy.com" style="color: #9ca3af; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: color 0.3s; width: fit-content;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">
+                        <i class="fa-regular fa-envelope"></i> <span dir="ltr">support@ghawy.com</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="footer-bottom">
+                <p class="footer-copy">
+                    © 2026 Ghawy. جميع الحقوق محفوظة.
+                </p>
+                <div class="social-icons">
+                    <a href="https://instagram.com/ghawy_official" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-instagram" style="font-size: 1.2rem;"></i>
+                    </a>
+                    <a href="https://facebook.com/ghawyofficial" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-facebook-f" style="font-size: 1.2rem;"></i>
+                    </a>
+                    <a href="https://tiktok.com/@ghawy_official" target="_blank" class="social-icon">
+                        <i class="fa-brands fa-tiktok" style="font-size: 1.2rem;"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
 
@@ -169,7 +226,14 @@
                     { title: 'مشاريع تطبيقية - Part 1', duration: '1h 20m' },
                     { title: 'مشاريع تطبيقية - Part 2', duration: '1h 04m' },
                 ],
-                learnings: [
+                beforeCourse: [
+                    'بتعاني عشان تطلع نتائج دقيقة ومفيدة من أدوات الذكاء الاصطناعي.',
+                    'مش فاهم إزاي الموديلز بتفكر أو إزاي توجهها صح.',
+                    'بتستخدم أدوات الذكاء الاصطناعي لاستخدامات سطحية وبسيطة.',
+                    'مش عارف تحمي تطبيقاتك من التلاعب أو الـ Prompt Injection.',
+                    'مش بتعرف تدمج النصوص مع الصور للوصول لأفضل نتيجة.'
+                ],
+                afterCourse: [
                     'كتابة برومبتات احترافية تطلّع أفضل نتائج.',
                     'فهم تقنيات Few-Shot و Chain of Thought.',
                     'بناء System Prompts لأي تطبيق ذكاء اصطناعي.',
@@ -193,7 +257,14 @@
                     { title: 'التسويق وجلب العملاء', duration: '1h 40m' },
                     { title: 'التنفيذ والـ Delivery', duration: '1h 27m' },
                 ],
-                learnings: [
+                beforeCourse: [
+                    'مش عارف إزاي تبدأ وكالة AI Automation من الصفر.',
+                    'بتواجه مشكلة في تسعير خدماتك بشكل يضمن لك ربح عالي.',
+                    'مش عارف إزاي تدير العملاء والمشاريع باحترافية.',
+                    'عندك مشكلة في إيجاد عملاء مهتمين بخدمات الذكاء الاصطناعي.',
+                    'بتعاني في تنفيذ المشاريع وتسليمها بجودة ترضي العميل.'
+                ],
+                afterCourse: [
                     'بناء وكالة AI Automation كاملة من الصفر.',
                     'تسعير خدماتك بشكل احترافي.',
                     'إدارة العملاء والمشاريع بفعالية.',
@@ -214,7 +285,13 @@
                     { title: 'الـ LLMs شرح كامل', duration: '1h 35m' },
                     { title: 'بناء AI Agent من الصفر', duration: '1h 21m' },
                 ],
-                learnings: [
+                beforeCourse: [
+                    'مجال الذكاء الاصطناعي يبدو معقد ومش فاهم أساسياته.',
+                    'بتسمع عن الـ Neural Networks بس مش فاهمها.',
+                    'مش عارف إزاي الـ LLMs بتشتغل من جوه.',
+                    'متعرفش إزاي تبني AI Agent أو إيه المبادئ اللي بيقوم عليها.'
+                ],
+                afterCourse: [
                     'فهم تاريخ الذكاء الاصطناعي وتطوره.',
                     'شرح عمل الـ Neural Networks بالتفصيل.',
                     'فهم الـ Large Language Models (LLMs).',
@@ -235,7 +312,14 @@
                     { title: 'بناء Customer Support Bot', duration: '3h 05m' },
                     { title: 'معالجة الإيميلات تلقائياً', duration: '2h 32m' },
                 ],
-                learnings: [
+                beforeCourse: [
+                    'بتعمل مهامك اليومية بشكل يدوي وبياخد منك وقت طويل.',
+                    'مش بتعرف تستخدم أدوات الـ No-Code زي n8n أو Make.',
+                    'معندكش خبرة في ربط التطبيقات ببعضها أو استخدام الـ APIs.',
+                    'مش عارف إزاي تبني Customer Support Bot يرد على العملاء.',
+                    'بتعاني في ترتيب ومعالجة البيانات أو الإيميلات بشكل آلي.'
+                ],
+                afterCourse: [
                     'تصميم سير عمل أوتوماتيكي معقد.',
                     'دمج نماذج اللغات (LLMs) في عملياتك اليومية.',
                     'معالجة البيانات وتصنيفها بشكل آلي.',
@@ -274,15 +358,13 @@
                 <span><i data-lucide="play-circle" class="nav-icon"></i> ${course.videoCount} فيديو</span>
                 <span class="cd-meta-dot">•</span>
                 <span><i class="fa-regular fa-clock"></i> ${course.duration}</span>
-                <span class="cd-meta-dot">•</span>
-                <span class="cd-category-tag">${course.category}</span>
             `;
 
             // Level
             document.getElementById('cdLevel').textContent = course.level;
 
-            // Course name
-            document.getElementById('cdCourseName').innerHTML = `<i data-lucide="presentation" class="nav-icon"></i> ${course.title}`;
+            // Course name / Category tag (Replacing the old course title with category pill)
+            document.getElementById('cdCourseName').innerHTML = `<span class="cd-category-tag">${course.category}</span>`;
 
             // Description
             document.getElementById('cdDescription').textContent = course.description;
@@ -299,10 +381,15 @@
                 </li>
             `).join('');
 
-            // Learnings
-            const learnList = document.getElementById('cdLearnList');
-            learnList.innerHTML = course.learnings.map(l => `
-                <li><i data-lucide="check" size="16"></i> ${l}</li>
+            // Before & After
+            const beforeList = document.getElementById('cdBeforeList');
+            beforeList.innerHTML = course.beforeCourse.map(item => `
+                <li>${item}</li>
+            `).join('');
+
+            const afterList = document.getElementById('cdAfterList');
+            afterList.innerHTML = course.afterCourse.map(item => `
+                <li>${item}</li>
             `).join('');
         }
 

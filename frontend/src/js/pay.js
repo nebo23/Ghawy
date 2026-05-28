@@ -5,6 +5,11 @@
 
 let selectedFile = null;
 
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = 'login.html';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPaymentConfig();
     setupDragAndDrop();
@@ -115,9 +120,6 @@ function removeFile() {
 
 // Submit Form
 async function submitPayment() {
-    const fullName = document.getElementById('pay-fullname').value.trim();
-    const email = document.getElementById('pay-email').value.trim();
-    const phone = document.getElementById('pay-phone').value.trim();
     const amount = document.getElementById('display-price').innerText;
     
     if (!selectedFile) {
@@ -132,10 +134,6 @@ async function submitPayment() {
     spinner.style.display = 'block';
 
     const formData = new FormData();
-    formData.append('full_name', fullName);
-    formData.append('email', email);
-    
-    if (phone) formData.append('phone', phone);
     
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount)) {
@@ -147,6 +145,9 @@ async function submitPayment() {
     try {
         const res = await fetch(`${API}/manual-payments/submit`, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
             body: formData // FormData sets correct multipart header automatically
         });
 
@@ -161,7 +162,6 @@ async function submitPayment() {
         document.getElementById('pay-success-view').style.display = 'block';
         
         document.getElementById('success-ref').innerText = `MANUAL-${data.id}`;
-        document.getElementById('success-email').innerText = email;
 
     } catch (error) {
         console.error("Submit error:", error);

@@ -10,7 +10,7 @@ from app.database import get_db
 from app.services.ws_manager import manager
 from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRole, ChannelType, MessageType
 from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, ChatMemberOut
-from app.routers.users import get_current_user
+from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
 from pydantic import BaseModel
 
@@ -30,7 +30,7 @@ class StartHereConfigUpdate(BaseModel):
 
 @router.get("/start-here-config")
 def get_start_here_config(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
 ):
     try:
         if START_HERE_CONFIG.exists():
@@ -45,7 +45,7 @@ def get_start_here_config(
 @router.put("/start-here-config")
 def update_start_here_config(
     data: StartHereConfigUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
 ):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin only")
@@ -73,7 +73,7 @@ class SimpleMsgCreate(BaseModel):
 def get_messages_simple(
     channel: str = Query("general"),
     limit: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     ch = db.query(Channel).filter(Channel.name == channel).first()
@@ -146,7 +146,7 @@ def get_messages_simple(
 @router.post("/messages", status_code=201)
 async def post_message_simple(
     data: SimpleMsgCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     ch = db.query(Channel).filter(Channel.name == data.channel).first()
@@ -225,7 +225,7 @@ async def post_message_simple(
 @router.delete("/messages/{message_id}")
 def delete_message(
     message_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     msg = db.query(Message).filter(Message.id == message_id).first()
@@ -249,7 +249,7 @@ class MarkReadRequest(BaseModel):
 @router.post("/mark-read")
 async def mark_read(
     data: MarkReadRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if not data.message_ids:
@@ -290,7 +290,7 @@ async def mark_read(
 @router.get("/online-count")
 def get_online_count(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
 ):
     one_min_ago = datetime.utcnow() - timedelta(seconds=60)
     count = (
@@ -306,7 +306,7 @@ def get_online_count(
 
 @router.get("/channels", response_model=List[ChannelOut])
 def list_channels(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     channels = db.query(Channel).order_by(Channel.created_at).all()
@@ -367,7 +367,7 @@ def list_channels(
 @router.post("/channels", response_model=ChannelOut, status_code=201)
 def create_channel(
     data: ChannelCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if not current_user.is_admin:
@@ -408,7 +408,7 @@ def create_channel(
 @router.post("/channels/{channel_id}/join")
 def join_channel(
     channel_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     channel = db.query(Channel).filter(Channel.id == channel_id).first()
@@ -440,7 +440,7 @@ def list_messages(
     channel_id: int,
     before: int = None,
     limit: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     # Auto-join user to channel if not a member
@@ -493,7 +493,7 @@ def list_messages(
 def send_message(
     channel_id: int,
     data: MessageCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     channel = db.query(Channel).filter(Channel.id == channel_id).first()
@@ -537,7 +537,7 @@ def send_message(
 @router.put("/channels/{channel_id}/read")
 def mark_channel_read(
     channel_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     membership = db.query(ChatMember).filter(
@@ -584,7 +584,7 @@ def list_channel_members(
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
 ):
     try:
         result = await save_upload(file, subfolder="chat")
@@ -601,7 +601,7 @@ class DMRequest(BaseModel):
 @router.post("/dm")
 def get_or_create_dm(
     data: DMRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     """Get or create a DM channel between current user and target user."""
@@ -647,7 +647,7 @@ def get_or_create_dm(
 
 @router.get("/dm/list")
 def list_dm_conversations(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     """List all DM channels for the current user."""
@@ -754,7 +754,7 @@ def list_dm_conversations(
 
 @router.get("/members")
 def list_active_members(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     """List all active/verified members for the new message search modal."""
@@ -782,7 +782,7 @@ def list_active_members(
 @router.post("/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     from app.services.file_service import save_avatar

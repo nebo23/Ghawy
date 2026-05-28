@@ -69,24 +69,16 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
 
 @router.post("/submit")
 async def submit_payment_request(
-    full_name: str = Form(...),
-    email: str = Form(...),
-    phone: Optional[str] = Form(None),
     amount: Optional[float] = Form(None),
     notes: Optional[str] = Form(None),
     receipt: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Submit a manual payment request with receipt screenshot."""
-    # Validate email format (basic)
-    email = email.strip().lower()
-    if "@" not in email or "." not in email:
-        raise HTTPException(status_code=422, detail="Invalid email format")
-
-    # Check if email already registered
-    existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        raise HTTPException(status_code=409, detail="This email is already registered. Please login instead.")
+    email = current_user.email
+    full_name = current_user.full_name
+    phone = current_user.phone
 
     # Check for existing pending request
     existing_request = db.query(ManualPaymentRequest).filter(
@@ -119,9 +111,9 @@ async def submit_payment_request(
 
     # Create request
     mpr = ManualPaymentRequest(
-        full_name=full_name.strip(),
+        full_name=full_name,
         email=email,
-        phone=phone.strip() if phone else None,
+        phone=phone,
         receipt_url=receipt_url,
         amount=amount,
         notes=notes.strip() if notes else None,
@@ -269,7 +261,7 @@ def approve_request(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Approve a payment request and send invite link."""
+    """Approve a payment request and activate user account."""
     require_admin(current_user)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
@@ -278,36 +270,60 @@ def approve_request(
     if req.status != "pending":
         raise HTTPException(status_code=400, detail=f"Request is already {req.status}")
 
-    # Generate invite token
-    invite_token = secrets.token_urlsafe(32)
     now = datetime.utcnow()
 
     req.status = "approved"
-    req.invite_token = invite_token
-    req.invite_sent_at = now
-    req.invite_expires_at = now + timedelta(hours=48)
     req.reviewed_by = current_user.id
     req.reviewed_at = now
+    
+    # Activate the user
+    user = db.query(User).filter(User.email == req.email).first()
+    if user:
+        user.is_active = True
+        
     db.commit()
 
-    # Build registration URL
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
-    registration_url = f"{frontend_url}/register.html?token={invite_token}"
+    login_url = f"{frontend_url}/login.html"
 
-    # Send approval email
+    import urllib.parse
+    def format_phone_for_whatsapp(phone: str) -> str:
+        if not phone: return ""
+        # Remove spaces, dashes, plus signs
+        phone = phone.replace(" ", "").replace("-", "").replace("+", "")
+        # If starts with 0 (Egyptian number like 01019381981), replace with country code
+        if phone.startswith("0"):
+            phone = "20" + phone[1:]
+        return phone
+
+    whatsapp_message = (
+        f"مرحباً {req.full_name} 👋\n\n"
+        f"تم التحقق من دفعتك بنجاح! 🎉\n\n"
+        f"تم تفعيل حسابك، وتقدر تدخل على المنصة دلوقتي من الرابط التالي:\n"
+        f"{login_url}\n\n"
+        f"نتمنى لك تجربة ممتعة!"
+    )
+
+    whatsapp_url = None
+    if req.phone:
+        formatted_phone = format_phone_for_whatsapp(req.phone)
+        whatsapp_url = f"https://wa.me/{formatted_phone}?text={urllib.parse.quote(whatsapp_message)}"
+
+    # We can also send an email here if we want (e.g. send_payment_approval_email)
+    # The previous implementation sent an invite link, we can update the email template to send activation info instead.
     try:
         send_payment_approval_email(
             to_email=req.email,
             full_name=req.full_name,
-            registration_url=registration_url,
+            registration_url=login_url,  # Reuse parameter but pass login URL
         )
     except Exception as exc:
-        logger.warning("Failed to send approval email to %s: %s", req.email, exc)
+        logger.warning("Failed to send activation email to %s: %s", req.email, exc)
 
     return {
         "message": "approved",
-        "invite_token": invite_token,
-        "registration_url": registration_url,
+        "login_url": login_url,
+        "whatsapp_url": whatsapp_url
     }
 
 
@@ -357,34 +373,25 @@ def resend_invite(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Resend invite with a new token (if expired or needs resending)."""
+    """Resend activation notification."""
     require_admin(current_user)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     if req.status != "approved":
-        raise HTTPException(status_code=400, detail="Can only resend invites for approved requests")
-
-    # Generate new token
-    invite_token = secrets.token_urlsafe(32)
-    now = datetime.utcnow()
-
-    req.invite_token = invite_token
-    req.invite_sent_at = now
-    req.invite_expires_at = now + timedelta(hours=48)
-    db.commit()
+        raise HTTPException(status_code=400, detail="Can only resend notification for approved requests")
 
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
-    registration_url = f"{frontend_url}/register.html?token={invite_token}"
+    login_url = f"{frontend_url}/login.html"
 
     try:
         send_payment_approval_email(
             to_email=req.email,
             full_name=req.full_name,
-            registration_url=registration_url,
+            registration_url=login_url,
         )
     except Exception as exc:
-        logger.warning("Failed to resend invite email to %s: %s", req.email, exc)
+        logger.warning("Failed to resend activation email to %s: %s", req.email, exc)
 
-    return {"message": "invite resent", "registration_url": registration_url}
+    return {"message": "notification resent", "login_url": login_url}

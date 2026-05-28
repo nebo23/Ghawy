@@ -81,8 +81,12 @@ async function verifyEmail() {
     const data = await res.json();
 
     if (res.ok) {
-      showAlert('تم تأكيد بريدك بنجاح ✅ جاري تحويلك لتسجيل الدخول...', 'success');
-      setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+      showAlert('تم تأكيد بريدك بنجاح ✅ جاري تحويلك...', 'success');
+      // Auto-login: save token from verification response
+      if (data.access_token) {
+        saveToken(data.access_token);
+      }
+      setTimeout(() => { window.location.href = 'index.html'; }, 1200);
     } else {
       showAlert(data.detail || 'فشل التحقق من الكود', 'error');
     }

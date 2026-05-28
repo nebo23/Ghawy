@@ -78,21 +78,6 @@
           <form id="pay-submit-form" onsubmit="event.preventDefault(); submitPayment();">
 
             <div class="form-group">
-              <label for="pay-fullname">Full Name *</label>
-              <input type="text" id="pay-fullname" placeholder="Ahmed Mohamed" required>
-            </div>
-
-            <div class="form-group">
-              <label for="pay-email">Email Address *</label>
-              <input type="email" id="pay-email" placeholder="ahmed@example.com" required>
-            </div>
-
-            <div class="form-group">
-              <label for="pay-phone">Phone Number</label>
-              <input type="text" id="pay-phone" placeholder="01000000000">
-            </div>
-
-            <div class="form-group">
               <label>Receipt Screenshot *</label>
               <div class="file-drop-area" id="file-drop-area" onclick="document.getElementById('pay-receipt').click()">
                 <i data-lucide="upload-cloud" class="upload-icon"></i>
@@ -133,8 +118,7 @@
 
       <div class="success-details">
         <p><strong>Reference ID:</strong> <span id="success-ref">---</span></p>
-        <p>Once approved, we will send an invite link to <strong><span id="success-email">your email</span></strong> so
-          you can set your password and log in.</p>
+        <p>Once approved, we will send an email confirmation and your account will be activated instantly.</p>
       </div>
 
       <p class="success-footer">Usually takes less than 12 hours.</p>

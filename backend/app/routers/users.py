@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import jwt
-from passlib.context import CryptContext
-from passlib.exc import UnknownHashError
+import bcrypt
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.models import User
 from app.schemas import UserRegister, UserLogin, UserOut, Token, VerifyEmailRequest, ResendVerificationRequest
@@ -23,7 +22,6 @@ load_dotenv(dotenv_path=ENV_PATH)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is required")
@@ -32,12 +30,18 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 days
 VERIFICATION_EXPIRE_MINUTES = 15
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    if len(pwd_bytes) > 72:
+        pwd_bytes = pwd_bytes[:72]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(plain: str, hashed: str) -> bool:
+    pwd_bytes = plain.encode('utf-8')
+    if len(pwd_bytes) > 72:
+        pwd_bytes = pwd_bytes[:72]
     try:
-        return pwd_context.verify(plain, hashed)
-    except UnknownHashError:
+        return bcrypt.checkpw(pwd_bytes, hashed.encode('utf-8'))
+    except ValueError:
         return False
 
 def create_token(user_id: int) -> str:
@@ -110,7 +114,16 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="إيميل أو باسورد غلط")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email first")
-    return {"access_token": create_token(user.id)}
+    return {
+        "access_token": create_token(user.id),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "has_completed_onboarding": user.onboarding_completed,
+            "avatar_url": user.avatar_url
+        }
+    }
 
 # ─── Token (Swagger) ─────────────────────────────────────────
 @router.post("/token", response_model=Token)
@@ -120,7 +133,16 @@ def token_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email first")
-    return {"access_token": create_token(user.id)}
+    return {
+        "access_token": create_token(user.id),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "has_completed_onboarding": user.onboarding_completed,
+            "avatar_url": user.avatar_url
+        }
+    }
 
 # ─── Verify Email ─────────────────────────────────────────────
 @router.post("/verify-email")
@@ -145,7 +167,17 @@ def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
     user.verification_code = None
     user.verification_expiry = None
     db.commit()
-    return {"message": "Email verified successfully"}
+    return {
+        "message": "Email verified successfully",
+        "access_token": create_token(user.id),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "has_completed_onboarding": user.onboarding_completed,
+            "avatar_url": user.avatar_url
+        }
+    }
 
 # ─── Resend Verification ──────────────────────────────────────
 @router.post("/resend-verification-code")
@@ -188,6 +220,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=404, detail="المستخدم مش موجود")
     return user
 
+def get_current_active_member(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_active or current_user.subscription_type == 'none':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="حسابك غير مفعل أو ليس لديك اشتراك")
+    return current_user
 
 # ─── Get All Users (Community Members) ───────────────────────
 @router.get("", response_model=list[UserOut])

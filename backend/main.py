@@ -439,6 +439,16 @@ def delete_payment(payment_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Payment deleted successfully"}
 
+from app.routers.users import get_current_user
+@app.patch("/users/me/complete-onboarding")
+def complete_onboarding_patch(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    current_user.onboarding_completed = True
+    db.commit()
+    return {"message": "onboarding completed"}
+
 @app.get("/config/payment-info")
 def get_payment_info():
     """Public endpoint to get payment details for manual flow."""

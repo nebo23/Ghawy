@@ -169,24 +169,42 @@ async function initInviteFlow() {
     const emailInput = document.getElementById('email');
     
     nameInput.value = data.full_name;
-    nameInput.readOnly = true;
-    nameInput.classList.add('opacity-50', 'cursor-not-allowed');
-    
     emailInput.value = data.email;
-    emailInput.readOnly = true;
-    emailInput.classList.add('opacity-50', 'cursor-not-allowed');
-
-    // UI Changes
-    document.getElementById('default-header').style.display = 'none';
-    document.getElementById('invite-header').style.display = 'block';
     
+    // HIDE name and phone, KEEP email visible but disabled
+    if (nameInput.closest('.mb-4')) nameInput.closest('.mb-4').style.display = 'none';
+    
+    emailInput.disabled = true;
+    emailInput.style.opacity = '0.6';
+    emailInput.style.cursor = 'not-allowed';
+    // Remove the icon for email if it exists so it doesn't look like an editable field
+    const emailIcon = emailInput.nextElementSibling;
+    if (emailIcon && emailIcon.tagName === 'I') {
+       emailIcon.style.display = 'none';
+    }
     document.getElementById('phone-section').style.display = 'none';
     document.getElementById('social-divider').style.display = 'none';
     document.getElementById('google-btn').style.display = 'none';
     document.getElementById('login-footer').style.display = 'none';
     
-    document.getElementById('password-label').innerText = 'Set Your Password';
-    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'Complete Setup <i class="fa-solid fa-arrow-right ml-1"></i>';
+    // UI Changes
+    document.getElementById('default-header').style.display = 'none';
+    document.getElementById('invite-header').style.display = 'none';
+    
+    // Show welcome message above password field
+    const welcomeEl = document.createElement('div');
+    welcomeEl.className = 'invite-welcome';
+    welcomeEl.innerHTML = `
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="font-size:32px; margin-bottom:8px;">🎉</div>
+        <h2 style="color:#fff; margin:0 0 4px;">أهلاً ${data.full_name}!</h2>
+        <p style="color:#888; margin:0;">اختر كلمة مرور لإكمال تسجيلك</p>
+      </div>
+    `;
+    document.getElementById('registerForm').prepend(welcomeEl);
+    
+    document.getElementById('password-label').innerText = 'كلمة المرور';
+    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'إكمال التسجيل &rarr;';
 
   } catch (err) {
     showFormMessage('Failed to verify invite link', 'error');
@@ -256,8 +274,11 @@ async function submitRegister() {
         showFormMessage('Setup complete! Redirecting...', 'success');
         // Save token and go straight to onboarding
         if (data.access_token) {
-          localStorage.setItem('ghawy_token', data.access_token);
-          setTimeout(() => { window.location.href = 'onboarding.html'; }, 1200);
+          localStorage.setItem('token', data.access_token);
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+          setTimeout(() => { window.location.href = '/onboarding.html'; }, 1200);
         } else {
           setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         }

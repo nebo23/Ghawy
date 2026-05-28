@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Channel, Message, MessageType, ChannelType, Post
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
-from app.routers.users import get_current_user, hash_password, verify_password
+from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import UploadFile, File
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 # ─── Heartbeat ──────────────────────────────────────────────
 @router.post("/heartbeat")
 def heartbeat(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     current_user.last_seen = datetime.utcnow()
@@ -30,7 +30,7 @@ def heartbeat(
 
 @router.post("/offline")
 def offline(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     current_user.last_seen = None
@@ -46,7 +46,7 @@ class ChangePasswordRequest(BaseModel):
 
 # ─── Get My Profile ─────────────────────────────────────────
 @router.get("/me", response_model=UserMemberOut)
-def get_my_profile(current_user: User = Depends(get_current_user)):
+def get_my_profile(current_user: User = Depends(get_current_active_member)):
     return current_user
 
 
@@ -54,7 +54,7 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
 @router.put("/me", response_model=UserMemberOut)
 def update_my_profile(
     data: UserProfileUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if data.full_name is not None:
@@ -77,7 +77,7 @@ def update_my_profile(
 @router.post("/avatar")
 def upload_avatar(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if not file.content_type.startswith("image/"):
@@ -105,7 +105,7 @@ def upload_avatar(
 
 # ─── Onboarding Status ────────────────────────────────────
 @router.get("/onboarding-status")
-def get_onboarding_status(current_user: User = Depends(get_current_user)):
+def get_onboarding_status(current_user: User = Depends(get_current_active_member)):
     return {"onboarding_completed": bool(current_user.onboarding_completed)}
 
 
@@ -113,7 +113,7 @@ def get_onboarding_status(current_user: User = Depends(get_current_user)):
 @router.post("/complete-onboarding")
 def complete_onboarding(
     data: OnboardingUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     # Update birth_date
@@ -162,7 +162,7 @@ def complete_onboarding(
 @router.post("/upload-avatar")
 def upload_avatar_onboarding(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     allowed = {"image/jpeg", "image/png", "image/webp"}
@@ -198,7 +198,7 @@ def upload_avatar_onboarding(
 @router.get("/{user_id}/public")
 def get_public_profile(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     from datetime import timedelta
@@ -256,7 +256,7 @@ def get_member_profile(user_id: int, db: Session = Depends(get_db)):
 @router.post("/change-password")
 def change_password(
     data: ChangePasswordRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if data.new_password != data.confirm_password:

@@ -1,3 +1,8 @@
+(async () => {
+  const user = await requireActiveUser();
+  if (!user) return;
+})();
+
 // ═══ AUTH GUARD ═══
 const token = getToken();
 if (!token) window.location.href = 'login.html';

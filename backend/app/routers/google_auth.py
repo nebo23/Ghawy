@@ -100,6 +100,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     frontend_url = "http://127.0.0.1:5500"
     if not user.is_active:
         return RedirectResponse(f"{frontend_url}/payment.html?token={access_token}")
+        
+    if not user.onboarding_completed:
+        return RedirectResponse(f"{frontend_url}/onboarding.html?token={access_token}")
+        
     return RedirectResponse(f"{frontend_url}/dashboard.html?token={access_token}")
 
 # ══════════════════════════════════════════════════════════
@@ -186,4 +190,13 @@ def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db))
     db.commit()
     
     # Return JWT
-    return create_token(new_user)
+    return {
+        "access_token": create_token(new_user.id),
+        "user": {
+            "id": new_user.id,
+            "email": new_user.email,
+            "full_name": new_user.full_name,
+            "has_completed_onboarding": new_user.onboarding_completed,
+            "avatar_url": new_user.avatar_url
+        }
+    }

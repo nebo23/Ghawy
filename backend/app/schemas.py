@@ -17,6 +17,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# دي البيانات اللي بيبعتها لل team dashboard
 class UserOut(BaseModel):
     id: int
     full_name: str
@@ -47,6 +48,7 @@ class OnboardingUpdate(BaseModel):
     avatar_url: Optional[str] = None        # uploaded photo URL
     selected_avatar: Optional[str] = None   # preset avatar filename
 
+# دا الحساب الشخصي 
 class UserMemberOut(BaseModel):
     id: int
     full_name: str
@@ -67,6 +69,7 @@ class UserMemberOut(BaseModel):
         from_attributes = True
 
 
+# دا اللي بيظهر لما حد يدوس علي البروفايل بتاعك
 class PublicProfileOut(BaseModel):
     id: int
     full_name: str
@@ -87,9 +90,11 @@ class PublicProfileOut(BaseModel):
     class Config:
         from_attributes = True
 
+# علشان السيرفر يفتكرك (Authentication)
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: Optional[dict] = None
 
 
 class VerifyEmailRequest(BaseModel):

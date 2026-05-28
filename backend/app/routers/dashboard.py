@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Course, UserCourseProgress, Post, Message
-from app.routers.users import get_current_user
+from app.routers.users import get_current_user, get_current_active_member
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/summary")
-def get_dashboard_summary(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_dashboard_summary(current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
     # 1. User stats
     user_data = {
         "full_name": current_user.full_name,

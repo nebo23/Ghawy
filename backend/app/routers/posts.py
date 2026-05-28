@@ -11,7 +11,7 @@ from app.models import (
     User, Post, Comment, PostLike, PostReaction, CommentReaction,
     Category, Channel
 )
-from app.routers.users import get_current_user
+from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
 from app.services.ws_manager import manager
 from pydantic import BaseModel
@@ -133,7 +133,7 @@ def list_posts(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=50),
     search: str = Query("", max_length=200),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     q = (
@@ -177,7 +177,7 @@ async def create_post(
     body: str = Form(...),
     tags: str = Form(""),
     image: Optional[UploadFile] = File(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if not title.strip():
@@ -232,6 +232,55 @@ async def create_post(
 
 
 # ══════════════════════════════════════════════════════════════
+#  TOP TOPICS (TAG COUNTS)
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/{channel}/top-topics")
+def get_top_topics(
+    channel: str,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """Return top 8 tags by usage in this channel."""
+    posts = db.query(Post.tags).filter(
+        Post.category_slug == channel,
+        Post.tags != None,
+        Post.tags != "",
+    ).all()
+
+    tag_counts = {}
+    for (tags_str,) in posts:
+        if tags_str:
+            for tag in tags_str.split(","):
+                tag = tag.strip()
+                if tag:
+                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+    sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+    return [{"tag": tag, "count": count} for tag, count in sorted_tags]
+
+
+# ══════════════════════════════════════════════════════════════
+#  PINNED POSTS
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/{channel}/pinned")
+def get_pinned_posts(
+    channel: str,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    posts = (
+        db.query(Post)
+        .options(joinedload(Post.author), joinedload(Post.reactions))
+        .filter(Post.category_slug == channel, Post.is_pinned == True)
+        .order_by(desc(Post.created_at))
+        .all()
+    )
+    return [build_post_dict(p, current_user.id) for p in posts]
+
+
+# ══════════════════════════════════════════════════════════════
 #  GET SINGLE POST WITH COMMENTS
 # ══════════════════════════════════════════════════════════════
 
@@ -239,7 +288,7 @@ async def create_post(
 def get_post(
     channel: str,
     post_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     post = (
@@ -280,7 +329,7 @@ def edit_post(
     channel: str,
     post_id: int,
     data: PostUpdateBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id, Post.category_slug == channel).first()
@@ -320,7 +369,7 @@ def edit_post(
 def delete_post(
     channel: str,
     post_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id, Post.category_slug == channel).first()
@@ -342,7 +391,7 @@ def delete_post(
 def toggle_pin(
     channel: str,
     post_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if not current_user.is_admin:
@@ -368,7 +417,7 @@ class ReactionBody(BaseModel):
 def react_to_post(
     post_id: int,
     data: ReactionBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if data.emoji not in ALLOWED_EMOJIS:
@@ -411,7 +460,7 @@ def react_to_post(
 @router.get("/{post_id}/comments")
 def list_comments(
     post_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
@@ -446,7 +495,7 @@ class CommentCreateBody(BaseModel):
 async def add_comment(
     post_id: int,
     data: CommentCreateBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
@@ -516,7 +565,7 @@ def edit_comment(
     post_id: int,
     comment_id: int,
     data: CommentUpdateBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     comment = db.query(Comment).filter(
@@ -550,7 +599,7 @@ def edit_comment(
 def delete_comment(
     post_id: int,
     comment_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     comment = db.query(Comment).filter(
@@ -581,7 +630,7 @@ def delete_comment(
 def react_to_comment(
     comment_id: int,
     data: ReactionBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     if data.emoji not in ALLOWED_EMOJIS:
@@ -611,50 +660,4 @@ def react_to_comment(
     }
 
 
-# ══════════════════════════════════════════════════════════════
-#  TOP TOPICS (TAG COUNTS)
-# ══════════════════════════════════════════════════════════════
 
-@router.get("/{channel}/top-topics")
-def get_top_topics(
-    channel: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Return top 8 tags by usage in this channel."""
-    posts = db.query(Post.tags).filter(
-        Post.category_slug == channel,
-        Post.tags != None,
-        Post.tags != "",
-    ).all()
-
-    tag_counts = {}
-    for (tags_str,) in posts:
-        if tags_str:
-            for tag in tags_str.split(","):
-                tag = tag.strip()
-                if tag:
-                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
-
-    sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:8]
-    return [{"tag": tag, "count": count} for tag, count in sorted_tags]
-
-
-# ══════════════════════════════════════════════════════════════
-#  PINNED POSTS
-# ══════════════════════════════════════════════════════════════
-
-@router.get("/{channel}/pinned")
-def get_pinned_posts(
-    channel: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    posts = (
-        db.query(Post)
-        .options(joinedload(Post.author), joinedload(Post.reactions))
-        .filter(Post.category_slug == channel, Post.is_pinned == True)
-        .order_by(desc(Post.created_at))
-        .all()
-    )
-    return [build_post_dict(p, current_user.id) for p in posts]

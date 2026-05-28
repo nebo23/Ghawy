@@ -229,6 +229,17 @@ async function submitStep3() {
 
     if (res.ok) {
       localStorage.setItem('just_onboarded', 'true');
+      
+      // Update has_completed_onboarding just in case
+      try {
+        await fetch(`${API}/users/me/complete-onboarding`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Failed to patch onboarding status", err);
+      }
+      
       window.location.href = 'dashboard.html';
     } else {
       const err = await res.json();

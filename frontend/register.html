@@ -2,10 +2,10 @@
 <html lang="en" dir="ltr">
 
 <head>
-    <!-- CACHE BUSTER -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+  <!-- CACHE BUSTER -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Your Account — Ghawy</title>
@@ -89,17 +89,25 @@
       -webkit-appearance: none;
       margin: 0;
     }
+
+    .invite-welcome {
+      background: rgba(63, 143, 249, 0.08);
+      border: 1px solid rgba(63, 143, 249, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
   </style>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 
 <body>
   <div class="w-full max-w-md p-6 mx-auto">
     <!-- Logo -->
-    <div class="flex justify-center mb-6 relative">
+    <div class="flex justify-center mb-2 relative">
       <div class="absolute left-0 top-0">
       </div>
-      <img src="./imgs/g-icon-logo.png" alt="Ghawy Logo" class="h-12 object-contain">
+      <img src="./imgs/g-icon-logo.png" alt="Ghawy Logo" class="h-32 object-contain">
     </div>
 
     <!-- Header -->
@@ -107,7 +115,7 @@
       <h1 class="text-2xl font-bold mb-2" data-i18n="register">إنشاء حساب</h1>
       <p class="text-gray-400 text-sm" data-i18n="createAccountSub">سجّل الآن وابدأ رحلتك مع الـ AI</p>
     </div>
-    
+
     <!-- Invite Header (hidden by default) -->
     <div class="text-center mb-8" id="invite-header" style="display: none;">
       <h1 class="text-2xl font-bold mb-2 text-[#3f8ff9]">Set Your Password</h1>
@@ -197,11 +205,13 @@
           <div id="checkNumber" class="check-item flex items-center text-xs">
             <i class="fa-regular fa-circle-check mr-2"></i> Contains number or special character
           </div>
-          
+
           <div class="mt-4 pt-2">
             <label class="flex items-center text-xs text-gray-400">
-              <input type="checkbox" id="terms" class="mr-2 rounded border-gray-700 bg-[#1a1a1a] text-brand focus:ring-brand w-4 h-4 cursor-pointer" required>
-              I agree to the <a href="#" class="text-brand hover:underline ml-1"><u>Terms and Conditions</u></a>.
+              <input type="checkbox" id="terms"
+                class="mr-2 rounded border-gray-700 bg-[#1a1a1a] text-brand focus:ring-brand w-4 h-4 cursor-pointer"
+                required>
+              I agree to the <a href="terms.html" target="_blank" class="text-brand hover:underline mx-1"><u>Terms & Conditions</u></a> and <a href="privacy.html" target="_blank" class="text-brand hover:underline ml-1"><u>Privacy Policy</u></a>
             </label>
           </div>
         </div>
@@ -209,10 +219,14 @@
 
       <!-- Submit Button -->
       <button type="submit" id="submitRegBtn"
-        class="w-full bg-brand hover:bg-[#99e600] text-black font-bold py-3 rounded-full transition-colors flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full bg-brand hover:bg-[#99e600] text-black font-bold py-3 rounded-full transition-colors flex justify-center items-center relative disabled:opacity-70 disabled:cursor-not-allowed"
         disabled>
-        <span>Sign Up Now <i class="fa-solid fa-arrow-right ml-1"></i></span>
-        <div id="spinner" class="hidden w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin">
+        <span class="transition-opacity duration-200">Sign Up Now <i class="fa-solid fa-arrow-right ml-1"></i></span>
+        <div id="spinner" class="hidden absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+          <svg class="animate-spin h-6 w-6 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
         </div>
       </button>
 
@@ -251,13 +265,9 @@
   <script src="src/js/i18n.js"></script>
   <script src="src/js/register.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
-</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+  </script>
 </body>
 
 </html>
-
-
-
-

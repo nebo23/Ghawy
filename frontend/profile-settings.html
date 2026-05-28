@@ -18,6 +18,24 @@
     <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
     
+<script>
+  (function() {
+    var t = localStorage.getItem("token");
+    if (!t) {
+      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    try {
+      var uStr = localStorage.getItem("user");
+      if (uStr) {
+        var u = JSON.parse(uStr);
+        if (u && (u.is_active === false || u.subscription_type === 'none')) {
+          window.location.replace("/payment.html?reason=access_required");
+        }
+      }
+    } catch(e) {}
+  })();
+</script>
 </head>
 
 <body>

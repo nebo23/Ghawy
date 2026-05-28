@@ -57,7 +57,7 @@ async function enforceAuthGuard() {
     });
     if (res.ok) {
       const u = await res.json();
-      if (!u.is_active) {
+      if (!u.is_active || u.subscription_type === 'none') {
         window.location.href = 'payment.html';
       }
     } else {

@@ -1,3 +1,8 @@
+(async () => {
+  const user = await requireActiveUser();
+  if (!user) return;
+})();
+
 // ═══ AUTH GUARD ═══
 const token = localStorage.getItem('token');
 if (!token) window.location.href = 'login.html';

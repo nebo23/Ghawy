@@ -1,4 +1,4 @@
-// لو عنده token بالفعل — شيك الأونبوردينج الأول
+// لو عنده token بالفعل — وجهه للصفحة المناسبة
 (async function checkExistingToken() {
   const t = getToken();
   if (!t) return;
@@ -12,7 +12,8 @@
     }
     const profile = await profileRes.json();
     if (!profile.is_active) {
-      window.location.href = 'payment.html';
+      // المستخدم عنده حساب بس مش مفعل — يرجع للصفحة الأساسية
+      window.location.href = 'index.html';
       return;
     }
 
@@ -23,11 +24,11 @@
       const data = await res.json();
       window.location.href = data.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
     } else {
-      // Token invalid
-      localStorage.removeItem('token');
+      // Onboarding status failed but token is valid — go to main page
+      window.location.href = 'index.html';
     }
   } catch(e) {
-    localStorage.removeItem('token');
+    // Network error — don't remove token, just stay on login page
   }
 })();
 
@@ -61,7 +62,7 @@ async function login() {
         });
         const profile = await profileRes.json();
         if (!profile.is_active) {
-          setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
+          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
           return;
         }
 

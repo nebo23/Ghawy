@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models import Guest, GuestSession, User
-from app.routers.users import get_current_user
+from app.routers.users import get_current_user, get_current_active_member
 
 router = APIRouter(prefix="/guests", tags=["Guest of Honors"])
 
@@ -152,13 +152,13 @@ def get_guest(guest_id: int, db: Session = Depends(get_db)):
     return guest
 
 @router.post("/suggest")
-def suggest_guest(data: SuggestGuestRequest, current_user: User = Depends(get_current_user)):
+def suggest_guest(data: SuggestGuestRequest, current_user: User = Depends(get_current_active_member)):
     # In a real app, save this to a Suggestions table or send an email
     return {"success": True, "message": "Thank you for the suggestion!"}
 
 # Admin Routes
 @router.post("/")
-def create_guest(data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_guest(data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin only")
     
@@ -169,7 +169,7 @@ def create_guest(data: GuestCreate, db: Session = Depends(get_db), current_user:
     return guest
 
 @router.put("/{guest_id}")
-def update_guest(guest_id: int, data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_guest(guest_id: int, data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin only")
         
@@ -185,7 +185,7 @@ def update_guest(guest_id: int, data: GuestCreate, db: Session = Depends(get_db)
     return guest
 
 @router.post("/{guest_id}/sessions")
-def create_session(guest_id: int, data: SessionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_session(guest_id: int, data: SessionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin only")
         

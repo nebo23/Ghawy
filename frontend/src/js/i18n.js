@@ -407,7 +407,7 @@ const translations = {
 // ── Language Management ──
 
 function getLang() {
-  return 'en';
+  return localStorage.getItem('lang') || 'ar';
 }
 
 function setLang(lang) {
@@ -421,7 +421,6 @@ function t(key) {
 }
 
 function applyLang(lang) {
-  lang = 'en';
   // Set HTML direction and language
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = lang;
@@ -444,7 +443,9 @@ function applyLang(lang) {
 
   // Update toggle button text
   const btn = document.getElementById('langToggle');
-  if (btn) btn.textContent = lang === 'ar' ? 'EN' : 'عربي';
+  if (btn) {
+    btn.innerHTML = lang === 'ar' ? 'EN' : 'AR';
+  }
 
   // Apply RTL-specific CSS fixes
   applyDirectionFixes(lang);

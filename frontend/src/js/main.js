@@ -1,3 +1,4 @@
+
 /* ═══════════════════════════════════════════
    Ghawy — Main JS (Redesigned)
 ═══════════════════════════════════════════ */
@@ -509,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.coursesSwiper')) {
         const coursesSwiper = new Swiper('.coursesSwiper', {
             slidesPerView: 3,
-            spaceBetween: 30,
+            spaceBetween: 15,
             loop: true,
             grabCursor: true,
             centeredSlides: false,
