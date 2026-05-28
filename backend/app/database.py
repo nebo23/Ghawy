@@ -10,7 +10,7 @@ ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 # بنقرأ رابط الداتابيز السري من غير ما نكشفه في الكود
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:Nabil.info2007:5432/ghawy_db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create engine with PostgreSQL connection pooling (Step 8 included)
 engine = create_engine(

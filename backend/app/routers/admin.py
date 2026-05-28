@@ -368,8 +368,7 @@ def list_payments(
         search_term = f"%{search}%"
         query = query.filter(
             (User.full_name.ilike(search_term)) |
-            (Payment.provider_order_id.ilike(search_term)) |
-            (Payment.paypal_order_id.ilike(search_term))
+            (Payment.provider_order_id.ilike(search_term))
         )
 
     # Status filter
@@ -401,7 +400,7 @@ def list_payments(
             "currency": payment.currency or "EGP",
             "method": payment.method.value if payment.method else "",
             "status": _map_status_to_display(payment.status),
-            "reference": payment.provider_order_id or payment.paypal_order_id or str(payment.id),
+            "reference": payment.provider_order_id or str(payment.id),
         })
 
     return {"payments": result, "total": total, "page": page, "pages": pages}
@@ -460,8 +459,7 @@ def export_payments_csv(
         search_term = f"%{search}%"
         query = query.filter(
             (User.full_name.ilike(search_term)) |
-            (Payment.provider_order_id.ilike(search_term)) |
-            (Payment.paypal_order_id.ilike(search_term))
+            (Payment.provider_order_id.ilike(search_term))
         )
 
     if status and status != "all":
@@ -488,7 +486,7 @@ def export_payments_csv(
             payment.currency or "EGP",
             payment.method.value if payment.method else "",
             _map_status_to_display(payment.status),
-            payment.provider_order_id or payment.paypal_order_id or str(payment.id),
+            payment.provider_order_id or str(payment.id),
         ])
 
     output.seek(0)

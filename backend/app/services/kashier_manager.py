@@ -42,12 +42,13 @@ def generate_kashier_hash(merchant_id: str, order_id: str, amount: str, currency
 def create_kashier_payment_url(
     order_id: str, 
     amount: float, 
+    currency: str = None,
     user_email: str = "",
-    user_id: int = None  # ← أضف ده
+    user_id: int = None
 ) -> dict:
     
     amount_str = _format_amount(amount)
-    currency = KASHIER_CURRENCY
+    currency = currency or KASHIER_CURRENCY
     signing_key = KASHIER_API_KEY or KASHIER_SECRET_KEY
 
     hash_value = generate_kashier_hash(
@@ -67,8 +68,8 @@ def create_kashier_payment_url(
         "allowedMethods": "card,wallet,bank_installments",
         "display": "ar",   # اللغة العربية
         # ── Recurring / Tokenization ──────────────────
-        "shopper_reference": f"user_{user_id}" if user_id else f"user_{order_id}",
-        "allow_tokenization": "true",
+        "shopperReference": f"user_{user_id}" if user_id else f"user_{order_id}",
+        "saveCard": "true",
         # ─────────────────────────────────────────────
     }
 

@@ -431,13 +431,16 @@ def react_to_post(
     existing = db.query(PostReaction).filter(
         PostReaction.post_id == post_id,
         PostReaction.user_id == current_user.id,
-        PostReaction.emoji == data.emoji,
     ).first()
 
     if existing:
-        # Remove — toggle off
-        db.delete(existing)
-        post.like_count = max((post.like_count or 0) - 1, 0)
+        if existing.emoji == data.emoji:
+            # Remove — toggle off
+            db.delete(existing)
+            post.like_count = max((post.like_count or 0) - 1, 0)
+        else:
+            # Change existing reaction, no need to increment like_count
+            existing.emoji = data.emoji
     else:
         # Add new reaction
         db.add(PostReaction(post_id=post_id, user_id=current_user.id, emoji=data.emoji))
@@ -643,11 +646,13 @@ def react_to_comment(
     existing = db.query(CommentReaction).filter(
         CommentReaction.comment_id == comment_id,
         CommentReaction.user_id == current_user.id,
-        CommentReaction.emoji == data.emoji,
     ).first()
 
     if existing:
-        db.delete(existing)
+        if existing.emoji == data.emoji:
+            db.delete(existing)
+        else:
+            existing.emoji = data.emoji
     else:
         db.add(CommentReaction(comment_id=comment_id, user_id=current_user.id, emoji=data.emoji))
 

@@ -107,13 +107,11 @@ class ResendVerificationRequest(BaseModel):
 
 # ─── Payment Schemas ─────────────────────────────────────────
 
-class PayPalCreateOrder(BaseModel):
-    amount: float
-    currency: str = "USD"
 
 class KashierCreateOrder(BaseModel):
     amount: float
     currency: str = "EGP"
+    plan_key: str = "monthly_egp"
     user_email: str = ""
 
 class KashierOrderOut(BaseModel):
@@ -121,10 +119,6 @@ class KashierOrderOut(BaseModel):
     order_id: str
     amount: str
     currency: str
-
-class PayPalOrderOut(BaseModel):
-    order_id: str
-    approval_url: str
 
 
 class PaymentOut(BaseModel):

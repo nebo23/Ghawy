@@ -86,7 +86,7 @@ async function verifyEmail() {
       if (data.access_token) {
         saveToken(data.access_token);
       }
-      setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+      setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
     } else {
       showAlert(data.detail || 'فشل التحقق من الكود', 'error');
     }

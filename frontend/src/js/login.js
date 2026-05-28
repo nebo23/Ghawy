@@ -12,8 +12,8 @@
     }
     const profile = await profileRes.json();
     if (!profile.is_active) {
-      // المستخدم عنده حساب بس مش مفعل — يرجع للصفحة الأساسية
-      window.location.href = 'index.html';
+      // المستخدم عنده حساب بس مش مفعل — يروح يدفع
+      window.location.href = 'payment.html';
       return;
     }
 
@@ -62,7 +62,7 @@ async function login() {
         });
         const profile = await profileRes.json();
         if (!profile.is_active) {
-          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+          setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
           return;
         }
 

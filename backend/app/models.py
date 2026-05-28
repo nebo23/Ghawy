@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,7 +12,6 @@ Base = declarative_base()
 # ═══════════════════════════════════════════
 
 class PaymentMethod(str, enum.Enum):
-    PAYPAL = "paypal"
     KASHIER = "kashier"
     MANUAL = "manual"
 
@@ -106,6 +105,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     # Relationships
+    # دي علشان لو احنا شيلنا شخص معين كل الحاجات اللي معاه هتتمسح
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="sender", cascade="all, delete-orphan")
@@ -119,13 +119,13 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     method = Column(Enum(PaymentMethod), nullable=False)
     status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
     amount = Column(Numeric(12, 2), nullable=False)
     currency = Column(String, default="EGP")
-    paypal_order_id = Column(String, nullable=True)       # للـ PayPal
     provider_order_id = Column(String, nullable=True, index=True)  # generic provider order id
+    plan_key = Column(String, nullable=True)  # monthly_egp, yearly_egp, monthly_usd, yearly_usd
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     confirmed_at = Column(DateTime, nullable=True)
 
@@ -195,6 +195,7 @@ class Comment(Base):
 
 class PostLike(Base):
     __tablename__ = "post_likes"
+    __table_args__ = (UniqueConstraint('post_id', 'user_id'),)
 
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
@@ -206,6 +207,7 @@ class PostLike(Base):
 
 class PostReaction(Base):
     __tablename__ = "post_reactions"
+    __table_args__ = (UniqueConstraint('post_id', 'user_id'),)
 
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
@@ -218,6 +220,7 @@ class PostReaction(Base):
 
 class CommentReaction(Base):
     __tablename__ = "comment_reactions"
+    __table_args__ = (UniqueConstraint('comment_id', 'user_id'),)
 
     id = Column(Integer, primary_key=True, index=True)
     comment_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=False)

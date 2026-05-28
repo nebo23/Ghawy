@@ -366,7 +366,63 @@ input::placeholder {
   font-size: 0.86rem;
 }
 
+/* ─── Plans Wrapper ─────────────────────────────────────── */
+.plans-wrapper {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+  animation: fadeUp 0.6s ease;
+}
+
 .plan-card {
+  flex: 1;
+  max-width: 220px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  text-align: center;
+}
+
+.plan-card:hover {
+  border-color: rgba(193, 255, 17, 0.3);
+  transform: translateY(-2px);
+}
+
+.plan-card.active {
+  border-color: var(--gold);
+  background: rgba(193, 255, 17, 0.04);
+  box-shadow: 0 0 0 4px var(--gold-glow), 0 0 30px rgba(193, 255, 17, 0.08);
+}
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.plan-card.single {
+  max-width: 360px;
+  padding: 32px 28px;
+  cursor: default;
+}
+
+/* ─── Features Card ────────────────────────────────────── */
+.features-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 24px;
@@ -375,11 +431,11 @@ input::placeholder {
   max-width: 480px;
   position: relative;
   z-index: 1;
-  animation: fadeUp 0.6s ease;
+  animation: fadeUp 0.7s ease;
   box-shadow: 0 0 60px rgba(193, 255, 17, 0.08);
 }
 
-.plan-card::before {
+.features-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -388,6 +444,33 @@ input::placeholder {
   width: 80%;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* ─── Skeleton Loading ─────────────────────────────────── */
+.skeleton-card {
+  min-height: 120px;
+  background: var(--card) !important;
+  border: 2px solid var(--border) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(193, 255, 17, 0.04) 50%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .header {
@@ -581,5 +664,20 @@ input::placeholder {
   .resend-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .plans-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .plan-card {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .features-card {
+    padding: 28px 20px;
+    border-radius: 16px;
   }
 }

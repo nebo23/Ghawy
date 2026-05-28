@@ -1985,7 +1985,10 @@
                 window.location.href = 'register.html';
                 return;
             }
-            window.location.href = 'payment.html';
+            // Pass the selected billing cycle to payment.html
+            const toggle = document.getElementById('pricingToggle');
+            const cycle = (toggle && toggle.checked) ? 'yearly' : 'monthly';
+            window.location.href = `payment.html?plan=${cycle}`;
         }
 
         // --- Instapay Payment Handler ---
