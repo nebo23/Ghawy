@@ -31,7 +31,8 @@ function initTabs() {
     'payments': 'Payments & Subscriptions',
     'analytics': 'Platform Analytics',
     'pending-requests': 'Pending Requests',
-    'live-sessions': 'Live Sessions'
+    'live-sessions': 'Live Sessions',
+    'courses': 'Courses Management'
   };
 
   tabs.forEach(tab => {
@@ -64,6 +65,9 @@ function initTabs() {
       }
       if (target === 'live-sessions') {
         loadLiveSessionsTab();
+      }
+      if (target === 'courses') {
+        loadCoursesTab();
       }
     });
   });
@@ -1387,4 +1391,524 @@ async function viewAttendees(sessionId) {
   } catch (e) {
     listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Failed to load attendees</div>';
   }
+}
+
+// ==========================================
+//  COURSES TAB (LEVEL 1 & 2)
+// ==========================================
+
+let coursesCache = [];
+let currentCourseId = null;
+let uploadPollInterval = null;
+
+async function loadCoursesTab() {
+  document.getElementById('courses-list-view').style.display = 'block';
+  document.getElementById('lessons-manager-view').style.display = 'none';
+  const tbody = document.getElementById('courses-body');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
+
+  try {
+    const res = await fetch(API + '/courses/admin/courses', { headers });
+    if (!res.ok) throw new Error('Failed to load courses');
+    coursesCache = await res.json();
+    renderCourses();
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:red;">Error loading courses.</td></tr>`;
+  }
+}
+
+function renderCourses() {
+  const tbody = document.getElementById('courses-body');
+  if (coursesCache.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No courses found. Add one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = coursesCache.map(c => {
+    const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
+    const pdfHref = c.pdf_url ? (c.pdf_url.startsWith('/') ? API + c.pdf_url : c.pdf_url) : '';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${thumbSrc
+            ? `<img src="${thumbSrc}" style="width:80px;height:45px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+               <div style="display:none;width:80px;height:45px;border-radius:4px;background:#222;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
+            : `<div style="width:80px;height:45px;border-radius:4px;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
+          }
+          <button class="btn-action" style="font-size:11px;padding:3px 6px;" onclick="uploadCourseThumbnail(${c.id})" title="Upload thumbnail"><i class="fa-solid fa-image"></i></button>
+          <input type="file" id="course-thumb-upload-${c.id}" accept="image/*" style="display:none" onchange="handleCourseThumbSelected(event, ${c.id})">
+        </div>
+      </td>
+      <td><strong>${escapeHtml(c.title)}</strong><br><small style="color:#888;">${escapeHtml((c.description||'').substring(0,30))}...</small></td>
+      <td>${c.total_lessons || 0} lessons</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${pdfHref ? '<a href="' + pdfHref + '" target="_blank" style="color:#ef4444;text-decoration:none;"><i class="fa-solid fa-file-pdf"></i> View</a>' : '<span style="color:#555;">No PDF</span>'}
+          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadCoursePdf(${c.id})">${c.pdf_url ? 'Replace' : 'Upload'}</button>
+          <input type="file" id="course-pdf-upload-${c.id}" accept="application/pdf" style="display:none" onchange="handleCoursePdfSelected(event, ${c.id})">
+        </div>
+      </td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${c.is_published ? 'checked' : ''} onchange="toggleCoursePublish(${c.id}, this)">
+          <span class="slider round"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')\" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function toggleCoursePublish(id, checkbox) {
+  const isPub = checkbox.checked;
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ is_published: isPub })
+    });
+    if (!res.ok) throw new Error('Failed to update course');
+    showToast(`Course ${isPub ? 'published' : 'hidden'} successfully`, 'success');
+  } catch (err) {
+    checkbox.checked = !isPub;
+    showToast('Error updating course', 'error');
+  }
+}
+
+// -- Course Modals --
+function openAddCourseModal() {
+  document.getElementById('course-title').value = '';
+  document.getElementById('course-desc').value = '';
+  document.getElementById('course-thumbnail').value = '';
+  document.getElementById('course-total-lessons').value = '0';
+  document.getElementById('add-course-modal').style.display = 'flex';
+}
+
+async function submitAddCourse() {
+  const data = {
+    title: document.getElementById('course-title').value,
+    description: document.getElementById('course-desc').value,
+    thumbnail_url: document.getElementById('course-thumbnail').value,
+    total_lessons: parseInt(document.getElementById('course-total-lessons').value) || 0,
+    is_published: false
+  };
+  if (!data.title) return showToast('Title is required', 'error');
+  
+  try {
+    const res = await fetch(API + '/courses/admin/courses', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Failed to create course');
+    closeModal('add-course-modal');
+    showToast('Course created successfully!', 'success');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function openEditCourseModal(id) {
+  const c = coursesCache.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('edit-course-id').value = c.id;
+  document.getElementById('edit-course-title').value = c.title;
+  document.getElementById('edit-course-desc').value = c.description || '';
+  document.getElementById('edit-course-thumbnail').value = c.thumbnail_url || '';
+  document.getElementById('edit-course-total-lessons').value = c.total_lessons || 0;
+  document.getElementById('edit-course-modal').style.display = 'flex';
+}
+
+async function submitEditCourse() {
+  const id = document.getElementById('edit-course-id').value;
+  const data = {
+    title: document.getElementById('edit-course-title').value,
+    description: document.getElementById('edit-course-desc').value,
+    thumbnail_url: document.getElementById('edit-course-thumbnail').value,
+    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0
+  };
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Update failed');
+    closeModal('edit-course-modal');
+    showToast('Course updated!', 'success');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function openDeleteCourseModal(id) {
+  document.getElementById('delete-course-id').value = id;
+  document.getElementById('delete-course-modal').style.display = 'flex';
+}
+
+async function confirmDeleteCourse() {
+  const id = document.getElementById('delete-course-id').value;
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'DELETE', headers
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    closeModal('delete-course-modal');
+    showToast('Course deleted', 'info');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// -- Course PDF Upload --
+function uploadCoursePdf(courseId) {
+  document.getElementById(`course-pdf-upload-${courseId}`).click();
+}
+
+async function handleCoursePdfSelected(event, courseId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
+
+  showToast('Uploading PDF...', 'info');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Upload failed');
+    }
+    
+    showToast('Course PDF uploaded successfully!', 'success');
+    loadCoursesTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+
+// -- Course Thumbnail Upload --
+function uploadCourseThumbnail(courseId) {
+  document.getElementById(`course-thumb-upload-${courseId}`).click();
+}
+
+async function handleCourseThumbSelected(event, courseId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return showToast('Must be an image file', 'error');
+
+  showToast('Uploading thumbnail...', 'info');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-thumbnail`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Upload failed');
+    }
+    
+    showToast('Thumbnail uploaded successfully!', 'success');
+    loadCoursesTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ==========================================
+//  LESSONS MANAGER (LEVEL 2)
+// ==========================================
+
+function showCoursesList() {
+  currentCourseId = null;
+  document.getElementById('courses-list-view').style.display = 'block';
+  document.getElementById('lessons-manager-view').style.display = 'none';
+  if (uploadPollInterval) { clearInterval(uploadPollInterval); uploadPollInterval = null; }
+  loadCoursesTab();
+}
+
+async function showLessonsManager(courseId, title) {
+  currentCourseId = courseId;
+  document.getElementById('courses-list-view').style.display = 'none';
+  document.getElementById('lessons-manager-view').style.display = 'block';
+  document.getElementById('lm-course-title').textContent = title + ' - Lessons';
+  await loadLessons();
+  startLessonStatusPolling();
+}
+
+let lessonsCache = [];
+async function loadLessons() {
+  const tbody = document.getElementById('lessons-body');
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${currentCourseId}/lessons`, { headers });
+    if (!res.ok) throw new Error('Failed');
+    lessonsCache = await res.json();
+    renderLessons();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:red;">Error loading lessons.</td></tr>`;
+  }
+}
+
+function renderLessons() {
+  const tbody = document.getElementById('lessons-body');
+  if (lessonsCache.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No lessons found. Add one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lessonsCache.map(l => {
+    let statHtml = '';
+    if (l.video_status === 'ready') statHtml = '<span class="video-badge ready"><span class="dot"></span>Ready</span>';
+    else if (l.video_status === 'processing') statHtml = '<span class="video-badge processing"><span class="dot"></span>Processing...</span>';
+    else if (l.video_status === 'error') statHtml = '<span class="video-badge error"><span class="dot"></span>Error</span>';
+    else statHtml = '<span class="video-badge pending"><span class="dot"></span>Pending</span>';
+
+    const hasPdf = !!l.pdf_url;
+    
+    return `
+    <tr>
+      <td style="color:#888;">${l.order}</td>
+      <td><strong>${escapeHtml(l.title)}</strong><br><small style="color:#888;">${escapeHtml(l.section_title||'')}</small></td>
+      <td>${l.duration_minutes} min</td>
+      <td id="status-cell-${l.id}">${statHtml}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${hasPdf ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>' : '<span style="color:#555;">No PDF</span>'}
+          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadPdf(${l.id})">${hasPdf ? 'Replace' : 'Upload'}</button>
+          <input type="file" id="pdf-upload-${l.id}" accept="application/pdf" style="display:none" onchange="handlePdfSelected(event, ${l.id})">
+        </div>
+      </td>
+      <td>
+        <button class="btn-action" onclick="openEditLessonModal(${l.id})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action" onclick="openDeleteLessonModal(${l.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>
+  `}).join('');
+}
+
+// -- Polling CF Stream --
+function startLessonStatusPolling() {
+  if (uploadPollInterval) clearInterval(uploadPollInterval);
+  uploadPollInterval = setInterval(async () => {
+    const processingLessons = lessonsCache.filter(l => l.video_status === 'processing' || l.video_status === 'pending');
+    if (processingLessons.length === 0) return;
+    
+    for (let l of processingLessons) {
+      if(!l.cloudflare_video_id) continue;
+      try {
+        const res = await fetch(API + `/courses/admin/lessons/${l.id}/status`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status !== l.video_status) {
+            l.video_status = data.status;
+            renderLessons();
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+  }, 4000);
+}
+
+// -- PDF Upload --
+function uploadPdf(lessonId) {
+  document.getElementById(`pdf-upload-${lessonId}`).click();
+}
+
+async function handlePdfSelected(event, lessonId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
+
+  showToast('Preparing PDF upload...', 'info');
+  try {
+    const res = await fetch(API + `/courses/admin/lessons/${lessonId}/pdf`, { method: 'POST', headers });
+    if (!res.ok) throw new Error('Failed to get upload URL');
+    const data = await res.json();
+    
+    showToast('Uploading to R2...', 'info');
+    const putRes = await fetch(data.upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/pdf' },
+      body: file
+    });
+    if (!putRes.ok) throw new Error('Upload to R2 failed');
+    
+    showToast('Saving PDF link...', 'info');
+    const patchRes = await fetch(API + `/courses/admin/lessons/${lessonId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ pdf_url: data.public_url })
+    });
+    if (!patchRes.ok) throw new Error('Failed to save link');
+    
+    showToast('PDF uploaded successfully!', 'success');
+    loadLessons();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// -- Lesson Modals --
+let selectedVideoFile = null;
+
+function openAddLessonModal() {
+  document.getElementById('lesson-title').value = '';
+  document.getElementById('lesson-section').value = '';
+  document.getElementById('lesson-order').value = lessonsCache.length + 1;
+  document.getElementById('lesson-duration').value = '0';
+  selectedVideoFile = null;
+  document.getElementById('selectedFileName').style.display = 'none';
+  document.getElementById('uploadProgressWrap').style.display = 'none';
+  document.getElementById('uploadProgressFill').style.width = '0%';
+  document.getElementById('uploadProgressText').textContent = '0%';
+  document.getElementById('addLessonSubmitBtn').disabled = false;
+  document.getElementById('add-lesson-modal').style.display = 'flex';
+}
+
+const dropZone = document.getElementById('videoDropZone');
+const fileInput = document.getElementById('videoFileInput');
+if(dropZone && fileInput){
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      selectedVideoFile = e.dataTransfer.files[0];
+      document.getElementById('selectedFileName').textContent = selectedVideoFile.name;
+      document.getElementById('selectedFileName').style.display = 'block';
+    }
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+      selectedVideoFile = e.target.files[0];
+      document.getElementById('selectedFileName').textContent = selectedVideoFile.name;
+      document.getElementById('selectedFileName').style.display = 'block';
+    }
+  });
+}
+
+async function submitAddLesson() {
+  const title = document.getElementById('lesson-title').value;
+  const section = document.getElementById('lesson-section').value;
+  const order = parseInt(document.getElementById('lesson-order').value) || 0;
+  const duration = parseInt(document.getElementById('lesson-duration').value) || 0;
+
+  if (!title) return showToast('Title is required', 'error');
+  if (!selectedVideoFile) return showToast('Please select a video file', 'error');
+
+  const btn = document.getElementById('addLessonSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  try {
+    // 1. Create Lesson in DB and get CF Upload URL
+    const res = await fetch(API + `/courses/admin/courses/${currentCourseId}/lessons`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        title, section_title: section, order, duration_minutes: duration
+      })
+    });
+    if (!res.ok) throw new Error('Failed to create lesson in database');
+    const data = await res.json();
+    const uploadUrl = data.upload_url;
+    
+    // 2. Upload to Cloudflare Stream directly
+    document.getElementById('uploadProgressWrap').style.display = 'block';
+    
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', selectedVideoFile.type || 'video/mp4');
+      
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          document.getElementById('uploadProgressFill').style.width = percentComplete + '%';
+          document.getElementById('uploadProgressText').textContent = percentComplete + '%';
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error('Upload to Cloudflare failed'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(selectedVideoFile);
+    });
+
+    closeModal('add-lesson-modal');
+    showToast('Video uploaded! It is now processing.', 'success');
+    loadLessons();
+  } catch (err) {
+    showToast(err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Create & Upload';
+  }
+}
+
+function openEditLessonModal(id) {
+  const l = lessonsCache.find(x => x.id === id);
+  if(!l) return;
+  document.getElementById('edit-lesson-id').value = l.id;
+  document.getElementById('edit-lesson-title').value = l.title;
+  document.getElementById('edit-lesson-section').value = l.section_title || '';
+  document.getElementById('edit-lesson-order').value = l.order || 0;
+  document.getElementById('edit-lesson-duration').value = l.duration_minutes || 0;
+  document.getElementById('edit-lesson-modal').style.display = 'flex';
+}
+
+async function submitEditLesson() {
+  const id = document.getElementById('edit-lesson-id').value;
+  try {
+    const res = await fetch(API + `/courses/admin/lessons/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        title: document.getElementById('edit-lesson-title').value,
+        section_title: document.getElementById('edit-lesson-section').value,
+        order: parseInt(document.getElementById('edit-lesson-order').value) || 0,
+        duration_minutes: parseInt(document.getElementById('edit-lesson-duration').value) || 0
+      })
+    });
+    if (!res.ok) throw new Error('Update failed');
+    closeModal('edit-lesson-modal');
+    showToast('Lesson updated', 'success');
+    loadLessons();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function openDeleteLessonModal(id) {
+  document.getElementById('delete-lesson-id').value = id;
+  document.getElementById('delete-lesson-modal').style.display = 'flex';
+}
+
+async function confirmDeleteLesson() {
+  const id = document.getElementById('delete-lesson-id').value;
+  try {
+    const res = await fetch(API + `/courses/admin/lessons/${id}`, {
+      method: 'DELETE', headers
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    closeModal('delete-lesson-modal');
+    showToast('Lesson deleted', 'info');
+    loadLessons();
+  } catch (e) { showToast(e.message, 'error'); }
 }

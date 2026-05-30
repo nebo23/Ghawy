@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -10,9 +10,15 @@ from app.schemas import (
     UserCourseProgressOut, CourseProgressUpdate,
 )
 import logging
+import uuid
+import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/courses", tags=["Courses"])
+
+UPLOADS_DIR = Path(__file__).resolve().parents[2] / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # ═══════════════════════════════════════════════════════════════
 #  PUBLIC / USER ENDPOINTS
@@ -77,24 +83,19 @@ def update_course_progress(course_id: int, data: CourseProgressUpdate, current_u
 
 # ─── Admin: List ALL courses (including unpublished) ─────────
 @router.get("/admin/all", response_model=List[CourseOut])
+# ─── Admin: List ALL courses ─────────────────────────────────
+@router.get("/admin/courses", response_model=List[CourseOut])
 def admin_list_courses(admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     return db.query(Course).order_by(Course.created_at.desc()).all()
 
-# ─── Admin: Get course detail (including unpublished) ────────
-@router.get("/admin/{course_id}", response_model=CourseDetailOut)
-def admin_get_course(course_id: int, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
-    course = db.query(Course).filter(Course.id == course_id).first()
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-    return course
-
 # ─── Admin: Create course ────────────────────────────────────
-@router.post("", response_model=CourseOut, status_code=201)
+@router.post("/admin/courses", response_model=CourseOut, status_code=201)
 def create_course(data: CourseCreate, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     course = Course(
         title=data.title,
         description=data.description,
         thumbnail_url=data.thumbnail_url,
+        pdf_url=data.pdf_url,
         total_lessons=data.total_lessons,
         is_published=data.is_published
     )
@@ -104,7 +105,7 @@ def create_course(data: CourseCreate, admin: User = Depends(get_current_admin_us
     return course
 
 # ─── Admin: Update course ────────────────────────────────────
-@router.patch("/admin/{course_id}", response_model=CourseOut)
+@router.patch("/admin/courses/{course_id}", response_model=CourseOut)
 def update_course(course_id: int, data: CourseUpdate, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -116,7 +117,7 @@ def update_course(course_id: int, data: CourseUpdate, admin: User = Depends(get_
     return course
 
 # ─── Admin: Delete course ────────────────────────────────────
-@router.delete("/admin/{course_id}", status_code=204)
+@router.delete("/admin/courses/{course_id}", status_code=204)
 def delete_course(course_id: int, admin: User = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -129,6 +130,72 @@ def delete_course(course_id: int, admin: User = Depends(get_current_admin_user),
     db.delete(course)
     db.commit()
     return None
+
+# ─── Admin: Upload course PDF (direct file upload) ──────────
+@router.post("/admin/courses/{course_id}/upload-pdf")
+async def upload_course_pdf(
+    course_id: int,
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    # Save file
+    pdf_dir = UPLOADS_DIR / "course-pdfs"
+    pdf_dir.mkdir(exist_ok=True)
+    safe_name = f"course_{course_id}_{uuid.uuid4().hex[:8]}.pdf"
+    file_path = pdf_dir / safe_name
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Update course record
+    course.pdf_url = f"/uploads/course-pdfs/{safe_name}"
+    db.commit()
+    db.refresh(course)
+    
+    return {"pdf_url": course.pdf_url, "message": "PDF uploaded successfully"}
+
+# ─── Admin: Upload course thumbnail (direct file upload) ─────
+@router.post("/admin/courses/{course_id}/upload-thumbnail")
+async def upload_course_thumbnail(
+    course_id: int,
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    allowed = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed:
+        raise HTTPException(status_code=400, detail=f"Only image files are allowed ({', '.join(allowed)})")
+
+    # Save file
+    thumb_dir = UPLOADS_DIR / "course-thumbnails"
+    thumb_dir.mkdir(exist_ok=True)
+    safe_name = f"course_{course_id}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = thumb_dir / safe_name
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Update course record
+    course.thumbnail_url = f"/uploads/course-thumbnails/{safe_name}"
+    db.commit()
+    db.refresh(course)
+    
+    return {"thumbnail_url": course.thumbnail_url, "message": "Thumbnail uploaded successfully"}
 
 # ─── Admin: Create lesson + CF direct upload ─────────────────
 @router.post("/admin/{course_id}/lessons", status_code=201)

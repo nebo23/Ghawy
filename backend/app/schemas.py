@@ -308,6 +308,7 @@ class CourseOut(BaseModel):
     title: str
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    pdf_url: Optional[str] = None
     total_lessons: int
     is_published: bool
     created_at: datetime
@@ -355,6 +356,7 @@ class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    pdf_url: Optional[str] = None
     total_lessons: int = 0
     is_published: bool = False
 
@@ -362,6 +364,7 @@ class CourseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    pdf_url: Optional[str] = None
     is_published: Optional[bool] = None
 
 # ─── Live Session Schemas ────────────────────────────────────

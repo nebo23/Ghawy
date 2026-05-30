@@ -94,7 +94,7 @@ function renderCourses(courses) {
 
     grid.innerHTML = courses.map(c => {
         const pct = Math.round(c.percent || 0);
-        const thumb = c.thumbnail_url || '';
+        const thumb = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
         return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'">
             <div class="course-thumb">${thumb ? `<img src="${thumb}" alt="${c.title}"/>` : ''}<div class="course-thumb-overlay"></div>
                 <div style="position:absolute;top:10px;left:10px;background:var(--gold);color:#000;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:800">AI</div>

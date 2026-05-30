@@ -305,6 +305,7 @@ class Course(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     thumbnail_url = Column(String, nullable=True)
+    pdf_url = Column(String, nullable=True)
     total_lessons = Column(Integer, server_default=text('0'), default=0)
     is_published = Column(Boolean, server_default=text('false'), default=False)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)

@@ -2,10 +2,10 @@
 <html lang="en" dir="ltr">
 
 <head>
-    <!-- CACHE BUSTER -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+  <!-- CACHE BUSTER -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Team Management — Ghawy</title>
@@ -623,32 +623,134 @@
         display: none
       }
     }
+
+    /* Courses specific styles */
+    .file-drop-zone {
+      border: 2px dashed #333;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      background: #1a1a1a;
+      transition: all .2s;
+    }
+
+    .file-drop-zone:hover,
+    .file-drop-zone.dragover {
+      border-color: #3f8ff9;
+      background: rgba(63, 143, 249, .05);
+    }
+
+    .file-drop-zone .drop-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: .8;
+    }
+
+    .file-drop-zone .drop-text {
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .file-drop-zone .drop-hint {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .upload-progress-wrap {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .upload-progress-bar {
+      background: #2a2a2a;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .upload-progress-fill {
+      background: #3f8ff9;
+      height: 100%;
+      width: 0;
+      transition: width .2s ease;
+    }
+
+    .upload-progress-text {
+      color: #ccc;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .video-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .video-badge.pending {
+      background: rgba(255, 255, 255, .05);
+      color: #aaa;
+    }
+
+    .video-badge.processing {
+      background: rgba(245, 158, 11, .15);
+      color: #f59e0b;
+    }
+
+    .video-badge.ready {
+      background: rgba(34, 197, 94, .15);
+      color: #22c55e;
+    }
+
+    .video-badge.error {
+      background: rgba(239, 68, 68, .15);
+      color: #ef4444;
+    }
+
+    .video-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
   </style>
-  
-<script>
-  (function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var urlToken = urlParams.get("token");
-    if (urlToken) {
-      localStorage.setItem("token", urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    var t = localStorage.getItem("token");
-    if (!t) {
-      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
-      return;
-    }
-    try {
-      var uStr = localStorage.getItem("user");
-      if (uStr) {
-        var u = JSON.parse(uStr);
-        if (u && (u.is_active === false || u.subscription_type === 'none')) {
-          window.location.replace("/payment.html?reason=access_required");
-        }
+
+  <script>
+    (function () {
+      var urlParams = new URLSearchParams(window.location.search);
+      var urlToken = urlParams.get("token");
+      if (urlToken) {
+        localStorage.setItem("token", urlToken);
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
-    } catch(e) {}
-  })();
-</script>
+      var t = localStorage.getItem("token");
+      if (!t) {
+        window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+        return;
+      }
+      try {
+        var uStr = localStorage.getItem("user");
+        if (uStr) {
+          var u = JSON.parse(uStr);
+          if (u && (u.is_active === false || u.subscription_type === 'none')) {
+            window.location.replace("/payment.html?reason=access_required");
+          }
+        }
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>
@@ -667,18 +769,21 @@
             data-i18n="guestOfHonors">ضيوف الشرف</span></a>
         <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
             data-i18n="communityChat">شات المجتمع</span></a>
-        <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct
+        <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+          <span>Direct
             Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
             style="display:none; margin-left:auto; margin-right:4px;"></span></a>
         <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
             data-i18n="achievements">الإنجازات</span></a>
         <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
             data-i18n="settings">الإعدادات</span></a>
-        <a href="teamdashboard.html?v=2" class="nav-item active" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i>
+        <a href="teamdashboard.html?v=2" class="nav-item active" data-admin-only="true"><i data-lucide="users"
+            class="nav-icon"></i>
           <span data-i18n='teamDashboard'>Team Dashboard</span></a>
       </nav>
       <div class="sidebar-user" id="sidebarUser">
-        <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
+        <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i>
+        </div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name" id="sidebarName">—</div>
           <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
@@ -717,16 +822,18 @@
           <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
           <div class="topbar-user" id="topbarUser"
             onclick="document.getElementById('userDropdown').classList.toggle('open')">
-            <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
+            <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i>
+            </div>
             <span class="topbar-user-name" id="topbarName">—</span>
             <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
           </div>
           <div class="user-dropdown" id="userDropdown">
-            <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="profile">الملف الشخصي</span></a>
+            <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span
+                data-i18n="profile">الملف الشخصي</span></a>
             <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span
                 data-i18n="settings">الإعدادات</span></a>
-            <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i> <span
-                data-i18n="logout">تسجيل الخروج</span></button>
+            <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i>
+              <span data-i18n="logout">تسجيل الخروج</span></button>
           </div>
         </div>
       </header>
@@ -749,327 +856,405 @@
             <button class="team-section-btn active" data-tab="users">
               <i data-lucide="users" style="width:18px;height:18px;"></i>
               <span class="tab-label">Members</span>
-          </button>
-          <button class="team-section-btn" data-tab="payments">
-            <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
-            <span class="tab-label">Payments</span>
-          </button>
-          <button class="team-section-btn" data-tab="pending-requests">
-            <i data-lucide="inbox" style="width:18px;height:18px;"></i>
-            <span class="tab-label">Pending Requests</span>
-            <span class="pending-badge" id="pending-badge" style="display:none">0</span>
-          </button>
-          <button class="team-section-btn" data-tab="analytics">
-            <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
-            <span class="tab-label">Analytics</span>
-          </button>
-          <button class="team-section-btn" data-tab="live-sessions">
-            <i data-lucide="radio" style="width:18px;height:18px;"></i>
-            <span class="tab-label">Live Sessions</span>
-          </button>
+            </button>
+            <button class="team-section-btn" data-tab="payments">
+              <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Payments</span>
+            </button>
+            <button class="team-section-btn" data-tab="pending-requests">
+              <i data-lucide="inbox" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Pending Requests</span>
+              <span class="pending-badge" id="pending-badge" style="display:none">0</span>
+            </button>
+            <button class="team-section-btn" data-tab="analytics">
+              <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Analytics</span>
+            </button>
+            <button class="team-section-btn" data-tab="live-sessions">
+              <i data-lucide="radio" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Live Sessions</span>
+            </button>
+            <button class="team-section-btn" data-tab="courses">
+              <i data-lucide="presentation" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Courses</span>
+            </button>
           </nav>
 
           <!-- Tab Content Area -->
           <div class="team-content-area">
 
-        <!-- Tab Content: Users -->
-        <div id="tab-users" class="tab-panel">
+            <!-- Tab Content: Users -->
+            <div id="tab-users" class="tab-panel">
 
-        <!-- Stats -->
-        <div class="team-stats">
-          <div class="stat-card"><span class="stat-icon"><i data-lucide="users" style="width:36px; height:36px; stroke:#3f8ff9; stroke-width:1.5px;"></i></span>
-            <div class="stat-info">
-              <div class="stat-number" id="stat-total">0</div>
-              <div class="stat-label">Total Members</div>
-            </div>
-          </div>
-          <div class="stat-card"><span class="stat-icon"><i data-lucide="user-check" style="width:36px; height:36px; stroke:#22c55e; stroke-width:1.5px;"></i></span>
-            <div class="stat-info">
-              <div class="stat-number" id="stat-active">0</div>
-              <div class="stat-label">Active</div>
-            </div>
-          </div>
-          <div class="stat-card"><span class="stat-icon"><i data-lucide="user-minus" style="width:36px; height:36px; stroke:#ef4444; stroke-width:1.5px;"></i></span>
-            <div class="stat-info">
-              <div class="stat-number" id="stat-inactive">0</div>
-              <div class="stat-label">Inactive</div>
-            </div>
-          </div>
-          <div class="stat-card"><span class="stat-icon"><i data-lucide="shield-check" style="width:36px; height:36px; stroke:#f59e0b; stroke-width:1.5px;"></i></span>
-            <div class="stat-info">
-              <div class="stat-number" id="stat-admins">0</div>
-              <div class="stat-label">Admins</div>
-            </div>
-          </div>
-        </div>
+              <!-- Stats -->
+              <div class="team-stats">
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="users"
+                      style="width:36px; height:36px; stroke:#3f8ff9; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="stat-total">0</div>
+                    <div class="stat-label">Total Members</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="user-check"
+                      style="width:36px; height:36px; stroke:#22c55e; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="stat-active">0</div>
+                    <div class="stat-label">Active</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="user-minus"
+                      style="width:36px; height:36px; stroke:#ef4444; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="stat-inactive">0</div>
+                    <div class="stat-label">Inactive</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="shield-check"
+                      style="width:36px; height:36px; stroke:#f59e0b; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="stat-admins">0</div>
+                    <div class="stat-label">Admins</div>
+                  </div>
+                </div>
+              </div>
 
-        <!-- Toolbar -->
-        <div class="team-toolbar">
-          <div class="search-wrap">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="Search by name or email..."
-              oninput="handleSearch(this.value)" />
-          </div>
-          <select id="status-filter" onchange="handleFilter(this.value)">
-            <option value="all">All Members</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
-          <button class="btn-add-member" onclick="openAddModal()">+ Add Member</button>
-        </div>
+              <!-- Toolbar -->
+              <div class="team-toolbar">
+                <div class="search-wrap">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="search-input" placeholder="Search by name or email..."
+                    oninput="handleSearch(this.value)" />
+                </div>
+                <select id="status-filter" onchange="handleFilter(this.value)">
+                  <option value="all">All Members</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+                <button class="btn-add-member" onclick="openAddModal()">+ Add Member</button>
+              </div>
 
-        <!-- Recurring Status Panel -->
-        <div class="recurring-panel">
-          <div class="recurring-panel-header" onclick="toggleRecurringPanel()">
-            <span>💳 Recurring Subscriptions Overview</span>
-            <span id="recurring-toggle">▼</span>
-          </div>
-          <div class="recurring-panel-body" id="recurring-body" style="display:none">
-            <div class="recurring-stats">
-              <div class="rec-stat">
-                <div class="rec-num" id="rec-total">—</div>
-                <div class="rec-label">Total Subscribers</div>
+              <!-- Recurring Status Panel -->
+              <div class="recurring-panel">
+                <div class="recurring-panel-header" onclick="toggleRecurringPanel()">
+                  <span>💳 Recurring Subscriptions Overview</span>
+                  <span id="recurring-toggle">▼</span>
+                </div>
+                <div class="recurring-panel-body" id="recurring-body" style="display:none">
+                  <div class="recurring-stats">
+                    <div class="rec-stat">
+                      <div class="rec-num" id="rec-total">—</div>
+                      <div class="rec-label">Total Subscribers</div>
+                    </div>
+                    <div class="rec-stat">
+                      <div class="rec-num" id="rec-due" style="color:#ef4444">—</div>
+                      <div class="rec-label">Due Now</div>
+                    </div>
+                    <div class="rec-stat">
+                      <div class="rec-num" id="rec-soon" style="color:#f59e0b">—</div>
+                      <div class="rec-label">Due in 7 Days</div>
+                    </div>
+                  </div>
+                  <button class="btn-trigger-recurring" onclick="triggerRecurring()">
+                    ⚡ Run Recurring Charges Now
+                  </button>
+                </div>
               </div>
-              <div class="rec-stat">
-                <div class="rec-num" id="rec-due" style="color:#ef4444">—</div>
-                <div class="rec-label">Due Now</div>
-              </div>
-              <div class="rec-stat">
-                <div class="rec-num" id="rec-soon" style="color:#f59e0b">—</div>
-                <div class="rec-label">Due in 7 Days</div>
-              </div>
-            </div>
-            <button class="btn-trigger-recurring" onclick="triggerRecurring()">
-              ⚡ Run Recurring Charges Now
-            </button>
-          </div>
-        </div>
 
-        <!-- Table -->
-        <div class="team-table-wrap">
-          <table class="team-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Country</th>
-                <th>Joined</th>
-                <th>Subscription</th>
-                <th>Next Charge</th>
-                <th>Status</th>
-                <th>Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="users-tbody">
-              <tr>
-                <td colspan="10" style="text-align:center;color:#888;padding:40px">Loading...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination" id="pagination"></div>
-        </div>
+              <!-- Table -->
+              <div class="team-table-wrap">
+                <table class="team-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Country</th>
+                      <th>Joined</th>
+                      <th>Subscription</th>
+                      <th>Next Charge</th>
+                      <th>Status</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-tbody">
+                    <tr>
+                      <td colspan="10" style="text-align:center;color:#888;padding:40px">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination" id="pagination"></div>
+            </div>
 
-        <!-- Tab Content: Payments -->
-        <div id="tab-payments" class="tab-panel" style="display:none;">
-          <!-- Payment Stats -->
-          <div class="payments-stats">
-            <div class="pay-stat-card">
-              <div class="pay-stat-icon" style="background:rgba(34,197,94,0.1)">
-                <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
+            <!-- Tab Content: Payments -->
+            <div id="tab-payments" class="tab-panel" style="display:none;">
+              <!-- Payment Stats -->
+              <div class="payments-stats">
+                <div class="pay-stat-card">
+                  <div class="pay-stat-icon" style="background:rgba(34,197,94,0.1)">
+                    <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
+                  </div>
+                  <div>
+                    <div class="pay-stat-number" id="pay-stat-revenue">—</div>
+                    <div class="pay-stat-label">Total Revenue</div>
+                  </div>
+                </div>
+                <div class="pay-stat-card">
+                  <div class="pay-stat-icon" style="background:rgba(63,143,249,0.1)">
+                    <i data-lucide="calendar" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
+                  </div>
+                  <div>
+                    <div class="pay-stat-number" id="pay-stat-month">—</div>
+                    <div class="pay-stat-label">This Month</div>
+                  </div>
+                </div>
+                <div class="pay-stat-card">
+                  <div class="pay-stat-icon" style="background:rgba(239,68,68,0.1)">
+                    <i data-lucide="x-circle" style="width:24px;height:24px;stroke:#ef4444;"></i>
+                  </div>
+                  <div>
+                    <div class="pay-stat-number" id="pay-stat-failed">—</div>
+                    <div class="pay-stat-label">Failed</div>
+                  </div>
+                </div>
+                <div class="pay-stat-card">
+                  <div class="pay-stat-icon" style="background:rgba(245,158,11,0.1)">
+                    <i data-lucide="clock" style="width:24px;height:24px;stroke:#f59e0b;"></i>
+                  </div>
+                  <div>
+                    <div class="pay-stat-number" id="pay-stat-pending">—</div>
+                    <div class="pay-stat-label">Pending</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="pay-stat-number" id="pay-stat-revenue">—</div>
-                <div class="pay-stat-label">Total Revenue</div>
-              </div>
-            </div>
-            <div class="pay-stat-card">
-              <div class="pay-stat-icon" style="background:rgba(63,143,249,0.1)">
-                <i data-lucide="calendar" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
-              </div>
-              <div>
-                <div class="pay-stat-number" id="pay-stat-month">—</div>
-                <div class="pay-stat-label">This Month</div>
-              </div>
-            </div>
-            <div class="pay-stat-card">
-              <div class="pay-stat-icon" style="background:rgba(239,68,68,0.1)">
-                <i data-lucide="x-circle" style="width:24px;height:24px;stroke:#ef4444;"></i>
-              </div>
-              <div>
-                <div class="pay-stat-number" id="pay-stat-failed">—</div>
-                <div class="pay-stat-label">Failed</div>
-              </div>
-            </div>
-            <div class="pay-stat-card">
-              <div class="pay-stat-icon" style="background:rgba(245,158,11,0.1)">
-                <i data-lucide="clock" style="width:24px;height:24px;stroke:#f59e0b;"></i>
-              </div>
-              <div>
-                <div class="pay-stat-number" id="pay-stat-pending">—</div>
-                <div class="pay-stat-label">Pending</div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Payment Filters -->
-          <div class="payments-toolbar">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="pay-search" placeholder="Search by name or reference..." />
-            </div>
-            <select id="pay-status-filter">
-              <option value="all">All Status</option>
-              <option value="paid">Paid</option>
-              <option value="failed">Failed</option>
-              <option value="pending">Pending</option>
-              <option value="refunded">Refunded</option>
-            </select>
-            <select id="pay-method-filter">
-              <option value="all">All Methods</option>
-              <option value="kashier">Kashier</option>
-              <option value="manual">Manual</option>
-            </select>
-            <button class="btn-export" onclick="exportPaymentsCSV()">
-              <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
-            </button>
-          </div>
+              <!-- Payment Filters -->
+              <div class="payments-toolbar">
+                <div class="search-wrap">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="pay-search" placeholder="Search by name or reference..." />
+                </div>
+                <select id="pay-status-filter">
+                  <option value="all">All Status</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="pending">Pending</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+                <select id="pay-method-filter">
+                  <option value="all">All Methods</option>
+                  <option value="kashier">Kashier</option>
+                  <option value="manual">Manual</option>
+                </select>
+                <button class="btn-export" onclick="exportPaymentsCSV()">
+                  <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
+                </button>
+              </div>
 
-          <!-- Payments Table -->
-          <div class="payments-table-wrap">
-            <table class="payments-table">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Reference</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="payments-tbody"></tbody>
-            </table>
-          </div>
-          <div class="payments-pagination" id="payments-pagination"></div>
-        </div>
+              <!-- Payments Table -->
+              <div class="payments-table-wrap">
+                <table class="payments-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Method</th>
+                      <th>Status</th>
+                      <th>Reference</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payments-tbody"></tbody>
+                </table>
+              </div>
+              <div class="payments-pagination" id="payments-pagination"></div>
+            </div>
 
-        <!-- Tab Content: Analytics -->
-        <div id="tab-analytics" class="tab-panel" style="display:none;">
-          <!-- Time Range -->
-          <div class="analytics-range">
-            <button class="range-btn" data-range="7d">7 Days</button>
-            <button class="range-btn active" data-range="30d">30 Days</button>
-            <button class="range-btn" data-range="90d">90 Days</button>
-            <button class="range-btn" data-range="6mo">6 Months</button>
-            <button class="range-btn" data-range="1yr">1 Year</button>
-          </div>
+            <!-- Tab Content: Analytics -->
+            <div id="tab-analytics" class="tab-panel" style="display:none;">
+              <!-- Time Range -->
+              <div class="analytics-range">
+                <button class="range-btn" data-range="7d">7 Days</button>
+                <button class="range-btn active" data-range="30d">30 Days</button>
+                <button class="range-btn" data-range="90d">90 Days</button>
+                <button class="range-btn" data-range="6mo">6 Months</button>
+                <button class="range-btn" data-range="1yr">1 Year</button>
+              </div>
 
-          <!-- KPI Cards -->
-          <div class="analytics-kpis">
-            <div class="kpi-card">
-              <div class="kpi-icon" style="background:rgba(63,143,249,0.1)">
-                <i data-lucide="users" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
+              <!-- KPI Cards -->
+              <div class="analytics-kpis">
+                <div class="kpi-card">
+                  <div class="kpi-icon" style="background:rgba(63,143,249,0.1)">
+                    <i data-lucide="users" style="width:24px;height:24px;stroke:#3f8ff9;"></i>
+                  </div>
+                  <div>
+                    <div class="kpi-number" id="kpi-total-members">—</div>
+                    <div class="kpi-label">Total Members</div>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon" style="background:rgba(34,197,94,0.1)">
+                    <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
+                  </div>
+                  <div>
+                    <div class="kpi-number" id="kpi-growth-rate">—</div>
+                    <div class="kpi-label">Growth Rate</div>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon" style="background:rgba(245,158,11,0.1)">
+                    <i data-lucide="dollar-sign" style="width:24px;height:24px;stroke:#f59e0b;"></i>
+                  </div>
+                  <div>
+                    <div class="kpi-number" id="kpi-total-revenue">—</div>
+                    <div class="kpi-label">Total Revenue</div>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon" style="background:rgba(239,68,68,0.1)">
+                    <i data-lucide="user-minus" style="width:24px;height:24px;stroke:#ef4444;"></i>
+                  </div>
+                  <div>
+                    <div class="kpi-number" id="kpi-churn-rate">—</div>
+                    <div class="kpi-label">Churn Rate</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="kpi-number" id="kpi-total-members">—</div>
-                <div class="kpi-label">Total Members</div>
-              </div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-icon" style="background:rgba(34,197,94,0.1)">
-                <i data-lucide="trending-up" style="width:24px;height:24px;stroke:#22c55e;"></i>
-              </div>
-              <div>
-                <div class="kpi-number" id="kpi-growth-rate">—</div>
-                <div class="kpi-label">Growth Rate</div>
-              </div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-icon" style="background:rgba(245,158,11,0.1)">
-                <i data-lucide="dollar-sign" style="width:24px;height:24px;stroke:#f59e0b;"></i>
-              </div>
-              <div>
-                <div class="kpi-number" id="kpi-total-revenue">—</div>
-                <div class="kpi-label">Total Revenue</div>
-              </div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-icon" style="background:rgba(239,68,68,0.1)">
-                <i data-lucide="user-minus" style="width:24px;height:24px;stroke:#ef4444;"></i>
-              </div>
-              <div>
-                <div class="kpi-number" id="kpi-churn-rate">—</div>
-                <div class="kpi-label">Churn Rate</div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Charts -->
-          <div class="charts-grid">
-            <div class="chart-card">
-              <h3>New Members</h3>
-              <div class="chart-subtitle">Signups over the selected period</div>
-              <div class="chart-canvas-wrap"><canvas id="chart-members"></canvas></div>
+              <!-- Charts -->
+              <div class="charts-grid">
+                <div class="chart-card">
+                  <h3>New Members</h3>
+                  <div class="chart-subtitle">Signups over the selected period</div>
+                  <div class="chart-canvas-wrap"><canvas id="chart-members"></canvas></div>
+                </div>
+              </div>
+              <div class="charts-grid-2col">
+                <div class="chart-card">
+                  <h3>Revenue (EGP)</h3>
+                  <div class="chart-subtitle" id="revenue-total-label">Total: —</div>
+                  <div class="chart-canvas-wrap"><canvas id="chart-revenue"></canvas></div>
+                </div>
+                <div class="chart-card">
+                  <h3>Subscription Types</h3>
+                  <div class="chart-subtitle">Current distribution</div>
+                  <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas
+                      id="chart-subs"></canvas></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="charts-grid-2col">
-            <div class="chart-card">
-              <h3>Revenue (EGP)</h3>
-              <div class="chart-subtitle" id="revenue-total-label">Total: —</div>
-              <div class="chart-canvas-wrap"><canvas id="chart-revenue"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <h3>Subscription Types</h3>
-              <div class="chart-subtitle">Current distribution</div>
-              <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas id="chart-subs"></canvas></div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Tab Content: Pending Requests -->
-        <div id="tab-pending-requests" class="tab-panel" style="display:none;">
-          <div class="mpr-filter-bar">
-            <h3>Manual Payment Requests <span id="mpr-count-label" class="mpr-count-label"></span></h3>
-            <select id="mpr-status-filter" onchange="loadPendingRequestsTab()">
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="all">All</option>
-            </select>
-          </div>
-          
-          <!-- Cards Container -->
-          <div id="mpr-cards-container" class="mpr-cards-grid">
-            <div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>
-          </div>
-          <div class="pagination" id="mpr-pagination"></div>
-        </div>
+            <!-- Tab Content: Pending Requests -->
+            <div id="tab-pending-requests" class="tab-panel" style="display:none;">
+              <div class="mpr-filter-bar">
+                <h3>Manual Payment Requests <span id="mpr-count-label" class="mpr-count-label"></span></h3>
+                <select id="mpr-status-filter" onchange="loadPendingRequestsTab()">
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="all">All</option>
+                </select>
+              </div>
 
-        <!-- Tab Content: Live Sessions -->
-        <div id="tab-live-sessions" class="tab-panel" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-            <h3 style="margin:0;color:#fff;">📺 Live Sessions</h3>
-            <button class="btn-add-member" onclick="openAddSessionModal()">+ Add Session</button>
-          </div>
-          <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
-            <table class="team-table" id="live-sessions-table">
-              <thead><tr>
-                <th>Title</th>
-                <th>Scheduled</th>
-                <th>Published</th>
-                <th>Attendees</th>
-                <th>Actions</th>
-              </tr></thead>
-              <tbody id="live-sessions-body">
-                <tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+              <!-- Cards Container -->
+              <div id="mpr-cards-container" class="mpr-cards-grid">
+                <div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>
+              </div>
+              <div class="pagination" id="mpr-pagination"></div>
+            </div>
+
+            <!-- Tab Content: Live Sessions -->
+            <div id="tab-live-sessions" class="tab-panel" style="display:none;">
+              <div
+                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                <h3 style="margin:0;color:#fff;">📺 Live Sessions</h3>
+                <button class="btn-add-member" onclick="openAddSessionModal()">+ Add Session</button>
+              </div>
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                <table class="team-table" id="live-sessions-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Scheduled</th>
+                      <th>Published</th>
+                      <th>Attendees</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="live-sessions-body">
+                    <tr>
+                      <td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab Content: Courses -->
+            <div id="tab-courses" class="tab-panel" style="display:none;">
+
+              <!-- Level 1: Courses List -->
+              <div id="courses-list-view">
+                <div
+                  style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                  <h3 style="margin:0;color:#fff;"> Courses</h3>
+                  <button class="btn-add-member" onclick="openAddCourseModal()">+ Add Course</button>
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                  <table class="team-table" id="courses-table">
+                    <thead>
+                      <tr>
+                        <th>Thumbnail</th>
+                        <th>Title</th>
+                        <th>Lessons</th>
+                        <th>Resources (PDF)</th>
+                        <th>Published</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="courses-body">
+                      <tr>
+                        <td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Level 2: Lessons Manager -->
+              <div id="lessons-manager-view" style="display:none;">
+                <div style="display:flex;align-items:center;margin-bottom:20px;gap:12px;">
+                  <button class="btn-action" onclick="showCoursesList()" style="padding:8px 12px;"><i
+                      class="fa-solid fa-arrow-left"></i> Back</button>
+                  <h3 style="margin:0;color:#fff;" id="lm-course-title">Manage Lessons</h3>
+                  <button class="btn-add-member" style="margin-left:auto;" onclick="openAddLessonModal()">+ Add
+                    Lesson</button>
+                </div>
+
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                  <table class="team-table" id="lessons-table">
+                    <thead>
+                      <tr>
+                        <th style="width:40px">#</th>
+                        <th>Title</th>
+                        <th>Duration</th>
+                        <th>Video Status</th>
+                        <th>PDF</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="lessons-body">
+                      <tr>
+                        <td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
 
           </div><!-- end team-content-area -->
         </div><!-- end team-layout -->
@@ -1139,12 +1324,14 @@
   <div class="modal-overlay-team" id="reject-modal" style="display:none">
     <div class="modal-box-team small">
       <div class="modal-header-team">
-        <h3>❌ Reject Payment Request</h3><button class="modal-close-team" onclick="closeModal('reject-modal')">✕</button>
+        <h3>❌ Reject Payment Request</h3><button class="modal-close-team"
+          onclick="closeModal('reject-modal')">✕</button>
       </div>
       <div class="modal-body-team">
         <div class="fg">
           <label>Rejection Reason *</label>
-          <textarea id="reject-reason" rows="3" placeholder="e.g. Receipt is blurry, amount doesn't match..." style="width: 100%; background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; font-family: inherit; resize: none;"></textarea>
+          <textarea id="reject-reason" rows="3" placeholder="e.g. Receipt is blurry, amount doesn't match..."
+            style="width: 100%; background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; font-family: inherit; resize: none;"></textarea>
         </div>
         <p style="color:#aaa;font-size:12px;margin-top:8px;">This reason will be sent to the user via email.</p>
       </div>
@@ -1167,14 +1354,22 @@
   <div class="modal-overlay-team" id="add-session-modal" style="display:none">
     <div class="modal-box-team">
       <div class="modal-header-team">
-        <h3>📺 Add Live Session</h3><button class="modal-close-team" onclick="closeModal('add-session-modal')">✕</button>
+        <h3>📺 Add Live Session</h3><button class="modal-close-team"
+          onclick="closeModal('add-session-modal')">✕</button>
       </div>
       <div class="modal-body-team">
-        <div class="fg"><label>Title *</label><input type="text" id="session-title" placeholder="e.g. Build an AI Agent Live"/></div>
-        <div class="fg"><label>Description</label><textarea id="session-desc" rows="3" placeholder="Session description..." style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
-        <div class="fg"><label>Scheduled At *</label><input type="datetime-local" id="session-datetime" style="color-scheme:dark;"/></div>
-        <div class="fg"><label>YouTube URL</label><input type="url" id="session-youtube" placeholder="https://youtube.com/..."/></div>
-        <div class="fg"><label>Zoom URL</label><input type="url" id="session-zoom" placeholder="https://zoom.us/..."/></div>
+        <div class="fg"><label>Title *</label><input type="text" id="session-title"
+            placeholder="e.g. Build an AI Agent Live" /></div>
+        <div class="fg"><label>Description</label><textarea id="session-desc" rows="3"
+            placeholder="Session description..."
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div class="fg"><label>Scheduled At *</label><input type="datetime-local" id="session-datetime"
+            style="color-scheme:dark;" /></div>
+        <div class="fg"><label>Meet URL</label><input type="url" id="session-youtube"
+            placeholder="https://youtube.com/..." /></div>
+        <div class="fg"><label>Zoom URL</label><input type="url" id="session-zoom" placeholder="https://zoom.us/..." />
+        </div>
       </div>
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('add-session-modal')">Cancel</button>
@@ -1190,12 +1385,15 @@
         <h3>✏️ Edit Session</h3><button class="modal-close-team" onclick="closeModal('edit-session-modal')">✕</button>
       </div>
       <div class="modal-body-team">
-        <input type="hidden" id="edit-session-id"/>
-        <div class="fg"><label>Title</label><input type="text" id="edit-session-title"/></div>
-        <div class="fg"><label>Description</label><textarea id="edit-session-desc" rows="3" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
-        <div class="fg"><label>Scheduled At</label><input type="datetime-local" id="edit-session-datetime" style="color-scheme:dark;"/></div>
-        <div class="fg"><label>YouTube URL</label><input type="url" id="edit-session-youtube"/></div>
-        <div class="fg"><label>Zoom URL</label><input type="url" id="edit-session-zoom"/></div>
+        <input type="hidden" id="edit-session-id" />
+        <div class="fg"><label>Title</label><input type="text" id="edit-session-title" /></div>
+        <div class="fg"><label>Description</label><textarea id="edit-session-desc" rows="3"
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div class="fg"><label>Scheduled At</label><input type="datetime-local" id="edit-session-datetime"
+            style="color-scheme:dark;" /></div>
+        <div class="fg"><label>Meet URL</label><input type="url" id="edit-session-youtube" /></div>
+        <div class="fg"><label>Zoom URL</label><input type="url" id="edit-session-zoom" /></div>
       </div>
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('edit-session-modal')">Cancel</button>
@@ -1208,11 +1406,13 @@
   <div class="modal-overlay-team" id="delete-session-modal" style="display:none">
     <div class="modal-box-team small">
       <div class="modal-header-team">
-        <h3>🗑️ Delete Session</h3><button class="modal-close-team" onclick="closeModal('delete-session-modal')">✕</button>
+        <h3>🗑️ Delete Session</h3><button class="modal-close-team"
+          onclick="closeModal('delete-session-modal')">✕</button>
       </div>
       <div class="modal-body-team">
-        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this session? This action cannot be undone.</p>
-        <input type="hidden" id="delete-session-id"/>
+        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this session? This action cannot be
+          undone.</p>
+        <input type="hidden" id="delete-session-id" />
       </div>
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('delete-session-modal')">Cancel</button>
@@ -1230,8 +1430,156 @@
       <div class="modal-body-team">
         <div id="attendees-list" style="max-height:400px;overflow-y:auto;">Loading...</div>
         <div style="text-align:right;margin-top:12px;">
-          <button class="btn-confirm-team" id="export-csv-btn" style="background:#1e1e1e;color:#ccc;font-weight:600;">📥 Export CSV</button>
+          <button class="btn-confirm-team" id="export-csv-btn" style="background:#1e1e1e;color:#ccc;font-weight:600;">📥
+            Export CSV</button>
         </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Add Course Modal -->
+  <div class="modal-overlay-team" id="add-course-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3> Add Course</h3><button class="modal-close-team" onclick="closeModal('add-course-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg"><label>Title *</label><input type="text" id="course-title"
+            placeholder="e.g. Master AI Agents" /></div>
+        <div class="fg"><label>Description</label><textarea id="course-desc" rows="3"
+            placeholder="Course description..."
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div class="fg"><label>Thumbnail URL</label><input type="url" id="course-thumbnail" placeholder="https://..." />
+        </div>
+        <div class="fg"><label>Total Lessons</label><input type="number" id="course-total-lessons" value="0" min="0" />
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-course-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitAddCourse()">Create Course</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Course Modal -->
+  <div class="modal-overlay-team" id="edit-course-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>✏️ Edit Course</h3><button class="modal-close-team" onclick="closeModal('edit-course-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="edit-course-id" />
+        <div class="fg"><label>Title</label><input type="text" id="edit-course-title" /></div>
+        <div class="fg"><label>Description</label><textarea id="edit-course-desc" rows="3"
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div class="fg"><label>Thumbnail URL</label><input type="url" id="edit-course-thumbnail" /></div>
+        <div class="fg"><label>Total Lessons</label><input type="number" id="edit-course-total-lessons" /></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('edit-course-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitEditCourse()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Course Modal -->
+  <div class="modal-overlay-team" id="delete-course-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🗑️ Delete Course</h3><button class="modal-close-team"
+          onclick="closeModal('delete-course-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;">Are you sure? This will delete all lessons and videos associated with this
+          course.</p>
+        <input type="hidden" id="delete-course-id" />
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('delete-course-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="confirmDeleteCourse()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Lesson Modal -->
+  <div class="modal-overlay-team" id="add-lesson-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>📹 Add Lesson</h3><button class="modal-close-team" onclick="closeModal('add-lesson-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg"><label>Title *</label><input type="text" id="lesson-title" placeholder="Lesson Title" /></div>
+        <div class="fg"><label>Section</label><input type="text" id="lesson-section" placeholder="e.g. Module 1" />
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div class="fg" style="flex:1"><label>Order</label><input type="number" id="lesson-order" value="0" /></div>
+          <div class="fg" style="flex:1"><label>Duration (min)</label><input type="number" id="lesson-duration"
+              value="0" /></div>
+        </div>
+        <div class="fg">
+          <label>Video File *</label>
+          <div class="file-drop-zone" id="videoDropZone">
+            <div class="drop-icon">🎥</div>
+            <div class="drop-text">Click to select or drag & drop video</div>
+            <div class="drop-hint">MP4, MOV, MKV — Max 4GB</div>
+            <input type="file" id="videoFileInput" accept="video/*" style="display:none" />
+          </div>
+          <div id="selectedFileName" style="color:#3f8ff9;font-size:13px;margin-top:6px;display:none;"></div>
+          <div class="upload-progress-wrap" id="uploadProgressWrap">
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="uploadProgressFill"></div>
+            </div>
+            <div class="upload-progress-text" id="uploadProgressText">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-lesson-modal')">Cancel</button>
+        <button class="btn-confirm-team" id="addLessonSubmitBtn" onclick="submitAddLesson()">Create & Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Lesson Modal -->
+  <div class="modal-overlay-team" id="edit-lesson-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>✏️ Edit Lesson</h3><button class="modal-close-team" onclick="closeModal('edit-lesson-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="edit-lesson-id" />
+        <div class="fg"><label>Title</label><input type="text" id="edit-lesson-title" /></div>
+        <div class="fg"><label>Section</label><input type="text" id="edit-lesson-section" /></div>
+        <div style="display:flex;gap:12px;">
+          <div class="fg" style="flex:1"><label>Order</label><input type="number" id="edit-lesson-order" /></div>
+          <div class="fg" style="flex:1"><label>Duration (min)</label><input type="number" id="edit-lesson-duration" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('edit-lesson-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitEditLesson()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Lesson Modal -->
+  <div class="modal-overlay-team" id="delete-lesson-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🗑️ Delete Lesson</h3><button class="modal-close-team"
+          onclick="closeModal('delete-lesson-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;">Are you sure? This will also remove the video from Cloudflare Stream.</p>
+        <input type="hidden" id="delete-lesson-id" />
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('delete-lesson-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="confirmDeleteLesson()">Delete</button>
       </div>
     </div>
   </div>

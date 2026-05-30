@@ -307,6 +307,33 @@ async function loadCourseDetail() {
         // Render curriculum sections
         renderCurriculum(course.lessons || []);
 
+        // Render Resources Tab
+        const resourcesTab = document.getElementById('tabResources');
+        if (resourcesTab) {
+            if (course.pdf_url) {
+                const pdfHref = course.pdf_url.startsWith('/') ? API + course.pdf_url : course.pdf_url;
+                resourcesTab.innerHTML = `
+                    <div class="cd-side-card">
+                        <div class="side-card-title">Course Resources</div>
+                        <a href="${pdfHref}" target="_blank" class="btn-outline" style="width:100%;justify-content:center;margin-top:10px;">
+                            <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Download Course PDF
+                        </a>
+                    </div>
+                `;
+            } else {
+                resourcesTab.innerHTML = `<div class="cd-side-card"><p style="color:var(--text-muted)">No resources available for this course.</p></div>`;
+            }
+        }
+
+        // Set Hero Background if thumbnail exists
+        const hero = document.querySelector('.cd-hero');
+        if (hero && course.thumbnail_url) {
+            const thumbSrc = course.thumbnail_url.startsWith('/') ? API + course.thumbnail_url : course.thumbnail_url;
+            hero.style.backgroundImage = `linear-gradient(to right, rgba(10,10,10,0.9) 20%, rgba(10,10,10,0.4)), url('${thumbSrc}')`;
+            hero.style.backgroundSize = 'cover';
+            hero.style.backgroundPosition = 'center';
+        }
+
         // Load progress
         const pRes = await apiFetch(`/courses/${courseId}/progress`);
         const prog = await pRes.json();

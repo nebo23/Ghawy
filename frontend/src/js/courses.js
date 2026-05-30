@@ -64,9 +64,11 @@ async function loadCourses() {
         grid.innerHTML = courses.map(c => {
             const icon = getCourseIcon(c.title);
             const desc = c.description ? c.description.substring(0, 80) + '...' : '';
+            const thumb = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
             return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'">
                 <div class="course-thumb">
-                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;z-index:1">${icon}</div>
+                    ${thumb ? `<img src="${thumb}" alt="${c.title}" style="width:100%;height:100%;object-fit:cover;z-index:0;position:relative;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>` : ''}
+                    <div style="position:absolute;inset:0;display:${thumb ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:3rem;z-index:1">${icon}</div>
                     <div class="course-thumb-overlay"></div>
                     <div style="position:absolute;top:10px;left:10px;background:var(--gold);color:#000;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:800;z-index:2">AI</div>
                 </div>
