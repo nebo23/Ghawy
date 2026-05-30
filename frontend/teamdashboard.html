@@ -1516,24 +1516,11 @@
         </div>
         <div style="display:flex;gap:12px;">
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="lesson-order" value="0" /></div>
-          <div class="fg" style="flex:1"><label>Duration (min)</label><input type="number" id="lesson-duration"
-              value="0" /></div>
         </div>
-        <div class="fg">
-          <label>Video File *</label>
-          <div class="file-drop-zone" id="videoDropZone">
-            <div class="drop-icon">🎥</div>
-            <div class="drop-text">Click to select or drag & drop video</div>
-            <div class="drop-hint">MP4, MOV, MKV — Max 4GB</div>
-            <input type="file" id="videoFileInput" accept="video/*" style="display:none" />
-          </div>
-          <div id="selectedFileName" style="color:#3f8ff9;font-size:13px;margin-top:6px;display:none;"></div>
-          <div class="upload-progress-wrap" id="uploadProgressWrap">
-            <div class="upload-progress-bar">
-              <div class="upload-progress-fill" id="uploadProgressFill"></div>
-            </div>
-            <div class="upload-progress-text" id="uploadProgressText">0%</div>
-          </div>
+        <div class="fg" style="display:flex; flex-direction:column; gap:8px;">
+          <label>رابط الفيديو من Bunny.net Stream *</label>
+          <input type="url" id="lesson-video-url" placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID" style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
+          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الفيديو → Embed → انسخ الـ iframe src</small>
         </div>
       </div>
       <div class="modal-footer-team">
@@ -1553,10 +1540,18 @@
         <input type="hidden" id="edit-lesson-id" />
         <div class="fg"><label>Title</label><input type="text" id="edit-lesson-title" /></div>
         <div class="fg"><label>Section</label><input type="text" id="edit-lesson-section" /></div>
+        <div class="fg"><label>Video Status</label>
+          <select id="edit-lesson-status" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;">
+            <option value="pending">Pending</option>
+            <option value="ready">Ready</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Video URL (Bunny.net)</label>
+          <input type="url" id="edit-lesson-video-url" style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
+        </div>
         <div style="display:flex;gap:12px;">
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="edit-lesson-order" /></div>
-          <div class="fg" style="flex:1"><label>Duration (min)</label><input type="number" id="edit-lesson-duration" />
-          </div>
         </div>
       </div>
       <div class="modal-footer-team">

@@ -158,6 +158,20 @@
                         </div>
                     </div>
 
+                    <!-- Video Player -->
+                    <div class="video-section" id="videoSection" style="display:none; margin-bottom: 24px;">
+                      <div id="videoPlayer" style="display:block;">
+                        <div class="video-wrapper">
+                          <iframe id="bunnyVideoFrame" src="" style="border:none; width:100%; aspect-ratio:16/9; border-radius:12px;" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
+                        </div>
+                      </div>
+                      <div id="videoLocked" style="display:none; text-align:center; padding:40px; background:var(--bg-card); border-radius:12px; border:1px solid var(--border);">
+                        <i class="fa-solid fa-lock" style="font-size:32px; color:var(--text-muted); margin-bottom:16px;"></i>
+                        <h3 style="margin-bottom:8px;">الفيديو غير متاح</h3>
+                        <p style="color:var(--text-muted);">اشترك الآن لمشاهدة هذا الدرس وكل محتويات الكورس.</p>
+                      </div>
+                    </div>
+
                     <!-- Tabs -->
                     <div class="cd-tabs" id="cdTabs">
                         <div class="cd-tab active" data-tab="overview" data-i18n="overview">نظرة عامة</div>
@@ -294,8 +308,10 @@ const courseId = new URLSearchParams(window.location.search).get('id') || 1;
 async function loadCourseDetail() {
     try {
         const res = await apiFetch(`/courses/${courseId}`);
-        if (!res.ok) return;
+        if (!res.ok) throw new Error('Course not found');
         const course = await res.json();
+        
+        window.courseData = course; // Store globally for playback
 
         document.title = `${course.title} — Ghawy`;
         document.getElementById('breadcrumbTitle').textContent = course.title;
@@ -390,9 +406,9 @@ function renderCurriculum(lessons) {
                 ${secLessons.map(l => {
                     const mins = l.duration_minutes || 0;
                     const dur = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
-                    return `<div class="lesson-row">
-                        <div class="lesson-icon"><i class="fa-solid fa-play"></i></div>
-                        <span class="lesson-title">${l.title}</span>
+                    return `<div class="lesson-row" onclick="playLesson(${l.id})" style="cursor:pointer;">
+                        <div class="lesson-icon"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
+                        <span class="lesson-title">${escapeHtml(l.title)}</span>
                         <span class="lesson-dur">${dur}</span>
                         <span class="lesson-check undone"><i data-lucide="check" size="16"></i></span>
                     </div>`;
@@ -408,6 +424,44 @@ function toggleSection(header) {
     const toggle = header.querySelector('.sec-toggle');
     lessons.classList.toggle('open');
     toggle.style.transform = lessons.classList.contains('open') ? 'rotate(90deg)' : '';
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, match => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[match]);
+}
+
+function playLesson(lessonId) {
+    // Scroll to player
+    const hero = document.querySelector('.cd-hero');
+    if (hero) hero.style.display = 'none'; // hide hero when playing
+    const vidSec = document.getElementById('videoSection');
+    vidSec.style.display = 'block';
+    vidSec.scrollIntoView({ behavior: 'smooth' });
+
+    // Find lesson in global course data
+    const lesson = window.courseData.lessons.find(x => x.id === lessonId);
+    if (!lesson) return;
+
+    if (lesson.bunny_video_url || lesson.cloudflare_video_url) {
+        document.getElementById('videoPlayer').style.display = 'block';
+        document.getElementById('videoLocked').style.display = 'none';
+        const frame = document.getElementById('bunnyVideoFrame');
+        
+        let finalUrl = lesson.bunny_video_url || lesson.cloudflare_video_url;
+        // if user pasted a cloudflare stream url, it might need iframe wrapper
+        if (finalUrl && finalUrl.includes('videodelivery.net')) {
+            const match = finalUrl.match(/(?:cloudflarestream\.com\/|videodelivery\.net\/)([a-zA-Z0-9]+)/);
+            if(match) finalUrl = `https://iframe.cloudflarestream.com/${match[1]}`;
+        }
+        
+        frame.src = finalUrl;
+    } else {
+        document.getElementById('videoPlayer').style.display = 'none';
+        document.getElementById('videoLocked').style.display = 'block';
+    }
 }
 
 // Expand All

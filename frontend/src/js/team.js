@@ -1653,7 +1653,7 @@ async function loadLessons() {
   const tbody = document.getElementById('lessons-body');
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
   try {
-    const res = await fetch(API + `/courses/admin/courses/${currentCourseId}/lessons`, { headers });
+    const res = await fetch(API + `/courses/admin/${currentCourseId}/lessons`, { headers });
     if (!res.ok) throw new Error('Failed');
     lessonsCache = await res.json();
     renderLessons();
@@ -1767,100 +1767,54 @@ function openAddLessonModal() {
   document.getElementById('lesson-title').value = '';
   document.getElementById('lesson-section').value = '';
   document.getElementById('lesson-order').value = lessonsCache.length + 1;
-  document.getElementById('lesson-duration').value = '0';
-  selectedVideoFile = null;
-  document.getElementById('selectedFileName').style.display = 'none';
-  document.getElementById('uploadProgressWrap').style.display = 'none';
-  document.getElementById('uploadProgressFill').style.width = '0%';
-  document.getElementById('uploadProgressText').textContent = '0%';
+  document.getElementById('lesson-video-url').value = '';
+  
   document.getElementById('addLessonSubmitBtn').disabled = false;
   document.getElementById('add-lesson-modal').style.display = 'flex';
 }
 
-const dropZone = document.getElementById('videoDropZone');
-const fileInput = document.getElementById('videoFileInput');
-if(dropZone && fileInput){
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-      selectedVideoFile = e.dataTransfer.files[0];
-      document.getElementById('selectedFileName').textContent = selectedVideoFile.name;
-      document.getElementById('selectedFileName').style.display = 'block';
-    }
-  });
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length) {
-      selectedVideoFile = e.target.files[0];
-      document.getElementById('selectedFileName').textContent = selectedVideoFile.name;
-      document.getElementById('selectedFileName').style.display = 'block';
-    }
-  });
-}
+// Dropzone logic removed
 
 async function submitAddLesson() {
   const title = document.getElementById('lesson-title').value;
   const section = document.getElementById('lesson-section').value;
   const order = parseInt(document.getElementById('lesson-order').value) || 0;
-  const duration = parseInt(document.getElementById('lesson-duration').value) || 0;
+  let videoUrl = document.getElementById('lesson-video-url').value.trim();
 
   if (!title) return showToast('Title is required', 'error');
-  if (!selectedVideoFile) return showToast('Please select a video file', 'error');
+  if (!videoUrl) return showToast('Video URL is required', 'error');
+
+  const srcMatch = videoUrl.match(/src="([^"]+)"/);
+  if (srcMatch) videoUrl = srcMatch[1];
+
+  const bunnyPatterns = ['mediadelivery.net', 'b-cdn.net'];
+  if (!bunnyPatterns.some(p => videoUrl.includes(p))) {
+    return showToast('الرابط يجب أن يكون من Bunny.net', 'error');
+  }
 
   const btn = document.getElementById('addLessonSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Creating...';
 
   try {
-    // 1. Create Lesson in DB and get CF Upload URL
-    const res = await fetch(API + `/courses/admin/courses/${currentCourseId}/lessons`, {
+    const res = await fetch(API + `/courses/admin/${currentCourseId}/lessons`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        title, section_title: section, order, duration_minutes: duration
+        title, section_title: section, order, bunny_video_url: videoUrl
       })
     });
-    if (!res.ok) throw new Error('Failed to create lesson in database');
-    const data = await res.json();
-    const uploadUrl = data.upload_url;
     
-    // 2. Upload to Cloudflare Stream directly
-    document.getElementById('uploadProgressWrap').style.display = 'block';
+    if (!res.ok) throw new Error('Failed to create lesson');
     
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl, true);
-      xhr.setRequestHeader('Content-Type', selectedVideoFile.type || 'video/mp4');
-      
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = Math.round((e.loaded / e.total) * 100);
-          document.getElementById('uploadProgressFill').style.width = percentComplete + '%';
-          document.getElementById('uploadProgressText').textContent = percentComplete + '%';
-        }
-      };
-      
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error('Upload to Cloudflare failed'));
-        }
-      };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(selectedVideoFile);
-    });
-
     closeModal('add-lesson-modal');
-    showToast('Video uploaded! It is now processing.', 'success');
+    showToast('Lesson created successfully!', 'success');
     loadLessons();
   } catch (err) {
     showToast(err.message, 'error');
+  } finally {
     btn.disabled = false;
-    btn.textContent = 'Create & Upload';
+    btn.textContent = 'Create Lesson';
   }
 }
 
@@ -1870,13 +1824,26 @@ function openEditLessonModal(id) {
   document.getElementById('edit-lesson-id').value = l.id;
   document.getElementById('edit-lesson-title').value = l.title;
   document.getElementById('edit-lesson-section').value = l.section_title || '';
+  document.getElementById('edit-lesson-status').value = l.video_status || 'pending';
+  document.getElementById('edit-lesson-video-url').value = l.bunny_video_url || '';
   document.getElementById('edit-lesson-order').value = l.order || 0;
-  document.getElementById('edit-lesson-duration').value = l.duration_minutes || 0;
   document.getElementById('edit-lesson-modal').style.display = 'flex';
 }
 
 async function submitEditLesson() {
   const id = document.getElementById('edit-lesson-id').value;
+  let videoUrl = document.getElementById('edit-lesson-video-url').value.trim();
+  const srcMatch = videoUrl.match(/src="([^"]+)"/);
+  if (srcMatch) videoUrl = srcMatch[1];
+  
+  let status = document.getElementById('edit-lesson-status').value;
+  // Auto update status based on URL if not explicitly changed or if it makes sense
+  if (videoUrl && status === 'pending' && !lessonsCache.find(x => x.id == id)?.bunny_video_url) {
+      status = 'ready';
+  } else if (!videoUrl) {
+      status = 'pending';
+  }
+
   try {
     const res = await fetch(API + `/courses/admin/lessons/${id}`, {
       method: 'PATCH',
@@ -1884,8 +1851,9 @@ async function submitEditLesson() {
       body: JSON.stringify({
         title: document.getElementById('edit-lesson-title').value,
         section_title: document.getElementById('edit-lesson-section').value,
-        order: parseInt(document.getElementById('edit-lesson-order').value) || 0,
-        duration_minutes: parseInt(document.getElementById('edit-lesson-duration').value) || 0
+        video_status: status,
+        bunny_video_url: videoUrl,
+        order: parseInt(document.getElementById('edit-lesson-order').value) || 0
       })
     });
     if (!res.ok) throw new Error('Update failed');

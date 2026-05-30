@@ -320,6 +320,7 @@ class Lesson(Base):
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
     video_url = Column(String, nullable=True)
     content = Column(Text, nullable=True)
     section_title = Column(String, nullable=True)
@@ -328,7 +329,11 @@ class Lesson(Base):
     duration_minutes = Column(Integer, server_default=text('0'), default=0)
     # Cloudflare Stream
     cloudflare_video_id = Column(String, nullable=True)
+    cloudflare_video_url = Column(String, nullable=True)
+    # Bunny.net
+    bunny_video_url = Column(String, nullable=True)
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
+    is_free_preview = Column(Boolean, server_default=text('false'), default=False)
     # PDF attachment
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)

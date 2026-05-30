@@ -33,7 +33,11 @@ def get_course_detail(course_id: int, db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id, Course.is_published == True).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    return course
+    
+    # Use Pydantic to serialize the course first, then filter lessons
+    out = CourseDetailOut.model_validate(course)
+    out.lessons = [l for l in out.lessons if l.video_status == "ready"]
+    return out
 
 @router.get("/{course_id}/progress", response_model=UserCourseProgressOut)
 def get_course_progress(course_id: int, current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
@@ -197,7 +201,20 @@ async def upload_course_thumbnail(
     
     return {"thumbnail_url": course.thumbnail_url, "message": "Thumbnail uploaded successfully"}
 
-# ─── Admin: Create lesson + CF direct upload ─────────────────
+# ─── Admin: Get lessons for a course ───────────────────────
+@router.get("/admin/{course_id}/lessons", response_model=List[LessonOut])
+def admin_get_lessons(
+    course_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
+    return lessons
+
+# ─── Admin: Create lesson ─────────────────────────────────
 @router.post("/admin/{course_id}/lessons", status_code=201)
 def admin_create_lesson(
     course_id: int,
@@ -209,22 +226,23 @@ def admin_create_lesson(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    # Create Cloudflare Stream direct upload URL
+    # No Cloudflare Stream direct upload needed for Bunny.net
     upload_info = {"upload_url": "", "video_id": ""}
-    try:
-        from app.services.cloudflare_stream import create_direct_upload
-        upload_info = create_direct_upload(max_duration_seconds=7200)
-    except Exception as exc:
-        logger.warning("CF Stream direct_upload failed: %s", exc)
+
+    duration_minutes = data.duration_minutes
+    if data.bunny_video_url and not duration_minutes:
+        from app.services.bunny_stream import get_video_duration_minutes
+        duration_minutes = get_video_duration_minutes(data.bunny_video_url)
 
     lesson = Lesson(
         course_id=course_id,
         title=data.title,
         section_title=data.section_title,
         order=data.order,
-        duration_minutes=data.duration_minutes,
+        duration_minutes=duration_minutes,
         cloudflare_video_id=upload_info.get("video_id", ""),
-        video_status="pending",
+        bunny_video_url=data.bunny_video_url,
+        video_status="ready" if data.bunny_video_url else "pending",
     )
     db.add(lesson)
 
@@ -258,7 +276,14 @@ def admin_update_lesson(
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    if "bunny_video_url" in update_data and update_data["bunny_video_url"] != lesson.bunny_video_url:
+        from app.services.bunny_stream import get_video_duration_minutes
+        new_duration = get_video_duration_minutes(update_data["bunny_video_url"])
+        if new_duration > 0 or update_data.get("duration_minutes", 0) == 0:
+            update_data["duration_minutes"] = new_duration
+
+    for field, value in update_data.items():
         setattr(lesson, field, value)
     db.commit()
     db.refresh(lesson)
@@ -335,3 +360,72 @@ def admin_lesson_status(
     except Exception as exc:
         logger.error("CF status poll failed for lesson %d: %s", lesson_id, exc)
         return {"status": "error", "message": str(exc)}
+
+@router.patch("/{course_id}/lessons/{lesson_id}", dependencies=[Depends(get_current_admin_user)])
+async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: Session = Depends(get_db)):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
+    if not lesson:
+        raise HTTPException(404, "Lesson not found")
+    if data.cloudflare_video_url:
+        valid_patterns = ["iframe.cloudflarestream.com", "cloudflarestream.com", "videodelivery.net"]
+        if not any(p in data.cloudflare_video_url for p in valid_patterns):
+            raise HTTPException(400, "Invalid Cloudflare Stream URL. Must be from cloudflarestream.com")
+    if data.bunny_video_url:
+        valid_patterns = ["iframe.mediadelivery.net", "mediadelivery.net", "b-cdn.net"]
+        if not any(p in data.bunny_video_url for p in valid_patterns):
+            raise HTTPException(400, "Invalid Bunny.net URL. Must be from mediadelivery.net or b-cdn.net")
+    update_data = data.model_dump(exclude_unset=True)
+    if "bunny_video_url" in update_data and update_data["bunny_video_url"] != lesson.bunny_video_url:
+        from app.services.bunny_stream import get_video_duration_minutes
+        new_duration = get_video_duration_minutes(update_data["bunny_video_url"])
+        if new_duration > 0 or update_data.get("duration_minutes", 0) == 0:
+            update_data["duration_minutes"] = new_duration
+
+    for field, value in update_data.items():
+        setattr(lesson, field, value)
+    db.commit()
+    db.refresh(lesson)
+    return lesson
+
+@router.post("/{course_id}/lessons", dependencies=[Depends(get_current_admin_user)])
+async def create_lesson(course_id: int, data: LessonCreate, db: Session = Depends(get_db)):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+    lesson_data = data.model_dump()
+    if lesson_data.get("bunny_video_url") and not lesson_data.get("duration_minutes"):
+        from app.services.bunny_stream import get_video_duration_minutes
+        lesson_data["duration_minutes"] = get_video_duration_minutes(lesson_data["bunny_video_url"])
+
+    lesson = Lesson(course_id=course_id, **lesson_data)
+    db.add(lesson)
+    db.commit()
+    db.refresh(lesson)
+    return lesson
+
+@router.get("/{course_id}/lessons")
+async def get_lessons(course_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    lessons = db.query(Lesson).filter(
+        Lesson.course_id == course_id,
+        Lesson.video_status == "ready"
+    ).order_by(Lesson.order).all()
+    # completed_ids logic skipped since UserProgress with lesson_id doesn't exist
+    completed_ids = []
+    result = []
+    for lesson in lessons:
+        can_watch = current_user.is_active or lesson.is_free_preview
+        result.append({
+            "id": lesson.id,
+            "title": lesson.title,
+            "description": lesson.description,
+            "duration_minutes": lesson.duration_minutes,
+            "order": lesson.order,
+            "is_free_preview": lesson.is_free_preview,
+            "has_pdf": lesson.pdf_url is not None,
+            "has_video": lesson.bunny_video_url is not None or lesson.cloudflare_video_url is not None,
+            "cloudflare_video_url": lesson.cloudflare_video_url if can_watch else None,
+            "bunny_video_url": lesson.bunny_video_url if can_watch else None,
+            "pdf_url": lesson.pdf_url if can_watch else None,
+            "is_completed": lesson.id in completed_ids,
+        })
+    return result

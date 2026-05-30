@@ -289,6 +289,7 @@ class LessonOut(BaseModel):
     id: int
     course_id: int
     title: str
+    description: Optional[str] = None
     video_url: Optional[str] = None
     content: Optional[str] = None
     section_title: Optional[str] = None
@@ -296,7 +297,10 @@ class LessonOut(BaseModel):
     order: int
     duration_minutes: int
     cloudflare_video_id: Optional[str] = None
+    cloudflare_video_url: Optional[str] = None
+    bunny_video_url: Optional[str] = None
     video_status: str = "pending"
+    is_free_preview: bool = False
     pdf_url: Optional[str] = None
     created_at: datetime
 
@@ -334,23 +338,32 @@ class CourseProgressUpdate(BaseModel):
 
 class LessonCreate(BaseModel):
     title: str
-    video_url: Optional[str] = None
-    content: Optional[str] = None
-    order: int = 0
-    duration_minutes: int = 0
+    description: Optional[str] = None
+    cloudflare_video_url: Optional[str] = None
+    bunny_video_url: Optional[str] = None
+    pdf_url: Optional[str] = None
+    order: Optional[int] = 0
+    duration_minutes: Optional[int] = None
+    is_free_preview: bool = False
 
 class AdminLessonCreate(BaseModel):
     title: str
     section_title: Optional[str] = None
     order: int = 0
     duration_minutes: int = 0
+    bunny_video_url: Optional[str] = None
 
 class LessonUpdate(BaseModel):
     title: Optional[str] = None
     section_title: Optional[str] = None
+    description: Optional[str] = None
+    cloudflare_video_url: Optional[str] = None
+    bunny_video_url: Optional[str] = None
+    video_status: Optional[str] = None
+    pdf_url: Optional[str] = None
     order: Optional[int] = None
     duration_minutes: Optional[int] = None
-    pdf_url: Optional[str] = None
+    is_free_preview: Optional[bool] = None
 
 class CourseCreate(BaseModel):
     title: str

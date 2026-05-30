@@ -441,7 +441,6 @@ app.mount("/static", StaticFiles(directory=str(BACKEND_DIR / "static")), name="s
 app.include_router(users.router)
 app.include_router(payment.router)
 app.include_router(webhooks.router)
-
 app.include_router(chat.router)
 app.include_router(ws.router)
 app.include_router(google_auth.router)
