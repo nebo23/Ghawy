@@ -16,8 +16,8 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
-    <script src="https://embed.cloudflarestream.com/embed/sdk.latest.js"></script>
     <script src="https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js"></script>
+    <script src="src/js/utils.js"></script>
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
         .cd-grid {
@@ -1686,21 +1686,12 @@
             currentLessonId = lessonId;
             videoCompletionTriggered = false; // Reset the completion flag for the new video
 
-            if (lesson.bunny_video_url || lesson.cloudflare_video_url) {
+            if (lesson.bunny_video_url) {
                 document.getElementById('videoPlayer').style.display = 'block';
                 document.getElementById('videoLocked').style.display = 'none';
                 const frame = document.getElementById('bunnyVideoFrame');
 
-                let finalUrl = lesson.bunny_video_url || lesson.cloudflare_video_url;
-                if (finalUrl && finalUrl.includes('videodelivery.net')) {
-                    const match = finalUrl.match(/(?:cloudflarestream\.com\/|videodelivery\.net\/)([a-zA-Z0-9]+)/);
-                    if (match) finalUrl = `https://iframe.cloudflarestream.com/${match[1]}`;
-                }
-
-                // Append required query parameters for postMessage events
-                const isCloudflare = finalUrl.includes('cloudflarestream.com') || finalUrl.includes('videodelivery.net');
-                const isBunny = !isCloudflare;
-                window.videoPlayerType = isCloudflare ? 'cloudflare' : 'bunny';
+                let finalUrl = lesson.bunny_video_url;
 
                 try {
                     const urlObj = new URL(finalUrl);
@@ -1709,15 +1700,10 @@
                         urlObj.searchParams.set('autoplay', 'false');
                     }
 
-                    if (isBunny) {
-                        urlObj.searchParams.set('controls', 'false');
-                        urlObj.searchParams.set('responsive', 'true');
-                        urlObj.searchParams.set('api', 'true');
-                        urlObj.searchParams.set('fs', 'false');
-                    } else {
-                        // Cloudflare
-                        urlObj.searchParams.set('controls', '0');
-                    }
+                    urlObj.searchParams.set('controls', 'false');
+                    urlObj.searchParams.set('responsive', 'true');
+                    urlObj.searchParams.set('api', 'true');
+                    urlObj.searchParams.set('fs', 'false');
 
                     finalUrl = urlObj.toString();
                 } catch (e) { }
@@ -1730,50 +1716,8 @@
 
                 // Phase 3: Setup completion button & Fallback Timer
                 setupPlayerCompleteBtn(courseId, lessonId, lesson);
-
-                const isCloudflare2 = window.videoPlayerType === 'cloudflare';
-                if (isCloudflare2 && typeof Stream !== 'undefined') {
-                    frame.onload = () => {
-                        const player = Stream(frame);
-                        window.coursePlayer = player;
-                        player.addEventListener('timeupdate', () => {
-                            let duration = player.duration;
-                            const currentTime = player.currentTime;
-                            if (!duration && lesson.duration_minutes) duration = lesson.duration_minutes * 60;
-
-                            if (duration && currentTime > 0) {
-                                window.currentVideoTime = currentTime;
-                                window.currentVideoDuration = duration;
-                                updateSeekBar(currentTime, duration);
-
-                                if ((currentTime / duration) * 100 >= 90 && currentLessonId == lessonId && !videoCompletionTriggered) {
-                                    videoCompletionTriggered = true;
-                                    autoCompleteLesson(courseId, lessonId);
-                                }
-                            }
-                        });
-                        player.addEventListener('play', () => {
-                            window.isVideoPlaying = true;
-                            const pi = document.getElementById('vslPlayIcon');
-                            if (pi) pi.className = 'fa-solid fa-pause';
-                        });
-                        player.addEventListener('pause', () => {
-                            window.isVideoPlaying = false;
-                            const pi = document.getElementById('vslPlayIcon');
-                            if (pi) pi.className = 'fa-solid fa-play';
-                        });
-                        player.addEventListener('ended', () => {
-                            window.isVideoPlaying = false;
-                            const pi = document.getElementById('vslPlayIcon');
-                            if (pi) pi.className = 'fa-solid fa-play';
-                            if (currentLessonId == lessonId && !videoCompletionTriggered) {
-                                videoCompletionTriggered = true;
-                                autoCompleteLesson(courseId, lessonId);
-                            }
-                        });
-                    };
-                    initVideoAutoCompleteTimer(courseId, lessonId, lesson.duration_minutes);
-                } else if (typeof playerjs !== 'undefined') {
+                
+                if (typeof playerjs !== 'undefined') {
                     frame.onload = () => {
                         const player = new playerjs.Player(frame);
                         window.coursePlayer = player;

@@ -235,11 +235,6 @@ def delete_course(course_id: int, admin: User = Depends(get_current_admin_user),
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    # Delete CF videos for all lessons
-    from app.services.cloudflare_stream import delete_video
-    for lesson in course.lessons:
-        if lesson.cloudflare_video_id:
-            delete_video(lesson.cloudflare_video_id)
     db.delete(course)
     db.commit()
     return None
@@ -335,9 +330,6 @@ def admin_create_lesson(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    # No Cloudflare Stream direct upload needed for Bunny.net
-    upload_info = {"upload_url": "", "video_id": ""}
-
     duration_minutes = data.duration_minutes
     if data.bunny_video_url and not duration_minutes:
         from app.services.bunny_stream import get_video_duration_minutes
@@ -349,7 +341,6 @@ def admin_create_lesson(
         section_title=data.section_title,
         order=data.order,
         duration_minutes=duration_minutes,
-        cloudflare_video_id=upload_info.get("video_id", ""),
         bunny_video_url=data.bunny_video_url,
         video_status="ready" if data.bunny_video_url else "pending",
     )
@@ -362,8 +353,6 @@ def admin_create_lesson(
 
     return {
         "lesson_id": lesson.id,
-        "upload_url": upload_info.get("upload_url", ""),
-        "video_id": upload_info.get("video_id", ""),
         "lesson": {
             "id": lesson.id,
             "title": lesson.title,
@@ -398,27 +387,37 @@ def admin_update_lesson(
     db.refresh(lesson)
     return lesson
 
-# ─── Admin: Generate PDF presigned upload URL ────────────────
+# ─── Admin: Upload PDF (direct file upload) ────────────────
 @router.post("/admin/lessons/{lesson_id}/pdf")
-def admin_upload_pdf(
+async def admin_upload_pdf(
     lesson_id: int,
+    file: UploadFile = File(...),
     admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    try:
-        from app.services.cloudflare_r2 import generate_presigned_upload_url
-        result = generate_presigned_upload_url(
-            filename=f"lesson-{lesson_id}.pdf",
-            content_type="application/pdf",
-            folder="lesson-pdfs",
-        )
-        return result
-    except Exception as exc:
-        logger.error("R2 presigned URL failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Failed to generate upload URL")
+    
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    # Save file
+    pdf_dir = UPLOADS_DIR / "lesson-pdfs"
+    pdf_dir.mkdir(exist_ok=True)
+    safe_name = f"lesson_{lesson_id}_{uuid.uuid4().hex[:8]}.pdf"
+    file_path = pdf_dir / safe_name
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Update lesson record
+    lesson.pdf_url = f"/uploads/lesson-pdfs/{safe_name}"
+    db.commit()
+    db.refresh(lesson)
+    
+    return {"pdf_url": lesson.pdf_url, "message": "PDF uploaded successfully"}
 
 # ─── Admin: Delete lesson + CF video ─────────────────────────
 @router.delete("/admin/lessons/{lesson_id}", status_code=204)
@@ -430,11 +429,6 @@ def admin_delete_lesson(
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-
-    # Delete CF video
-    if lesson.cloudflare_video_id:
-        from app.services.cloudflare_stream import delete_video
-        delete_video(lesson.cloudflare_video_id)
 
     course = lesson.course
     db.delete(lesson)
@@ -455,30 +449,13 @@ def admin_lesson_status(
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    if not lesson.cloudflare_video_id:
-        return {"status": "pending", "message": "No video uploaded yet"}
-
-    try:
-        from app.services.cloudflare_stream import get_video_status
-        status = get_video_status(lesson.cloudflare_video_id)
-        # Update the stored status
-        if lesson.video_status != status:
-            lesson.video_status = status
-            db.commit()
-        return {"status": status}
-    except Exception as exc:
-        logger.error("CF status poll failed for lesson %d: %s", lesson_id, exc)
-        return {"status": "error", "message": str(exc)}
+    return {"status": lesson.video_status}
 
 @router.patch("/{course_id}/lessons/{lesson_id}", dependencies=[Depends(get_current_admin_user)])
 async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: Session = Depends(get_db)):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
     if not lesson:
         raise HTTPException(404, "Lesson not found")
-    if data.cloudflare_video_url:
-        valid_patterns = ["iframe.cloudflarestream.com", "cloudflarestream.com", "videodelivery.net"]
-        if not any(p in data.cloudflare_video_url for p in valid_patterns):
-            raise HTTPException(400, "Invalid Cloudflare Stream URL. Must be from cloudflarestream.com")
     if data.bunny_video_url:
         valid_patterns = ["iframe.mediadelivery.net", "mediadelivery.net", "b-cdn.net"]
         if not any(p in data.bunny_video_url for p in valid_patterns):
@@ -534,8 +511,7 @@ async def get_lessons(course_id: int, current_user: User = Depends(get_current_u
             "order": lesson.order,
             "is_free_preview": lesson.is_free_preview,
             "has_pdf": lesson.pdf_url is not None,
-            "has_video": lesson.bunny_video_url is not None or lesson.cloudflare_video_url is not None,
-            "cloudflare_video_url": lesson.cloudflare_video_url if can_watch else None,
+            "has_video": lesson.bunny_video_url is not None,
             "bunny_video_url": lesson.bunny_video_url if can_watch else None,
             "pdf_url": lesson.pdf_url if can_watch else None,
             "is_completed": lesson.id in completed_ids,

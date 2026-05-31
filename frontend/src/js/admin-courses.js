@@ -137,13 +137,11 @@ function escapeHtml(str) {
 
 // ═══ ADD LESSON MODAL ═══
 function openAddLessonModal() {
-  selectedVideoFile = null;
   document.getElementById('lessonTitle').value = '';
   document.getElementById('lessonSection').value = '';
   document.getElementById('lessonOrder').value = '0';
   document.getElementById('lessonDuration').value = '0';
-  document.getElementById('selectedFileName').style.display = 'none';
-  document.getElementById('uploadProgressWrap').style.display = 'none';
+  document.getElementById('lessonVideoUrl').value = '';
   document.getElementById('addLessonSubmit').disabled = false;
   document.getElementById('addLessonModal').classList.add('active');
 }
@@ -152,52 +150,18 @@ function closeAddLessonModal() {
   document.getElementById('addLessonModal').classList.remove('active');
 }
 
-// ═══ VIDEO FILE SELECTION ═══
-const dropZone = document.getElementById('videoDropZone');
-const fileInput = document.getElementById('videoFileInput');
-
-if (dropZone) {
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-      selectedVideoFile = e.dataTransfer.files[0];
-      showSelectedFile(selectedVideoFile);
-    }
-  });
-}
-
-if (fileInput) {
-  fileInput.addEventListener('change', e => {
-    if (e.target.files.length) {
-      selectedVideoFile = e.target.files[0];
-      showSelectedFile(selectedVideoFile);
-    }
-  });
-}
-
-function showSelectedFile(file) {
-  const el = document.getElementById('selectedFileName');
-  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-  el.textContent = `✅ ${file.name} (${sizeMB} MB)`;
-  el.style.display = 'block';
-}
-
 // ═══ SUBMIT ADD LESSON ═══
 async function submitAddLesson() {
   const title = document.getElementById('lessonTitle').value.trim();
+  const videoUrl = document.getElementById('lessonVideoUrl').value.trim();
   if (!title) return showToast('Title is required', 'error');
-  if (!selectedVideoFile) return showToast('Please select a video file', 'error');
+  if (!videoUrl) return showToast('Please enter a Bunny.net video URL', 'error');
 
   const btn = document.getElementById('addLessonSubmit');
   btn.disabled = true;
   btn.textContent = 'Creating...';
 
   try {
-    // 1. Create lesson + get upload URL
     const res = await apiFetch(`/courses/admin/${courseId}/lessons`, {
       method: 'POST',
       body: JSON.stringify({
@@ -205,71 +169,23 @@ async function submitAddLesson() {
         section_title: document.getElementById('lessonSection').value.trim() || null,
         order: parseInt(document.getElementById('lessonOrder').value) || 0,
         duration_minutes: parseInt(document.getElementById('lessonDuration').value) || 0,
+        bunny_video_url: videoUrl
       }),
     });
 
     if (!res.ok) { const err = await res.json(); throw new Error(err.detail || 'Failed'); }
     const data = await res.json();
 
-    showToast('Lesson created! Uploading video...', 'success');
-
-    // 2. Upload video directly to Cloudflare
-    if (data.upload_url) {
-      btn.textContent = 'Uploading...';
-      await uploadVideoToCloudflare(data.upload_url, selectedVideoFile, data.lesson_id);
-    }
-
+    showToast('Lesson created successfully!', 'success');
     closeAddLessonModal();
     loadCourseDetail();
   } catch (e) {
     console.error(e);
     showToast('Error: ' + e.message, 'error');
+  } finally {
     btn.disabled = false;
-    btn.textContent = 'Create & Upload';
+    btn.textContent = 'Create Lesson';
   }
-}
-
-// ═══ UPLOAD VIDEO TO CLOUDFLARE ═══
-async function uploadVideoToCloudflare(uploadUrl, file, lessonId) {
-  const progressWrap = document.getElementById('uploadProgressWrap');
-  const progressFill = document.getElementById('uploadProgressFill');
-  const progressText = document.getElementById('uploadProgressText');
-  progressWrap.style.display = 'block';
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', uploadUrl, true);
-    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        progressFill.style.width = pct + '%';
-        progressText.textContent = pct + '%';
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 400) {
-        progressFill.style.width = '100%';
-        progressText.textContent = '100% — Processing...';
-        showToast('Video uploaded! Processing on Cloudflare...', 'success');
-        // Start polling for status
-        startPolling(lessonId);
-        resolve();
-      } else {
-        showToast('Upload failed: ' + xhr.statusText, 'error');
-        reject(new Error(xhr.statusText));
-      }
-    };
-
-    xhr.onerror = () => {
-      showToast('Upload network error', 'error');
-      reject(new Error('Network error'));
-    };
-
-    xhr.send(file);
-  });
 }
 
 // ═══ POLL VIDEO STATUS ═══
@@ -307,6 +223,7 @@ function openEditLessonModal(id, title, section, order, duration) {
   document.getElementById('editLessonSection').value = section;
   document.getElementById('editLessonOrder').value = order;
   document.getElementById('editLessonDuration').value = duration;
+  document.getElementById('editLessonVideoUrl').value = ''; // Since we can't easily pass it without changing args, we leave it blank unless user types it
   document.getElementById('editLessonModal').classList.add('active');
 }
 
@@ -317,15 +234,21 @@ function closeEditLessonModal() {
 async function submitEditLesson() {
   const id = document.getElementById('editLessonId').value;
   try {
+    const bodyData = {
+      title: document.getElementById('editLessonTitle').value.trim(),
+      section_title: document.getElementById('editLessonSection').value.trim() || null,
+      order: parseInt(document.getElementById('editLessonOrder').value) || 0,
+      duration_minutes: parseInt(document.getElementById('editLessonDuration').value) || 0,
+    };
+    
+    const newUrl = document.getElementById('editLessonVideoUrl').value.trim();
+    if (newUrl) bodyData.bunny_video_url = newUrl;
+
     const res = await apiFetch(`/courses/admin/lessons/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({
-        title: document.getElementById('editLessonTitle').value.trim(),
-        section_title: document.getElementById('editLessonSection').value.trim() || null,
-        order: parseInt(document.getElementById('editLessonOrder').value) || 0,
-        duration_minutes: parseInt(document.getElementById('editLessonDuration').value) || 0,
-      }),
+      body: JSON.stringify(bodyData),
     });
+
     if (!res.ok) throw new Error('Failed to update');
     showToast('Lesson updated ✅', 'success');
     closeEditLessonModal();
@@ -367,28 +290,22 @@ async function uploadPdf(lessonId) {
     const file = e.target.files[0];
     if (!file) return;
 
-    showToast('Getting upload URL...', 'info');
+    showToast('Uploading PDF...', 'info');
 
     try {
-      // 1. Get presigned URL
-      const res = await apiFetch(`/courses/admin/lessons/${lessonId}/pdf`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to get upload URL');
-      const data = await res.json();
-
-      // 2. Upload to R2
-      const uploadRes = await fetch(data.upload_url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/pdf' },
-        body: file,
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const res = await fetch(API + `/courses/admin/lessons/${lessonId}/pdf`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
       });
-      if (!uploadRes.ok) throw new Error('Upload failed');
-
-      // 3. Save PDF URL to lesson
-      const patchRes = await apiFetch(`/courses/admin/lessons/${lessonId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ pdf_url: data.public_url }),
-      });
-      if (!patchRes.ok) throw new Error('Failed to save PDF URL');
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Failed to upload PDF');
+      }
 
       showToast('PDF uploaded ✅', 'success');
       loadCourseDetail();

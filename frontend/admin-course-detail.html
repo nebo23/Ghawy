@@ -127,19 +127,8 @@
             <div style="flex:1"><label>Order</label><input type="number" id="lessonOrder" value="0" min="0"/></div>
             <div style="flex:1"><label>Duration (min)</label><input type="number" id="lessonDuration" value="0" min="0"/></div>
         </div>
-        <label>Video File *</label>
-        <div class="file-drop-zone" id="videoDropZone">
-            <div class="drop-icon">🎥</div>
-            <div class="drop-text">Click to select or drag & drop video file</div>
-            <div class="drop-hint">MP4, MOV, MKV — Max 4GB</div>
-            <input type="file" id="videoFileInput" accept="video/*" style="display:none"/>
-        </div>
-        <div id="selectedFileName" style="color:#3f8ff9;font-size:13px;margin-top:6px;display:none;"></div>
-
-        <div class="upload-progress-wrap" id="uploadProgressWrap">
-            <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
-            <div class="upload-progress-text" id="uploadProgressText">0%</div>
-        </div>
+        <label>Bunny.net Video URL *</label>
+        <input type="url" id="lessonVideoUrl" placeholder="https://iframe.mediadelivery.net/play/..."/>
 
         <div class="admin-modal-actions">
             <button class="modal-btn secondary" onclick="closeAddLessonModal()">Cancel</button>
@@ -160,7 +149,8 @@
         <div style="display:flex;gap:12px;">
             <div style="flex:1"><label>Order</label><input type="number" id="editLessonOrder" min="0"/></div>
             <div style="flex:1"><label>Duration (min)</label><input type="number" id="editLessonDuration" min="0"/></div>
-        </div>
+        <label>Bunny.net Video URL</label>
+        <input type="url" id="editLessonVideoUrl" placeholder="https://iframe.mediadelivery.net/play/..."/>
         <div class="admin-modal-actions">
             <button class="modal-btn secondary" onclick="closeEditLessonModal()">Cancel</button>
             <button class="modal-btn primary" onclick="submitEditLesson()">Save Changes</button>
@@ -172,7 +162,7 @@
 <div class="admin-modal-overlay" id="confirmDeleteModal">
     <div class="admin-modal">
         <h3>🗑️ Delete Lesson</h3>
-        <div class="confirm-modal-body">Are you sure you want to delete this lesson? This will also remove the video from Cloudflare Stream. This action cannot be undone.</div>
+        <div class="confirm-modal-body">Are you sure you want to delete this lesson? This action cannot be undone.</div>
         <input type="hidden" id="deleteLessonId"/>
         <div class="admin-modal-actions">
             <button class="modal-btn secondary" onclick="closeDeleteModal()">Cancel</button>

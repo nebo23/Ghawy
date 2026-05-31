@@ -328,9 +328,6 @@ class Lesson(Base):
     section_order = Column(Integer, server_default=text('0'), default=0)
     order = Column(Integer, server_default=text('0'), default=0)
     duration_minutes = Column(Integer, server_default=text('0'), default=0)
-    # Cloudflare Stream
-    cloudflare_video_id = Column(String, nullable=True)
-    cloudflare_video_url = Column(String, nullable=True)
     # Bunny.net
     bunny_video_url = Column(String, nullable=True)
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
