@@ -110,6 +110,7 @@ class User(Base):
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="sender", cascade="all, delete-orphan")
     course_progress = relationship("UserCourseProgress", back_populates="user", cascade="all, delete-orphan")
+    progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
 
 # ═══════════════════════════════════════════
 #  PAYMENT
@@ -339,6 +340,7 @@ class Lesson(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     course = relationship("Course", back_populates="lessons")
+    progress = relationship("UserProgress", back_populates="lesson", cascade="all, delete-orphan")
 
 
 class UserCourseProgress(Base):
@@ -353,6 +355,31 @@ class UserCourseProgress(Base):
 
     user = relationship("User", back_populates="course_progress")
     course = relationship("Course", back_populates="progress")
+
+
+class UserProgress(Base):
+    __tablename__ = "user_progress"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    lesson_id = Column(Integer, ForeignKey("lessons.id"))
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    completed_at = Column(DateTime, default=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("user_id", "lesson_id"),)
+
+    user = relationship("User", back_populates="progress")
+    lesson = relationship("Lesson", back_populates="progress")
+
+
+class Certificate(Base):
+    __tablename__ = "certificates"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    certificate_id = Column(String, unique=True)  # GHAWY-2026-XXXXXX
+    issued_at = Column(DateTime, default=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("user_id", "course_id"),)
 
 # ═══════════════════════════════════════════
 #  GUEST OF HONORS

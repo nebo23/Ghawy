@@ -91,7 +91,7 @@ async function loadCourses() {
             try {
                 const pRes = await apiFetch(`/courses/${c.id}/progress`);
                 const prog = await pRes.json();
-                const pct = Math.round(prog.percent || 0);
+                const pct = Math.round(prog.percentage || 0);
                 const card = grid.querySelector(`[onclick*="id=${c.id}"]`);
                 if (card) {
                     card.querySelector('.course-progress-bar').style.width = pct + '%';
