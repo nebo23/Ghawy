@@ -112,6 +112,18 @@ class User(Base):
     course_progress = relationship("UserCourseProgress", back_populates="user", cascade="all, delete-orphan")
     progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
 
+
+class PhoneOTP(Base):
+    __tablename__ = "phone_otps"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    phone = Column(String, nullable=False)
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # ═══════════════════════════════════════════
 #  PAYMENT
 # ═══════════════════════════════════════════

@@ -14,6 +14,9 @@ from datetime import datetime
 import os
 import uuid
 import shutil
+from datetime import datetime, timedelta
+from app.services.vonage_service import generate_otp, send_otp_sms
+from app.models import PhoneOTP
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -275,3 +278,82 @@ def change_password(
     current_user.hashed_password = hash_password(data.new_password)
     db.commit()
     return {"message": "Password changed successfully"}
+
+
+# ─── Phone Verification (Vonage) ────────────────────────────
+from app.schemas import SendPhoneOTP, VerifyPhoneOTP
+
+@router.post("/send-phone-otp")
+async def send_phone_otp(
+    req: SendPhoneOTP,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db)
+):
+    """
+    يبعت OTP على الرقم المدخل
+    """
+    phone = req.phone.strip()
+
+    # تحقق إن الرقم مصري صحيح
+    if not (phone.startswith("01") and len(phone) == 11 and phone.isdigit()):
+        raise HTTPException(status_code=400, detail="رقم التليفون غير صحيح")
+
+    # تحقق إن الرقم مش مستخدم من حساب تاني
+    existing = db.query(User).filter(
+        User.phone == phone,
+        User.id != current_user.id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="الرقم ده مسجل بحساب تاني")
+
+    # احذف أي OTP قديم لنفس المستخدم
+    db.query(PhoneOTP).filter(PhoneOTP.user_id == current_user.id).delete()
+
+    # ابعت OTP جديد
+    code = generate_otp()
+    otp = PhoneOTP(
+        user_id=current_user.id,
+        phone=phone,
+        code=code,
+        expires_at=datetime.utcnow() + timedelta(minutes=10)
+    )
+    db.add(otp)
+    db.commit()
+
+    success = send_otp_sms(phone, code)
+    if not success:
+        raise HTTPException(status_code=500, detail="فشل إرسال الكود، حاول تاني")
+
+    return {"message": "تم إرسال الكود على رقمك"}
+
+
+@router.post("/verify-phone-otp")
+async def verify_phone_otp(
+    req: VerifyPhoneOTP,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db)
+):
+    """
+    يتحقق من الكود ويحفظ الرقم في الـ DB
+    """
+    otp = db.query(PhoneOTP).filter(
+        PhoneOTP.user_id == current_user.id,
+        PhoneOTP.phone == req.phone,
+        PhoneOTP.is_used == False
+    ).first()
+
+    if not otp:
+        raise HTTPException(status_code=400, detail="كود غير صحيح")
+
+    if datetime.utcnow() > otp.expires_at:
+        raise HTTPException(status_code=400, detail="انتهت صلاحية الكود، اطلب كود جديد")
+
+    if otp.code != req.code:
+        raise HTTPException(status_code=400, detail="الكود غير صحيح")
+
+    # احفظ الرقم في الـ User
+    current_user.phone = req.phone
+    otp.is_used = True
+    db.commit()
+
+    return {"message": "تم التحقق من رقمك بنجاح ✅"}

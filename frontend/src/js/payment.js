@@ -1,5 +1,21 @@
 // تحقق من الـ token
-if (!getToken()) window.location.href = 'login.html';
+if (!getToken()) {
+    window.location.href = 'login.html';
+} else {
+    // تحقق لو الحساب اتفعل بالفعل (مثلاً بعد الدفع اليدوي) نوديه للـ onboarding
+    fetch(`${API}/profile/me`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+    })
+    .then(res => {
+        if (res.ok) return res.json();
+    })
+    .then(user => {
+        if (user && user.is_active) {
+            window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
+        }
+    })
+    .catch(() => {});
+}
 
 // ─── Plans Configuration ────────────────────────────────────
 const PLANS = {

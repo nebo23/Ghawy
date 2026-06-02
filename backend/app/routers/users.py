@@ -61,11 +61,11 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
     if existing_user:
         if existing_user.is_verified:
-            raise HTTPException(status_code=400, detail="الإيميل ده موجود بالفعل")
+            raise HTTPException(status_code=400, detail="This Email Is Already Exists")
 
         existing_user.full_name = data.full_name
         existing_user.hashed_password = hash_password(data.password)
-        existing_user.phone = data.phone
+        existing_user.phone = None
         existing_user.country = data.country
         existing_user.governorate = data.governorate
         existing_user.verification_code = verification_code
@@ -76,7 +76,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
             full_name=data.full_name,
             email=data.email,
             hashed_password=hash_password(data.password),
-            phone=data.phone,
+            phone=None,
             country=data.country,
             governorate=data.governorate,
             is_active=False,
@@ -89,7 +89,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    logger.info("📧 Verification code for %s: %s", user.email, verification_code)
+    logger.info(" Verification code for %s: %s", user.email, verification_code)
 
     try:
         send_verification_email(user.email, verification_code)

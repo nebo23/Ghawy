@@ -1,152 +1,207 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
-    <!-- CACHE BUSTER -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- CACHE BUSTER -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome — Ghawy</title>
-  <meta name="description" content="Complete your Ghawy profile to get started"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
-  <link rel="stylesheet" href="src/css/onboarding.css"/>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <meta name="description" content="Complete your Ghawy profile to get started" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+  <link rel="stylesheet" href="src/css/onboarding.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
+
 <body>
-<div class="ob-page">
-  <!-- Logo -->
-  <div class="ob-logo">
-    <img src="./imgs/g-icon-logo.png" alt="Ghawy"/>
-    <span>Ghawy</span>
-  </div>
-
-  <!-- Stepper -->
-  <div class="ob-stepper" id="obStepper">
-    <div class="ob-step-wrap">
-      <div class="ob-step done" id="stepCircle1">✓</div>
-      <div class="ob-step-label"><span class="ob-step-title">Payment</span><span class="ob-step-sub">Completed</span></div>
-    </div>
-    <div class="ob-step-line done" id="stepLine1"></div>
-    <div class="ob-step-wrap">
-      <div class="ob-step active" id="stepCircle2">2</div>
-      <div class="ob-step-label"><span class="ob-step-title">Complete</span><span class="ob-step-sub">Your Profile</span></div>
-    </div>
-    <div class="ob-step-line" id="stepLine2"></div>
-    <div class="ob-step-wrap">
-      <div class="ob-step locked" id="stepCircle3">3</div>
-      <div class="ob-step-label"><span class="ob-step-title">You're All Set!</span><span class="ob-step-sub">Let's go</span></div>
-    </div>
-  </div>
-
-  <!-- ════════════ STEP 1: Profile Picture ════════════ -->
-  <div id="step1" class="onboarding-step">
-    <div class="ob-card">
-      <div class="ob-title">✅ Thank you!</div>
-      <div class="ob-subtitle">Your payment was successful.</div>
-      <div class="ob-description">Let's complete your profile to personalize your experience.</div>
-
-      <div class="ob-section-title">Add a Profile Picture</div>
-      <div class="ob-section-sub">Upload your photo or choose an avatar</div>
-
-      <div class="ob-two-col">
-        <!-- Upload -->
-        <div>
-          <div class="ob-upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
-            <div class="ob-upload-icon">☁️↑</div>
-            <div class="ob-upload-text">Upload Your Photo</div>
-            <div class="ob-upload-hint">JPG, PNG or WEBP. Max size 5MB</div>
-            <div class="ob-upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview"/></div>
-          </div>
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden/>
-        </div>
-
-        <!-- OR -->
-        <div class="ob-or-divider">OR</div>
-
-        <!-- Avatars -->
-        <div>
-          <div class="ob-avatar-section-title">Choose an Avatar</div>
-          <div class="ob-avatar-grid" id="avatarGrid">
-            <div class="ob-avatar-item" data-avatar="icon_1.png" onclick="handleAvatarSelect('icon_1.png', this)"><img src="imgs/avatars/icon_1.png" alt="Avatar 1"/></div>
-            <div class="ob-avatar-item" data-avatar="icon_2.png" onclick="handleAvatarSelect('icon_2.png', this)"><img src="imgs/avatars/icon_2.png" alt="Avatar 2"/></div>
-            <div class="ob-avatar-item" data-avatar="icon_3.png" onclick="handleAvatarSelect('icon_3.png', this)"><img src="imgs/avatars/icon_3.png" alt="Avatar 3"/></div>
-            <div class="ob-avatar-item" data-avatar="icon_4.png" onclick="handleAvatarSelect('icon_4.png', this)"><img src="imgs/avatars/icon_4.png" alt="Avatar 4"/></div>
-            <div class="ob-avatar-item" data-avatar="icon_5.png" onclick="handleAvatarSelect('icon_5.png', this)"><img src="imgs/avatars/icon_5.png" alt="Avatar 5"/></div>
-            <div class="ob-avatar-item" data-avatar="icon_6.png" onclick="handleAvatarSelect('icon_6.png', this)"><img src="imgs/avatars/icon_6.png" alt="Avatar 6"/></div>
-          </div>
-        </div>
-      </div>
-
-      <button class="ob-continue-btn" id="step1Btn" disabled onclick="submitStep1()">Continue →</button>
-    </div>
-  </div>
-
-  <!-- ════════════ STEP 2: Profile Details ════════════ -->
-  <div id="step2" class="onboarding-step" style="display:none">
-    <div class="ob-card">
-      <div class="ob-title">✅ Almost there!</div>
-      <div class="ob-subtitle">Let's finalize your profile.</div>
-      <div class="ob-description">Add your birth date and a social media account to complete your journey.</div>
-
-      <hr class="ob-divider"/>
-
-      <div class="ob-input-group">
-        <label>Birth Date</label>
-        <input type="date" class="ob-input" id="birthDateInput" placeholder="DD / MM / YYYY"/>
-      </div>
-
-      <div class="ob-input-group">
-        <label>Social Media Account <span class="required">*</span></label>
-        <div class="ob-input-with-icon">
-          <span class="ob-input-icon">🔗</span>
-          <input type="url" class="ob-input" id="socialInput" placeholder="https://your-profile-link.com"/>
-        </div>
-        <div class="ob-helper-text">Enter your profile link (Instagram, TikTok, Facebook, etc.)</div>
-        <div class="ob-error" id="socialError">Please enter a valid URL starting with https://</div>
-      </div>
-
-      <button class="ob-continue-btn" onclick="submitStep2()">Join Now →</button>
-    </div>
-  </div>
-
-  <!-- ════════════ STEP 3: Congratulations ════════════ -->
-  <div id="step3" class="onboarding-step" style="display:none">
-    <div class="ob-card" style="text-align:center;">
-      <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
-      <div class="ob-title">مبروك! أنت جاهز تبدأ</div>
-      <div class="ob-subtitle">ملفك الشخصي اكتمل بنجاح</div>
-
-      <div class="ob-congrats-avatar" id="congratsAvatar"></div>
-      <div class="ob-congrats-name" id="congratsName"></div>
-
-      <button class="ob-continue-btn" id="step3Btn" onclick="submitStep3()">Start Exploring →</button>
-    </div>
-    <div class="ob-confetti-container" id="confettiContainer"></div>
-  </div>
-
-  <!-- Footer -->
-  <div class="ob-footer">
-    <div class="ob-footer-logo">
-      <img src="./imgs/g-icon-logo.png" alt=""/>
+  <div class="ob-page">
+    <!-- Logo -->
+    <div class="ob-logo">
+      <img src="./imgs/g-icon-logo.png" alt="Ghawy" />
       <span>Ghawy</span>
     </div>
-    <div class="ob-footer-text">Empowering Minds, Building Futures</div>
+
+    <!-- Stepper -->
+    <div class="ob-stepper" id="obStepper">
+      <div class="ob-step-wrap">
+        <div class="ob-step done" id="stepCircle1">✓</div>
+        <div class="ob-step-label"><span class="ob-step-title">Payment</span><span class="ob-step-sub">Completed</span>
+        </div>
+      </div>
+      <div class="ob-step-line done" id="stepLine1"></div>
+      <div class="ob-step-wrap">
+        <div class="ob-step active" id="stepCircle2">2</div>
+        <div class="ob-step-label"><span class="ob-step-title">Complete</span><span class="ob-step-sub">Your
+            Profile</span></div>
+      </div>
+      <div class="ob-step-line" id="stepLine2"></div>
+      <div class="ob-step-wrap">
+        <div class="ob-step locked" id="stepCircle3">3</div>
+        <div class="ob-step-label"><span class="ob-step-title">You're All Set!</span><span class="ob-step-sub">Let's
+            go</span></div>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP 1: Profile Picture ════════════ -->
+    <div id="step1" class="onboarding-step">
+      <div class="ob-card">
+        <div class="ob-title">✅ Thank you!</div>
+        <div class="ob-subtitle">Your payment was successful.</div>
+        <div class="ob-description">Let's complete your profile to personalize your experience.</div>
+
+        <div class="ob-section-title">Add a Profile Picture</div>
+        <div class="ob-section-sub">Upload your photo or choose an avatar</div>
+
+        <div class="ob-two-col">
+          <!-- Upload -->
+          <div>
+            <div class="ob-upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+              <div class="ob-upload-icon">☁️↑</div>
+              <div class="ob-upload-text">Upload Your Photo</div>
+              <div class="ob-upload-hint">JPG, PNG or WEBP. Max size 5MB</div>
+              <div class="ob-upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview" /></div>
+            </div>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden />
+          </div>
+
+          <!-- OR -->
+          <div class="ob-or-divider">OR</div>
+
+          <!-- Avatars -->
+          <div>
+            <div class="ob-avatar-section-title">Choose an Avatar</div>
+            <div class="ob-avatar-grid" id="avatarGrid">
+              <div class="ob-avatar-item" data-avatar="icon_1.png" onclick="handleAvatarSelect('icon_1.png', this)"><img
+                  src="imgs/avatars/icon_1.png" alt="Avatar 1" /></div>
+              <div class="ob-avatar-item" data-avatar="icon_2.png" onclick="handleAvatarSelect('icon_2.png', this)"><img
+                  src="imgs/avatars/icon_2.png" alt="Avatar 2" /></div>
+              <div class="ob-avatar-item" data-avatar="icon_3.png" onclick="handleAvatarSelect('icon_3.png', this)"><img
+                  src="imgs/avatars/icon_3.png" alt="Avatar 3" /></div>
+              <div class="ob-avatar-item" data-avatar="icon_4.png" onclick="handleAvatarSelect('icon_4.png', this)"><img
+                  src="imgs/avatars/icon_4.png" alt="Avatar 4" /></div>
+              <div class="ob-avatar-item" data-avatar="icon_5.png" onclick="handleAvatarSelect('icon_5.png', this)"><img
+                  src="imgs/avatars/icon_5.png" alt="Avatar 5" /></div>
+              <div class="ob-avatar-item" data-avatar="icon_6.png" onclick="handleAvatarSelect('icon_6.png', this)"><img
+                  src="imgs/avatars/icon_6.png" alt="Avatar 6" /></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="ob-continue-btn" id="step1Btn" disabled onclick="submitStep1()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP PHONE: Phone Verification ════════════ -->
+    <div class="onboarding-step" id="step-phone" style="display:none;">
+      <div class="ob-card">
+        <div class="ob-title">تحقق من رقمك</div>
+        <div class="ob-subtitle">هنبعتلك كود على رقمك عشان نتأكد منه</div>
+
+        <!-- Phase 1: إدخال الرقم -->
+        <div id="phone-input-phase">
+          <div class="ob-input-group mt-6 text-right" dir="rtl">
+            <input type="tel" id="phoneInput" class="ob-input text-center text-xl tracking-widest"
+              placeholder="01XXXXXXXXX" maxlength="11" inputmode="numeric" style="direction: ltr;" />
+          </div>
+          <button class="ob-continue-btn" id="sendOtpBtn" onclick="sendPhoneOTP()" style="margin-top:20px;">
+            <span class="btn-text">إرسال الكود</span>
+            <div class="spinner" style="display:none;"></div>
+          </button>
+        </div>
+
+        <!-- Phase 2: إدخال الكود (مخفي أول ما يتبعت الكود) -->
+        <div id="otp-input-phase" style="display:none; margin-top:20px;">
+          <div class="ob-description text-center">تم إرسال كود على <strong id="phoneSent" style="color:#fff;"></strong>
+          </div>
+          <div class="otp-inputs" style="display:flex; justify-content:center; gap:8px; margin: 24px 0; direction:ltr;">
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+            <input type="text" maxlength="1" class="otp-box ob-input"
+              style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
+          </div>
+          <button class="ob-continue-btn" id="verifyOtpBtn" onclick="verifyPhoneOTP()">
+            <span class="btn-text">تأكيد الكود</span>
+            <div class="spinner" style="display:none;"></div>
+          </button>
+          <button class="ob-continue-btn" style="background:transparent; color:#888; box-shadow:none; margin-top:10px;"
+            onclick="resendOTP()">إعادة إرسال الكود</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP 2: Profile Details ════════════ -->
+    <div id="step2" class="onboarding-step" style="display:none">
+      <div class="ob-card">
+        <div class="ob-title">✅ Almost there!</div>
+        <div class="ob-subtitle">Let's finalize your profile.</div>
+        <div class="ob-description">Add your birth date and a social media account to complete your journey.</div>
+
+        <hr class="ob-divider" />
+
+        <div class="ob-input-group">
+          <label>Birth Date</label>
+          <input type="date" class="ob-input" id="birthDateInput" placeholder="DD / MM / YYYY" />
+        </div>
+
+        <div class="ob-input-group">
+          <label>Social Media Account <span class="required">*</span></label>
+          <div class="ob-input-with-icon">
+            <span class="ob-input-icon">🔗</span>
+            <input type="url" class="ob-input" id="socialInput" placeholder="https://your-profile-link.com" />
+          </div>
+          <div class="ob-helper-text">Enter your profile link (Instagram, TikTok, Facebook, etc.)</div>
+          <div class="ob-error" id="socialError">Please enter a valid URL starting with https://</div>
+        </div>
+
+        <button class="ob-continue-btn" onclick="submitStep2()">Join Now →</button>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP 3: Congratulations ════════════ -->
+    <div id="step3" class="onboarding-step" style="display:none">
+      <div class="ob-card" style="text-align:center;">
+        <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+        <div class="ob-title">مبروك! أنت جاهز تبدأ</div>
+        <div class="ob-subtitle">ملفك الشخصي اكتمل بنجاح</div>
+
+        <div class="ob-congrats-avatar" id="congratsAvatar"></div>
+        <div class="ob-congrats-name" id="congratsName"></div>
+
+        <button class="ob-continue-btn" id="step3Btn" onclick="submitStep3()">Start Exploring →</button>
+      </div>
+      <div class="ob-confetti-container" id="confettiContainer"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ob-footer">
+      <div class="ob-footer-logo">
+        <img src="./imgs/g-icon-logo.png" alt="" />
+        <span>Ghawy</span>
+      </div>
+      <div class="ob-footer-text">Empowering Minds, Building Futures</div>
+    </div>
   </div>
-</div>
 
-<script src="src/js/utils.js?v=2"></script>
-<script src="src/js/onboarding.js"></script>
+  <script src="src/js/utils.js?v=2"></script>
+  <script src="src/js/onboarding.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
-</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+  </script>
 </body>
+
 </html>
-
-
-
-

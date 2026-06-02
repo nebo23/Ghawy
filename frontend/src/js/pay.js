@@ -8,6 +8,20 @@ let selectedFile = null;
 const token = localStorage.getItem('token');
 if (!token) {
     window.location.href = 'login.html';
+} else {
+    // If user is already active, redirect them away from the payment screen
+    fetch(`${API}/profile/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => {
+        if (res.ok) return res.json();
+    })
+    .then(user => {
+        if (user && user.is_active) {
+            window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
+        }
+    })
+    .catch(() => {});
 }
 
 document.addEventListener('DOMContentLoaded', () => {

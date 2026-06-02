@@ -154,7 +154,7 @@ async function submitStep1() {
         return;
       }
     }
-    goToStep(2);
+    goToPhoneStep();
   } catch (e) {
     alert('Error uploading. Please try again.');
     btn.disabled = false;
@@ -278,5 +278,149 @@ function launchConfetti() {
 document.getElementById('socialInput').addEventListener('input', function() {
   document.getElementById('socialError').classList.remove('show');
 });
+
+
+// ═══ PHONE VERIFICATION ═══
+function goToPhoneStep() {
+  currentStep = 'phone';
+  document.querySelectorAll('.onboarding-step').forEach(el => el.style.display = 'none');
+  const step = document.getElementById('step-phone');
+  if (step) step.style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let enteredPhone = '';
+
+function setLoadingBtn(btnId, isLoading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const text = btn.querySelector('.btn-text');
+  const spinner = btn.querySelector('.spinner');
+  
+  if (isLoading) {
+    btn.disabled = true;
+    if(text) text.style.opacity = '0';
+    if(spinner) spinner.style.display = 'block';
+  } else {
+    btn.disabled = false;
+    if(text) text.style.opacity = '1';
+    if(spinner) spinner.style.display = 'none';
+  }
+}
+
+async function sendPhoneOTP() {
+  const phone = document.getElementById('phoneInput').value.trim();
+
+  if (!/^01[0-9]{9}$/.test(phone)) {
+    if (typeof showToast !== 'undefined') {
+      showToast('أدخل رقم تليفون مصري صحيح', 'error');
+    } else {
+      alert('أدخل رقم تليفون مصري صحيح');
+    }
+    return;
+  }
+
+  setLoadingBtn('sendOtpBtn', true);
+
+  try {
+    const res = await fetch(`${API}/profile/send-phone-otp`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ phone })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      enteredPhone = phone;
+      document.getElementById('phoneSent').textContent = phone;
+      document.getElementById('phone-input-phase').style.display = 'none';
+      document.getElementById('otp-input-phase').style.display = 'block';
+      if (typeof showToast !== 'undefined') showToast('تم إرسال الكود ✅', 'success');
+      // Focus أول box
+      document.querySelectorAll('.otp-box')[0].focus();
+    } else {
+      if (typeof showToast !== 'undefined') showToast(data.detail || 'حصل خطأ', 'error');
+      else alert(data.detail || 'حصل خطأ');
+    }
+  } catch (err) {
+    if (typeof showToast !== 'undefined') showToast('مفيش اتصال بالـ server', 'error');
+    else alert('مفيش اتصال بالـ server');
+  } finally {
+    setLoadingBtn('sendOtpBtn', false);
+  }
+}
+
+async function verifyPhoneOTP() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const code = Array.from(boxes).map(b => b.value).join('');
+
+  if (code.length !== 6) {
+    if (typeof showToast !== 'undefined') showToast('أدخل الكود كامل (6 أرقام)', 'error');
+    else alert('أدخل الكود كامل (6 أرقام)');
+    return;
+  }
+
+  setLoadingBtn('verifyOtpBtn', true);
+
+  try {
+    const res = await fetch(`${API}/profile/verify-phone-otp`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ phone: enteredPhone, code })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      if (typeof showToast !== 'undefined') showToast('تم التحقق بنجاح 🎉', 'success');
+      setTimeout(() => goToStep(2), 800);
+    } else {
+      if (typeof showToast !== 'undefined') showToast(data.detail || 'كود غير صحيح', 'error');
+      else alert(data.detail || 'كود غير صحيح');
+    }
+  } catch (err) {
+    if (typeof showToast !== 'undefined') showToast('مفيش اتصال بالـ server', 'error');
+    else alert('مفيش اتصال بالـ server');
+  } finally {
+    setLoadingBtn('verifyOtpBtn', false);
+  }
+}
+
+async function resendOTP() {
+  document.getElementById('otp-input-phase').style.display = 'none';
+  document.getElementById('phone-input-phase').style.display = 'block';
+  if (typeof showToast !== 'undefined') showToast('أدخل رقمك تاني واطلب كود جديد', 'info');
+}
+
+// Auto-focus بين الـ OTP boxes
+document.querySelectorAll('.otp-box').forEach((box, index, boxes) => {
+  box.addEventListener('input', () => {
+    // only numeric
+    box.value = box.value.replace(/[^0-9]/g, '');
+    if (box.value && index < boxes.length - 1) {
+      boxes[index + 1].focus();
+    }
+  });
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !box.value && index > 0) {
+      boxes[index - 1].focus();
+    }
+  });
+  box.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    const numericPaste = paste.replace(/[^0-9]/g, '');
+    let curr = index;
+    for(let i=0; i<numericPaste.length && curr < boxes.length; i++) {
+        boxes[curr].value = numericPaste[i];
+        if (curr < boxes.length - 1) {
+            boxes[curr+1].focus();
+        }
+        curr++;
+    }
+  });
+});
+
 
 

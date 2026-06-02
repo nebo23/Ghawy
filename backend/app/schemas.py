@@ -9,9 +9,15 @@ class UserRegister(BaseModel):
     full_name: str
     email: EmailStr
     password: str
-    phone: str
     country: Optional[str] = None
     governorate: str
+
+class SendPhoneOTP(BaseModel):
+    phone: str
+
+class VerifyPhoneOTP(BaseModel):
+    phone: str
+    code: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -20,7 +26,6 @@ class UserLogin(BaseModel):
 # دي البيانات اللي بيبعتها لل team dashboard
 class UserOut(BaseModel):
     id: int
-    full_name: str
     email: str
     phone: Optional[str] = None
     country: Optional[str] = None

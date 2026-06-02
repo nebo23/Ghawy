@@ -238,12 +238,9 @@ async function submitRegister() {
 
   const fullName = document.getElementById('fullName').value.trim();
   const email = document.getElementById('email').value.trim();
-  const rawPhone = document.getElementById('phone').value.trim();
   const password = document.getElementById('password').value;
   const country = document.getElementById('country').value.trim();
   const governorate = document.getElementById('governorate').value.trim();
-
-  const phone = dialCodeValue + rawPhone;
 
   const btn = document.getElementById('submitRegBtn');
   const spinner = document.getElementById('spinner');
@@ -295,7 +292,6 @@ async function submitRegister() {
           full_name: fullName,
           email,
           password,
-          phone,
           country,
           governorate
         })
