@@ -60,13 +60,13 @@ async function showWelcomeModal() {
 // ═══ LOAD DASHBOARD ═══
 async function loadDashboard() {
     try {
-        const res = await apiFetch('/dashboard/summary');
+        const res = await apiFetch(`/dashboard/summary?_t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
         renderUser(data.user);
         renderCourses(data.courses);
         renderPosts(data.recent_posts);
-        renderChatPreview(data.recent_messages);
+        renderChatPreview(data.recent_messages ? data.recent_messages.reverse() : []);
     } catch (e) { console.error('Dashboard load error:', e); }
 }
 
@@ -321,10 +321,10 @@ async function sendDashboardMessage() {
             body: JSON.stringify({ channel: 'general', content })
         });
         // Refresh chat preview
-        const res = await apiFetch('/chat/messages?channel=general&limit=4');
+        const res = await apiFetch(`/chat/messages?channel=general&limit=4&_t=${Date.now()}`);
         const msgs = await res.json();
-        // /chat/messages returns chronological, but dashboard wants reverse chronological
-        renderChatPreview(msgs.reverse());
+        // /chat/messages returns chronological, which is what we want for dashboard
+        renderChatPreview(msgs);
     } catch (e) { console.error('Send error:', e); }
 }
 

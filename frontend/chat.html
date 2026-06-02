@@ -1712,7 +1712,7 @@
             margin: 0;
         }
         .dm-inbox-new-btn {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
             background: rgba(193,255,17,0.1);
@@ -1805,6 +1805,10 @@
         .dm-inbox-empty p {
             font-size: 0.95rem;
             margin-bottom: 20px;
+        }
+        .dm-inbox-empty .dm-inbox-new-btn {
+            width: fit-content;
+            margin: 0 auto;
         }
     </style>
     <script>
