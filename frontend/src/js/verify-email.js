@@ -81,7 +81,7 @@ async function verifyEmail() {
     const data = await res.json();
 
     if (res.ok) {
-      showAlert('تم تأكيد بريدك بنجاح ✅ جاري تحويلك...', 'success');
+      showAlert('تم تأكيد بريدك بنجاح جاري تحويلك...', 'success');
       // Auto-login: save token from verification response
       if (data.access_token) {
         saveToken(data.access_token);

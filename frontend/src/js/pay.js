@@ -10,18 +10,18 @@ if (!token) {
     window.location.href = 'login.html';
 } else {
     // If user is already active, redirect them away from the payment screen
-    fetch(`${API}/profile/me`, {
+    fetch(`${API}/profile/me?_t=`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => {
-        if (res.ok) return res.json();
-    })
-    .then(user => {
-        if (user && user.is_active) {
-            window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
-        }
-    })
-    .catch(() => {});
+        .then(res => {
+            if (res.ok) return res.json();
+        })
+        .then(user => {
+            if (user && user.is_active) {
+                window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
+            }
+        })
+        .catch(() => { });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,7 +35,7 @@ async function loadPaymentConfig() {
         const res = await fetch(`${API}/config/payment-info`);
         if (!res.ok) throw new Error("Failed to load config");
         const config = await res.json();
-        
+
         document.getElementById('display-instapay').innerText = config.instapay_number;
         document.getElementById('display-price').innerText = config.subscription_price;
     } catch (error) {
@@ -48,7 +48,7 @@ async function loadPaymentConfig() {
 function copyInstapay() {
     const text = document.getElementById('display-instapay').innerText;
     if (text === "---") return;
-    
+
     navigator.clipboard.writeText(text).then(() => {
         showToast("Instapay number copied!", "success");
         const btn = document.getElementById('copy-instapay-btn');
@@ -101,7 +101,7 @@ function setupDragAndDrop() {
     });
 
     // Handle selected files
-    fileInput.addEventListener('change', function() {
+    fileInput.addEventListener('change', function () {
         if (this.files && this.files.length > 0) {
             handleFile(this.files[0]);
         }
@@ -114,7 +114,7 @@ function handleFile(file) {
         showToast("Invalid file type. Please upload a JPG, PNG, WebP, or PDF.", "error");
         return;
     }
-    
+
     // 5MB limit
     if (file.size > 5 * 1024 * 1024) {
         showToast("File too large. Maximum size is 5MB.", "error");
@@ -135,7 +135,7 @@ function removeFile() {
 // Submit Form
 async function submitPayment() {
     const amount = document.getElementById('display-price').innerText;
-    
+
     if (!selectedFile) {
         showToast("Please upload your receipt screenshot", "error");
         return;
@@ -143,17 +143,17 @@ async function submitPayment() {
 
     const submitBtn = document.getElementById('pay-submit-btn');
     const spinner = document.getElementById('btn-spinner');
-    
+
     submitBtn.disabled = true;
     spinner.style.display = 'block';
 
     const formData = new FormData();
-    
+
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount)) {
         formData.append('amount', parsedAmount);
     }
-    
+
     formData.append('receipt', selectedFile);
 
     try {
@@ -166,7 +166,7 @@ async function submitPayment() {
         });
 
         const data = await res.json();
-        
+
         if (!res.ok) {
             throw new Error(data.detail || "Failed to submit request");
         }
@@ -174,7 +174,7 @@ async function submitPayment() {
         // Show success screen
         document.getElementById('pay-form-view').style.display = 'none';
         document.getElementById('pay-success-view').style.display = 'block';
-        
+
         document.getElementById('success-ref').innerText = `MANUAL-${data.id}`;
 
     } catch (error) {

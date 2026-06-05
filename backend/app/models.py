@@ -94,6 +94,7 @@ class User(Base):
 
     # ── Recurring / Subscription ──────────────────
     card_token = Column(String, nullable=True)
+    ccv_token = Column(String, nullable=True)
     shopper_reference = Column(String, nullable=True)
     subscription_type = Column(String, default="monthly")  # monthly / yearly
     subscription_start = Column(DateTime, nullable=True)

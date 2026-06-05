@@ -12,15 +12,17 @@ from app.services.kashier_manager import (
     KASHIER_MERCHANT_ID,
     KASHIER_API_KEY,
     KASHIER_SECRET_KEY,
+    KASHIER_MODE,
 )
 
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────
-TEST_MODE = True  # ← Set to False in production
-MONTHLY_AMOUNT = "10.00" if TEST_MODE else "500.00"
-YEARLY_AMOUNT = "10.00" if TEST_MODE else "3996.00"
-KASHIER_CHARGE_URL = "https://checkout.kashier.io/api/payments/v1"
+MONTHLY_AMOUNT = "500.00"
+YEARLY_AMOUNT = "3996.00"
+KASHIER_BASE_URL = "https://api.kashier.io"
+# 💡 Endpoint لشحن كارت محفوظ (token-based recurring charge):
+KASHIER_CHARGE_URL = "https://test-iframe.kashier.io/checkout" if KASHIER_MODE == "test" else "https://iframe.kashier.io/checkout"
 
 
 async def charge_user(user: User, db: Session) -> bool:
@@ -36,19 +38,26 @@ async def charge_user(user: User, db: Session) -> bool:
 
     payload = {
         "merchantId": KASHIER_MERCHANT_ID,
+        "shopper_reference": user.shopper_reference,
+        "cardToken": user.card_token,
+        "ccvToken": user.ccv_token,
         "amount": amount,
         "currency": currency,
-        "orderId": order_id,
-        "cardToken": user.card_token,
-        "shopperReference": user.shopper_reference,
+        "display": "en",
         "hash": hash_value,
-        "type": "recurring",
+        "orderId": order_id,
+        "serviceName": "customizableForm",
     }
+
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(KASHIER_CHARGE_URL, json=payload)
-            result = response.json()
+            try:
+                result = response.json()
+            except ValueError:
+                logger.error("❌ API returned non-JSON. Status: %s, Body: %s", response.status_code, response.text)
+                return False
 
         if result.get("status") == "SUCCESS":
             user.failed_charge_count = 0  # reset on success
@@ -77,9 +86,9 @@ async def charge_user(user: User, db: Session) -> bool:
             db.add(new_payment)
 
             # Update user subscription dates
-            days_to_add = 30 if user.subscription_type == "monthly" else 365
+            # days_to_add = 30 if user.subscription_type == "monthly" else 365
             user.last_charged_at = datetime.utcnow()
-            user.next_charge_at = datetime.utcnow() + timedelta(days=days_to_add)
+            user.next_charge_at = datetime.utcnow() + timedelta(minutes=2)
             user.subscription_end = user.next_charge_at
             db.commit()
 

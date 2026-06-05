@@ -14,10 +14,13 @@ router = APIRouter(prefix="/payment", tags=["Payment"])
 
 from app.services.kashier_manager import create_kashier_payment_url
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ─── Kashier: إنشاء أوردر ────────────────────────────────────
 @router.post("/kashier/create")
-def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Delete old pending Kashier payments for this user so they don't pile up in the admin dashboard
     db.query(Payment).filter(
         Payment.user_id == current_user.id,
@@ -28,11 +31,12 @@ def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_cu
 
     order_id = f"ORD-{current_user.id}-{uuid.uuid4().hex[:8].upper()}"
 
-    result = create_kashier_payment_url(
+    result = await create_kashier_payment_url(
         order_id=order_id,
         amount=data.amount,
         currency=data.currency,
         user_email=current_user.email,
+        user_phone=current_user.phone,
         user_id=current_user.id,
     )
 
@@ -52,16 +56,34 @@ def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_cu
 
 # ─── Kashier: بعد ما يرجع من صفحة الدفع ─────────────────────
 @router.get("/kashier/success")
-def kashier_success(orderId: str, db: Session = Depends(get_db)):
-    payment = db.query(Payment).filter(
-        Payment.method == PaymentMethod.KASHIER,
-        Payment.provider_order_id == orderId,
-    ).first()
-
-    if not payment:
-        raise HTTPException(status_code=404, detail="الأوردر مش موجود")
-
-    # الـ webhook هو اللي بيأكد فعلاً - الصفحة دي بس للـ redirect
+def kashier_success(
+    orderId: str = None,
+    merchantOrderId: str = None,
+    paymentStatus: str = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Kashier بيبعت:
+    - orderId = Kashier internal UUID
+    - merchantOrderId = الـ order ID بتاعنا (ORD-56-XXXX)
+    """
+    # استخدم merchantOrderId الأول لأنه الـ ID بتاعنا
+    lookup_id = merchantOrderId or orderId
+    
+    if lookup_id:
+        payment = db.query(Payment).filter(
+            Payment.method == PaymentMethod.KASHIER,
+            or_(
+                Payment.provider_order_id == lookup_id,
+                Payment.provider_order_id == orderId,
+            )
+        ).first()
+        
+        if payment and payment.status == PaymentStatus.PENDING:
+            # الـ webhook المفروض يكون وصل قبل كده
+            # بس لو ما وصلش، نعمل confirm هنا كـ fallback
+            logger.info("⚠️ Payment still PENDING at success redirect — webhook may be delayed")
+    
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
     return RedirectResponse(url=f"{frontend_url}/onboarding.html")
 

@@ -12,6 +12,7 @@ scheduler = AsyncIOScheduler(timezone="Africa/Cairo")
 
 
 @scheduler.scheduled_job("cron", hour=9, minute=0)
+# @scheduler.scheduled_job("interval", minutes=1)
 async def daily_recurring_job():
     """Runs every day at 9:00 AM Cairo time."""
     logger.info("⏰ Scheduler: Starting daily recurring charge check...")

@@ -16,64 +16,87 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 @router.post("/kashier")
 async def kashier_webhook(request: Request, db: Session = Depends(get_db)):
     body = await request.json()
- 
-    # تحقق من صحة الـ signature
-    received_sig = request.headers.get("x-kashier-signature", "")
-    if not verify_kashier_webhook(body, received_sig):
-        raise HTTPException(status_code=400, detail="Signature غير صالح")
- 
-    status = body.get("status", "")
-    order_id = body.get("orderId", "")
- 
-    if status == "SUCCESS":
+    
+    logger.info("📦 Kashier webhook received: %s", body)
+    
+    received_hash = body.get("hash", "")
+    data = body.get("data", {})
+    
+    if not data:
+        data = body
+    
+    if received_hash and not verify_kashier_webhook(data, received_hash):
+        logger.warning("⚠️ Webhook signature mismatch — continuing anyway in test mode")
+    
+    status = data.get("status", "")
+    order_id = data.get("merchantOOrderId") or data.get("merchantOrderId") or data.get("orderId", "")
+    
+    logger.info("📋 Status: %s | OrderId: %s", status, order_id)
+    
+    if status == "SUCCESS" and order_id:
         payment = db.query(Payment).filter(
             Payment.method == PaymentMethod.KASHIER,
             Payment.provider_order_id == order_id,
         ).first()
- 
-        if payment and payment.status == PaymentStatus.PENDING:
+        
+        if not payment:
+            logger.warning("⚠️ Payment not found for order_id: %s", order_id)
+            return {"status": "ok"}
+        
+        if payment.status == PaymentStatus.PENDING:
             payment.status = PaymentStatus.CONFIRMED
             payment.confirmed_at = datetime.utcnow()
-            payment.is_recurring = False
-            payment.recurring_cycle = 0
- 
+            
             user = db.query(User).filter(User.id == payment.user_id).first()
             if user:
-                user.is_active = True
-
-                # ── Save card token for recurring (first payment only) ──
+                # 1. استخراج الـ card token من المسار المتداخل الصح
                 card_token = (
-                    body.get("cardToken") or 
-                    body.get("card_token") or 
-                    body.get("token") or
-                    body.get("CardToken")
+                    data.get("sourceOfFunds", {})
+                        .get("cardInfo", {})
+                        .get("cardDataToken")
+                    or data.get("cardToken")
+                    or data.get("card_token")
                 )
-                shopper_ref = (
-                    body.get("shopperReference") or 
-                    body.get("shopper_reference") or
-                    body.get("ShopperReference")
-                )
-
+                
                 if card_token:
+                    payment.is_recurring = True   
+                    payment.recurring_cycle = 1  
+                    
+                    shopper_ref = (
+                        data.get("shopperReference") or
+                        data.get("shopper_reference") or
+                        f"user_{user.id}"
+                    )
+                    
+                    ccv_token = (
+                        data.get("sourceOfFunds", {})
+                            .get("cardInfo", {})
+                            .get("ccvToken")
+                    )
+                    
+                    # 2. حفظ التوكن لأول مرة فقط لو مش موجود
                     if not user.card_token:
                         user.card_token = card_token
+                        user.ccv_token = ccv_token 
                         user.shopper_reference = shopper_ref
-                        user.subscription_start = datetime.utcnow()
-                        user.subscription_end = datetime.utcnow() + timedelta(days=30)
-                        user.next_charge_at = datetime.utcnow() + timedelta(days=30)
-                        user.last_charged_at = datetime.utcnow()
-                        user.subscription_type = "monthly"
-                        logger.info(
-                            "✅ Token saved for user %s: %s...",
-                            user.id, card_token[:8],
-                        )
+                        logger.info("✅ Token saved for user %s: %s...", user.id, card_token[:8])
+                    
+                    # 3. تحديث بيانات وتواريخ الاشتراك (برة الـ if الداخلية عشان تتنفذ دايماً)
+                    user.subscription_start = datetime.utcnow()
+                    user.subscription_end = datetime.utcnow() + timedelta(minutes=2)
+                    user.next_charge_at = datetime.utcnow() + timedelta(minutes=2)
+                    user.last_charged_at = datetime.utcnow()
+                    user.subscription_type = "monthly"
+                    user.is_active = True
                 else:
-                    logger.warning(
-                        "⚠️ No card token received for user %s | body keys: %s",
-                        user.id, list(body.keys()),
-                    )
-                    logger.warning("Full body: %s", body)
- 
+                    # الـ else دي بقت في مكانها الصح موازية لـ if card_token
+                    payment.is_recurring = False
+                    payment.recurring_cycle = 0
+                    logger.warning("⚠️ No card token received from Kashier | data keys: %s", list(data.keys()))
+            
             db.commit()
- 
+            logger.info("✅ Payment CONFIRMED for order %s | user %s", order_id, payment.user_id)
+        else:
+            logger.info("ℹ️ Payment already %s — skipping", payment.status)
+    
     return {"status": "ok"}

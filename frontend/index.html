@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl" id="htmlRoot">
 
 <head>
     <!-- CACHE BUSTER -->
@@ -43,6 +43,163 @@
     <link rel="stylesheet" href="src/css/main.css">
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<style id="rtlLtrLayoutSystem">
+/* ═══════════════════════════════════
+   RTL / LTR LAYOUT SYSTEM
+   ═══════════════════════════════════ */
+
+/* ─── Transition for smooth switching ─── */
+.hero-split,
+.features-section,
+.premium-courses-section,
+.story-section,
+.premium-reviews-section,
+.pricing-section,
+.main-nav,
+footer {
+  transition: direction 0s;
+}
+
+/* ─── NAVBAR ─── */
+[dir="rtl"] .main-nav {
+  flex-direction: row-reverse;
+}
+[dir="rtl"] .nav-links {
+  flex-direction: row-reverse;
+}
+[dir="rtl"] .nav-auth {
+  flex-direction: row-reverse;
+}
+
+/* ─── HERO SECTION (Text + Video side by side) ─── */
+[dir="rtl"] .hero-left {
+  text-align: right;
+}
+[dir="rtl"] .hero-left h1,
+[dir="rtl"] .hero-left h2,
+[dir="rtl"] .hero-left p,
+[dir="rtl"] .hero-left .hero-sub {
+  text-align: right !important;
+}
+[dir="rtl"] .hero-cta-row {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+[dir="rtl"] .hero-rating-info {
+  text-align: right;
+  direction: rtl;
+}
+
+/* ─── FEATURES / CARDS GRID ─── */
+[dir="rtl"] .features-grid {
+  direction: rtl;
+}
+[dir="rtl"] .feature-card,
+[dir="rtl"] .feature-card p,
+[dir="rtl"] .feature-card h4 {
+  text-align: right;
+}
+[dir="rtl"] .feature-icon {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* ─── PRICING SECTION ─── */
+[dir="rtl"] .pricing-card {
+  text-align: right;
+}
+[dir="rtl"] .pricing-features li {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+[dir="rtl"] .pricing-features li svg,
+[dir="rtl"] .pricing-features li i {
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+/* ─── EXPLICIT GRID DIRECTION FIX ─── */
+[dir="rtl"] .hero-split {
+  direction: rtl;
+}
+[dir="ltr"] .hero-split {
+  direction: ltr;
+}
+
+/* ─── TESTIMONIALS ─── */
+[dir="rtl"] .testimonial-card,
+[dir="rtl"] .pr-subtitle {
+  text-align: right;
+  direction: rtl;
+}
+
+/* ─── FOOTER ─── */
+[dir="rtl"] footer .container {
+  flex-direction: row-reverse;
+}
+[dir="rtl"] .footer-col,
+[dir="rtl"] .footer-col p {
+  text-align: right;
+}
+[dir="rtl"] .footer-links {
+  text-align: right;
+}
+[dir="rtl"] .footer-social {
+  flex-direction: row-reverse;
+}
+
+/* ─── BUTTONS with icons ─── */
+[dir="rtl"] .btn-cta i,
+[dir="rtl"] .btn-cta-ghost i,
+[dir="rtl"] .btn-cta svg,
+[dir="rtl"] .btn-cta-ghost svg {
+  margin-right: 0;
+  margin-left: 8px;
+}
+[dir="rtl"] .btn-cta,
+[dir="rtl"] .btn-cta-ghost {
+  flex-direction: row-reverse;
+}
+
+/* ─── LTR RESTORE (explicit) ─── */
+[dir="ltr"] .hero-left {
+  text-align: left;
+}
+[dir="ltr"] .hero-left h1,
+[dir="ltr"] .hero-left h2,
+[dir="ltr"] .hero-left p,
+[dir="ltr"] .hero-left .hero-sub {
+  text-align: left !important;
+}
+[dir="ltr"] .hero-cta-row {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+[dir="ltr"] .main-nav,
+[dir="ltr"] .nav-links,
+[dir="ltr"] .nav-auth {
+  flex-direction: row;
+}
+[dir="ltr"] .feature-card,
+[dir="ltr"] .feature-card p,
+[dir="ltr"] .feature-card h4 {
+  text-align: left;
+}
+[dir="ltr"] .pricing-card {
+  text-align: left;
+}
+[dir="ltr"] .testimonial-card,
+[dir="ltr"] .pr-subtitle {
+  text-align: left;
+  direction: ltr;
+}
+[dir="ltr"] .footer-col,
+[dir="ltr"] .footer-col p {
+  text-align: left;
+}
+</style>
+
 </head>
 
 <body>
@@ -55,26 +212,42 @@
             <img src="./imgs/ghawy-new-logo-transparent.png" alt="Ghawy" />
         </a>
         <ul class="nav-links" id="navLinks">
-            <li><a href="#reviews" data-i18n="lp_navReviews">الاراء</a></li>
-            <li><a href="#modules" data-i18n="lp_navCourses">الكورسات</a></li>
-            <li><a href="#features" data-i18n="lp_navFeatures">المميزات</a></li>
-            <li><a href="#payment" data-i18n="lp_navPrice">السعر</a></li>
+            <li><a href="#reviews" data-ar="الاراء" data-en="Reviews">الاراء</a></li>
+            <li><a href="#modules" data-ar="الكورسات" data-en="Courses">الكورسات</a></li>
+            <li><a href="#features" data-ar="المميزات" data-en="Features">المميزات</a></li>
+            <li><a href="#payment" data-ar="السعر" data-en="Pricing">السعر</a></li>
         </ul>
         <div class="nav-auth" id="navAuth">
-            <button id="langToggle" onclick="setLang(getLang() === 'ar' ? 'en' : 'ar')"
-                style="background:#2a2a2a;border:none;color:#ffffff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:Cairo,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-inline-end:12px;line-height:1;">
-                EN
-            </button>
+            <button
+  id="langToggleBtn"
+  onclick="toggleLanguage()"
+  style="
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+  "
+  onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
+  onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'"
+>
+  <span id="langToggleText">English</span>
+</button>
             <!-- Logged out state (default) -->
             <div id="navLoggedOut">
                 <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;"
-                    data-i18n="lp_startNow">ابدا الان</a>
+                    data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
                 <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;"
-                    data-i18n="lp_login">تسجيل الدخول</a>
+                    data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
             </div>
             <!-- Logged in state -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
-                <button class="nav-auth-btn danger" onclick="logout()" data-i18n="lp_logout">تسجيل الخروج</button>
+                <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
             </div>
         </div>
         <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
@@ -84,21 +257,20 @@
 
     <!-- Mobile Drawer -->
     <div class="mobile-drawer" id="mobileDrawer">
-        <a href="#features" onclick="closeDrawer()" data-i18n="lp_navFeatures">المميزات</a>
-        <a href="#reviews" onclick="closeDrawer()" data-i18n="lp_navReviews">الاراء</a>
-        <a href="#modules" onclick="closeDrawer()" data-i18n="lp_navCourses">الكورسات</a>
-        <a href="#payment" onclick="closeDrawer()" data-i18n="lp_navPrice">السعر</a>
+        <a href="#features" onclick="closeDrawer()" data-ar="المميزات" data-en="Features">المميزات</a>
+        <a href="#reviews" onclick="closeDrawer()" data-ar="الاراء" data-en="Reviews">الاراء</a>
+        <a href="#modules" onclick="closeDrawer()" data-ar="الكورسات" data-en="Courses">الكورسات</a>
+        <a href="#payment" onclick="closeDrawer()" data-ar="السعر" data-en="Pricing">السعر</a>
         <div id="mobileAuthLoggedOut">
             <a href="login.html" onclick="closeDrawer()"
                 style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;"
-                data-i18n="lp_mobileLogin">تسجيل الدخول</a>
+                data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
         </div>
         <div id="mobileAuthLoggedIn" style="display:none">
-            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-i18n="lp_logout">تسجيل
-                الخروج</button>
+            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
         </div>
         <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()"
-            data-i18n="lp_mobileStart">ابدا الان</a>
+            data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
     </div>
 
     <!-- ════════════════════════════════════════
@@ -346,7 +518,7 @@
     <!-- ════════════════════════════════════════
      HERO SECTION
     ════════════════════════════════════════ -->
-    <header class="hero" id="top" dir="ltr">
+    <header class="hero" id="top">
         <!-- Marine Blue Glow -->
         <div class="hero-marine-glow"></div>
         <div class="hero-glow"></div>
@@ -359,21 +531,18 @@
                     <!-- Top Badge -->
                     <div class="pre-headline">
                         <span style="color: var(--green); font-weight: 900; margin-right: 4px;">#1</span>
-                        <span data-i18n="lp_badge">AI Learning Platform In The Arab World</span>
+                        <span data-ar="منصة تعليم الذكاء الاصطناعي #1 في الوطن العربي" data-en="#1 AI Learning Platform In The Arab World">منصة تعليم الذكاء الاصطناعي #1 في الوطن العربي</span>
                     </div>
 
                     <!-- Main Headline -->
                     <h1 class="hero-heading-split">
-                        <span class="line-white" data-i18n="lp_heroLine1">Master AI.</span>
-                        <span class="line-white" data-i18n="lp_heroLine2">Build Leverage.</span>
-                        <span class="line-green" data-i18n="lp_heroLine3">Create Freedom.</span>
+                        <span class="line-white" data-ar="احترف الـ AI." data-en="Master AI.">احترف الـ AI.</span>
+                        <span class="line-white" data-ar="ابني نفوذ." data-en="Build Leverage.">ابني نفوذ.</span>
+                        <span class="line-green" data-ar="اصنع حريتك." data-en="Create Freedom.">اصنع حريتك.</span>
                     </h1>
 
                     <!-- Sub-headline -->
-                    <p class="hero-sub" data-i18n="lp_heroSub">
-                        Practical courses, real projects and a powerful community
-                        to help you master AI and build real income.
-                    </p>
+                    <p class="hero-sub" data-ar="كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي." data-en="Practical courses, real projects and a powerful community to help you master AI and build real income.">كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي.</p>
 
                     <!-- Stats Row -->
                     <div class="hero-stats-inline">
@@ -381,28 +550,28 @@
                             <i class="fa-solid fa-video"></i>
                             <div>
                                 <span class="stat-num-inline">24+</span>
-                                <span class="stat-lbl-inline" data-i18n="lp_statCourses">Courses</span>
+                                <span class="stat-lbl-inline" data-ar="كورسات" data-en="Courses">كورسات</span>
                             </div>
                         </div>
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-code-fork"></i>
                             <div>
                                 <span class="stat-num-inline">100+</span>
-                                <span class="stat-lbl-inline" data-i18n="lp_statProjects">Projects</span>
+                                <span class="stat-lbl-inline" data-ar="مشاريع" data-en="Projects">مشاريع</span>
                             </div>
                         </div>
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-users"></i>
                             <div>
                                 <span class="stat-num-inline">10K+</span>
-                                <span class="stat-lbl-inline" data-i18n="lp_statMembers">Members</span>
+                                <span class="stat-lbl-inline" data-ar="أعضاء" data-en="Members">أعضاء</span>
                             </div>
                         </div>
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-circle-play"></i>
                             <div>
-                                <span class="stat-num-inline" data-i18n="lp_statLive">Live</span>
-                                <span class="stat-lbl-inline" data-i18n="lp_statSessions">Sessions</span>
+                                <span class="stat-num-inline" data-ar="لايف" data-en="Live">لايف</span>
+                                <span class="stat-lbl-inline" data-ar="جلسات" data-en="Sessions">جلسات</span>
                             </div>
                         </div>
                     </div>
@@ -412,12 +581,12 @@
                         <a href="javascript:void(0)"
                             onclick="handleKashierPayment()"
                             class="btn-cta btn-cta-solid">
-                            <span data-i18n="lp_joinNow">Join Ghawy Now</span> &nbsp;<i
+                            <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span> &nbsp;<i
                                 class="fa-solid fa-arrow-right"></i>
                         </a>
                         <button class="btn-cta-ghost" id="watchIntroBtn">
                             <i class="fa-regular fa-circle-play"></i>
-                            &nbsp;<span data-i18n="lp_watchIntro">Watch Intro</span>
+                            &nbsp;<span data-ar="شاهد المقدمة" data-en="Watch Intro">شاهد المقدمة</span>
                         </button>
                     </div>
                     <!-- INSTAPAY OPTION -->
@@ -444,7 +613,7 @@
                         <!-- Unmute Button -->
                         <button id="customUnmuteBtn" class="custom-unmute-btn" style="z-index:10;">
                             <span class="icon"><i class="fa-solid fa-volume-high"></i></span>
-                            <span class="text" data-i18n="lp_unmuteBtn">تشغيل الصوت</span>
+                            <span class="text" data-ar="تشغيل الصوت" data-en="Unmute">تشغيل الصوت</span>
                         </button>
 
                         <!-- Video -->
@@ -2071,11 +2240,81 @@
             if (typeof updateAuthUI === 'function') updateAuthUI();
         }
     </script>
-    <script src="src/js/i18n.js"></script>
+    
 
     <script>
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
+
+<script id="rtlLtrLayoutSystemJS">
+// ═══ LANGUAGE SYSTEM ═══
+const translations = {
+  ar: {
+    dir: 'rtl',
+    lang: 'ar',
+    toggleBtn: 'English',
+    fontFamily: "'Cairo', sans-serif",
+  },
+  en: {
+    dir: 'ltr',
+    lang: 'en',
+    toggleBtn: 'عربي',
+    fontFamily: "'Cairo', sans-serif",
+  }
+};
+
+function applyLanguage(lang) {
+  const config = translations[lang];
+  const html = document.getElementById('htmlRoot');
+
+  // 1. Set direction and lang
+  html.setAttribute('dir', config.dir);
+  html.setAttribute('lang', config.lang);
+
+  // 2. Update all text elements
+  document.querySelectorAll('[data-ar]').forEach(el => {
+    el.textContent = lang === 'ar'
+      ? el.getAttribute('data-ar')
+      : el.getAttribute('data-en');
+  });
+
+  // 3. Update placeholders
+  document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
+    el.placeholder = lang === 'ar'
+      ? el.getAttribute('data-ar-placeholder')
+      : el.getAttribute('data-en-placeholder');
+  });
+
+  // 4. Update toggle button
+  const toggleText = document.getElementById('langToggleText');
+  if (toggleText) {
+    toggleText.textContent = config.toggleBtn;
+  }
+
+  // 5. Force reflow for flex containers (fix layout on toggle)
+  document.querySelectorAll('.hero-split, .features-section, .pricing-section, .main-nav').forEach(el => {
+    el.style.display = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.display = '';
+  });
+
+  // 6. Save preference
+  localStorage.setItem('ghawy_lang', lang);
+}
+
+function toggleLanguage() {
+  const current = localStorage.getItem('ghawy_lang') || 'ar';
+  const next = current === 'ar' ? 'en' : 'ar';
+  applyLanguage(next);
+}
+
+// On page load — default Arabic
+(function() {
+  const saved = localStorage.getItem('ghawy_lang') || 'ar';
+  applyLanguage(saved);
+})();
+</script>
+
 </body>
 
 </html>

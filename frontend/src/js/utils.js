@@ -52,7 +52,7 @@ async function enforceAuthGuard() {
   }
 
   try {
-    const res = await fetch(`${API}/profile/me`, {
+    const res = await fetch(`${API}/profile/me?_t=`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -93,7 +93,7 @@ async function requireActiveUser() {
   }
 
   try {
-    const res = await fetch(`${API}/profile/me`, {
+    const res = await fetch(`${API}/profile/me?_t=`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -199,7 +199,7 @@ if (getToken()) {
   // Hide admin-only sidebar links for non-admins
   (async function hideAdminLinks() {
     try {
-      const res = await fetch(`${API}/profile/me`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+      const res = await fetch(`${API}/profile/me?_t=`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
       if (!res.ok) return;
       const u = await res.json();
       if (!u.is_admin) {
@@ -311,3 +311,33 @@ document.addEventListener('click', e => {
 });
 
 
+
+// == Sidebar Initialization ==
+function initSidebar() {
+  const hamburger = document.getElementById('hamburgerBtn');
+  const sidebar = document.querySelector('.dash-sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const hamburgerDash = document.getElementById('hamburgerDash');
+  function toggleSidebar() {
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('visible');
+  }
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('visible');
+  }
+  if (hamburger) hamburger.addEventListener('click', toggleSidebar);
+  if (hamburgerDash) hamburgerDash.addEventListener('click', toggleSidebar);
+  if (overlay) overlay.addEventListener('click', closeSidebar);
+  if (sidebar) {
+    sidebar.querySelectorAll('a, button').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebar();
+});

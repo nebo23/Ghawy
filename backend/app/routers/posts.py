@@ -129,7 +129,7 @@ def build_comment_dict(comment: Comment, current_user_id: int, include_replies: 
 @router.get("/{channel}")
 def list_posts(
     channel: str,
-    sort: str = Query("latest", regex="^(latest|top)$"),
+    sort: str = Query("latest", pattern="^(latest|top)$"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=50),
     search: str = Query("", max_length=200),
