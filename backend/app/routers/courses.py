@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate
+from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
 from app.routers.users import get_current_user, get_current_active_member, get_current_admin_user
 from app.schemas import (
     CourseOut, CourseDetailOut, CourseCreate, CourseUpdate,
@@ -517,3 +517,70 @@ async def get_lessons(course_id: int, current_user: User = Depends(get_current_u
             "is_completed": lesson.id in completed_ids,
         })
     return result
+
+from pydantic import BaseModel
+class ReviewCreate(BaseModel):
+    rating: int
+    comment: str = ""
+
+@router.get("/{course_id}/reviews")
+async def get_course_reviews(course_id: int, db: Session = Depends(get_db)):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+        
+    reviews = db.query(CourseReview).filter(CourseReview.course_id == course_id).order_by(CourseReview.created_at.desc()).all()
+    
+    result = []
+    for r in reviews:
+        result.append({
+            "id": r.id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "date": r.created_at.isoformat() + "Z",
+            "user": {
+                "id": r.user.id,
+                "full_name": r.user.full_name,
+                "avatar_url": r.user.avatar_url
+            }
+        })
+    return result
+
+@router.post("/{course_id}/reviews")
+async def create_course_review(
+    course_id: int, 
+    data: ReviewCreate, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+        
+    existing = db.query(CourseReview).filter_by(course_id=course_id, user_id=current_user.id).first()
+    if existing:
+        existing.rating = data.rating
+        existing.comment = data.comment
+        db.commit()
+        return {"message": "Review updated"}
+    
+    review = CourseReview(
+        course_id=course_id,
+        user_id=current_user.id,
+        rating=data.rating,
+        comment=data.comment
+    )
+    db.add(review)
+    db.commit()
+    return {"message": "Review added"}
+
+@router.delete("/{course_id}/reviews/{review_id}", dependencies=[Depends(get_current_admin_user)])
+async def delete_course_review(course_id: int, review_id: int, db: Session = Depends(get_db)):
+    review = db.query(CourseReview).filter(CourseReview.id == review_id, CourseReview.course_id == course_id).first()
+    if not review:
+        raise HTTPException(404, "Review not found")
+    
+    db.delete(review)
+    db.commit()
+    return {"message": "Review deleted successfully"}
+

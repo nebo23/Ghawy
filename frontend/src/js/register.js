@@ -197,14 +197,14 @@ async function initInviteFlow() {
     welcomeEl.innerHTML = `
       <div style="text-align:center; margin-bottom:24px;">
         <div style="font-size:32px; margin-bottom:8px;">🎉</div>
-        <h2 style="color:#fff; margin:0 0 4px;">أهلاً ${data.full_name}!</h2>
-        <p style="color:#888; margin:0;">اختر كلمة مرور لإكمال تسجيلك</p>
+        <h2 style="color:#fff; margin:0 0 4px;">Welcome ${data.full_name}!</h2>
+        <p style="color:#888; margin:0;">Choose a password to complete your registration</p>
       </div>
     `;
     document.getElementById('registerForm').prepend(welcomeEl);
     
-    document.getElementById('password-label').innerText = 'كلمة المرور';
-    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'إكمال التسجيل &rarr;';
+    document.getElementById('password-label').innerText = 'Password';
+    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'Complete Registration &rarr;';
 
   } catch (err) {
     showFormMessage('Failed to verify invite link', 'error');

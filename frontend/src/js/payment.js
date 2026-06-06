@@ -1,8 +1,8 @@
-// تحقق من الـ token
+// Verify the token
 if (!getToken()) {
     window.location.href = 'login.html';
 } else {
-    // تحقق لو الحساب اتفعل بالفعل (مثلاً بعد الدفع اليدوي) نوديه للـ onboarding
+    // Verify if account is already active (e.g. after manual payment) redirect to onboarding
     fetch(`${API}/profile/me`, {
         headers: { 'Authorization': `Bearer ${getToken()}` }
     })
@@ -19,8 +19,8 @@ if (!getToken()) {
 
 // ─── Plans Configuration ────────────────────────────────────
 const PLANS = {
-  monthly_egp: { amount: 500, currency: 'EGP', label: 'اشتراك شهري', period: 'شهر', badge: null },
-  yearly_egp: { amount: 3000, currency: 'EGP', label: 'اشتراك سنوي', period: 'سنة', badge: 'وفر 2000 جنيه ' },
+  monthly_egp: { amount: 500, currency: 'EGP', label: 'Monthly Subscription', period: 'Month', badge: null },
+  yearly_egp: { amount: 3000, currency: 'EGP', label: 'Annual Subscription', period: 'Year', badge: 'Save 2000 EGP ' },
   monthly_usd: { amount: 15, currency: 'USD', label: 'Monthly Plan', period: 'Month', badge: null },
   yearly_usd: { amount: 100, currency: 'USD', label: 'Yearly Plan', period: 'Year', badge: 'Save $80 ' },
 };
@@ -34,7 +34,7 @@ async function detectUserRegion() {
     const data = await res.json();
     return data.country_code === 'EG' ? 'EGP' : 'USD';
   } catch {
-    return 'EGP'; // fallback لو فشل
+    return 'EGP'; // fallback if detection fails
   }
 }
 
@@ -57,7 +57,7 @@ function renderSinglePlan(planKey) {
     <p class="plan-name">${plan.label}</p>
     <div class="new-price">
       ${plan.currency === 'USD' ? '$' : ''}${plan.amount.toLocaleString()}
-      <span>${plan.currency === 'EGP' ? 'جنيه' : 'USD'} / ${plan.period}</span>
+      <span>${plan.currency === 'EGP' ? 'EGP' : 'USD'} / ${plan.period}</span>
     </div>
   `;
 
@@ -110,17 +110,17 @@ async function pay() {
     const url = data.payment_url || data.approval_url;
 
     if (res.ok && url) {
-      showAlert('جاري تحويلك لصفحة الدفع... ✅', 'success');
+      showAlert('Redirecting to payment page... ✅', 'success');
       setTimeout(() => { window.location.href = url; }, 800);
     } else if (res.status === 401) {
-      showAlert('انتهت جلستك، سجّل دخولك مجدداً', 'error');
+      showAlert('Session expired, please login again', 'error');
       setTimeout(() => { logout(); }, 1500);
     } else {
-      showAlert(data.detail || 'حصل خطأ، حاول تاني', 'error');
+      showAlert(data.detail || 'An error occurred, try again', 'error');
     }
 
   } catch {
-    showAlert('مفيش اتصال بالـ server', 'error');
+    showAlert('No connection to server', 'error');
   } finally {
     setLoading('payBtn', false);
   }

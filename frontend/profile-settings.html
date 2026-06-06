@@ -17,31 +17,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
-    
-<script>
-  (function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var urlToken = urlParams.get("token");
-    if (urlToken) {
-      localStorage.setItem("token", urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    var t = localStorage.getItem("token");
-    if (!t) {
-      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
-      return;
-    }
-    try {
-      var uStr = localStorage.getItem("user");
-      if (uStr) {
-        var u = JSON.parse(uStr);
-        if (u && (u.is_active === false || u.subscription_type === 'none')) {
-          window.location.replace("/payment.html?reason=access_required");
-        }
-      }
-    } catch(e) {}
-  })();
-</script>
+
+    <script>
+        (function () {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlToken = urlParams.get("token");
+            if (urlToken) {
+                localStorage.setItem("token", urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            var t = localStorage.getItem("token");
+            if (!t) {
+                window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+                return;
+            }
+            try {
+                var uStr = localStorage.getItem("user");
+                if (uStr) {
+                    var u = JSON.parse(uStr);
+                    if (u && (u.is_active === false || u.subscription_type === 'none')) {
+                        window.location.replace("/payment.html?reason=access_required");
+                    }
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
 
 <body>
@@ -53,23 +53,30 @@
                         data-i18n="dashboard">الرئيسية</span></a>
                 <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
                         data-i18n="courses">الكورسات</span></a>
-                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span data-i18n="buildWithMe">???? ?????
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
+                        data-i18n="buildWithMe">???? ?????
                         (????)</span></a>
                 <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
                         data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
+                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
+<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
                         data-i18n="communityChat">شات المجتمع</span></a>
-                
-                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+
+                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                    <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
+                        style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
                 <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
                         data-i18n="achievements">الإنجازات</span></a>
-                <a href="profile-settings.html" class="nav-item active"><i data-lucide="settings" class="nav-icon"></i> <span
-                        data-i18n="settings">الإعدادات</span></a>
-                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+                <a href="profile-settings.html" class="nav-item active"><i data-lucide="settings" class="nav-icon"></i>
+                    <span data-i18n="settings">الإعدادات</span></a>
+                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
+                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
             </nav>
             <div class="sidebar-user">
-                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
+                        style="width:16px;height:16px;"></i></div>
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name" id="sidebarName">—</div>
                     <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
@@ -83,16 +90,19 @@
             <header class="dash-topbar">
                 <button class="hamburger-btn" id="hamburgerBtn"
                     aria-label="Open menu"><span></span><span></span><span></span></button>
-                <div class="topbar-search"><i data-lucide="search" size="16"></i><input type="text"
-                        data-i18n-placeholder="searchGeneral" placeholder="بحث..." /></div>
+                
                 <div class="topbar-actions">
 
                     <div class="notif-wrapper" id="notifWrapper">
-                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot"
+                                id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge"
+                                style="display:none;">0</span></button>
                         <div class="notif-panel" id="notifPanel">
                             <div class="notif-panel-header">
                                 <h4>Notifications</h4>
-                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x" size="16"></i></button>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
+                                        size="16"></i></button>
                             </div>
                             <div class="notif-panel-list" id="notifList">
                                 <div class="notif-empty">No notifications</div>
@@ -100,8 +110,9 @@
                         </div>
                     </div>
                     <div class="topbar-user" id="topbarUser">
-                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div><span
-                            class="topbar-user-name" id="topbarName">—</span>
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user"
+                                style="width:16px;height:16px;"></i></div><span class="topbar-user-name"
+                            id="topbarName">—</span>
                     </div>
                 </div>
             </header>
@@ -116,7 +127,8 @@
 
                     <!-- Personal Info -->
                     <div class="settings-section">
-                        <h3><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="personalInfo">المعلومات الشخصية</span>
+                        <h3><i data-lucide="user" style="width:16px;height:16px;"></i> <span
+                                data-i18n="personalInfo">المعلومات الشخصية</span>
                         </h3>
                         <div class="form-group">
                             <label for="settingsName" data-i18n="fullName">الاسم الكامل</label>
@@ -237,7 +249,7 @@
     <script src="src/js/profile.js?v=4"></script>
 
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
 
 </html>

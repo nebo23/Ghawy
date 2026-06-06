@@ -1,277 +1,581 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard — Ghawy</title>
-    <meta name="description" content="Ghawy Dashboard — Master AI, Build Leverage, Create Freedom"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
-    <link rel="stylesheet" href="src/css/dashboard.css"/>
+    <meta name="description" content="Ghawy Dashboard — Master AI, Build Leverage, Create Freedom" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
         /* Dashboard-specific overrides */
-        .dash-grid{display:grid;grid-template-columns:1fr 340px;gap:24px}
-        .goh-section{margin-bottom:24px}
-        .goh-row{display:flex;gap:24px;overflow-x:auto;padding-bottom:8px}
-        .goh-row::-webkit-scrollbar{height:4px}
-        .goh-row::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:4px}
-        .goh-item{text-align:center;flex-shrink:0}
-        .goh-avatar{width:64px;height:64px;border-radius:50%;background:var(--gold-subtle);border:2px solid var(--gold-border);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.5rem;color:var(--gold)}
-        .goh-avatar img{width:100%;height:100%;object-fit:cover}
-        .goh-name{font-size:.78rem;font-weight:700;color:var(--text-primary)}
-        .goh-role{font-size:.65rem;color:var(--text-muted)}
+        .dash-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px
+        }
+
+        .goh-section {
+            margin-bottom: 24px
+        }
+
+        .goh-row {
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px
+        }
+
+        .goh-row::-webkit-scrollbar {
+            height: 4px
+        }
+
+        .goh-row::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 4px
+        }
+
+        .goh-item {
+            text-align: center;
+            flex-shrink: 0
+        }
+
+        .goh-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--gold-subtle);
+            border: 2px solid var(--gold-border);
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 1.5rem;
+            color: var(--gold)
+        }
+
+        .goh-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .goh-name {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-primary)
+        }
+
+        .goh-role {
+            font-size: .65rem;
+            color: var(--text-muted)
+        }
 
         /* Build With Me Live card */
-        .bwm-card{background:linear-gradient(135deg,rgba(193,255,17,.06),rgba(0,0,0,.8));border:1px solid var(--gold-border);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;margin-bottom:16px}
-        .bwm-card::before{content:'';position:absolute;top:-50%;right:-30%;width:60%;height:200%;background:radial-gradient(ellipse,rgba(193,255,17,.08),transparent 70%);pointer-events:none}
-        .bwm-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-        .bwm-live-pill{display:inline-flex;align-items:center;gap:5px;background:var(--red-notif);color:#fff;padding:3px 10px;border-radius:4px;font-size:.65rem;font-weight:700}
-        .bwm-live-pill .dot{width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse-dot 1.5s infinite}
-        .bwm-viewers{font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}
-        .bwm-title{font-size:1.1rem;font-weight:800;margin-bottom:6px}
-        .bwm-host{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text-secondary);margin-bottom:16px}
-        .bwm-host-av{width:24px;height:24px;border-radius:50%;background:var(--gold-subtle);border:1px solid var(--gold-border)}
-        .bwm-join-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--gold);color:#000;padding:10px;border-radius:var(--radius-sm);font-weight:700;font-size:.88rem;transition:all .2s}
-        .bwm-join-btn:hover{background:var(--gold-light)}
-        .bwm-join-btn .live-dot{width:8px;height:8px;background:var(--red-notif);border-radius:50%;animation:pulse-dot 1.5s infinite}
+        .bwm-card {
+            background: linear-gradient(135deg, rgba(193, 255, 17, .06), rgba(0, 0, 0, .8));
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 16px
+        }
+
+        .bwm-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(193, 255, 17, .08), transparent 70%);
+            pointer-events: none
+        }
+
+        .bwm-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        .bwm-live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--red-notif);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: .65rem;
+            font-weight: 700
+        }
+
+        .bwm-live-pill .dot {
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite
+        }
+
+        .bwm-viewers {
+            font-size: .75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .bwm-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 6px
+        }
+
+        .bwm-host {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .8rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px
+        }
+
+        .bwm-host-av {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--gold-subtle);
+            border: 1px solid var(--gold-border)
+        }
+
+        .bwm-join-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: var(--gold);
+            color: #000;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: .88rem;
+            transition: all .2s
+        }
+
+        .bwm-join-btn:hover {
+            background: var(--gold-light)
+        }
+
+        .bwm-join-btn .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--red-notif);
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite
+        }
 
         /* Upcoming Sessions */
-        .upcoming-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
-        .upcoming-timer{font-size:1.4rem;font-weight:800;color:var(--gold);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-        .upcoming-timer .timer-badge{font-size:.6rem;background:var(--gold-subtle);color:var(--gold);padding:2px 8px;border-radius:4px;font-weight:700}
-        .upcoming-title{font-size:.9rem;font-weight:700;margin-bottom:4px}
-        .upcoming-date{font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+        .upcoming-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px
+        }
+
+        .upcoming-timer {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold);
+            font-family: 'IBM Plex Mono', monospace;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .upcoming-timer .timer-badge {
+            font-size: .6rem;
+            background: var(--gold-subtle);
+            color: var(--gold);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700
+        }
+
+        .upcoming-title {
+            font-size: .9rem;
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .upcoming-date {
+            font-size: .75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
 
         /* Chat Preview */
-        .chat-preview-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
-        .chat-preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-        .chat-preview-input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:20px;padding:10px 16px;color:var(--text-primary);font-family:inherit;font-size:.82rem;outline:none;transition:border-color .2s;margin-top:8px}
-        .chat-preview-input:hover{border-color:var(--gold-border)}
-        .chat-msg-preview{display:flex;gap:8px;padding:6px 0;align-items:flex-start}
-        .chat-msg-preview .av{width:28px;height:28px;border-radius:50%;background:var(--gold-subtle);border:1px solid var(--gold-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--gold);overflow:hidden}
-        .chat-msg-preview .av img{width:100%;height:100%;object-fit:cover}
-        .chat-msg-preview .info{flex:1;min-width:0}
-        .chat-msg-preview .name{font-size:.78rem;font-weight:700}
-        .chat-msg-preview .txt{font-size:.72rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .chat-msg-preview .time{font-size:.6rem;color:var(--text-muted);flex-shrink:0}
-
-        @media(max-width:1024px){.dash-grid{grid-template-columns:1fr}}
-
-
-    </style>
-    
-<script>
-  (function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var urlToken = urlParams.get("token");
-    if (urlToken) {
-      localStorage.setItem("token", urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    var t = localStorage.getItem("token");
-    if (!t) {
-      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
-      return;
-    }
-    try {
-      var uStr = localStorage.getItem("user");
-      if (uStr) {
-        var u = JSON.parse(uStr);
-        if (u && (u.is_active === false || u.subscription_type === 'none')) {
-          window.location.replace("/payment.html?reason=access_required");
+        .chat-preview-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px
         }
-      }
-    } catch(e) {}
-  })();
-</script>
+
+        .chat-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px
+        }
+
+        .chat-preview-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: .82rem;
+            outline: none;
+            transition: border-color .2s;
+            margin-top: 8px
+        }
+
+        .chat-preview-input:hover {
+            border-color: var(--gold-border)
+        }
+
+        .chat-msg-preview {
+            display: flex;
+            gap: 8px;
+            padding: 6px 0;
+            align-items: flex-start
+        }
+
+        .chat-msg-preview .av {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gold-subtle);
+            border: 1px solid var(--gold-border);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .6rem;
+            color: var(--gold);
+            overflow: hidden
+        }
+
+        .chat-msg-preview .av img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .chat-msg-preview .info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .chat-msg-preview .name {
+            font-size: .78rem;
+            font-weight: 700
+        }
+
+        .chat-msg-preview .txt {
+            font-size: .72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .chat-msg-preview .time {
+            font-size: .6rem;
+            color: var(--text-muted);
+            flex-shrink: 0
+        }
+
+        @media(max-width:1024px) {
+            .dash-grid {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+
+    <script>
+        (function () {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlToken = urlParams.get("token");
+            if (urlToken) {
+                localStorage.setItem("token", urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            var t = localStorage.getItem("token");
+            if (!t) {
+                window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+                return;
+            }
+            try {
+                var uStr = localStorage.getItem("user");
+                if (uStr) {
+                    var u = JSON.parse(uStr);
+                    if (u && (u.is_active === false || u.subscription_type === 'none')) {
+                        window.location.replace("/payment.html?reason=access_required");
+                    }
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
+
 <body>
-<div class="dash-layout">
-    <!-- SIDEBAR -->
-    <aside class="dash-sidebar" id="dashSidebar">
-        <div class="sidebar-logo">
-            <img src="./imgs/ghawi-logo.png" alt="Ghawy"/>
-            <span>Ghawy</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="dashboard.html?v=2" class="nav-item active"><i data-lucide="layout-grid" class="nav-icon"></i> <span data-i18n="dashboard">الرئيسية</span></a>
-            <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span data-i18n="courses">الكورسات</span></a>
-            <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
-            <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-            <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
-            
-            <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-
-            <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span data-i18n="achievements">الإنجازات</span></a>
-            <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-            <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
-        </nav>
-        <div class="sidebar-user" id="sidebarUser">
-            <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="sidebarName">—</div>
-                <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+    <div class="dash-layout">
+        <!-- SIDEBAR -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-logo">
+                <img src="./imgs/ghawi-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
-        </div>
-        <div class="sidebar-streak" id="sidebarStreak">
-            <span class="streak-fire">🔥</span>
-            <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span>
-        </div>
-    </aside>
-    <!-- Sidebar overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html?v=2" class="nav-item active"><i data-lucide="layout-grid" class="nav-icon"></i>
+                    <span>Dashboard</span></a>
+                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i>
+                    <span>Courses</span></a>
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
+                    <span>Build With Me (Live)</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
+                    <span>Guest of Honors</span></a>
+                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span>AI
+                        Updates</span></a>
+                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
+                    <span>Community Chat</span></a>
 
-    <!-- MAIN -->
-    <div class="dash-main">
-        <!-- TOPBAR -->
-        <header class="dash-topbar">
-            <!-- Hamburger (mobile only) -->
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="topbar-search">
-                <i data-lucide="search" size="16"></i>
-                <input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..." id="topbarSearchInput"/>
-                <kbd>⌘K</kbd>
-            </div>
-            <div class="topbar-actions">
+                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                    <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
+                        style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x" size="16"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-                <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
-                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="profile">الملف الشخصي</span></a>
-                    <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-                    <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
+                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i>
+                    <span>Achievements</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
+                    <span>Settings</span></a>
+                <a href="teamdashboard.html?v=2" target="_blank" class="nav-item" data-admin-only="true"><i
+                        data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
+            </nav>
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
+                        style="width:16px;height:16px;"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarName">—</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge">Member</div>
                 </div>
             </div>
-        </header>
+            <div class="sidebar-streak" id="sidebarStreak">
+                <span class="streak-fire">🔥</span>
+                <span><span class="streak-count" id="streakCount">0</span> <span>Day Streak</span></span>
+            </div>
+        </aside>
+        <!-- Sidebar overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- CONTENT -->
-        <div class="dash-content">
-            <div class="dash-grid">
-                <div class="dash-grid-main">
-                    <!-- HERO -->
-                    <div class="dash-hero" id="dashHero">
-                        <div class="dash-hero-badge"><i class="fa-solid fa-bolt"></i> AI</div>
-                        <h2 data-i18n="heroTitle">احترف الـ AI. ابني نفوذ. اصنع حرية.</h2>
-                        <p data-i18n="heroSubtitle">كورسات عملية. مشاريع حقيقية. نتائج فعلية.</p>
-                        <div class="hero-actions">
-                            <a href="courses.html?v=2" class="btn-gold"><span data-i18n="continueLearning">كمّل التعلم</span> <i class="fa-solid fa-arrow-right"></i></a>
+        <!-- MAIN -->
+        <div class="dash-main">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <!-- Hamburger (mobile only) -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+
+                <div class="topbar-actions">
+
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot"
+                                id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge"
+                                style="display:none;">0</span></button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
+                                        size="16"></i></button>
+                            </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- YOUR COURSES -->
-                    <div class="card-header">
-                        <h3 class="card-title" data-i18n="yourCourses">كورساتك</h3>
-                        <a href="courses.html?v=2" class="card-link" data-i18n="viewAll">عرض الكل</a>
+                    <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user"
+                                style="width:16px;height:16px;"></i></div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                     </div>
-                    <div class="courses-grid" id="coursesGrid">
-                        <div class="empty-state" id="coursesEmpty" style="display:none">
-                            <i data-lucide="presentation" class="nav-icon"></i>
-                            <p>No courses available yet</p>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i>
+                            <span>Profile</span></a>
+                        <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i>
+                            <span>Settings</span></a>
+                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
+                                style="width:16px;height:16px;"></i> <span>Logout</span></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <div class="dash-content">
+                <div class="dash-grid">
+                    <div class="dash-grid-main">
+                        <!-- HERO -->
+                        <div class="dash-hero" id="dashHero">
+                            <div class="dash-hero-badge"><i class="fa-solid fa-bolt"></i> AI</div>
+                            <h2>Master AI. Build Leverage. Create Freedom.</h2>
+                            <p>Practical courses. Real projects. Real results.</p>
+                            <div class="hero-actions">
+                                <a href="courses.html?v=2" class="btn-gold"><span>Continue Learning</span> <i
+                                        class="fa-solid fa-arrow-right"></i></a>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- GUEST OF HONORS -->
-                    <div class="goh-section">
+                        <!-- YOUR COURSES -->
                         <div class="card-header">
-                            <h3 class="card-title" data-i18n="guestOfHonorsTitle">ضيوف الشرف</h3>
-                            <a href="chat.html?v=5" class="card-link" data-i18n="viewAll">عرض الكل</a>
+                            <h3 class="card-title">Your Courses</h3>
+                            <a href="courses.html?v=2" class="card-link">View All</a>
                         </div>
-                        <div class="goh-row" id="gohRow">
-                            <div class="goh-item"><div class="goh-avatar">SA</div><div class="goh-name">Sam Altman</div><div class="goh-role">CEO of OpenAI</div></div>
-                            <div class="goh-item"><div class="goh-avatar">LF</div><div class="goh-name">Lex Fridman</div><div class="goh-role">AI Researcher</div></div>
-                            <div class="goh-item"><div class="goh-avatar">AN</div><div class="goh-name">Andrew Ng</div><div class="goh-role">AI Pioneer</div></div>
-                            <div class="goh-item"><div class="goh-avatar">IA</div><div class="goh-name">Iman Abuzeid</div><div class="goh-role">Tech Entrepreneur</div></div>
-                            <div class="goh-item"><div class="goh-avatar">AA</div><div class="goh-name">Ali Abdaal</div><div class="goh-role">YouTuber</div></div>
+                        <div class="courses-grid" id="coursesGrid">
+                            <div class="empty-state" id="coursesEmpty" style="display:none">
+                                <i data-lucide="presentation" class="nav-icon"></i>
+                                <p>No courses available yet</p>
+                            </div>
                         </div>
+
+                        <!-- GUEST OF HONORS -->
+                        <div class="goh-section">
+                            <div class="card-header">
+                                <h3 class="card-title">Guest of Honors</h3>
+                                <a href="chat.html?v=5" class="card-link">View All</a>
+                            </div>
+                            <div class="goh-row" id="gohRow">
+                                <div class="goh-item">
+                                    <div class="goh-avatar">SA</div>
+                                    <div class="goh-name">Sam Altman</div>
+                                    <div class="goh-role">CEO of OpenAI</div>
+                                </div>
+                                <div class="goh-item">
+                                    <div class="goh-avatar">LF</div>
+                                    <div class="goh-name">Lex Fridman</div>
+                                    <div class="goh-role">AI Researcher</div>
+                                </div>
+                                <div class="goh-item">
+                                    <div class="goh-avatar">AN</div>
+                                    <div class="goh-name">Andrew Ng</div>
+                                    <div class="goh-role">AI Pioneer</div>
+                                </div>
+                                <div class="goh-item">
+                                    <div class="goh-avatar">IA</div>
+                                    <div class="goh-name">Iman Abuzeid</div>
+                                    <div class="goh-role">Tech Entrepreneur</div>
+                                </div>
+                                <div class="goh-item">
+                                    <div class="goh-avatar">AA</div>
+                                    <div class="goh-name">Ali Abdaal</div>
+                                    <div class="goh-role">YouTuber</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI UPDATES -->
+                        <div class="card-header" style="margin-top:8px">
+                            <h3 class="card-title">New AI Updates</h3>
+                            <a href="ai-updates.html?v=5" class="card-link">View All</a>
+                        </div>
+                        <div class="courses-grid" id="aiUpdatesGrid"
+                            style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div>
                     </div>
 
-                    <!-- AI UPDATES -->
-                    <div class="card-header" style="margin-top:8px">
-                        <h3 class="card-title" data-i18n="newAiUpdates">أخبار الذكاء الاصطناعي</h3>
-                        <a href="chat.html?v=5" class="card-link" data-i18n="viewAll">عرض الكل</a>
-                    </div>
-                    <div class="courses-grid" id="aiUpdatesGrid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div>
-                </div>
+                    <!-- RIGHT SIDE -->
+                    <div class="dash-grid-side">
+                        <!-- BUILD WITH ME LIVE -->
+                        <div class="bwm-card">
+                            <div class="bwm-header">
+                                <div class="bwm-live-pill"><span class="dot"></span> <span>Live Now</span></div>
+                                <div class="bwm-viewers"><i class="fa-solid fa-user-group"></i> 1.2K</div>
+                            </div>
+                            <div class="bwm-title">Building AI Automations From Scratch</div>
+                            <div class="bwm-host">
+                                <div class="bwm-host-av"></div>
+                                With Mohamed Hakim
+                            </div>
+                            <button class="bwm-join-btn"><span>Join Live</span> <span class="live-dot"></span></button>
+                        </div>
 
-                <!-- RIGHT SIDE -->
-                <div class="dash-grid-side">
-                    <!-- BUILD WITH ME LIVE -->
-                    <div class="bwm-card">
-                        <div class="bwm-header">
-                            <div class="bwm-live-pill"><span class="dot"></span> <span data-i18n="liveNow">لايف الآن</span></div>
-                            <div class="bwm-viewers"><i class="fa-solid fa-user-group"></i> 1.2K</div>
+                        <!-- UPCOMING SESSIONS -->
+                        <div class="upcoming-card">
+                            <div class="card-header" style="margin-bottom:12px">
+                                <div class="side-card-title" style="margin-bottom:0">Upcoming Sessions</div>
+                                <span class="upcoming-timer" id="upcomingTimer"><span class="timer-badge">⏳</span> 2h
+                                    45m</span>
+                            </div>
+                            <div class="upcoming-title"><i class="fa-solid fa-robot"
+                                    style="color:var(--gold);margin-right:6px"></i> Build Your First AI Agent</div>
+                            <div class="upcoming-date"><i class="fa-regular fa-calendar"></i> Today at 8:00 PM</div>
                         </div>
-                        <div class="bwm-title">Building AI Automations From Scratch</div>
-                        <div class="bwm-host">
-                            <div class="bwm-host-av"></div>
-                            With Mohamed Hakim
-                        </div>
-                        <button class="bwm-join-btn"><span data-i18n="joinLive">انضم للايف</span> <span class="live-dot"></span></button>
-                    </div>
 
-                    <!-- UPCOMING SESSIONS -->
-                    <div class="upcoming-card">
-                        <div class="card-header" style="margin-bottom:12px">
-                            <div class="side-card-title" style="margin-bottom:0" data-i18n="upcomingSessions">الجلسات القادمة</div>
-                            <span class="upcoming-timer" id="upcomingTimer"><span class="timer-badge">⏳</span> 2h 45m</span>
-                        </div>
-                        <div class="upcoming-title"><i class="fa-solid fa-robot" style="color:var(--gold);margin-right:6px"></i> Build Your First AI Agent</div>
-                        <div class="upcoming-date"><i class="fa-regular fa-calendar"></i> Today at 8:00 PM</div>
-                    </div>
-
-                    <!-- COMMUNITY CHAT PREVIEW -->
-                    <div class="chat-preview-card">
-                        <div class="chat-preview-header">
-                            <div class="side-card-title" style="margin-bottom:0" data-i18n="communityChat">شات المجتمع</div>
-                            <span style="font-size:.72rem;color:var(--green-live);display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;background:var(--green-live);border-radius:50%;display:inline-block"></span> <span id="dashOnlineCount">0</span> <span data-i18n="online">أونلاين</span></span>
-                        </div>
-                        <div id="chatPreview"></div>
-                        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-                            <input type="text" class="chat-preview-input" id="dashChatInput" data-i18n-placeholder="typeMessage" placeholder="اكتب رسالة..." style="margin-top:0;flex:1;" />
-                            <button id="dashChatSendBtn" style="width:36px;height:36px;border-radius:50%;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;cursor:pointer;border:none;transition:all .2s;"><i data-lucide="send" size="18"></i></button>
+                        <!-- COMMUNITY CHAT PREVIEW -->
+                        <div class="chat-preview-card">
+                            <div class="chat-preview-header">
+                                <div class="side-card-title" style="margin-bottom:0">Community Chat</div>
+                                <span
+                                    style="font-size:.72rem;color:var(--green-live);display:flex;align-items:center;gap:4px"><span
+                                        style="width:6px;height:6px;background:var(--green-live);border-radius:50%;display:inline-block"></span>
+                                    <span id="dashOnlineCount">0</span> <span>Online</span></span>
+                            </div>
+                            <div id="chatPreview"></div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+                                <input type="text" class="chat-preview-input" id="dashChatInput"
+                                    placeholder="Type a message..." style="margin-top:0;flex:1;" />
+                                <button id="dashChatSendBtn"
+                                    style="width:36px;height:36px;border-radius:50%;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;cursor:pointer;border:none;transition:all .2s;"><i
+                                        data-lucide="send" size="18"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Close dropdowns on outside click -->
-<script>document.addEventListener('click',e=>{const d=document.getElementById('userDropdown');const u=document.getElementById('topbarUser');if(d&&!d.contains(e.target)&&!u.contains(e.target))d.classList.remove('open'); const np=document.getElementById('notifPanel');const nw=document.getElementById('notifWrapper');if(np&&nw&&!nw.contains(e.target))np.classList.remove('open');})</script>
-<script src="src/js/utils.js"></script>
-<script src="src/js/i18n.js"></script>
-<script src="src/js/dashboard.js?v=4"></script>
+    <!-- Close dropdowns on outside click -->
+    <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/dashboard.js?v=4"></script>
 
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
+
 </html>
-
-
-

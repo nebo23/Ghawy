@@ -6,60 +6,58 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تأكيد البريد — Ghawy</title>
-  <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png">
-  <link rel="stylesheet" href="src/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأكيد البريد — Ghawy</title>
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png">
+    <link rel="stylesheet" href="src/css/style.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 
 <body>
-  <nav>
-    <a class="logo" href="index.html">Ghawy</a>
-    <a class="nav-link" href="login.html" data-i18n="login">دخول</a>
-  </nav>
+    <nav>
+        <a class="logo" href="index.html">Ghawy</a>
+        <a class="nav-link" href="login.html" data-i18n="login">دخول</a>
+    </nav>
 
-  <div class="card cyan">
-    <h1 class="card-title" data-i18n="verifyEmail">تأكيد <span class="cyan">البريد</span></h1>
-    <p class="card-sub">
-      <span data-i18n="enterOtp">أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى:</span>
-      <span id="emailHint" class="email-hint"></span>
-    </p>
-    <div id="alert" class="alert"></div>
-    <div class="otp-group" dir="ltr">
-      <input class="otp-input cyan-focus" id="code0" type="text" inputmode="numeric" maxlength="1"
-        autocomplete="one-time-code" />
-      <input class="otp-input cyan-focus" id="code1" type="text" inputmode="numeric" maxlength="1" />
-      <input class="otp-input cyan-focus" id="code2" type="text" inputmode="numeric" maxlength="1" />
-      <input class="otp-input cyan-focus" id="code3" type="text" inputmode="numeric" maxlength="1" />
-      <input class="otp-input cyan-focus" id="code4" type="text" inputmode="numeric" maxlength="1" />
-      <input class="otp-input cyan-focus" id="code5" type="text" inputmode="numeric" maxlength="1" />
+    <div class="card cyan">
+        <h1 class="card-title" data-i18n="verifyEmail">تأكيد <span class="cyan">البريد</span></h1>
+        <p class="card-sub">
+            <span data-i18n="enterOtp">أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى:</span>
+            <span id="emailHint" class="email-hint"></span>
+        </p>
+        <div id="alert" class="alert"></div>
+        <div class="otp-group" dir="ltr">
+            <input class="otp-input cyan-focus" id="code0" type="text" inputmode="numeric" maxlength="1"
+                autocomplete="one-time-code" />
+            <input class="otp-input cyan-focus" id="code1" type="text" inputmode="numeric" maxlength="1" />
+            <input class="otp-input cyan-focus" id="code2" type="text" inputmode="numeric" maxlength="1" />
+            <input class="otp-input cyan-focus" id="code3" type="text" inputmode="numeric" maxlength="1" />
+            <input class="otp-input cyan-focus" id="code4" type="text" inputmode="numeric" maxlength="1" />
+            <input class="otp-input cyan-focus" id="code5" type="text" inputmode="numeric" maxlength="1" />
+        </div>
+        <button class="btn" id="verifyBtn" onclick="verifyEmail()">
+            <span class="btn-text" data-i18n="verify">تحقق</span>
+            <div class="spinner"></div>
+        </button>
+        <div class="resend-row">
+            <button id="resendBtn" class="link-btn" onclick="resendCode()" disabled data-i18n="resendCode">إعادة إرسال
+                الكود</button>
+            <span id="resendTimer" class="muted-text">إعادة الإرسال خلال 60ث</span>
+        </div>
+        <div class="bottom-link">
+            <span data-i18n="backToRegister">رجوع إلى إنشاء حساب</span> <a href="register.html"
+                data-i18n="register">إنشاء حساب</a>
+        </div>
     </div>
-    <button class="btn" id="verifyBtn" onclick="verifyEmail()">
-      <span class="btn-text" data-i18n="verify">تحقق</span>
-      <div class="spinner"></div>
-    </button>
-    <div class="resend-row">
-      <button id="resendBtn" class="link-btn" onclick="resendCode()" disabled data-i18n="resendCode">إعادة إرسال الكود</button>
-      <span id="resendTimer" class="muted-text">إعادة الإرسال خلال 60ث</span>
-    </div>
-    <div class="bottom-link">
-      <span data-i18n="backToRegister">رجوع إلى إنشاء حساب</span> <a href="register.html" data-i18n="register">إنشاء حساب</a>
-    </div>
-  </div>
 
-  <script src="src/js/utils.js?v=2"></script>
-  <script src="src/js/i18n.js"></script>
-  <script src="src/js/verify-email.js"></script>
+    <script src="src/js/utils.js?v=2"></script>
+    <script src="src/js/i18n.js"></script>
+    <script src="src/js/verify-email.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
 </body>
 
 </html>
-
-
-
-

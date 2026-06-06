@@ -128,10 +128,10 @@ function renderSessions(sessions, tab, container) {
 
         const registerBtn = s.is_registered
             ? `<button class="btn-reminder active" onclick="unregisterSession(${s.id}, this)" style="background:rgba(34,197,94,.15);color:#22c55e;border-color:#22c55e33;">✅ Registered</button>`
-            : `<button class="btn-reminder" onclick="registerSession(${s.id}, this)"><i class="fa-regular fa-hand"></i> سجل حضورك</button>`;
+            : `<button class="btn-reminder" onclick="registerSession(${s.id}, this)"><i class="fa-regular fa-hand"></i> RSVP</button>`;
 
         const joinBtn = s.is_registered && (s.youtube_url || s.zoom_url)
-            ? `<a href="${s.zoom_url || s.youtube_url}" target="_blank" class="btn-primary" style="margin-top:8px;font-size:13px;padding:8px 16px;display:inline-block;text-decoration:none;">🚀 انضم الآن</a>`
+            ? `<a href="${s.zoom_url || s.youtube_url}" target="_blank" class="btn-primary" style="margin-top:8px;font-size:13px;padding:8px 16px;display:inline-block;text-decoration:none;">🚀 Join Now</a>`
             : '';
 
         html += `
@@ -180,7 +180,7 @@ async function registerSession(sessionId, btn) {
         btn.style.background = 'rgba(34,197,94,.15)';
         btn.style.color = '#22c55e';
         btn.onclick = () => unregisterSession(sessionId, btn);
-        showToast('تم التسجيل بنجاح! ✅', 'success');
+        showToast('Registered successfully! ✅', 'success');
 
         // Update local cache
         const s = allSessions.find(s => s.id === sessionId);
@@ -197,11 +197,11 @@ async function unregisterSession(sessionId, btn) {
         });
         if (!res.ok) throw new Error('Failed');
         btn.classList.remove('active');
-        btn.innerHTML = '<i class="fa-regular fa-hand"></i> سجل حضورك';
+        btn.innerHTML = '<i class="fa-regular fa-hand"></i> RSVP';
         btn.style.background = '';
         btn.style.color = '';
         btn.onclick = () => registerSession(sessionId, btn);
-        showToast('تم إلغاء التسجيل', 'info');
+        showToast('Registration cancelled', 'info');
 
         const s = allSessions.find(s => s.id === sessionId);
         if (s) { s.is_registered = false; s.attendee_count = Math.max(0, (s.attendee_count || 1) - 1); }

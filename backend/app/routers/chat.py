@@ -758,7 +758,7 @@ def list_active_members(
     db: Session = Depends(get_db),
 ):
     """List all active/verified members for the new message search modal."""
-    five_min_ago = datetime.utcnow() - timedelta(minutes=5)
+    one_min_ago = datetime.utcnow() - timedelta(seconds=60)
     users = (
         db.query(User)
         .filter(User.id != current_user.id, User.is_verified == True, User.is_active == True)
@@ -770,7 +770,7 @@ def list_active_members(
             "id": u.id,
             "full_name": u.full_name,
             "avatar_url": u.avatar_url,
-            "is_online": u.last_seen is not None and u.last_seen >= five_min_ago,
+            "is_online": u.last_seen is not None and u.last_seen >= one_min_ago,
             "badge": u.badge or "Member",
         }
         for u in users

@@ -313,9 +313,9 @@ async function sendPhoneOTP() {
 
   if (!/^01[0-9]{9}$/.test(phone)) {
     if (typeof showToast !== 'undefined') {
-      showToast('أدخل رقم تليفون مصري صحيح', 'error');
+      showToast('Enter a valid Egyptian phone number', 'error');
     } else {
-      alert('أدخل رقم تليفون مصري صحيح');
+      alert('Enter a valid Egyptian phone number');
     }
     return;
   }
@@ -336,16 +336,16 @@ async function sendPhoneOTP() {
       document.getElementById('phoneSent').textContent = phone;
       document.getElementById('phone-input-phase').style.display = 'none';
       document.getElementById('otp-input-phase').style.display = 'block';
-      if (typeof showToast !== 'undefined') showToast('تم إرسال الكود ✅', 'success');
-      // Focus أول box
+      if (typeof showToast !== 'undefined') showToast('Code sent ✅', 'success');
+      // Focus first box
       document.querySelectorAll('.otp-box')[0].focus();
     } else {
-      if (typeof showToast !== 'undefined') showToast(data.detail || 'حصل خطأ', 'error');
-      else alert(data.detail || 'حصل خطأ');
+      if (typeof showToast !== 'undefined') showToast(data.detail || 'An error occurred', 'error');
+      else alert(data.detail || 'An error occurred');
     }
   } catch (err) {
-    if (typeof showToast !== 'undefined') showToast('مفيش اتصال بالـ server', 'error');
-    else alert('مفيش اتصال بالـ server');
+    if (typeof showToast !== 'undefined') showToast('No connection to server', 'error');
+    else alert('No connection to server');
   } finally {
     setLoadingBtn('sendOtpBtn', false);
   }
@@ -356,8 +356,8 @@ async function verifyPhoneOTP() {
   const code = Array.from(boxes).map(b => b.value).join('');
 
   if (code.length !== 6) {
-    if (typeof showToast !== 'undefined') showToast('أدخل الكود كامل (6 أرقام)', 'error');
-    else alert('أدخل الكود كامل (6 أرقام)');
+    if (typeof showToast !== 'undefined') showToast('Enter the full 6-digit code', 'error');
+    else alert('Enter the full 6-digit code');
     return;
   }
 
@@ -373,15 +373,15 @@ async function verifyPhoneOTP() {
     const data = await res.json();
 
     if (res.ok) {
-      if (typeof showToast !== 'undefined') showToast('تم التحقق بنجاح 🎉', 'success');
+      if (typeof showToast !== 'undefined') showToast('Verified successfully 🎉', 'success');
       setTimeout(() => goToStep(2), 800);
     } else {
-      if (typeof showToast !== 'undefined') showToast(data.detail || 'كود غير صحيح', 'error');
-      else alert(data.detail || 'كود غير صحيح');
+      if (typeof showToast !== 'undefined') showToast(data.detail || 'Invalid code', 'error');
+      else alert(data.detail || 'Invalid code');
     }
   } catch (err) {
-    if (typeof showToast !== 'undefined') showToast('مفيش اتصال بالـ server', 'error');
-    else alert('مفيش اتصال بالـ server');
+    if (typeof showToast !== 'undefined') showToast('No connection to server', 'error');
+    else alert('No connection to server');
   } finally {
     setLoadingBtn('verifyOtpBtn', false);
   }
@@ -390,10 +390,10 @@ async function verifyPhoneOTP() {
 async function resendOTP() {
   document.getElementById('otp-input-phase').style.display = 'none';
   document.getElementById('phone-input-phase').style.display = 'block';
-  if (typeof showToast !== 'undefined') showToast('أدخل رقمك تاني واطلب كود جديد', 'info');
+  if (typeof showToast !== 'undefined') showToast('Enter your number again and request a new code', 'info');
 }
 
-// Auto-focus بين الـ OTP boxes
+// Auto-focus between OTP boxes
 document.querySelectorAll('.otp-box').forEach((box, index, boxes) => {
   box.addEventListener('input', () => {
     // only numeric

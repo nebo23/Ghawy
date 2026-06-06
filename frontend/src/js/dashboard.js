@@ -1,6 +1,6 @@
 (async () => {
-  const user = await requireActiveUser();
-  if (!user) return;
+    const user = await requireActiveUser();
+    if (!user) return;
 })();
 
 // ═══ AUTH GUARD ═══
@@ -32,19 +32,19 @@ async function showWelcomeModal() {
             name = u.full_name || '';
             if (u.avatar_url) avatarHtml = `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;"/>`;
         }
-    } catch(e) {}
+    } catch (e) { }
 
     const overlay = document.createElement('div');
     overlay.className = 'ob-modal-overlay';
     overlay.innerHTML = `
         <div style="background:#0a0a0a;border:1px solid rgba(193,255,17,0.2);border-radius:20px;padding:40px;max-width:420px;width:90%;text-align:center;animation:obFadeUp 0.4s ease;">
             <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
-            <h2 style="font-size:1.4rem;font-weight:900;color:#f1f0ea;margin-bottom:8px;">أهلاً بك في Ghawy!</h2>
+            <h2 style="font-size:1.4rem;font-weight:900;color:#f1f0ea;margin-bottom:8px;">Welcome to Ghawy!</h2>
             <div style="width:80px;height:80px;border-radius:50%;margin:16px auto;border:3px solid #c1ff11;overflow:hidden;box-shadow:0 0 20px rgba(193,255,17,0.2);">${avatarHtml}</div>
-            <p style="font-size:1rem;color:#f1f0ea;margin-bottom:6px;">مرحباً ${name}! 👋</p>
-            <p style="font-size:0.85rem;color:#888;margin-bottom:24px;">ابدأ رحلتك بمشاهدة الفيديو التعريفي في قسم Start Here</p>
-            <button onclick="window.location.href='chat.html?v=4&channel=start_here'" style="width:100%;background:#c1ff11;color:#000;border:none;border-radius:12px;padding:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:12px;">🚀 روح لـ Start Here</button>
-            <button onclick="this.closest('.ob-modal-overlay').remove()" style="background:none;border:none;color:#888;font-family:'Cairo',sans-serif;font-size:0.85rem;cursor:pointer;">تخطي</button>
+            <p style="font-size:1rem;color:#f1f0ea;margin-bottom:6px;">Welcome ${name}! 👋</p>
+            <p style="font-size:0.85rem;color:#888;margin-bottom:24px;">Start your journey by watching the intro video in the Start Here section</p>
+            <button onclick="window.location.href='chat.html?v=4&channel=start_here'" style="width:100%;background:#c1ff11;color:#000;border:none;border-radius:12px;padding:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:12px;">🚀 Go to Start Here</button>
+            <button onclick="this.closest('.ob-modal-overlay').remove()" style="background:none;border:none;color:#888;font-family:'Cairo',sans-serif;font-size:0.85rem;cursor:pointer;">Skip</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -73,15 +73,14 @@ async function loadDashboard() {
 function renderUser(u) {
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setTxt('sidebarName', u.full_name);
-    setTxt('sidebarBadge', u.badge || 'Member');
+    setTxt('sidebarBadge', getBadgeLabel(u.badge));
     setTxt('topbarName', u.full_name);
     setTxt('streakCount', u.streak_days || 0);
 
-    // Avatars
     ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
         const el = document.getElementById(id);
-        if (el && u.avatar_url) {
-            const fullUrl = u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url;
+        if (el) {
+            const fullUrl = window.getAvatarSrc(u);
             el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
         }
     });
@@ -168,7 +167,7 @@ function renderChatPreview(messages) {
             const initials = (m.author_name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
             avatarHtml = `<div style="font-size:0.6rem;font-weight:bold;color:var(--gold);">${initials}</div>`;
         }
-        
+
         let text = formatPreviewText(m.content);
 
         return `<div class="chat-msg-preview" onclick="window.location.href='chat.html?v=4&channel=${m.channel}'" style="cursor:pointer">
@@ -198,8 +197,8 @@ function generateInitialsAvatar(name) {
 
 function formatPreviewText(text) {
     if (!text) return '';
-    if (text.startsWith('[IMAGE|')) return '📷 صورة';
-    if (text.startsWith('[AUDIO|')) return '🎤 رسالة صوتية';
+    if (text.startsWith('[IMAGE|')) return '📷 Image';
+    if (text.startsWith('[AUDIO|')) return '🎤 Voice message';
     if (text.startsWith('[REPLY|')) {
         const parts = text.split(']');
         if (parts.length > 1) return '↩️ ' + parts.slice(1).join(']').trim();
@@ -213,10 +212,10 @@ function timeAgo(dt) {
     if (!dt) return '';
     if (typeof dt === 'string' && !dt.endsWith('Z') && !dt.includes('+')) dt += 'Z';
     const diff = (Date.now() - new Date(dt).getTime()) / 1000;
-    if (diff < 60) return 'الآن';
-    if (diff < 3600) return Math.floor(diff / 60) + ' دقيقة';
-    if (diff < 86400) return Math.floor(diff / 3600) + ' ساعة';
-    return Math.floor(diff / 86400) + ' يوم';
+    if (diff < 60) return 'Now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' Minute';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' Hour';
+    return Math.floor(diff / 86400) + ' Day';
 }
 
 // ═══ ONLINE COUNT ═══
@@ -226,7 +225,7 @@ async function fetchOnlineCount() {
         const data = await res.json();
         const el = document.getElementById('dashOnlineCount');
         if (el) el.textContent = data.online_count || 0;
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // ═══ COUNTDOWN TIMER ═══
@@ -244,7 +243,7 @@ function startCountdown() {
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
         const s = Math.floor(diff % 60);
-        timerEl.innerHTML = `<span class="timer-badge">⏳</span> ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        timerEl.innerHTML = `<span class="timer-badge">⏳</span> ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
     }, 1000);
 }
 

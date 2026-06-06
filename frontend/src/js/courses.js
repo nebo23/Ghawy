@@ -26,12 +26,15 @@ async function loadProfile() {
         const u = await res.json();
         const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt('sidebarName', u.full_name);
-        setTxt('sidebarBadge', u.badge || 'Member');
+        setTxt('sidebarBadge', getBadgeLabel(u.badge));
         setTxt('topbarName', u.full_name);
         setTxt('streakCount', u.streak_days || 0);
         ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
             const el = document.getElementById(id);
-            if (el && u.avatar_url) el.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+            if (el) {
+                const fullUrl = window.getAvatarSrc(u);
+                el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+            }
         });
     } catch (e) { console.error(e); }
 }

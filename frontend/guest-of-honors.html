@@ -1,247 +1,277 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Guest of Honors — Ghawy</title>
-    <meta name="description" content="Ghawy Dashboard — Guest of Honors"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
-    <link rel="stylesheet" href="src/css/dashboard.css"/>
-    <link rel="stylesheet" href="src/css/goh.css"/>
-    
-<script>
-  (function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var urlToken = urlParams.get("token");
-    if (urlToken) {
-      localStorage.setItem("token", urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    var t = localStorage.getItem("token");
-    if (!t) {
-      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
-      return;
-    }
-    try {
-      var uStr = localStorage.getItem("user");
-      if (uStr) {
-        var u = JSON.parse(uStr);
-        if (u && (u.is_active === false || u.subscription_type === 'none')) {
-          window.location.replace("/payment.html?reason=access_required");
-        }
-      }
-    } catch(e) {}
-  })();
-</script>
+    <meta name="description" content="Ghawy Dashboard — Guest of Honors" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="stylesheet" href="src/css/dashboard.css" />
+    <link rel="stylesheet" href="src/css/goh.css" />
+
+    <script>
+        (function () {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlToken = urlParams.get("token");
+            if (urlToken) {
+                localStorage.setItem("token", urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            var t = localStorage.getItem("token");
+            if (!t) {
+                window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+                return;
+            }
+            try {
+                var uStr = localStorage.getItem("user");
+                if (uStr) {
+                    var u = JSON.parse(uStr);
+                    if (u && (u.is_active === false || u.subscription_type === 'none')) {
+                        window.location.replace("/payment.html?reason=access_required");
+                    }
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
+
 <body>
-<div class="dash-layout">
-    <!-- SIDEBAR -->
-    <aside class="dash-sidebar" id="dashSidebar">
-        <div class="sidebar-logo">
-            <img src="./imgs/ghawi-logo.png" alt="Ghawy"/>
-            <span>Ghawy</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span data-i18n="dashboard">الرئيسية</span></a>
-            <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span data-i18n="courses">الكورسات</span></a>
-            <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
-            <a href="guest-of-honors.html?v=2" class="nav-item active"><i data-lucide="star" class="nav-icon"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-            <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
-            <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-            <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span data-i18n="achievements">الإنجازات</span></a>
-            <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-            <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
-        </nav>
-        <div class="sidebar-user" id="sidebarUser">
-            <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="sidebarName">—</div>
-                <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+    <div class="dash-layout">
+        <!-- SIDEBAR -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-logo">
+                <img src="./imgs/ghawi-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
-        </div>
-        <div class="sidebar-streak" id="sidebarStreak">
-            <span class="streak-fire">🔥</span>
-            <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span>
-        </div>
-    </aside>
-    <!-- Sidebar overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- MAIN -->
-    <div class="dash-main">
-        <!-- TOPBAR -->
-        <header class="dash-topbar">
-            <!-- Hamburger (mobile only) -->
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="topbar-search">
-                <i data-lucide="search" size="16"></i>
-                <input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..." id="topbarSearchInput"/>
-                <kbd>⌘K</kbd>
-            </div>
-            <div class="topbar-actions">
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x" size="16"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-                <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
-                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="profile">الملف الشخصي</span></a>
-                    <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-                    <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
+                        data-i18n="dashboard">الرئيسية</span></a>
+                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
+                        data-i18n="courses">الكورسات</span></a>
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
+                        data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item active"><i data-lucide="star" class="nav-icon"></i>
+                    <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
+                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
+<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+                        data-i18n="communityChat">شات المجتمع</span></a>
+                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                    <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
+                        style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
+                        data-i18n="achievements">الإنجازات</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
+                        data-i18n="settings">الإعدادات</span></a>
+                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
+                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+            </nav>
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
+                        style="width:16px;height:16px;"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarName">—</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
                 </div>
             </div>
-        </header>
+            <div class="sidebar-streak" id="sidebarStreak">
+                <span class="streak-fire">🔥</span>
+                <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم
+                        متواصل</span></span>
+            </div>
+        </aside>
+        <!-- Sidebar overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- CONTENT -->
-        <div class="dash-content" style="padding:0; overflow-y:auto;">
-            <div class="goh-layout">
-                <div class="goh-main-col">
-                    <!-- HERO -->
-                    <div class="goh-hero-content" style="margin-bottom: 40px;">
-                        <div class="goh-breadcrumb"><i data-lucide="star" class="nav-icon"></i> Guest of Honors</div>
-                        <h1>Learn From The Best.<br>Get Inspired. <span class="accent">Level Up.</span></h1>
-                        <p>Exclusive talks, insights and live sessions with top experts and industry leaders.</p>
-                        
-                        <div class="goh-stats">
-                        <div class="stat-item">
-                            <span class="stat-icon">👥</span>
-                            <div>
-                            <div class="stat-number" id="stat-guests">0</div>
-                            <div class="stat-label">Total Guests</div>
+        <!-- MAIN -->
+        <div class="dash-main">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <!-- Hamburger (mobile only) -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+                
+                <div class="topbar-actions">
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot"
+                                id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge"
+                                style="display:none;">0</span></button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
+                                        size="16"></i></button>
+                            </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
                             </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-icon">📅</span>
-                            <div>
-                            <div class="stat-number" id="stat-sessions">0</div>
-                            <div class="stat-label">Sessions This Month</div>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-icon">🔥</span>
-                            <div>
-                            <div class="stat-number" id="stat-attendees">0</div>
-                            <div class="stat-label">Total Attendees</div>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-icon"><i data-lucide="star" class="nav-icon"></i></span>
-                            <div>
-                            <div class="stat-number" id="stat-rating">0.0</div>
-                            <div class="stat-label">Average Rating</div>
-                            </div>
-                        </div>
-                        </div>
                     </div>
-
-                    <!-- TABS -->
-                    <div class="goh-tabs" style="padding:0; border-bottom: 1px solid #2a2a2a; margin-bottom: 32px;">
-                        <button class="tab active" onclick="switchTab('all')">All Guests</button>
-                        <button class="tab" onclick="switchTab('upcoming')">Upcoming</button>
-                        <button class="tab" onclick="switchTab('past')">Past Sessions</button>
-                        <button class="tab" onclick="switchTab('categories')">Categories</button>
-                        
-                        <select class="category-filter" onchange="filterByCategory(this.value)">
-                            <option>All Categories</option>
-                            <option>AI</option>
-                            <option>Tech</option>
-                            <option>Business</option>
-                        </select>
+                    <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user"
+                                style="width:16px;height:16px;"></i></div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                     </div>
-
-                    <!-- GUEST CARDS -->
-                    <div class="section-header" style="padding:0; margin-bottom: 32px; align-items: center;">
-                        <h2>Featured Guests</h2>
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <button class="goh-scroll-btn" onclick="scrollGuests(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                            <button class="goh-scroll-btn" onclick="scrollGuests(1)"><i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button>
-                            <a href="#" class="view-all" style="margin-left: 8px;">View All Guests →</a>
-                        </div>
-                    </div>
-
-                    <div class="guests-scroll" id="featured-guests" style="padding: 0 0 20px;">
-                        <!-- Generated by JS -->
-                    </div>
-
-                    <!-- SESSIONS -->
-                    <div class="section-header" style="padding:0; margin-bottom: 16px;">
-                        <h2>Upcoming Sessions</h2>
-                        <a href="#" class="view-all">View Full Schedule →</a>
-                    </div>
-
-                    <div class="sessions-grid" id="upcoming-sessions" style="padding: 0 0 40px;">
-                        <!-- Generated by JS -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span
+                                data-i18n="profile">الملف الشخصي</span></a>
+                        <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span
+                                data-i18n="settings">الإعدادات</span></a>
+                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
+                                style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل
+                                الخروج</span></button>
                     </div>
                 </div>
+            </header>
 
-                <div class="goh-sidebar-col">
-                    <!-- Featured Guest Card -->
-                    <div class="featured-guest-card" id="featuredHeroCard" style="display:none;">
-                    <div class="featured-label">Featured Guest</div>
-                    <img class="featured-avatar" id="heroAvatar" src="" alt="Guest" onerror="this.src='./imgs/ghawi-logo.png'"/>
-                    <h3 class="featured-name" id="heroName">...</h3>
-                    <p class="featured-title" id="heroTitle">...</p>
-                    <p class="featured-bio" id="heroBio">...</p>
-                    <div class="featured-meta">
-                        <span>Session <strong id="heroTotalSessions">0</strong></span>
-                        <span>Attendees <strong id="heroTotalAttendees">0</strong></span>
-                        <span>Rating <strong id="heroRating"><i data-lucide="star" class="nav-icon"></i> 0.0</strong></span>
+            <!-- CONTENT -->
+            <div class="dash-content" style="padding:0; overflow-y:auto;">
+                <div class="goh-layout">
+                    <div class="goh-main-col">
+                        <!-- HERO -->
+                        <div class="goh-hero-content" style="margin-bottom: 40px;">
+                            <div class="goh-breadcrumb"><i data-lucide="star" class="nav-icon"></i> Guest of Honors
+                            </div>
+                            <h1>Learn From The Best.<br>Get Inspired. <span class="accent">Level Up.</span></h1>
+                            <p>Exclusive talks, insights and live sessions with top experts and industry leaders.</p>
+
+                            <div class="goh-stats">
+                                <div class="stat-item">
+                                    <span class="stat-icon">👥</span>
+                                    <div>
+                                        <div class="stat-number" id="stat-guests">0</div>
+                                        <div class="stat-label">Total Guests</div>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-icon">📅</span>
+                                    <div>
+                                        <div class="stat-number" id="stat-sessions">0</div>
+                                        <div class="stat-label">Sessions This Month</div>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-icon">🔥</span>
+                                    <div>
+                                        <div class="stat-number" id="stat-attendees">0</div>
+                                        <div class="stat-label">Total Attendees</div>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-icon"><i data-lucide="star" class="nav-icon"></i></span>
+                                    <div>
+                                        <div class="stat-number" id="stat-rating">0.0</div>
+                                        <div class="stat-label">Average Rating</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABS -->
+                        <div class="goh-tabs" style="padding:0; border-bottom: 1px solid #2a2a2a; margin-bottom: 32px;">
+                            <button class="tab active" onclick="switchTab('all')">All Guests</button>
+                            <button class="tab" onclick="switchTab('upcoming')">Upcoming</button>
+                            <button class="tab" onclick="switchTab('past')">Past Sessions</button>
+                            <button class="tab" onclick="switchTab('categories')">Categories</button>
+
+                            <select class="category-filter" onchange="filterByCategory(this.value)">
+                                <option>All Categories</option>
+                                <option>AI</option>
+                                <option>Tech</option>
+                                <option>Business</option>
+                            </select>
+                        </div>
+
+                        <!-- GUEST CARDS -->
+                        <div class="section-header" style="padding:0; margin-bottom: 32px; align-items: center;">
+                            <h2>Featured Guests</h2>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <button class="goh-scroll-btn" onclick="scrollGuests(-1)"><i
+                                        class="fa-solid fa-chevron-left"></i></button>
+                                <button class="goh-scroll-btn" onclick="scrollGuests(1)"><i data-lucide="chevron-right"
+                                        style="width:12px;height:12px;"></i></button>
+                                <a href="#" class="view-all" style="margin-left: 8px;">View All Guests →</a>
+                            </div>
+                        </div>
+
+                        <div class="guests-scroll" id="featured-guests" style="padding: 0 0 20px;">
+                            <!-- Generated by JS -->
+                        </div>
+
+                        <!-- SESSIONS -->
+                        <div class="section-header" style="padding:0; margin-bottom: 16px;">
+                            <h2>Upcoming Sessions</h2>
+                            <a href="#" class="view-all">View Full Schedule →</a>
+                        </div>
+
+                        <div class="sessions-grid" id="upcoming-sessions" style="padding: 0 0 40px;">
+                            <!-- Generated by JS -->
+                        </div>
                     </div>
-                    <button class="btn-watch">▶ Watch Latest Session</button>
-                    
-                    <div class="what-youll-gain">
-                        <h4>What You'll Gain</h4>
-                        <ul>
-                        <li>✅ Learn from industry leaders</li>
-                        <li>✅ Get insider insights and strategies</li>
-                        <li>✅ Stay ahead with expert knowledge</li>
-                        <li>✅ Network with top learners</li>
-                        <li>✅ Real stories. Real impact.</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="suggest-guest-box">
-                        <h4>Suggest a Guest</h4>
-                        <p>Know someone inspiring? Let us know!</p>
-                        <button class="btn-suggest" onclick="openSuggestModal()">✈ Suggest Now</button>
-                    </div>
+
+                    <div class="goh-sidebar-col">
+                        <!-- Featured Guest Card -->
+                        <div class="featured-guest-card" id="featuredHeroCard" style="display:none;">
+                            <div class="featured-label">Featured Guest</div>
+                            <img class="featured-avatar" id="heroAvatar" src="" alt="Guest"
+                                onerror="this.src='./imgs/ghawi-logo.png'" />
+                            <h3 class="featured-name" id="heroName">...</h3>
+                            <p class="featured-title" id="heroTitle">...</p>
+                            <p class="featured-bio" id="heroBio">...</p>
+                            <div class="featured-meta">
+                                <span>Session <strong id="heroTotalSessions">0</strong></span>
+                                <span>Attendees <strong id="heroTotalAttendees">0</strong></span>
+                                <span>Rating <strong id="heroRating"><i data-lucide="star" class="nav-icon"></i>
+                                        0.0</strong></span>
+                            </div>
+                            <button class="btn-watch">▶ Watch Latest Session</button>
+
+                            <div class="what-youll-gain">
+                                <h4>What You'll Gain</h4>
+                                <ul>
+                                    <li>✅ Learn from industry leaders</li>
+                                    <li>✅ Get insider insights and strategies</li>
+                                    <li>✅ Stay ahead with expert knowledge</li>
+                                    <li>✅ Network with top learners</li>
+                                    <li>✅ Real stories. Real impact.</li>
+                                </ul>
+                            </div>
+
+                            <div class="suggest-guest-box">
+                                <h4>Suggest a Guest</h4>
+                                <p>Know someone inspiring? Let us know!</p>
+                                <button class="btn-suggest" onclick="openSuggestModal()">✈ Suggest Now</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="src/js/utils.js"></script>
-<script src="src/js/i18n.js"></script>
-<script src="src/js/goh.js"></script>
-<script>document.addEventListener('click',e=>{const d=document.getElementById('userDropdown');const u=document.getElementById('topbarUser');if(d&&!d.contains(e.target)&&!u.contains(e.target))d.classList.remove('open'); const np=document.getElementById('notifPanel');const nw=document.getElementById('notifWrapper');if(np&&nw&&!nw.contains(e.target))np.classList.remove('open');})</script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/i18n.js"></script>
+    <script src="src/js/goh.js"></script>
+    <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
 
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
+
 </html>

@@ -42,7 +42,7 @@ function initTabs() {
 
       const target = tab.dataset.tab;
       panels.forEach(p => p.style.display = 'none');
-      
+
       const targetPanel = document.getElementById(`tab-${target}`);
       if (targetPanel) targetPanel.style.display = 'block';
 
@@ -85,20 +85,20 @@ async function loadTeamPage() {
       const u = await res.json();
       const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       setTxt('sidebarName', u.full_name);
-      setTxt('sidebarBadge', u.badge || 'Member');
+      setTxt('sidebarBadge', getBadgeLabel(u.badge));
       setTxt('topbarName', u.full_name);
       setTxt('streakCount', u.streak_days || 0);
       ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
         const el = document.getElementById(id);
-        if (el && u.avatar_url) {
-          const fullUrl = u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url;
+        if (el) {
+          const fullUrl = window.getAvatarSrc(u);
           el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
         }
       });
     }
-  } catch (e) {}
+  } catch (e) { }
   await loadUsers();
-  
+
   // Set up listeners for Users tab
   document.getElementById('search-input')?.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') { currentPage = 1; loadUsersTab(); }
@@ -166,7 +166,7 @@ function renderTable() {
   tbody.innerHTML = paginated.map(user => {
     // Subscription type cell
     const subType = user.subscription_type || null;
-    const subCell = subType 
+    const subCell = subType
       ? `<span class="sub-badge ${subType}">${subType === 'monthly' ? '📅 Monthly' : '📆 Yearly'}</span>`
       : `<span class="sub-badge none">—</span>`;
 
@@ -177,10 +177,10 @@ function renderTable() {
       const days = user.days_until_charge;
       const isOverdue = days !== null && days < 0;
       const isSoon = days !== null && days <= 3 && days >= 0;
-      
+
       chargeCell = `
         <div class="charge-info">
-          <div class="charge-date">${nextDate.toLocaleDateString('en', {month:'short', day:'numeric', year:'numeric'})}</div>
+          <div class="charge-date">${nextDate.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
           <div class="charge-days ${isOverdue ? 'overdue' : isSoon ? 'soon' : ''}">
             ${isOverdue ? '⚠️ Overdue' : isSoon ? `⚡ ${days}d left` : `${days}d`}
           </div>
@@ -196,7 +196,7 @@ function renderTable() {
           <img src="${user.avatar_url || '/static/avatars/default.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
           <div>
             <div class="member-name">${escapeHtml(user.full_name)}</div>
-            <div class="member-badge">${user.badge || 'Member'}</div>
+            <div class="member-badge">${getBadgeLabel(user.badge)}</div>
           </div>
         </div>
       </td>
@@ -205,9 +205,9 @@ function renderTable() {
       <td class="text-secondary">${user.country || '—'}</td>
       <td>
         <div style="font-size:13px">${formatDate(user.created_at)}</div>
-        ${user.subscription_start ? 
-          `<div style="font-size:11px;color:#3f8ff9">💳 Since ${formatDate(user.subscription_start)}</div>` 
-          : ''}
+        ${user.subscription_start ?
+        `<div style="font-size:11px;color:#3f8ff9">💳 Since ${formatDate(user.subscription_start)}</div>`
+        : ''}
       </td>
       <td>${subCell}</td>
       <td>${chargeCell}</td>
@@ -224,9 +224,9 @@ function renderTable() {
       </td>
       <td>
         <div class="action-btns">
-          ${user.failed_charge_count > 0 ? 
-            `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)"><i data-lucide="alert-triangle" style="width:12px;height:12px;margin-right:2px;"></i>${user.failed_charge_count}</span>` 
-            : ''}
+          ${user.failed_charge_count > 0 ?
+        `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)"><i data-lucide="alert-triangle" style="width:12px;height:12px;margin-right:2px;"></i>${user.failed_charge_count}</span>`
+        : ''}
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
           <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
         </div>
@@ -247,7 +247,7 @@ async function loadRecurringStatus() {
     document.getElementById('rec-total').textContent = data.total_subscribers;
     document.getElementById('rec-due').textContent = data.due_now;
     document.getElementById('rec-soon').textContent = data.upcoming_7_days;
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function toggleRecurringPanel() {
@@ -277,7 +277,7 @@ async function triggerRecurring() {
     );
     await loadUsers();
     await loadRecurringStatus();
-  } catch(e) {
+  } catch (e) {
     showToast('❌ Failed to trigger recurring', 'error');
   }
 }
@@ -475,14 +475,6 @@ function goToPage(page) {
 // ── Helpers ───────────────────────────────────────────
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function showToast(message, type) {
-  const toast = document.createElement('div');
-  toast.className = `toast ${type || 'success'}`;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -490,7 +482,7 @@ function formatDate(dateStr) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function showTableLoading() {
@@ -540,13 +532,13 @@ async function loadPaymentStats() {
     document.getElementById('pay-stat-month').textContent = `EGP ${Number(d.this_month || 0).toLocaleString()}`;
     document.getElementById('pay-stat-failed').textContent = d.failed_count || 0;
     document.getElementById('pay-stat-pending').textContent = d.pending_count || 0;
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function loadPayments() {
   const tbody = document.getElementById('payments-tbody');
   // Skeleton
-  tbody.innerHTML = Array.from({length: 3}, () => `
+  tbody.innerHTML = Array.from({ length: 3 }, () => `
     <tr class="skeleton-row">
       <td><div class="skeleton-bar" style="width:120px"></div></td>
       <td><div class="skeleton-bar" style="width:100px"></div></td>
@@ -586,7 +578,7 @@ async function loadPayments() {
     }
 
     tbody.innerHTML = data.payments.map(p => {
-      const dateFormatted = p.date ? new Date(p.date).toLocaleDateString('en', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const dateFormatted = p.date ? new Date(p.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
       const statusClass = p.status || 'pending';
       const statusLabel = (p.status || 'pending').charAt(0).toUpperCase() + (p.status || 'pending').slice(1);
       const methodLabel = (p.method || '').charAt(0).toUpperCase() + (p.method || '').slice(1);
@@ -625,7 +617,7 @@ async function loadPayments() {
     // Pagination
     renderPaymentsPagination(data.page, data.pages);
     setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     showToast('❌ Failed to load payments: ' + e.message, 'error');
   }
@@ -661,7 +653,7 @@ async function retryPayment(id) {
       const d = await res.json();
       showToast(`❌ ${d.detail || 'Retry failed'}`, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     showToast('❌ Network error', 'error');
   }
 }
@@ -677,7 +669,7 @@ async function refundPayment(id) {
       const d = await res.json();
       showToast(`❌ ${d.detail || 'Refund failed'}`, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     showToast('❌ Network error', 'error');
   }
 }
@@ -696,7 +688,7 @@ function exportPaymentsCSV() {
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = blobUrl;
-    a.download = `ghawy_payments_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `ghawy_payments_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -756,7 +748,7 @@ async function loadKPIs() {
     document.getElementById('kpi-growth-rate').textContent = `${(d.growth_rate || 0).toFixed(1)}%`;
     document.getElementById('kpi-total-revenue').textContent = `EGP ${Number(d.total_revenue || 0).toLocaleString()}`;
     document.getElementById('kpi-churn-rate').textContent = `${(d.churn_rate || 0).toFixed(1)}%`;
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function loadMembersChart() {
@@ -793,7 +785,7 @@ async function loadMembersChart() {
       }
     });
     document.getElementById('chart-members').parentElement.style.height = '260px';
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function loadRevenueChart() {
@@ -835,7 +827,7 @@ async function loadRevenueChart() {
       }
     });
     document.getElementById('chart-revenue').parentElement.style.height = '260px';
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function loadSubsChart() {
@@ -884,7 +876,7 @@ async function loadSubsChart() {
         }
       }]
     });
-  } catch(e) {}
+  } catch (e) { }
 }
 
 
@@ -911,20 +903,20 @@ async function loadManualPaymentStats() {
         badge.style.display = 'none';
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 async function loadPendingRequestsTab() {
   const container = document.getElementById('mpr-cards-container');
   container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>`;
-  
+
   const status = document.getElementById('mpr-status-filter').value;
-  
+
   try {
     const res = await authFetch(`${API}/manual-payments?status=${status}&page=${mprCurrentPage}&limit=12`);
     if (!res.ok) throw new Error("Failed to load requests");
     const data = await res.json();
-    
+
     // Update labels and badges
     document.getElementById('mpr-count-label').innerText = `(${data.total})`;
     const badge = document.getElementById('pending-badge');
@@ -934,16 +926,16 @@ async function loadPendingRequestsTab() {
     } else {
       badge.style.display = 'none';
     }
-    
+
     if (data.requests.length === 0) {
       container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">No requests found.</div>`;
       document.getElementById('mpr-pagination').innerHTML = '';
       return;
     }
-    
+
     renderMprCards(data.requests, container);
     renderMprPagination(data.page, data.pages);
-    
+
   } catch (e) {
     container.innerHTML = `<div style="padding: 40px; text-align: center; color: #ef4444; grid-column: 1 / -1;">Error loading requests</div>`;
   }
@@ -951,17 +943,17 @@ async function loadPendingRequestsTab() {
 
 function renderMprCards(requests, container) {
   container.innerHTML = '';
-  
+
   requests.forEach(req => {
     const d = new Date(req.created_at);
-    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     let statusClass = 'pending';
     if (req.status === 'approved') statusClass = 'approved';
     if (req.status === 'rejected') statusClass = 'rejected';
-    
+
     let actionsHtml = '';
-    
+
     if (req.status === 'pending') {
       actionsHtml = `
         <button class="mpr-btn-approve" onclick="approveRequest(${req.id})"><i data-lucide="check"></i> Approve</button>
@@ -1023,18 +1015,18 @@ function renderMprPagination(page, pages) {
   const p = document.getElementById('mpr-pagination');
   p.innerHTML = '';
   if (pages <= 1) return;
-  
+
   if (page > 1) {
     const b = document.createElement('button');
     b.innerText = 'Prev';
     b.onclick = () => { mprCurrentPage--; loadPendingRequestsTab(); };
     p.appendChild(b);
   }
-  
+
   const span = document.createElement('span');
   span.innerText = `Page ${page} of ${pages}`;
   p.appendChild(span);
-  
+
   if (page < pages) {
     const b = document.createElement('button');
     b.innerText = 'Next';
@@ -1050,7 +1042,7 @@ async function approveRequest(id) {
       const data = await res.json();
       if (data.whatsapp_url) {
         window.open(data.whatsapp_url, '_blank');
-        showToast("تم الموافقة! جاري فتح واتساب...", "success");
+        showToast("Approved! Opening WhatsApp...", "success");
       } else {
         showToast("Request approved! No phone number provided for WhatsApp.", "success");
       }
@@ -1077,14 +1069,14 @@ async function submitRejectRequest() {
     showToast("Please provide a reason", "error");
     return;
   }
-  
+
   try {
     const res = await authFetch(`${API}/manual-payments/${currentRejectId}/reject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason })
     });
-    
+
     if (res.ok) {
       showToast("Request rejected. Email sent.", "success");
       closeModal('reject-modal');
@@ -1432,15 +1424,15 @@ function renderCourses() {
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
           ${thumbSrc
-            ? `<img src="${thumbSrc}" style="width:80px;height:45px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        ? `<img src="${thumbSrc}" style="width:80px;height:45px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                <div style="display:none;width:80px;height:45px;border-radius:4px;background:#222;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
-            : `<div style="width:80px;height:45px;border-radius:4px;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
-          }
+        : `<div style="width:80px;height:45px;border-radius:4px;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
+      }
           <button class="btn-action" style="font-size:11px;padding:3px 6px;" onclick="uploadCourseThumbnail(${c.id})" title="Upload thumbnail"><i class="fa-solid fa-image"></i></button>
           <input type="file" id="course-thumb-upload-${c.id}" accept="image/*" style="display:none" onchange="handleCourseThumbSelected(event, ${c.id})">
         </div>
       </td>
-      <td><strong>${escapeHtml(c.title)}</strong><br><small style="color:#888;">${escapeHtml((c.description||'').substring(0,30))}...</small></td>
+      <td><strong>${escapeHtml(c.title)}</strong><br><small style="color:#888;">${escapeHtml((c.description || '').substring(0, 30))}...</small></td>
       <td>${c.total_lessons || 0} lessons</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
@@ -1498,7 +1490,7 @@ async function submitAddCourse() {
     is_published: false
   };
   if (!data.title) return showToast('Title is required', 'error');
-  
+
   try {
     const res = await fetch(API + '/courses/admin/courses', {
       method: 'POST',
@@ -1576,7 +1568,7 @@ async function handleCoursePdfSelected(event, courseId) {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-pdf`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
@@ -1586,7 +1578,7 @@ async function handleCoursePdfSelected(event, courseId) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.detail || 'Upload failed');
     }
-    
+
     showToast('Course PDF uploaded successfully!', 'success');
     loadCoursesTab();
   } catch (e) {
@@ -1609,7 +1601,7 @@ async function handleCourseThumbSelected(event, courseId) {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-thumbnail`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
@@ -1619,7 +1611,7 @@ async function handleCourseThumbSelected(event, courseId) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.detail || 'Upload failed');
     }
-    
+
     showToast('Thumbnail uploaded successfully!', 'success');
     loadCoursesTab();
   } catch (e) {
@@ -1676,11 +1668,11 @@ function renderLessons() {
     else statHtml = '<span class="video-badge pending"><span class="dot"></span>Pending</span>';
 
     const hasPdf = !!l.pdf_url;
-    
+
     return `
     <tr>
       <td style="color:#888;">${l.order}</td>
-      <td><strong>${escapeHtml(l.title)}</strong><br><small style="color:#888;">${escapeHtml(l.section_title||'')}</small></td>
+      <td><strong>${escapeHtml(l.title)}</strong><br><small style="color:#888;">${escapeHtml(l.section_title || '')}</small></td>
       <td>${l.duration_minutes} min</td>
       <td id="status-cell-${l.id}">${statHtml}</td>
       <td>
@@ -1704,9 +1696,9 @@ function startLessonStatusPolling() {
   uploadPollInterval = setInterval(async () => {
     const processingLessons = lessonsCache.filter(l => l.video_status === 'processing' || l.video_status === 'pending');
     if (processingLessons.length === 0) return;
-    
+
     for (let l of processingLessons) {
-      if(!l.cloudflare_video_id) continue;
+      if (!l.cloudflare_video_id) continue;
       try {
         const res = await fetch(API + `/courses/admin/lessons/${l.id}/status`, { headers });
         if (res.ok) {
@@ -1736,7 +1728,7 @@ async function handlePdfSelected(event, lessonId) {
     const res = await fetch(API + `/courses/admin/lessons/${lessonId}/pdf`, { method: 'POST', headers });
     if (!res.ok) throw new Error('Failed to get upload URL');
     const data = await res.json();
-    
+
     showToast('Uploading to R2...', 'info');
     const putRes = await fetch(data.upload_url, {
       method: 'PUT',
@@ -1744,7 +1736,7 @@ async function handlePdfSelected(event, lessonId) {
       body: file
     });
     if (!putRes.ok) throw new Error('Upload to R2 failed');
-    
+
     showToast('Saving PDF link...', 'info');
     const patchRes = await fetch(API + `/courses/admin/lessons/${lessonId}`, {
       method: 'PATCH',
@@ -1752,7 +1744,7 @@ async function handlePdfSelected(event, lessonId) {
       body: JSON.stringify({ pdf_url: data.public_url })
     });
     if (!patchRes.ok) throw new Error('Failed to save link');
-    
+
     showToast('PDF uploaded successfully!', 'success');
     loadLessons();
   } catch (e) {
@@ -1768,7 +1760,7 @@ function openAddLessonModal() {
   document.getElementById('lesson-section').value = '';
   document.getElementById('lesson-order').value = lessonsCache.length + 1;
   document.getElementById('lesson-video-url').value = '';
-  
+
   document.getElementById('addLessonSubmitBtn').disabled = false;
   document.getElementById('add-lesson-modal').style.display = 'flex';
 }
@@ -1789,7 +1781,7 @@ async function submitAddLesson() {
 
   const bunnyPatterns = ['mediadelivery.net', 'b-cdn.net'];
   if (!bunnyPatterns.some(p => videoUrl.includes(p))) {
-    return showToast('الرابط يجب أن يكون من Bunny.net', 'error');
+    return showToast('Link must be from Bunny.net', 'error');
   }
 
   const btn = document.getElementById('addLessonSubmitBtn');
@@ -1804,9 +1796,9 @@ async function submitAddLesson() {
         title, section_title: section, order, bunny_video_url: videoUrl
       })
     });
-    
+
     if (!res.ok) throw new Error('Failed to create lesson');
-    
+
     closeModal('add-lesson-modal');
     showToast('Lesson created successfully!', 'success');
     loadLessons();
@@ -1820,7 +1812,7 @@ async function submitAddLesson() {
 
 function openEditLessonModal(id) {
   const l = lessonsCache.find(x => x.id === id);
-  if(!l) return;
+  if (!l) return;
   document.getElementById('edit-lesson-id').value = l.id;
   document.getElementById('edit-lesson-title').value = l.title;
   document.getElementById('edit-lesson-section').value = l.section_title || '';
@@ -1835,13 +1827,13 @@ async function submitEditLesson() {
   let videoUrl = document.getElementById('edit-lesson-video-url').value.trim();
   const srcMatch = videoUrl.match(/src="([^"]+)"/);
   if (srcMatch) videoUrl = srcMatch[1];
-  
+
   let status = document.getElementById('edit-lesson-status').value;
   // Auto update status based on URL if not explicitly changed or if it makes sense
   if (videoUrl && status === 'pending' && !lessonsCache.find(x => x.id == id)?.bunny_video_url) {
-      status = 'ready';
+    status = 'ready';
   } else if (!videoUrl) {
-      status = 'pending';
+    status = 'pending';
   }
 
   try {

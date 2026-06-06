@@ -1,4 +1,4 @@
-// لو عنده token بالفعل — وجهه للصفحة المناسبة
+// If a token already exists — redirect user to the appropriate page
 (async function checkExistingToken() {
   // Fail-safe: extract token if it got caught in the redirect param (e.g. from cached dashboard.html)
   const urlParams = new URLSearchParams(window.location.search);
@@ -26,13 +26,13 @@
       headers: { 'Authorization': `Bearer ${t}` }
     });
 
-    // Token فاسد أو منتهي
+    // Token expired or invalid
     if (profileRes.status === 401) {
       localStorage.removeItem('token');
       return;
     }
 
-    // المستخدم مش active — وجهه للدفع
+    // User not active — redirect to payment
     if (profileRes.status === 403) {
       window.location.href = 'payment.html';
       return;
@@ -57,7 +57,7 @@ async function login() {
   const password = document.getElementById('password').value;
 
   if (!email || !password) {
-    showAlert('من فضلك اكمل كل الحقول', 'error');
+    showAlert('Please fill all fields', 'error');
     return;
   }
 
@@ -75,22 +75,22 @@ async function login() {
     if (res.ok) {
       saveToken(data.access_token);
 
-      // حفظ بيانات اليوزر في localStorage
+      // Save user data in localStorage
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      showAlert('تم الدخول بنجاح! ✅ جاري تحويلك...', 'success');
+      showAlert('Logged in successfully! ✅ Redirecting...', 'success');
 
       let redirect = 'onboarding.html';
       
-      // أولاً: لو في رابط رجوع (redirect parameter) نستخدمه (بشرط ما يكونش تسجيل دخول أو رجوع غير آمن)
+      // First: if there's a redirect parameter, use it (as long as it's not login/register)
       const urlParams = new URLSearchParams(window.location.search);
       let redirectParam = urlParams.get('redirect');
       if (redirectParam && !redirectParam.includes('login') && redirectParam.startsWith('/')) {
-        redirect = redirectParam.split('?')[0]; // نأخذ الرابط النظيف بدون توكنات
+        redirect = redirectParam.split('?')[0]; // strip extra query string
       } else {
-        // ثانياً: لو مفيش، نحدد بناءً على حالة الحساب
+        // Second: determine based on account state
         if (data.user) {
           if (!data.user.is_active) {
             redirect = 'payment.html';
@@ -102,11 +102,11 @@ async function login() {
 
       setTimeout(() => { window.location.href = redirect; }, 1200);
     } else {
-      showAlert(data.detail || 'إيميل أو باسورد غلط', 'error');
+      showAlert(data.detail || 'Invalid email or password', 'error');
     }
 
   } catch {
-    showAlert('مفيش اتصال بالـ server', 'error');
+    showAlert('No connection to server', 'error');
   } finally {
     setLoading('loginBtn', false);
   }

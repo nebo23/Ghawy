@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 import enum
@@ -52,6 +52,12 @@ class PaymentRequestStatus(str, enum.Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+
+class AiUpdatePostType(str, enum.Enum):
+    TEXT = "text"
+    VIDEO = "video"
+    PHOTO = "photo"
+    POLL = "poll"
 
 # ═══════════════════════════════════════════
 #  USER
@@ -543,3 +549,114 @@ class ManualPaymentRequest(Base):
     rejection_reason = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
+# ═══════════════════════════════════════════
+#  AI UPDATES (Standalone Section)
+# ═══════════════════════════════════════════
+
+class AiUpdatePost(Base):
+    __tablename__ = "ai_update_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_type = Column(Enum(AiUpdatePostType), nullable=False, default=AiUpdatePostType.TEXT)
+    title = Column(String(120), nullable=False)
+    body = Column(Text, nullable=False)
+    image_url = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    is_pinned = Column(Boolean, default=False)
+    
+    # Denormalized counts
+    like_count = Column(Integer, default=0)
+    comment_count = Column(Integer, default=0)
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    author = relationship("User")
+    reactions = relationship("AiUpdateReaction", back_populates="post", cascade="all, delete-orphan")
+    comments = relationship("AiUpdateComment", back_populates="post", cascade="all, delete-orphan")
+    poll = relationship("AiUpdatePoll", back_populates="post", uselist=False, cascade="all, delete-orphan")
+
+
+class AiUpdatePoll(Base):
+    __tablename__ = "ai_update_polls"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("ai_update_posts.id", ondelete="CASCADE"), nullable=False, unique=True)
+    question = Column(String, nullable=False)
+    total_votes = Column(Integer, default=0)
+
+    post = relationship("AiUpdatePost", back_populates="poll")
+    options = relationship("AiUpdatePollOption", back_populates="poll", cascade="all, delete-orphan", order_by="AiUpdatePollOption.id")
+    votes = relationship("AiUpdatePollVote", back_populates="poll", cascade="all, delete-orphan")
+
+
+class AiUpdatePollOption(Base):
+    __tablename__ = "ai_update_poll_options"
+
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("ai_update_polls.id", ondelete="CASCADE"), nullable=False)
+    text = Column(String, nullable=False)
+    votes_count = Column(Integer, default=0)
+
+    poll = relationship("AiUpdatePoll", back_populates="options")
+    votes = relationship("AiUpdatePollVote", back_populates="option", cascade="all, delete-orphan")
+
+
+class AiUpdatePollVote(Base):
+    __tablename__ = "ai_update_poll_votes"
+    __table_args__ = (UniqueConstraint('poll_id', 'user_id'),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("ai_update_polls.id", ondelete="CASCADE"), nullable=False)
+    option_id = Column(Integer, ForeignKey("ai_update_poll_options.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    poll = relationship("AiUpdatePoll", back_populates="votes")
+    option = relationship("AiUpdatePollOption", back_populates="votes")
+    user = relationship("User")
+
+
+class AiUpdateReaction(Base):
+    __tablename__ = "ai_update_reactions"
+    __table_args__ = (UniqueConstraint('post_id', 'user_id'),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("ai_update_posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    post = relationship("AiUpdatePost", back_populates="reactions")
+    user = relationship("User")
+
+
+class AiUpdateComment(Base):
+    __tablename__ = "ai_update_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("ai_update_posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("ai_update_comments.id", ondelete="CASCADE"), nullable=True)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    post = relationship("AiUpdatePost", back_populates="comments")
+    author = relationship("User")
+    replies = relationship("AiUpdateComment", backref=backref("parent", remote_side=[id]), cascade="all, delete-orphan")
+
+
+class CourseReview(Base):
+    __tablename__ = "course_reviews"
+    __table_args__ = (UniqueConstraint('course_id', 'user_id'),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    rating = Column(Integer, nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    course = relationship("Course", backref=backref("reviews", cascade="all, delete-orphan"))
+    user = relationship("User")

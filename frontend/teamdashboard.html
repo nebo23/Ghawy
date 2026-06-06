@@ -767,7 +767,9 @@
             data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
         <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
             data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-        <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+                        <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
+                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
+<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
             data-i18n="communityChat">شات المجتمع</span></a>
         <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
           <span>Direct
@@ -801,8 +803,7 @@
       <header class="dash-topbar">
         <button class="hamburger-btn" id="hamburgerBtn"
           aria-label="Open menu"><span></span><span></span><span></span></button>
-        <div class="topbar-search"><i data-lucide="search" size="16"></i><input type="text" placeholder="Search..."
-            id="topbarSearchInput" /><kbd>⌘K</kbd></div>
+        
         <div class="topbar-actions">
           <div class="notif-wrapper" id="notifWrapper">
             <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i
@@ -1519,8 +1520,11 @@
         </div>
         <div class="fg" style="display:flex; flex-direction:column; gap:8px;">
           <label>رابط الفيديو من Bunny.net Stream *</label>
-          <input type="url" id="lesson-video-url" placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID" style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
-          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الفيديو → Embed → انسخ الـ iframe src</small>
+          <input type="url" id="lesson-video-url"
+            placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
+            style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
+          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الفيديو → Embed → انسخ الـ
+            iframe src</small>
         </div>
       </div>
       <div class="modal-footer-team">
@@ -1541,14 +1545,16 @@
         <div class="fg"><label>Title</label><input type="text" id="edit-lesson-title" /></div>
         <div class="fg"><label>Section</label><input type="text" id="edit-lesson-section" /></div>
         <div class="fg"><label>Video Status</label>
-          <select id="edit-lesson-status" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;">
+          <select id="edit-lesson-status"
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;">
             <option value="pending">Pending</option>
             <option value="ready">Ready</option>
           </select>
         </div>
         <div class="fg">
           <label>Video URL (Bunny.net)</label>
-          <input type="url" id="edit-lesson-video-url" style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
+          <input type="url" id="edit-lesson-video-url"
+            style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
         </div>
         <div style="display:flex;gap:12px;">
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="edit-lesson-order" /></div>

@@ -17,7 +17,10 @@
 
 <body>
   <!-- Back Button -->
-  <a href="index.html" style="position: absolute; top: 20px; left: 20px; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; font-family: Cairo, sans-serif; font-size: 0.95rem; font-weight: 700; z-index: 20; background: #1a1a1a; padding: 8px 16px; border-radius: 20px; transition: all 0.3s;" onmouseover="this.style.background='#c1ff11'; this.style.color='#000';" onmouseout="this.style.background='#1a1a1a'; this.style.color='#fff';">
+  <a href="index.html"
+    style="position: absolute; top: 20px; left: 20px; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; font-family: Cairo, sans-serif; font-size: 0.95rem; font-weight: 700; z-index: 20; background: #1a1a1a; padding: 8px 16px; border-radius: 20px; transition: all 0.3s;"
+    onmouseover="this.style.background='#c1ff11'; this.style.color='#000';"
+    onmouseout="this.style.background='#1a1a1a'; this.style.color='#fff';">
     <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> رجوع
   </a>
 
@@ -38,10 +41,13 @@
     <div class="field">
       <label data-i18n="currentPassword">كلمة المرور</label>
       <div style="position: relative;">
-        <input type="password" id="password" data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" dir="ltr"
-          class="cyan-focus" style="padding-left: 40px; width: 100%; box-sizing: border-box;" />
-        <button type="button" onclick="togglePassword()" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #888; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;" tabindex="-1" title="عرض كلمة المرور">
-          <span id="toggleIconContainer" style="display: flex; align-items: center; justify-content: center;"><i data-lucide="eye" style="width: 20px; height: 20px;"></i></span>
+        <input type="password" id="password" data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••"
+          dir="ltr" class="cyan-focus" style="padding-left: 40px; width: 100%; box-sizing: border-box;" />
+        <button type="button" onclick="togglePassword()"
+          style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #888; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;"
+          tabindex="-1" title="عرض كلمة المرور">
+          <span id="toggleIconContainer" style="display: flex; align-items: center; justify-content: center;"><i
+              data-lucide="eye" style="width: 20px; height: 20px;"></i></span>
         </button>
       </div>
     </div>
@@ -90,7 +96,7 @@
     function togglePassword() {
       const passwordInput = document.getElementById('password');
       const iconContainer = document.getElementById('toggleIconContainer');
-      
+
       if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         iconContainer.innerHTML = '<i data-lucide="eye-off" style="width: 20px; height: 20px;"></i>';

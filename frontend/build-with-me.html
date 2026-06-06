@@ -1,264 +1,291 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Build With Me (Live) — Ghawy</title>
-    <meta name="description" content="Ghawy Dashboard — Build With Me Live Sessions"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png"/>
-    <link rel="stylesheet" href="src/css/dashboard.css"/>
-    <link rel="stylesheet" href="src/css/bwm.css"/>
-    
-<script>
-  (function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var urlToken = urlParams.get("token");
-    if (urlToken) {
-      localStorage.setItem("token", urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    var t = localStorage.getItem("token");
-    if (!t) {
-      window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
-      return;
-    }
-    try {
-      var uStr = localStorage.getItem("user");
-      if (uStr) {
-        var u = JSON.parse(uStr);
-        if (u && (u.is_active === false || u.subscription_type === 'none')) {
-          window.location.replace("/payment.html?reason=access_required");
-        }
-      }
-    } catch(e) {}
-  })();
-</script>
+    <meta name="description" content="Ghawy Dashboard — Build With Me Live Sessions" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="stylesheet" href="src/css/dashboard.css" />
+    <link rel="stylesheet" href="src/css/bwm.css" />
+
+    <script>
+        (function () {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlToken = urlParams.get("token");
+            if (urlToken) {
+                localStorage.setItem("token", urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            var t = localStorage.getItem("token");
+            if (!t) {
+                window.location.replace("/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+                return;
+            }
+            try {
+                var uStr = localStorage.getItem("user");
+                if (uStr) {
+                    var u = JSON.parse(uStr);
+                    if (u && (u.is_active === false || u.subscription_type === 'none')) {
+                        window.location.replace("/payment.html?reason=access_required");
+                    }
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
+
 <body>
-<div class="dash-layout">
-    <!-- SIDEBAR -->
-    <aside class="dash-sidebar" id="dashSidebar">
-        <div class="sidebar-logo">
-            <img src="./imgs/ghawi-logo.png" alt="Ghawy"/>
-            <span>Ghawy</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span data-i18n="dashboard">الرئيسية</span></a>
-            <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span data-i18n="courses">الكورسات</span></a>
-            <a href="build-with-me.html" class="nav-item active"><i data-lucide="play-circle" class="nav-icon"></i> <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
-            <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-            <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span data-i18n="communityChat">شات المجتمع</span></a>
-            <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i> <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge" style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-            <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span data-i18n="achievements">الإنجازات</span></a>
-            <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-            <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users" class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
-        </nav>
-        <div class="sidebar-user" id="sidebarUser">
-            <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="sidebarName">—</div>
-                <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+    <div class="dash-layout">
+        <!-- SIDEBAR -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-logo">
+                <img src="./imgs/ghawi-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
-        </div>
-        <div class="sidebar-streak" id="sidebarStreak">
-            <span class="streak-fire">🔥</span>
-            <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span>
-        </div>
-    </aside>
-    <!-- Sidebar overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- MAIN -->
-    <div class="dash-main">
-        <!-- TOPBAR -->
-        <header class="dash-topbar">
-            <!-- Hamburger (mobile only) -->
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="topbar-search">
-                <i data-lucide="search" size="16"></i>
-                <input type="text" data-i18n-placeholder="searchGeneral" placeholder="بحث..." id="topbarSearchInput"/>
-                <kbd>⌘K</kbd>
-            </div>
-            <div class="topbar-actions">
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x" size="16"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-                <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
-                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i></div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span data-i18n="profile">الملف الشخصي</span></a>
-                    <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span data-i18n="settings">الإعدادات</span></a>
-                    <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل الخروج</span></button>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
+                        data-i18n="dashboard">الرئيسية</span></a>
+                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
+                        data-i18n="courses">الكورسات</span></a>
+                <a href="build-with-me.html" class="nav-item active"><i data-lucide="play-circle" class="nav-icon"></i>
+                    <span data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
+                        data-i18n="guestOfHonors">ضيوف الشرف</span></a>
+                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
+                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
+<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+                        data-i18n="communityChat">شات المجتمع</span></a>
+                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                    <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
+                        style="display:none; margin-left:auto; margin-right:4px;"></span></a>
+                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
+                        data-i18n="achievements">الإنجازات</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
+                        data-i18n="settings">الإعدادات</span></a>
+                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
+                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+            </nav>
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
+                        style="width:16px;height:16px;"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarName">—</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
                 </div>
             </div>
-        </header>
+            <div class="sidebar-streak" id="sidebarStreak">
+                <span class="streak-fire">🔥</span>
+                <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم
+                        متواصل</span></span>
+            </div>
+        </aside>
+        <!-- Sidebar overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- CONTENT -->
-        <div class="dash-content bwm-scroll">
-            <div class="bwm-layout">
-                <!-- LEFT MAIN COLUMN -->
-                <div class="bwm-main-col">
-                    
-                    <!-- HERO SECTION -->
-                    <div class="bwm-hero">
-                        <div class="bwm-breadcrumb"><i class="fa-solid fa-cube"></i> Build With Me (Live)</div>
-                        <h1>Build With Me <span class="accent">Live</span></h1>
-                        <p>Learn real skills by building real projects live with experts.</p>
-                        
-                        <div class="bwm-stats">
-                            <div class="stat-box">
-                                <div class="stat-icon"><i data-lucide="play-circle" class="nav-icon"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-label">Live Sessions</span>
-                                    <span class="stat-value" id="statSessions">0</span>
-                                </div>
+        <!-- MAIN -->
+        <div class="dash-main">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <!-- Hamburger (mobile only) -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+                
+                <div class="topbar-actions">
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications"><i data-lucide="bell" size="18"></i><span class="notif-dot"
+                                id="notifDot" style="display:none;"></span><span class="notif-badge" id="notifBadge"
+                                style="display:none;">0</span></button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
+                                        size="16"></i></button>
                             </div>
-                            <div class="stat-box">
-                                <div class="stat-icon"><i class="fa-regular fa-clock"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-label">Hours Streamed</span>
-                                    <span class="stat-value" id="statHours">0+</span>
-                                </div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-label">Projects Built</span>
-                                    <span class="stat-value" id="statProjects">0</span>
-                                </div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-label">Active Learners</span>
-                                    <span class="stat-value" id="statLearners">0</span>
-                                </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- TABS -->
-                    <div class="bwm-tabs">
-                        <button class="tab active" data-tab="upcoming">Upcoming</button>
-                        <button class="tab" data-tab="past">Past Sessions</button>
-                        <button class="tab" data-tab="booked">My Registrations</button>
+                    <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user"
+                                style="width:16px;height:16px;"></i></div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                     </div>
-
-                    <!-- TAB CONTENT AREA -->
-                    <div class="bwm-tab-content" id="bwmTabContent">
-                        <!-- Loaded dynamically via JS -->
-                        <div class="bwm-loading">
-                            <i class="fa-solid fa-circle-notch fa-spin"></i> Loading sessions...
-                        </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span
+                                data-i18n="profile">الملف الشخصي</span></a>
+                        <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span
+                                data-i18n="settings">الإعدادات</span></a>
+                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
+                                style="width:16px;height:16px;"></i> <span data-i18n="logout">تسجيل
+                                الخروج</span></button>
                     </div>
-
                 </div>
+            </header>
 
-                <!-- RIGHT SIDEBAR COLUMN -->
-                <div class="bwm-sidebar-col">
-                    
-                    <!-- CALENDAR WIDGET -->
-                    <div class="bwm-widget">
-                        <div class="widget-header">
-                            <h3>Live Schedule</h3>
-                            <button class="btn-text">View Calendar</button>
+            <!-- CONTENT -->
+            <div class="dash-content bwm-scroll">
+                <div class="bwm-layout">
+                    <!-- LEFT MAIN COLUMN -->
+                    <div class="bwm-main-col">
+
+                        <!-- HERO SECTION -->
+                        <div class="bwm-hero">
+                            <div class="bwm-breadcrumb"><i class="fa-solid fa-cube"></i> Build With Me (Live)</div>
+                            <h1>Build With Me <span class="accent">Live</span></h1>
+                            <p>Learn real skills by building real projects live with experts.</p>
+
+                            <div class="bwm-stats">
+                                <div class="stat-box">
+                                    <div class="stat-icon"><i data-lucide="play-circle" class="nav-icon"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Live Sessions</span>
+                                        <span class="stat-value" id="statSessions">0</span>
+                                    </div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-icon"><i class="fa-regular fa-clock"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Hours Streamed</span>
+                                        <span class="stat-value" id="statHours">0+</span>
+                                    </div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Projects Built</span>
+                                        <span class="stat-value" id="statProjects">0</span>
+                                    </div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Active Learners</span>
+                                        <span class="stat-value" id="statLearners">0</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="calendar-nav">
-                            <button class="cal-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                            <span class="cal-month">May 2024</span>
-                            <button class="cal-nav-btn"><i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button>
+
+                        <!-- TABS -->
+                        <div class="bwm-tabs">
+                            <button class="tab active" data-tab="upcoming">Upcoming</button>
+                            <button class="tab" data-tab="past">Past Sessions</button>
+                            <button class="tab" data-tab="booked">My Registrations</button>
                         </div>
-                        <div class="calendar-days" id="calendarDays">
-                            <!-- Populated via JS -->
+
+                        <!-- TAB CONTENT AREA -->
+                        <div class="bwm-tab-content" id="bwmTabContent">
+                            <!-- Loaded dynamically via JS -->
+                            <div class="bwm-loading">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading sessions...
+                            </div>
                         </div>
-                        
-                        <div class="schedule-list" id="scheduleList">
-                            <!-- Populated via JS -->
-                        </div>
+
                     </div>
 
-                    <!-- TOP PROJECTS WIDGET -->
-                    <div class="bwm-widget">
-                        <div class="widget-header">
-                            <h3>Top Projects Built Live</h3>
-                            <button class="btn-text">View All</button>
-                        </div>
-                        <div class="projects-list" id="topProjectsList">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
+                    <!-- RIGHT SIDEBAR COLUMN -->
+                    <div class="bwm-sidebar-col">
 
-                    <!-- CTA WIDGET -->
-                    <div class="bwm-cta-widget">
-                        <h3>Can't Join Live?</h3>
-                        <p>Watch the recording or access the complete resources after the session.</p>
-                        <button class="btn-outline-accent"><i class="fa-regular fa-circle-play"></i> Browse Recordings</button>
-                    </div>
+                        <!-- CALENDAR WIDGET -->
+                        <div class="bwm-widget">
+                            <div class="widget-header">
+                                <h3>Live Schedule</h3>
+                                <button class="btn-text">View Calendar</button>
+                            </div>
+                            <div class="calendar-nav">
+                                <button class="cal-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span class="cal-month">May 2024</span>
+                                <button class="cal-nav-btn"><i data-lucide="chevron-right"
+                                        style="width:12px;height:12px;"></i></button>
+                            </div>
+                            <div class="calendar-days" id="calendarDays">
+                                <!-- Populated via JS -->
+                            </div>
 
+                            <div class="schedule-list" id="scheduleList">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+
+                        <!-- TOP PROJECTS WIDGET -->
+                        <div class="bwm-widget">
+                            <div class="widget-header">
+                                <h3>Top Projects Built Live</h3>
+                                <button class="btn-text">View All</button>
+                            </div>
+                            <div class="projects-list" id="topProjectsList">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+
+                        <!-- CTA WIDGET -->
+                        <div class="bwm-cta-widget">
+                            <h3>Can't Join Live?</h3>
+                            <p>Watch the recording or access the complete resources after the session.</p>
+                            <button class="btn-outline-accent"><i class="fa-regular fa-circle-play"></i> Browse
+                                Recordings</button>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="src/js/i18n.js"></script>
-<script src="src/js/utils.js"></script>
-<script src="src/js/bwm.js"></script>
-<script>document.addEventListener('click',e=>{const d=document.getElementById('userDropdown');const u=document.getElementById('topbarUser');if(d&&!d.contains(e.target)&&!u.contains(e.target))d.classList.remove('open'); const np=document.getElementById('notifPanel');const nw=document.getElementById('notifWrapper');if(np&&nw&&!nw.contains(e.target))np.classList.remove('open');})</script>
-<script>
-    // Auth guard
-    const token = localStorage.getItem('token');
-    if (!token) window.location.href = 'login.html';
-    const headers = { 'Authorization': 'Bearer ' + token };
-    // Load user info
-    (async function() {
-        try {
-            const res = await fetch(API + '/profile/me', { headers });
-            if (!res.ok) return;
-            const u = await res.json();
-            const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-            setTxt('sidebarName', u.full_name);
-            setTxt('topbarName', u.full_name);
-            setTxt('sidebarBadge', u.badge || 'Member');
-            setTxt('streakCount', u.streak_days || 0);
-            ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el && u.avatar_url) el.innerHTML = '<img src="' + u.avatar_url + '" alt=""/>';
-            });
-        } catch(e) {}
-    })();
-    // Hamburger
-    const hb = document.getElementById('hamburgerBtn');
-    const sb = document.getElementById('dashSidebar');
-    const ov = document.getElementById('sidebarOverlay');
-    if (hb) hb.addEventListener('click', () => { sb.classList.toggle('open'); ov.classList.toggle('visible'); });
-    if (ov) ov.addEventListener('click', () => { sb.classList.remove('open'); ov.classList.remove('visible'); });
-</script>
+    <script src="src/js/i18n.js"></script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/bwm.js"></script>
+    <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
+    <script>
+        // Auth guard
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+        const headers = { 'Authorization': 'Bearer ' + token };
+        // Load user info
+        (async function () {
+            try {
+                const res = await fetch(API + '/profile/me', { headers });
+                if (!res.ok) return;
+                const u = await res.json();
+                const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                setTxt('sidebarName', u.full_name);
+                setTxt('topbarName', u.full_name);
+                setTxt('sidebarBadge', u.badge || 'Member');
+                setTxt('streakCount', u.streak_days || 0);
+                ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && u.avatar_url) el.innerHTML = '<img src="' + u.avatar_url + '" alt=""/>';
+                });
+            } catch (e) { }
+        })();
+        // Hamburger
+        const hb = document.getElementById('hamburgerBtn');
+        const sb = document.getElementById('dashSidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        if (hb) hb.addEventListener('click', () => { sb.classList.toggle('open'); ov.classList.toggle('visible'); });
+        if (ov) ov.addEventListener('click', () => { sb.classList.remove('open'); ov.classList.remove('visible'); });
+    </script>
 
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
+
 </html>

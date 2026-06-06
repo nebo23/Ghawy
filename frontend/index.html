@@ -44,161 +44,182 @@
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
-<style id="rtlLtrLayoutSystem">
-/* ═══════════════════════════════════
+    <style id="rtlLtrLayoutSystem">
+        /* ═══════════════════════════════════
    RTL / LTR LAYOUT SYSTEM
    ═══════════════════════════════════ */
 
-/* ─── Transition for smooth switching ─── */
-.hero-split,
-.features-section,
-.premium-courses-section,
-.story-section,
-.premium-reviews-section,
-.pricing-section,
-.main-nav,
-footer {
-  transition: direction 0s;
-}
+        /* ─── Transition for smooth switching ─── */
+        .hero-split,
+        .features-section,
+        .premium-courses-section,
+        .story-section,
+        .premium-reviews-section,
+        .pricing-section,
+        .main-nav,
+        footer {
+            transition: direction 0s;
+        }
 
-/* ─── NAVBAR ─── */
-[dir="rtl"] .main-nav {
-  flex-direction: row-reverse;
-}
-[dir="rtl"] .nav-links {
-  flex-direction: row-reverse;
-}
-[dir="rtl"] .nav-auth {
-  flex-direction: row-reverse;
-}
+        /* ─── NAVBAR ─── */
+        [dir="rtl"] .main-nav {
+            flex-direction: row-reverse;
+        }
 
-/* ─── HERO SECTION (Text + Video side by side) ─── */
-[dir="rtl"] .hero-left {
-  text-align: right;
-}
-[dir="rtl"] .hero-left h1,
-[dir="rtl"] .hero-left h2,
-[dir="rtl"] .hero-left p,
-[dir="rtl"] .hero-left .hero-sub {
-  text-align: right !important;
-}
-[dir="rtl"] .hero-cta-row {
-  flex-direction: row-reverse;
-  justify-content: flex-end;
-}
-[dir="rtl"] .hero-rating-info {
-  text-align: right;
-  direction: rtl;
-}
+        [dir="rtl"] .nav-links {
+            flex-direction: row-reverse;
+        }
 
-/* ─── FEATURES / CARDS GRID ─── */
-[dir="rtl"] .features-grid {
-  direction: rtl;
-}
-[dir="rtl"] .feature-card,
-[dir="rtl"] .feature-card p,
-[dir="rtl"] .feature-card h4 {
-  text-align: right;
-}
-[dir="rtl"] .feature-icon {
-  margin-right: 0;
-  margin-left: auto;
-}
+        [dir="rtl"] .nav-auth {
+            flex-direction: row-reverse;
+        }
 
-/* ─── PRICING SECTION ─── */
-[dir="rtl"] .pricing-card {
-  text-align: right;
-}
-[dir="rtl"] .pricing-features li {
-  flex-direction: row-reverse;
-  text-align: right;
-}
-[dir="rtl"] .pricing-features li svg,
-[dir="rtl"] .pricing-features li i {
-  margin-right: 0;
-  margin-left: 8px;
-}
+        /* ─── HERO SECTION (Text + Video side by side) ─── */
+        [dir="rtl"] .hero-left {
+            text-align: right;
+        }
 
-/* ─── EXPLICIT GRID DIRECTION FIX ─── */
-[dir="rtl"] .hero-split {
-  direction: rtl;
-}
-[dir="ltr"] .hero-split {
-  direction: ltr;
-}
+        [dir="rtl"] .hero-left h1,
+        [dir="rtl"] .hero-left h2,
+        [dir="rtl"] .hero-left p,
+        [dir="rtl"] .hero-left .hero-sub {
+            text-align: right !important;
+        }
 
-/* ─── TESTIMONIALS ─── */
-[dir="rtl"] .testimonial-card,
-[dir="rtl"] .pr-subtitle {
-  text-align: right;
-  direction: rtl;
-}
+        [dir="rtl"] .hero-cta-row {
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
 
-/* ─── FOOTER ─── */
-[dir="rtl"] footer .container {
-  flex-direction: row-reverse;
-}
-[dir="rtl"] .footer-col,
-[dir="rtl"] .footer-col p {
-  text-align: right;
-}
-[dir="rtl"] .footer-links {
-  text-align: right;
-}
-[dir="rtl"] .footer-social {
-  flex-direction: row-reverse;
-}
+        [dir="rtl"] .hero-rating-info {
+            text-align: right;
+            direction: rtl;
+        }
 
-/* ─── BUTTONS with icons ─── */
-[dir="rtl"] .btn-cta i,
-[dir="rtl"] .btn-cta-ghost i,
-[dir="rtl"] .btn-cta svg,
-[dir="rtl"] .btn-cta-ghost svg {
-  margin-right: 0;
-  margin-left: 8px;
-}
-[dir="rtl"] .btn-cta,
-[dir="rtl"] .btn-cta-ghost {
-  flex-direction: row-reverse;
-}
+        /* ─── FEATURES / CARDS GRID ─── */
+        [dir="rtl"] .features-grid {
+            direction: rtl;
+        }
 
-/* ─── LTR RESTORE (explicit) ─── */
-[dir="ltr"] .hero-left {
-  text-align: left;
-}
-[dir="ltr"] .hero-left h1,
-[dir="ltr"] .hero-left h2,
-[dir="ltr"] .hero-left p,
-[dir="ltr"] .hero-left .hero-sub {
-  text-align: left !important;
-}
-[dir="ltr"] .hero-cta-row {
-  flex-direction: row;
-  justify-content: flex-start;
-}
-[dir="ltr"] .main-nav,
-[dir="ltr"] .nav-links,
-[dir="ltr"] .nav-auth {
-  flex-direction: row;
-}
-[dir="ltr"] .feature-card,
-[dir="ltr"] .feature-card p,
-[dir="ltr"] .feature-card h4 {
-  text-align: left;
-}
-[dir="ltr"] .pricing-card {
-  text-align: left;
-}
-[dir="ltr"] .testimonial-card,
-[dir="ltr"] .pr-subtitle {
-  text-align: left;
-  direction: ltr;
-}
-[dir="ltr"] .footer-col,
-[dir="ltr"] .footer-col p {
-  text-align: left;
-}
-</style>
+        [dir="rtl"] .feature-card,
+        [dir="rtl"] .feature-card p,
+        [dir="rtl"] .feature-card h4 {
+            text-align: right;
+        }
+
+        [dir="rtl"] .feature-icon {
+            margin-right: 0;
+            margin-left: auto;
+        }
+
+        /* ─── PRICING SECTION ─── */
+        [dir="rtl"] .pricing-card {
+            text-align: right;
+        }
+
+        [dir="rtl"] .pricing-features li {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+
+        [dir="rtl"] .pricing-features li svg,
+        [dir="rtl"] .pricing-features li i {
+            margin-right: 0;
+            margin-left: 8px;
+        }
+
+        /* ─── EXPLICIT GRID DIRECTION FIX ─── */
+        [dir="rtl"] .hero-split {
+            direction: rtl;
+        }
+
+        [dir="ltr"] .hero-split {
+            direction: ltr;
+        }
+
+        /* ─── TESTIMONIALS ─── */
+        [dir="rtl"] .testimonial-card,
+        [dir="rtl"] .pr-subtitle {
+            text-align: right;
+            direction: rtl;
+        }
+
+        /* ─── FOOTER ─── */
+        [dir="rtl"] footer .container {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .footer-col,
+        [dir="rtl"] .footer-col p {
+            text-align: right;
+        }
+
+        [dir="rtl"] .footer-links {
+            text-align: right;
+        }
+
+        [dir="rtl"] .footer-social {
+            flex-direction: row-reverse;
+        }
+
+        /* ─── BUTTONS with icons ─── */
+        [dir="rtl"] .btn-cta i,
+        [dir="rtl"] .btn-cta-ghost i,
+        [dir="rtl"] .btn-cta svg,
+        [dir="rtl"] .btn-cta-ghost svg {
+            margin-right: 0;
+            margin-left: 8px;
+        }
+
+        [dir="rtl"] .btn-cta,
+        [dir="rtl"] .btn-cta-ghost {
+            flex-direction: row-reverse;
+        }
+
+        /* ─── LTR RESTORE (explicit) ─── */
+        [dir="ltr"] .hero-left {
+            text-align: left;
+        }
+
+        [dir="ltr"] .hero-left h1,
+        [dir="ltr"] .hero-left h2,
+        [dir="ltr"] .hero-left p,
+        [dir="ltr"] .hero-left .hero-sub {
+            text-align: left !important;
+        }
+
+        [dir="ltr"] .hero-cta-row {
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+
+        [dir="ltr"] .main-nav,
+        [dir="ltr"] .nav-links,
+        [dir="ltr"] .nav-auth {
+            flex-direction: row;
+        }
+
+        [dir="ltr"] .feature-card,
+        [dir="ltr"] .feature-card p,
+        [dir="ltr"] .feature-card h4 {
+            text-align: left;
+        }
+
+        [dir="ltr"] .pricing-card {
+            text-align: left;
+        }
+
+        [dir="ltr"] .testimonial-card,
+        [dir="ltr"] .pr-subtitle {
+            text-align: left;
+            direction: ltr;
+        }
+
+        [dir="ltr"] .footer-col,
+        [dir="ltr"] .footer-col p {
+            text-align: left;
+        }
+    </style>
 
 </head>
 
@@ -218,10 +239,7 @@ footer {
             <li><a href="#payment" data-ar="السعر" data-en="Pricing">السعر</a></li>
         </ul>
         <div class="nav-auth" id="navAuth">
-            <button
-  id="langToggleBtn"
-  onclick="toggleLanguage()"
-  style="
+            <button id="langToggleBtn" onclick="toggleLanguage()" style="
     background: none;
     border: 1px solid rgba(255,255,255,0.2);
     color: #fff;
@@ -232,22 +250,21 @@ footer {
     font-weight: 600;
     font-family: inherit;
     transition: all 0.2s;
-  "
-  onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
-  onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'"
->
-  <span id="langToggleText">English</span>
-</button>
+  " onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
+                onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'">
+                <span id="langToggleText">English</span>
+            </button>
             <!-- Logged out state (default) -->
             <div id="navLoggedOut">
-                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;"
-                    data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
-                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;"
-                    data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
+                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-ar="ابدا الان"
+                    data-en="Start Now">ابدا الان</a>
+                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;" data-ar="تسجيل الدخول"
+                    data-en="Login">تسجيل الدخول</a>
             </div>
             <!-- Logged in state -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
-                <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
+                <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل
+                    الخروج</button>
             </div>
         </div>
         <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
@@ -267,7 +284,8 @@ footer {
                 data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
         </div>
         <div id="mobileAuthLoggedIn" style="display:none">
-            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
+            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج"
+                data-en="Logout">تسجيل الخروج</button>
         </div>
         <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()"
             data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
@@ -531,7 +549,9 @@ footer {
                     <!-- Top Badge -->
                     <div class="pre-headline">
                         <span style="color: var(--green); font-weight: 900; margin-right: 4px;">#1</span>
-                        <span data-ar="منصة تعليم الذكاء الاصطناعي #1 في الوطن العربي" data-en="#1 AI Learning Platform In The Arab World">منصة تعليم الذكاء الاصطناعي #1 في الوطن العربي</span>
+                        <span data-ar="منصة تعليم الذكاء الاصطناعي #1 في الوطن العربي"
+                            data-en="#1 AI Learning Platform In The Arab World">منصة تعليم الذكاء الاصطناعي #1 في الوطن
+                            العربي</span>
                     </div>
 
                     <!-- Main Headline -->
@@ -542,7 +562,10 @@ footer {
                     </h1>
 
                     <!-- Sub-headline -->
-                    <p class="hero-sub" data-ar="كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي." data-en="Practical courses, real projects and a powerful community to help you master AI and build real income.">كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي.</p>
+                    <p class="hero-sub"
+                        data-ar="كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي."
+                        data-en="Practical courses, real projects and a powerful community to help you master AI and build real income.">
+                        كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي.</p>
 
                     <!-- Stats Row -->
                     <div class="hero-stats-inline">
@@ -578,11 +601,9 @@ footer {
 
                     <!-- CTA Buttons -->
                     <div class="hero-cta-row">
-                        <a href="javascript:void(0)"
-                            onclick="handleKashierPayment()"
-                            class="btn-cta btn-cta-solid">
-                            <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span> &nbsp;<i
-                                class="fa-solid fa-arrow-right"></i>
+                        <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
+                            <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span>
+                            &nbsp;<i class="fa-solid fa-arrow-right"></i>
                         </a>
                         <button class="btn-cta-ghost" id="watchIntroBtn">
                             <i class="fa-regular fa-circle-play"></i>
@@ -1520,8 +1541,7 @@ footer {
                     <li><i class="fa-solid fa-circle-check"></i> ضمان استرداد 3 أيام</li>
                 </ul>
 
-                <button class="pricing-cta" id="pricingCta"
-                    onclick="handleKashierPayment()">
+                <button class="pricing-cta" id="pricingCta" onclick="handleKashierPayment()">
                     اشترك الآن
                 </button>
 
@@ -1647,9 +1667,8 @@ footer {
                     التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية
                     والوقت فات.
                 </p>
-                <a href="javascript:void(0)"
-                    onclick="handleKashierPayment()"
-                    class="btn-cta" style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
+                <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta"
+                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
                     انضم الآن — EGP 2,999 فقط
                 </a>
                 <!-- INSTAPAY OPTION -->
@@ -1871,7 +1890,7 @@ footer {
                         const profile = await res.json();
                         isSubscribed = profile.is_active && profile.subscription_type !== 'none';
                     }
-                } catch(e) {
+                } catch (e) {
                     // Network error — assume not subscribed to be safe
                 }
 
@@ -2240,80 +2259,80 @@ footer {
             if (typeof updateAuthUI === 'function') updateAuthUI();
         }
     </script>
-    
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
     </script>
 
-<script id="rtlLtrLayoutSystemJS">
-// ═══ LANGUAGE SYSTEM ═══
-const translations = {
-  ar: {
-    dir: 'rtl',
-    lang: 'ar',
-    toggleBtn: 'English',
-    fontFamily: "'Cairo', sans-serif",
-  },
-  en: {
-    dir: 'ltr',
-    lang: 'en',
-    toggleBtn: 'عربي',
-    fontFamily: "'Cairo', sans-serif",
-  }
-};
+    <script id="rtlLtrLayoutSystemJS">
+        // ═══ LANGUAGE SYSTEM ═══
+        const translations = {
+            ar: {
+                dir: 'rtl',
+                lang: 'ar',
+                toggleBtn: 'English',
+                fontFamily: "'Cairo', sans-serif",
+            },
+            en: {
+                dir: 'ltr',
+                lang: 'en',
+                toggleBtn: 'عربي',
+                fontFamily: "'Cairo', sans-serif",
+            }
+        };
 
-function applyLanguage(lang) {
-  const config = translations[lang];
-  const html = document.getElementById('htmlRoot');
+        function applyLanguage(lang) {
+            const config = translations[lang];
+            const html = document.getElementById('htmlRoot');
 
-  // 1. Set direction and lang
-  html.setAttribute('dir', config.dir);
-  html.setAttribute('lang', config.lang);
+            // 1. Set direction and lang
+            html.setAttribute('dir', config.dir);
+            html.setAttribute('lang', config.lang);
 
-  // 2. Update all text elements
-  document.querySelectorAll('[data-ar]').forEach(el => {
-    el.textContent = lang === 'ar'
-      ? el.getAttribute('data-ar')
-      : el.getAttribute('data-en');
-  });
+            // 2. Update all text elements
+            document.querySelectorAll('[data-ar]').forEach(el => {
+                el.textContent = lang === 'ar'
+                    ? el.getAttribute('data-ar')
+                    : el.getAttribute('data-en');
+            });
 
-  // 3. Update placeholders
-  document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
-    el.placeholder = lang === 'ar'
-      ? el.getAttribute('data-ar-placeholder')
-      : el.getAttribute('data-en-placeholder');
-  });
+            // 3. Update placeholders
+            document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
+                el.placeholder = lang === 'ar'
+                    ? el.getAttribute('data-ar-placeholder')
+                    : el.getAttribute('data-en-placeholder');
+            });
 
-  // 4. Update toggle button
-  const toggleText = document.getElementById('langToggleText');
-  if (toggleText) {
-    toggleText.textContent = config.toggleBtn;
-  }
+            // 4. Update toggle button
+            const toggleText = document.getElementById('langToggleText');
+            if (toggleText) {
+                toggleText.textContent = config.toggleBtn;
+            }
 
-  // 5. Force reflow for flex containers (fix layout on toggle)
-  document.querySelectorAll('.hero-split, .features-section, .pricing-section, .main-nav').forEach(el => {
-    el.style.display = 'none';
-    el.offsetHeight; // trigger reflow
-    el.style.display = '';
-  });
+            // 5. Force reflow for flex containers (fix layout on toggle)
+            document.querySelectorAll('.hero-split, .features-section, .pricing-section, .main-nav').forEach(el => {
+                el.style.display = 'none';
+                el.offsetHeight; // trigger reflow
+                el.style.display = '';
+            });
 
-  // 6. Save preference
-  localStorage.setItem('ghawy_lang', lang);
-}
+            // 6. Save preference
+            localStorage.setItem('ghawy_lang', lang);
+        }
 
-function toggleLanguage() {
-  const current = localStorage.getItem('ghawy_lang') || 'ar';
-  const next = current === 'ar' ? 'en' : 'ar';
-  applyLanguage(next);
-}
+        function toggleLanguage() {
+            const current = localStorage.getItem('ghawy_lang') || 'ar';
+            const next = current === 'ar' ? 'en' : 'ar';
+            applyLanguage(next);
+        }
 
-// On page load — default Arabic
-(function() {
-  const saved = localStorage.getItem('ghawy_lang') || 'ar';
-  applyLanguage(saved);
-})();
-</script>
+        // On page load — default Arabic
+        (function () {
+            const saved = localStorage.getItem('ghawy_lang') || 'ar';
+            applyLanguage(saved);
+        })();
+    </script>
 
 </body>
 

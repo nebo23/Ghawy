@@ -31,13 +31,16 @@ async function loadProfile() {
         // Sidebar
         const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt('sidebarName', u.full_name);
-        setTxt('sidebarBadge', u.badge || 'Member');
+        setTxt('sidebarBadge', getBadgeLabel(u.badge));
         setTxt('topbarName', u.full_name);
         setTxt('streakCount', u.streak_days || 0);
 
         ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
             const el = document.getElementById(id);
-            if (el && u.avatar_url) el.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+            if (el) {
+                const fullUrl = window.getAvatarSrc(u);
+                el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+            }
         });
 
         // Profile page elements
@@ -49,7 +52,7 @@ async function loadProfile() {
         setTxt('statCourses', 0);
 
         const badgeEl = document.getElementById('profileBadge');
-        if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${u.badge || 'Member'}`;
+        if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getBadgeLabel(u.badge)}`;
 
         const avatarLg = document.getElementById('profileAvatarLg');
         if (avatarLg && u.avatar_url) avatarLg.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
@@ -59,7 +62,7 @@ async function loadProfile() {
         if (dot) {
             // Current user is always online on their own profile
             dot.className = 'profile-online-dot online';
-            dot.title = 'أونلاين الآن';
+            dot.title = 'Online Now';
         }
 
         // Settings form

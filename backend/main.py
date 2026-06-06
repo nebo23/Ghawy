@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment
 from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
@@ -197,6 +197,20 @@ def apply_sqlite_compat_migrations():
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(session_id, user_id)
+                )
+            """))
+
+        # ── Course Reviews table ──
+        if not inspector.has_table("course_reviews"):
+            conn.execute(text("""
+                CREATE TABLE course_reviews (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    rating INTEGER NOT NULL,
+                    comment TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(course_id, user_id)
                 )
             """))
 
@@ -452,6 +466,7 @@ app.include_router(guests.router)
 app.include_router(posts.router)
 app.include_router(manual_payments.router)
 app.include_router(live.router)
+app.include_router(ai_updates.router)
 
 @app.get("/")
 def root():

@@ -231,7 +231,13 @@ function viewGuest(id) {
   }
 }
 
+// ════════════════════════════════════════════════════════
+// NO NATIVE DIALOGS ALLOWED: Do not use window.alert, window.confirm, or window.prompt
+// in any new admin workflows. Use showToast() or custom modals instead.
+// ════════════════════════════════════════════════════════
+
 async function openSuggestModal() {
+  // TODO: Replace with custom modal for members. Native dialogs are isolated here.
   const name = prompt("Guest Name:");
   if(!name) return;
   const reason = prompt("Why should we invite them?");

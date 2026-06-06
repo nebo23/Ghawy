@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Updates — Ghawy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="stylesheet" href="src/css/dashboard.css" />
+    <link rel="stylesheet" href="src/css/ai-updates.css?v=5" />
+    <script>
+        (function () {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlToken = urlParams.get("token");
+            if (urlToken) {
+                localStorage.setItem("token", urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            var t = localStorage.getItem("token");
+            if (!t) {
+                window.location.replace("login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search));
+                return;
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="dash-layout">
+        <!-- SIDEBAR -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-logo">
+                <img src="./imgs/ghawi-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i>
+                    <span>Home</span></a>
+                <a href="courses.html" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i>
+                    <span>Courses</span></a>
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
+                    <span>Build With Me (Live)</span></a>
+                <a href="guest-of-honors.html" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span>Guest
+                        of Honors</span></a>
+                <a href="ai-updates.html" class="nav-item active"><i data-lucide="sparkles" class="nav-icon"></i>
+                    <span>AI Updates</span></a>
+                <a href="chat.html" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
+                    <span>Community Chat</span></a>
+                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                    <span>Direct Messages</span></a>
+                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i>
+                    <span>Achievements</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
+                    <span>Settings</span></a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" data-admin-only="true"><i
+                        data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
+            </nav>
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
+                        style="width:16px;height:16px;"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarName">—</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge">Member</div>
+                </div>
+            </div>
+            <div class="sidebar-streak" id="sidebarStreak">
+                <span class="streak-fire">🔥</span>
+                <span><span class="streak-count" id="streakCount">0</span> <span>Day Streak</span></span>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- MAIN -->
+        <div class="dash-main">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+
+                <div class="topbar-actions">
+                    <a href="chat.html" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user"
+                                style="width:16px;height:16px;"></i></div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i>
+                            <span>Profile</span></a>
+                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
+                                style="width:16px;height:16px;"></i> <span>Logout</span></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <div class="dash-content">
+                <div class="ai-updates-layout">
+                    <!-- Main Content -->
+                    <div class="ai-updates-main">
+                        <div class="ai-updates-header">
+                            <div>
+                                <div class="goh-breadcrumb">Community / <span class="accent">AI Updates</span></div>
+                                <h1>AI Updates</h1>
+                            </div>
+                            <button id="newPostBtn" class="new-post-btn" style="display:none"><i data-lucide="plus"></i>
+                                New Post</button>
+                        </div>
+
+                        <div class="ai-feed" id="aiFeed">
+                            <!-- Skeletons while loading -->
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <aside class="ai-updates-sidebar">
+                        <div class="ai-active-users-card">
+                            <div class="ai-sidebar-header">
+                                <i data-lucide="users"></i>
+                                <h3>Online Now</h3>
+                                <span class="online-pulse"></span>
+                            </div>
+                            <div id="aiActiveUsersList" class="ai-users-list">
+                                <div style="text-align:center;color:#888;font-size:0.85rem;padding:20px 0;">Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Panel -->
+    <div id="profilePanel" class="profile-panel">
+        <div class="profile-panel-overlay" onclick="closeUserProfile()"></div>
+        <div class="profile-panel-card">
+            <!-- Cover Banner -->
+            <div class="pp-cover">
+                <button class="pp-close-btn" onclick="closeUserProfile()">✕</button>
+            </div>
+            <!-- Avatar + Online Indicator -->
+            <div class="pp-avatar-wrap">
+                <img id="ppAvatar" class="pp-avatar" src="" alt="">
+                <span id="ppOnlineDot" class="pp-online-dot"></span>
+            </div>
+            <!-- Name + Username + Message Button -->
+            <div class="pp-info">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <h3 id="ppName" class="pp-name" style="margin:0;"></h3>
+                    <button id="ppDmBtn" class="pp-dm-btn" onclick="startDmFromProfile()" style="display:none;">
+                        <i class="fa-solid fa-comment-dots"></i> Message
+                    </button>
+                </div>
+            </div>
+            <!-- Badge -->
+            <div id="ppBadge" class="pp-badge"></div>
+            <!-- Bio -->
+            <p id="ppBio" class="pp-bio"></p>
+            <!-- Social Media Link -->
+            <a id="ppSocialLink" class="pp-social-link pp-hidden" href="#" target="_blank">
+                🔗 <span id="ppSocialText"></span>
+            </a>
+            <!-- Stats Row -->
+            <div class="pp-stats">
+                <div class="pp-stat">
+                    <span id="ppLevel" class="pp-stat-value"></span>
+                    <span class="pp-stat-label">Level</span>
+                </div>
+                <div class="pp-stat">
+                    <span id="ppXp" class="pp-stat-value"></span>
+                    <span class="pp-stat-label">XP</span>
+                </div>
+                <div class="pp-stat">
+                    <span id="ppStreak" class="pp-stat-value"></span>
+                    <span class="pp-stat-label">Day Streak 🔥</span>
+                </div>
+                <div class="pp-stat">
+                    <span id="ppPosts" class="pp-stat-value"></span>
+                    <span class="pp-stat-label">Post</span>
+                </div>
+            </div>
+            <!-- Joined Date -->
+            <p id="ppJoined" class="pp-joined"></p>
+            <!-- Loading State -->
+            <div id="ppLoading" class="pp-loading">
+                <div class="pp-spinner"></div>
+            </div>
+            <!-- Error State -->
+            <div id="ppError" class="pp-error" style="display:none">
+                Error loading profile
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal-overlay" id="createPostModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Create AI Update</div>
+                <button class="modal-close" onclick="closeCreateModal()"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="post-type-tabs" id="postTypeTabs">
+                <button class="post-type-tab active" data-type="text">Text</button>
+                <button class="post-type-tab" data-type="video">Video</button>
+                <button class="post-type-tab" data-type="photo">Photo</button>
+                <button class="post-type-tab" data-type="poll">Poll</button>
+            </div>
+
+            <form id="createPostForm">
+                <input type="hidden" id="postType" value="text">
+
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="postTitle" class="form-control" placeholder="Update title..." required>
+                </div>
+
+                <div class="form-group">
+                    <label>Body</label>
+                    <textarea id="postBody" class="form-control" placeholder="What's new in AI?..." required></textarea>
+                </div>
+
+                <!-- Video Fields -->
+                <div id="videoFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Bunny.net Video URL</label>
+                        <input type="url" id="postVideoUrl" class="form-control"
+                            placeholder="https://iframe.mediadelivery.net/embed/...">
+                    </div>
+                </div>
+
+                <!-- Photo Fields -->
+                <div id="photoFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label for="postImageFile" class="btn-secondary"
+                                style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                                <i data-lucide="upload" style="width:16px;height:16px;"></i> Choose File
+                            </label>
+                            <input type="file" id="postImageFile" accept="image/*" style="display:none;"
+                                onchange="document.getElementById('fileNameDisplay').textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen'">
+                            <span id="fileNameDisplay" style="font-size:0.85rem; color:#888;">No file chosen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Poll Fields -->
+                <div id="pollFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Poll Question</label>
+                        <input type="text" id="pollQuestion" class="form-control" placeholder="Ask a question...">
+                    </div>
+                    <div class="form-group" id="pollOptionsContainer">
+                        <label>Options (2-4)</label>
+                        <div class="poll-option-wrapper">
+                            <input type="text" class="form-control poll-option-input" placeholder="Option 1">
+                        </div>
+                        <div class="poll-option-wrapper">
+                            <input type="text" class="form-control poll-option-input" placeholder="Option 2">
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add-option" id="addPollOptionBtn"><i data-lucide="plus"></i> Add
+                        Option</button>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitPostBtn">Post Update</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="src/js/utils.js?v=5"></script>
+    <script src="src/js/ai-updates.js?v=5"></script>
+    <script>lucide.createIcons();</script>
+    <script>
+        document.getElementById('hamburgerBtn').addEventListener('click', () => {
+            document.getElementById('dashSidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        });
+        document.getElementById('sidebarOverlay').addEventListener('click', () => {
+            document.getElementById('dashSidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+    </script>
+</body>
+
+</html>

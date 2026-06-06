@@ -9,6 +9,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Course Detail — Ghawy</title>
+    <meta name="description" content="Explore course details, curriculum, and track your learning progress on Ghawy." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -20,80 +21,169 @@
     <script src="src/js/utils.js"></script>
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
+        /* ═══ COURSE DETAIL — BLUE ACCENT OVERRIDES ═══ */
         .cd-grid {
             display: grid;
             grid-template-columns: 1fr 320px;
             gap: 24px
         }
 
-        /* Hero */
-        .cd-hero {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 32px;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 24px
+        .cd-grid-main {
+            min-width: 0
         }
 
-        .cd-hero::before {
+        .cd-grid-side {
+            display: flex;
+            flex-direction: column;
+            gap: 16px
+        }
+
+        /* ── Hero Banner ── */
+        .cd-hero {
+            position: relative;
+            min-height: 280px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        .cd-hero-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 0;
+        }
+
+        .cd-hero-bg::after {
             content: '';
             position: absolute;
-            top: -40%;
-            right: -20%;
-            width: 50%;
-            height: 180%;
-            background: radial-gradient(ellipse, rgba(193, 255, 17, .06), transparent 70%);
-            pointer-events: none
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 30%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0.3));
+            z-index: 1;
+        }
+
+        .cd-hero-content {
+            position: relative;
+            z-index: 2;
         }
 
         .cd-hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: var(--gold);
-            color: #000;
-            padding: 4px 12px;
+            background: #3f8ff9;
+            color: #fff;
+            padding: 4px 14px;
             border-radius: 6px;
             font-size: .75rem;
             font-weight: 800;
-            margin-bottom: 16px
+            margin-bottom: 16px;
+            width: fit-content;
         }
 
-        .cd-hero p {
+        .cd-hero-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            max-width: 520px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .cd-hero-desc {
             font-size: .9rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.8);
             max-width: 500px;
             margin-bottom: 16px;
-            line-height: 1.6
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
         }
 
-        .cd-stats {
+        .cd-hero-meta {
             display: flex;
             gap: 20px;
             margin-bottom: 20px;
             font-size: .82rem;
-            color: var(--text-secondary);
-            flex-wrap: wrap
+            color: rgba(255, 255, 255, 0.7);
+            flex-wrap: wrap;
         }
 
-        .cd-stats span {
+        .cd-hero-meta span {
             display: flex;
             align-items: center;
-            gap: 5px
+            gap: 6px;
         }
 
-        .cd-stats i {
-            color: var(--gold)
+        .cd-hero-meta i {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: .8rem;
         }
 
-        /* Tabs */
+        .cd-hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-blue {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #3f8ff9;
+            color: #fff;
+            padding: 11px 28px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: .88rem;
+            transition: all .2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-blue:hover {
+            background: #2d7ef0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(63, 143, 249, 0.3);
+        }
+
+        .btn-outline-white {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: .85rem;
+            transition: all .2s;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+        }
+
+        .btn-outline-white:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ── Tabs ── */
         .cd-tabs {
             display: flex;
             gap: 0;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 24px
+            margin-bottom: 24px;
         }
 
         .cd-tab {
@@ -103,7 +193,7 @@
             color: var(--text-muted);
             border-bottom: 2px solid transparent;
             transition: all .2s;
-            cursor: pointer
+            cursor: pointer;
         }
 
         .cd-tab:hover {
@@ -111,16 +201,16 @@
         }
 
         .cd-tab.active {
-            color: var(--gold);
-            border-bottom-color: var(--gold)
+            color: #3f8ff9;
+            border-bottom-color: #3f8ff9;
         }
 
-        /* Curriculum */
+        /* ── Curriculum ── */
         .curriculum-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px
+            margin-bottom: 16px;
         }
 
         .curriculum-header h3 {
@@ -130,18 +220,22 @@
 
         .curriculum-header .lesson-count {
             font-size: .72rem;
-            background: var(--bg-hover);
+            background: rgba(63, 143, 249, 0.12);
+            color: #3f8ff9;
             padding: 3px 10px;
             border-radius: 12px;
-            color: var(--text-muted);
-            font-weight: 600
+            font-weight: 600;
         }
 
         .expand-btn {
             font-size: .78rem;
-            color: var(--gold);
+            color: #3f8ff9;
             font-weight: 600;
-            cursor: pointer
+            cursor: pointer;
+        }
+
+        .expand-btn:hover {
+            text-decoration: underline
         }
 
         .section-block {
@@ -149,7 +243,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             margin-bottom: 12px;
-            overflow: hidden
+            overflow: hidden;
         }
 
         .section-header {
@@ -158,7 +252,7 @@
             justify-content: space-between;
             padding: 16px 18px;
             cursor: pointer;
-            transition: background .15s
+            transition: background .15s;
         }
 
         .section-header:hover {
@@ -168,13 +262,13 @@
         .section-header .sec-left {
             display: flex;
             align-items: center;
-            gap: 10px
+            gap: 10px;
         }
 
         .section-header .sec-toggle {
             color: var(--text-muted);
             font-size: .75rem;
-            transition: transform .2s
+            transition: transform .2s;
         }
 
         .section-header .sec-title {
@@ -182,15 +276,21 @@
             font-weight: 700
         }
 
+        .section-header .sec-desc {
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
         .section-header .sec-right {
             display: flex;
             align-items: center;
-            gap: 12px
+            gap: 12px;
         }
 
         .section-header .sec-count {
             font-size: .78rem;
-            color: var(--text-muted)
+            color: var(--text-muted);
         }
 
         .section-header .sec-expand {
@@ -201,7 +301,7 @@
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
-            transition: all .15s
+            transition: all .15s;
         }
 
         .section-header .sec-expand:hover {
@@ -210,7 +310,7 @@
 
         .section-lessons {
             border-top: 1px solid var(--border);
-            display: none
+            display: none;
         }
 
         .section-lessons.open {
@@ -225,7 +325,7 @@
             border-bottom: 1px solid var(--border);
             transition: background .15s;
             font-size: .85rem;
-            cursor: pointer
+            cursor: pointer;
         }
 
         .lesson-row:last-child {
@@ -240,24 +340,24 @@
             width: 28px;
             height: 28px;
             border-radius: 6px;
-            background: var(--gold-subtle);
+            background: rgba(63, 143, 249, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: .7rem;
-            color: var(--gold);
-            flex-shrink: 0
+            color: #3f8ff9;
+            flex-shrink: 0;
         }
 
         .lesson-row .lesson-title {
             flex: 1;
-            color: var(--text-secondary)
+            color: var(--text-secondary);
         }
 
         .lesson-row .lesson-dur {
             font-size: .75rem;
             color: var(--text-muted);
-            font-family: 'IBM Plex Mono', monospace
+            font-family: 'IBM Plex Mono', monospace;
         }
 
         .lesson-row .lesson-check {
@@ -268,41 +368,63 @@
             align-items: center;
             justify-content: center;
             font-size: .65rem;
-            flex-shrink: 0
+            flex-shrink: 0;
         }
 
         .lesson-row .lesson-check.done {
-            background: var(--gold);
-            color: #000
+            background: #3f8ff9;
+            color: #fff;
         }
 
         .lesson-row .lesson-check.undone {
             border: 2px solid var(--border-light);
-            color: transparent
+            color: transparent;
         }
 
-        /* Sidebar Cards */
+        /* ── Sidebar Cards ── */
         .cd-side-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 20px;
-            margin-bottom: 16px
         }
 
-        /* Progress Ring */
+        .cd-side-card .side-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .cd-side-card .side-card-title {
+            font-size: .9rem;
+            font-weight: 700;
+        }
+
+        .cd-side-card .side-card-link {
+            font-size: .75rem;
+            color: #3f8ff9;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .cd-side-card .side-card-link:hover {
+            text-decoration: underline
+        }
+
+        /* ── Progress Ring ── */
         .progress-ring-wrap {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px
+            gap: 20px;
+            margin-bottom: 16px;
         }
 
         .progress-ring {
             position: relative;
-            width: 100px;
-            height: 100px
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
         }
 
         .progress-ring svg {
@@ -312,15 +434,15 @@
         .progress-ring .track {
             fill: none;
             stroke: var(--border-light);
-            stroke-width: 8
+            stroke-width: 7;
         }
 
         .progress-ring .fill {
             fill: none;
-            stroke: var(--gold);
-            stroke-width: 8;
+            stroke: #3f8ff9;
+            stroke-width: 7;
             stroke-linecap: round;
-            transition: stroke-dashoffset .8s
+            transition: stroke-dashoffset .8s ease;
         }
 
         .progress-ring .pct {
@@ -329,105 +451,262 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 800;
-            color: var(--gold)
+            color: #3f8ff9;
         }
 
         .progress-ring-info {
-            text-align: center
+            flex: 1
         }
 
-        .progress-ring-info h4 {
-            font-size: .85rem;
-            font-weight: 600;
+        .progress-ring-info .label {
+            font-size: .72rem;
             color: var(--text-muted);
-            margin-bottom: 2px
+            margin-bottom: 2px;
         }
 
         .progress-ring-info .pct-text {
-            font-size: .9rem;
+            font-size: .95rem;
             font-weight: 700;
-            color: var(--gold)
+            color: var(--text-primary);
+            margin-bottom: 2px;
         }
 
         .progress-ring-info .lessons-text {
             font-size: .72rem;
-            color: var(--text-muted)
+            color: var(--text-muted);
         }
 
-        /* Learn List */
+        .progress-bar-full {
+            height: 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .progress-bar-full .bar {
+            height: 100%;
+            background: #3f8ff9;
+            border-radius: 3px;
+            transition: width .5s ease;
+        }
+
+        .btn-blue-full {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: #3f8ff9;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: .85rem;
+            transition: all .2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-blue-full:hover {
+            background: #2d7ef0;
+            box-shadow: 0 4px 12px rgba(63, 143, 249, 0.3);
+        }
+
+        /* ── Learn List ── */
         .learn-list {
             list-style: none;
-            padding: 0
+            padding: 0;
         }
 
         .learn-list li {
             display: flex;
             gap: 10px;
-            padding: 8px 0;
+            padding: 7px 0;
             font-size: .82rem;
             color: var(--text-secondary);
-            line-height: 1.5
+            line-height: 1.5;
         }
 
-        .learn-list li i {
-            color: var(--gold);
-            margin-top: 3px;
-            flex-shrink: 0
-        }
-
-        /* Search & Filter */
-        .cd-search {
+        .learn-list li .check-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(63, 143, 249, 0.15);
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 0 12px;
-            height: 36px;
-            margin-bottom: 10px
+            justify-content: center;
+            font-size: .6rem;
+            color: #3f8ff9;
+            flex-shrink: 0;
+            margin-top: 2px;
         }
 
-        .cd-search i {
+        /* ── Guest of Honor ── */
+        .goh-card {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .goh-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--bg-hover);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid var(--border-light);
+        }
+
+        .goh-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .goh-info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .goh-name {
+            font-size: .9rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .goh-title {
+            font-size: .75rem;
+            color: #3f8ff9;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .goh-bio {
+            font-size: .78rem;
             color: var(--text-muted);
-            font-size: .8rem
+            line-height: 1.5;
+            margin-bottom: 10px;
         }
 
-        .cd-search input {
-            background: none;
-            border: none;
-            outline: none;
+        .btn-outline-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-light);
             color: var(--text-primary);
-            font-family: inherit;
-            font-size: .82rem;
-            flex: 1
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: .75rem;
+            transition: all .2s;
+            background: none;
+            cursor: pointer;
         }
 
-        .cd-search input::placeholder {
-            color: var(--text-muted)
+        .btn-outline-sm:hover {
+            border-color: #3f8ff9;
+            color: #3f8ff9;
+            background: rgba(63, 143, 249, 0.06);
         }
 
-        /* Live Promo */
+        /* ── Resources Grid ── */
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .resource-item {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            transition: all .2s;
+            cursor: pointer;
+        }
+
+        .resource-item:hover {
+            border-color: #3f8ff9;
+            background: rgba(63, 143, 249, 0.06);
+        }
+
+        .resource-item .res-name {
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .resource-item .res-type {
+            font-size: .6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* ── Live Promo Card ── */
         .cd-live-promo {
-            background: linear-gradient(135deg, rgba(193, 255, 17, .06), rgba(193, 255, 17, .02));
-            border: 1px solid var(--gold-border);
+            background: linear-gradient(135deg, rgba(63, 143, 249, 0.12), rgba(63, 143, 249, 0.04));
+            border: 1px solid rgba(63, 143, 249, 0.2);
             border-radius: var(--radius);
             padding: 20px;
-            text-align: center
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cd-live-promo::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 60%;
+            height: 160%;
+            background: radial-gradient(ellipse, rgba(63, 143, 249, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .cd-live-promo .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ef4444;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: .65rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
+
+        .cd-live-promo .live-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
         }
 
         .cd-live-promo h4 {
-            color: var(--gold);
+            color: #3f8ff9;
             font-size: .95rem;
-            margin-bottom: 8px
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
         .cd-live-promo p {
             font-size: .8rem;
             color: var(--text-secondary);
-            margin-bottom: 14px
+            margin-bottom: 14px;
+            line-height: 1.5;
+            position: relative;
         }
 
         /* ═══ VIDEO WATERMARK & TIME ═══ */
@@ -437,7 +716,7 @@
             aspect-ratio: 16/9;
             border-radius: 12px;
             overflow: hidden;
-            background: #000
+            background: #000;
         }
 
         .video-container:fullscreen {
@@ -446,7 +725,7 @@
             border-radius: 0;
             display: flex;
             align-items: center;
-            justify-content: center
+            justify-content: center;
         }
 
         .video-container:-webkit-full-screen {
@@ -455,7 +734,7 @@
             border-radius: 0;
             display: flex;
             align-items: center;
-            justify-content: center
+            justify-content: center;
         }
 
         .video-container:fullscreen iframe {
@@ -478,10 +757,9 @@
             -webkit-user-select: none;
             transition: top 0.8s ease, left 0.8s ease;
             top: 20px;
-            left: 20px
+            left: 20px;
         }
 
-        /* Watermark stays visible in fullscreen */
         .video-container:fullscreen .video-watermark,
         .video-container:-webkit-full-screen .video-watermark,
         .video-container:-moz-full-screen .video-watermark {
@@ -501,7 +779,6 @@
             font-family: monospace;
         }
 
-        /* iframe fills the container, native controls visible */
         #bunnyVideoFrame {
             position: absolute;
             top: 0;
@@ -528,19 +805,19 @@
             transition: all .2s;
             flex-shrink: 0;
             padding: 0;
-            line-height: 1
+            line-height: 1;
         }
 
         .complete-btn.completed {
-            background: #22c55e;
-            border-color: #22c55e;
-            color: #fff
+            background: #3f8ff9;
+            border-color: #3f8ff9;
+            color: #fff;
         }
 
         .lesson-row.completed .lesson-title {
             color: #666;
             text-decoration: line-through;
-            text-decoration-color: #444
+            text-decoration-color: #444;
         }
 
         /* ═══ PROGRESS HEADER ═══ */
@@ -549,7 +826,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 16px 20px;
-            margin-bottom: 20px
+            margin-bottom: 20px;
         }
 
         .progress-info-bar {
@@ -557,14 +834,14 @@
             justify-content: space-between;
             margin-bottom: 8px;
             font-size: 13px;
-            color: #888
+            color: #888;
         }
 
         .progress-bar-wrapper {
             background: #2a2a2a;
             border-radius: 99px;
             height: 6px;
-            overflow: hidden
+            overflow: hidden;
         }
 
         .progress-bar-inner {
@@ -572,12 +849,12 @@
             height: 100%;
             border-radius: 99px;
             transition: width .4s ease;
-            width: 0%
+            width: 0%;
         }
 
         /* ═══ CERTIFICATE ═══ */
         .btn-certificate {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, #3f8ff9, #1d6fd4);
             color: #fff;
             border: none;
             padding: 12px 24px;
@@ -588,12 +865,12 @@
             width: 100%;
             margin-top: 16px;
             transition: transform .2s, box-shadow .2s;
-            font-family: inherit
+            font-family: inherit;
         }
 
         .btn-certificate:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(245, 158, 11, .3)
+            box-shadow: 0 4px 16px rgba(63, 143, 249, .3);
         }
 
         /* ═══ MODAL ═══ */
@@ -605,7 +882,7 @@
             z-index: 200;
             display: none;
             align-items: center;
-            justify-content: center
+            justify-content: center;
         }
 
         .cd-modal-overlay.open {
@@ -620,7 +897,7 @@
             max-width: 420px;
             width: 90%;
             overflow: hidden;
-            animation: modalIn .3s ease
+            animation: modalIn .3s ease;
         }
 
         @keyframes modalIn {
@@ -643,7 +920,7 @@
             padding: 10px 12px;
             border-radius: 8px;
             margin-bottom: 4px;
-            transition: background .2s
+            transition: background .2s;
         }
 
         .leaderboard-item:hover {
@@ -652,7 +929,7 @@
 
         .leaderboard-item.current-user {
             background: rgba(63, 143, 249, .1);
-            border: 1px solid rgba(63, 143, 249, .2)
+            border: 1px solid rgba(63, 143, 249, .2);
         }
 
         .rank-badge {
@@ -661,7 +938,7 @@
             font-size: 13px;
             font-weight: 700;
             color: #888;
-            flex-shrink: 0
+            flex-shrink: 0;
         }
 
         .rank-badge.gold {
@@ -688,7 +965,7 @@
             font-weight: 600;
             color: #fff;
             flex-shrink: 0;
-            overflow: hidden
+            overflow: hidden;
         }
 
         .leaderboard-info {
@@ -701,22 +978,22 @@
             color: #fff;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis
+            text-overflow: ellipsis;
         }
 
         .leaderboard-progress-mini {
             font-size: 11px;
             color: #555;
-            margin-top: 2px
+            margin-top: 2px;
         }
 
         .completed-badge {
-            background: rgba(34, 197, 94, .15);
-            color: #22c55e;
+            background: rgba(63, 143, 249, .15);
+            color: #3f8ff9;
             font-size: 10px;
             padding: 2px 6px;
             border-radius: 4px;
-            white-space: nowrap
+            white-space: nowrap;
         }
 
         .skeleton-row {
@@ -725,7 +1002,7 @@
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
             border-radius: 8px;
-            margin-bottom: 4px
+            margin-bottom: 4px;
         }
 
         @keyframes shimmer {
@@ -746,7 +1023,7 @@
             z-index: 99999;
             display: flex;
             flex-direction: column;
-            gap: 8px
+            gap: 8px;
         }
 
         .cd-toast {
@@ -758,7 +1035,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
             animation: slideInToast .3s;
             max-width: 380px;
-            transition: opacity .3s
+            transition: opacity .3s;
         }
 
         @keyframes slideInToast {
@@ -773,13 +1050,341 @@
             }
         }
 
+        /* ═══ About Section ═══ */
+        .about-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: .9rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ═══ REVIEWS TAB ═══ */
+        .reviews-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .review-form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+
+        .review-form-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .star-rating-select {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .star-rating-select .star-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.6rem;
+            color: #444;
+            transition: all .2s;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .star-rating-select .star-btn:hover,
+        .star-rating-select .star-btn.active {
+            color: #f59e0b;
+            transform: scale(1.15);
+        }
+
+        .star-rating-select .star-btn.hovered {
+            color: #f59e0b;
+        }
+
+        .rating-label {
+            font-size: .85rem;
+            color: #f59e0b;
+            font-weight: 600;
+            margin-bottom: 14px;
+            min-height: 22px;
+            transition: all .2s;
+        }
+
+        .review-textarea {
+            width: 100%;
+            min-height: 100px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: .85rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color .2s;
+            margin-bottom: 14px;
+        }
+
+        .review-textarea:focus {
+            border-color: #3f8ff9;
+        }
+
+        .review-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .submit-review-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #3f8ff9;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit;
+        }
+
+        .submit-review-btn:hover {
+            background: #2d7ef0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(63, 143, 249, .3);
+        }
+
+        .submit-review-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .review-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            transition: border-color .2s;
+        }
+
+        .review-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .review-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .review-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .review-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .review-author {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .review-date {
+            font-size: .72rem;
+            color: var(--text-muted);
+        }
+
+        .review-stars {
+            display: flex;
+            gap: 2px;
+            font-size: .85rem;
+        }
+
+        .review-stars .star-filled {
+            color: #f59e0b;
+        }
+
+        .review-stars .star-empty {
+            color: #444;
+        }
+
+        .review-text {
+            font-size: .85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .reviews-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .reviews-empty i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            display: block;
+            color: #444;
+        }
+
+        .reviews-summary {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+        }
+
+        .reviews-avg {
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .reviews-avg .big-number {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #f59e0b;
+            line-height: 1;
+        }
+
+        .reviews-avg .avg-stars {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin-top: 6px;
+            font-size: .9rem;
+        }
+
+        .reviews-avg .avg-label {
+            font-size: .72rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ═══ RESPONSIVE ═══ */
         @media(max-width:1024px) {
             .cd-grid {
                 grid-template-columns: 1fr
             }
+
+            .cd-grid-side {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+        }
+
+        @media(max-width:768px) {
+            .cd-grid-side {
+                grid-template-columns: 1fr;
+            }
+
+            .cd-hero {
+                min-height: 240px;
+                padding: 20px
+            }
+
+            .cd-hero-title {
+                font-size: 1.3rem
+            }
+
+            .cd-tabs {
+                overflow-x: auto;
+                scrollbar-width: none
+            }
+
+            .cd-tabs::-webkit-scrollbar {
+                display: none
+            }
+
+            .cd-tab {
+                white-space: nowrap;
+                padding: 10px 14px;
+                font-size: .8rem
+            }
+
+            .cd-hero-actions {
+                flex-direction: column;
+                align-items: stretch
+            }
+
+            .btn-blue,
+            .btn-outline-white {
+                justify-content: center
+            }
+
+            .resources-grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        /* ═══ VIDEO CONTAINER & WATERMARK ═══ */
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .video-watermark {
+            position: absolute;
+            z-index: 9999;
+            color: rgba(255, 60, 60, 0.75);
+            font-size: 13px;
+            font-weight: 700;
+            pointer-events: none;
+            user-select: none;
+            font-family: monospace;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            transition: top 0.5s ease, left 0.5s ease;
+        }
+
+        /* Keep watermark on top in ALL fullscreen modes */
+        .video-container:fullscreen .video-watermark,
+        .video-container:-webkit-full-screen .video-watermark,
+        .video-container:-moz-full-screen .video-watermark,
+        .video-container:-ms-fullscreen .video-watermark {
+            position: fixed !important;
+            z-index: 2147483647 !important;
         }
     </style>
-
 </head>
 
 <body>
@@ -787,46 +1392,47 @@
         <aside class="dash-sidebar" id="dashSidebar">
             <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
-                        data-i18n="dashboard">الرئيسية</span></a>
+                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i>
+                    <span>Dashboard</span></a>
                 <a href="courses.html?v=2" class="nav-item active"><i data-lucide="presentation" class="nav-icon"></i>
-                    <span data-i18n="courses">الكورسات</span></a>
-                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
-                        data-i18n="buildWithMe">???? ????? (????)</span></a>
-                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
-                        data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
-                        data-i18n="communityChat">شات المجتمع</span></a>
+                    <span>Courses</span></a>
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
+                    <span>Build With Me (Live)</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
+                    <span>Guest of Honors</span></a>
+                <a href="ai-updates.html" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span>AI
+                        Updates</span></a>
+                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
+                    <span>Community Chat</span></a>
 
                 <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
                     <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
                         style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
-                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
-                        data-i18n="achievements">الإنجازات</span></a>
-                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
-                        data-i18n="settings">الإعدادات</span></a>
-                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
-                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+                <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i>
+                    <span>Achievements</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
+                    <span>Settings</span></a>
+                <a href="teamdashboard.html?v=2" target="_blank" class="nav-item" data-admin-only="true"><i
+                        data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
             </nav>
             <div class="sidebar-user">
                 <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
                         style="width:16px;height:16px;"></i></div>
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name" id="sidebarName">—</div>
-                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+                    <div class="sidebar-user-badge" id="sidebarBadge">Member</div>
                 </div>
             </div>
             <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count"
-                        id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+                        id="streakCount">0</span> <span>Day Streak</span></span></div>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="dash-main">
             <header class="dash-topbar">
                 <button class="hamburger-btn" id="hamburgerBtn"
                     aria-label="Open menu"><span></span><span></span><span></span></button>
-                <div class="topbar-search"><i data-lucide="search" size="16"></i><input type="text"
-                        data-i18n-placeholder="searchLessons" placeholder="ابحث في الدروس..." /><kbd>⌘K</kbd></div>
+
                 <div class="topbar-actions">
 
                     <div class="notif-wrapper" id="notifWrapper">
@@ -854,29 +1460,35 @@
             </header>
             <div class="dash-content">
                 <!-- Breadcrumb -->
-                <div class="breadcrumb">
-                    <a href="courses.html?v=2"><i data-lucide="presentation" class="nav-icon"></i></a>
+                <div class="breadcrumb" id="breadcrumb">
+                    <a href="courses.html?v=2"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                        Courses</a>
                     <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
                     <span id="breadcrumbTitle">Course</span>
                 </div>
 
                 <div class="cd-grid">
                     <div class="cd-grid-main">
-                        <!-- Hero -->
-                        <div class="cd-hero">
-                            <div class="cd-hero-badge"><i class="fa-solid fa-bolt"></i> AI</div>
-                            <p id="courseDesc">Learn how to build smart automations and save 10+ hours every week.</p>
-                            <div class="cd-stats" id="courseStats">
-                                <span><i class="fa-solid fa-book"></i> <span id="statLessons">24</span> Lessons</span>
-                                <span><i class="fa-solid fa-signal"></i> Beginner</span>
-                                <span><i data-lucide="star" class="nav-icon"></i> 4.8 (1.2K)</span>
-                            </div>
-                            <div class="hero-actions">
-                                <button class="btn-gold" id="continueLearningBtn"><span
-                                        data-i18n="continueLearning">كمّل التعلم</span> <i
-                                        class="fa-solid fa-arrow-right"></i></button>
-                                <button class="btn-outline"><i class="fa-solid fa-play"></i> <span
-                                        data-i18n="previewCourse">معاينة الكورس</span></button>
+                        <!-- Hero Banner -->
+                        <div class="cd-hero" id="cdHero">
+                            <div class="cd-hero-bg" id="cdHeroBg"></div>
+                            <div class="cd-hero-content">
+                                <div class="cd-hero-badge" id="cdHeroBadge"><i class="fa-solid fa-bolt"></i> AI</div>
+                                <h1 class="cd-hero-title" id="cdHeroTitle">Loading course...</h1>
+                                <p class="cd-hero-desc" id="cdHeroDesc"></p>
+                                <div class="cd-hero-meta" id="cdHeroMeta">
+                                    <span><i class="fa-regular fa-file-lines"></i> <span id="statLessons">0</span>
+                                        Lessons</span>
+                                    <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                                    <span id="heroRatingContainer"><i class="fa-solid fa-star"
+                                            style="color:#f59e0b"></i> <span id="heroRatingText">0 / 5</span></span>
+                                </div>
+                                <div class="cd-hero-actions">
+                                    <button class="btn-blue" id="continueLearningBtn"><span>Continue Learning</span> <i
+                                            class="fa-solid fa-arrow-right"></i></button>
+                                    <button class="btn-outline-white" id="previewCourseBtn"><i
+                                            class="fa-solid fa-play"></i> <span>Preview Course</span></button>
+                                </div>
                             </div>
                         </div>
 
@@ -884,42 +1496,40 @@
                         <div class="video-section" id="videoSection" style="display:none; margin-bottom: 24px;">
                             <div id="videoPlayer" style="display:block;">
                                 <div class="video-container" id="videoContainer">
-                                    <!-- Watermark overlay -->
                                     <div class="video-watermark" id="videoWatermark" style="display:none;">
                                         <span id="watermarkText"></span>
                                     </div>
-                                    <!-- Custom Fullscreen Button -->
-                                    <button id="customFsBtn" title="Fullscreen" style="position: absolute; top: 15px; right: 15px; z-index: 101; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; transition: background 0.2s; font-size: 16px;">
+                                    <button id="customFsBtn" title="Fullscreen"
+                                        style="position: absolute; top: 15px; right: 15px; z-index: 101; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; transition: background 0.2s; font-size: 16px;">
                                         <i class="fa-solid fa-expand" id="customFsIcon"></i>
                                     </button>
-                                    <!-- Bunny.net / Cloudflare player -->
-                                    <iframe id="bunnyVideoFrame" src="" style="border:none;"
-                                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                                    <iframe id="bunnyVideoFrame" src="" style="border:none; width:100%; height:100%;"
+                                        allow="accelerometer; gyroscope; autoplay; encrypted-media"
                                         loading="lazy"></iframe>
                                 </div>
                             </div>
-                            <!-- Lesson completion status (auto-updates) -->
                             <div id="lessonCompleteArea"
                                 style="display:none; margin-top:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                                 <div class="complete-btn" id="currentLessonCompleteBtn"
                                     style="width:auto;border-radius:8px;padding:10px 20px;font-size:14px;gap:8px;height:auto;font-family:inherit;font-weight:600;background:var(--bg-card);">
-                                    <span id="completeBtnIcon">○</span> <span id="completeBtnText">جاري مشاهدة الدرس...
-                                        سيتم الإتمام تلقائياً</span>
+                                    <span id="completeBtnIcon"> </span> <span id="completeBtnText">Watching lesson...
+                                        will be completed automatically</span>
                                 </div>
                             </div>
                             <div id="videoLocked"
                                 style="display:none; text-align:center; padding:40px; background:var(--bg-card); border-radius:12px; border:1px solid var(--border);">
                                 <i class="fa-solid fa-lock"
                                     style="font-size:32px; color:var(--text-muted); margin-bottom:16px;"></i>
-                                <h3 style="margin-bottom:8px;">الفيديو غير متاح</h3>
-                                <p style="color:var(--text-muted);">اشترك الآن لمشاهدة هذا الدرس وكل محتويات الكورس.</p>
+                                <h3 style="margin-bottom:8px;">Video unavailable</h3>
+                                <p style="color:var(--text-muted);">Subscribe now to watch this lesson and all course
+                                    content.</p>
                             </div>
                         </div>
 
                         <!-- Progress Header -->
                         <div class="course-progress-header" id="courseProgressHeader">
                             <div class="progress-info-bar">
-                                <span id="progressText">0 / 0 دروس مكتملة</span>
+                                <span id="progressText">0 / 0 lessons completed</span>
                                 <span id="progressPercent">0%</span>
                             </div>
                             <div class="progress-bar-wrapper">
@@ -928,33 +1538,33 @@
                         </div>
                         <!-- Certificate section (hidden until 100%) -->
                         <div id="certificateSection" style="display:none;">
-                            <button onclick="downloadCertificate()" class="btn-certificate">🎓 تحميل الشهادة</button>
+                            <button onclick="downloadCertificate()" class="btn-certificate">🎓 Download
+                                Certificate</button>
                         </div>
 
                         <!-- Tabs -->
                         <div class="cd-tabs" id="cdTabs">
-                            <div class="cd-tab active" data-tab="overview" data-i18n="overview">نظرة عامة</div>
-                            <div class="cd-tab" data-tab="curriculum" data-i18n="curriculum">المنهج</div>
-                            <div class="cd-tab" data-tab="projects" data-i18n="projects">مشاريع</div>
-                            <div class="cd-tab" data-tab="resources" data-i18n="resources">مصادر</div>
-                            <div class="cd-tab" data-tab="reviews" data-i18n="reviews">تقييمات</div>
+                            <div class="cd-tab active" data-tab="overview">Overview</div>
+                            <div class="cd-tab" data-tab="curriculum">Curriculum</div>
+                            <div class="cd-tab" data-tab="projects">Projects</div>
+                            <div class="cd-tab" data-tab="resources">Resources</div>
+                            <div class="cd-tab" data-tab="reviews">Reviews</div>
                         </div>
 
-                        <!-- Curriculum Content -->
+                        <!-- Tab Content -->
                         <div id="tabOverview">
-                            <div class="cd-side-card">
-                                <div class="side-card-title" data-i18n="aboutThisCourse">عن هذا الكورس</div>
-                                <p style="color:var(--text-secondary);line-height:1.8;font-size:.9rem"
-                                    id="overviewText">Course overview will be displayed here.</p>
+                            <div class="cd-side-card about-section">
+                                <div class="side-card-title" style="margin-bottom:14px">About this course</div>
+                                <p id="overviewText">Course overview will be displayed here.</p>
                             </div>
                         </div>
                         <div id="tabCurriculum" style="display:none">
                             <div class="curriculum-header">
                                 <div style="display:flex;align-items:center;gap:10px">
-                                    <h3 data-i18n="courseCurriculum">محتوى الكورس</h3>
-                                    <span class="lesson-count" id="totalLessonsBadge">24 Lessons</span>
+                                    <h3>Course Curriculum</h3>
+                                    <span class="lesson-count" id="totalLessonsBadge">0 Lessons</span>
                                 </div>
-                                <span class="expand-btn" id="expandAllBtn" data-i18n="expandAll">توسيع الكل</span>
+                                <span class="expand-btn" id="expandAllBtn">Expand All</span>
                             </div>
                             <div id="curriculumSections"></div>
                         </div>
@@ -969,20 +1579,63 @@
                             </div>
                         </div>
                         <div id="tabReviews" style="display:none">
-                            <div class="cd-side-card">
-                                <p style="color:var(--text-muted)">Reviews coming soon...</p>
+                            <div class="reviews-container">
+                                <!-- Write Review -->
+                                <div class="review-form-card">
+                                    <div class="review-form-title">Write a Review</div>
+                                    <div class="star-rating-select" id="starRatingSelect">
+                                        <button class="star-btn" data-value="1" type="button"><i
+                                                class="fa-regular fa-star"></i></button>
+                                        <button class="star-btn" data-value="2" type="button"><i
+                                                class="fa-regular fa-star"></i></button>
+                                        <button class="star-btn" data-value="3" type="button"><i
+                                                class="fa-regular fa-star"></i></button>
+                                        <button class="star-btn" data-value="4" type="button"><i
+                                                class="fa-regular fa-star"></i></button>
+                                        <button class="star-btn" data-value="5" type="button"><i
+                                                class="fa-regular fa-star"></i></button>
+                                    </div>
+                                    <div class="rating-label" id="ratingLabel"></div>
+                                    <textarea class="review-textarea" id="reviewTextarea"
+                                        placeholder="Share your experience with this course..."></textarea>
+                                    <button class="submit-review-btn" id="submitReviewBtn" disabled>
+                                        <i class="fa-solid fa-paper-plane"></i> Submit Review
+                                    </button>
+                                </div>
+
+                                <!-- Reviews Summary -->
+                                <div class="reviews-summary" id="reviewsSummary" style="display:none;">
+                                    <div class="reviews-avg">
+                                        <div class="big-number" id="avgRatingNum">0 / 5</div>
+                                        <div class="avg-stars" id="avgStars">
+                                            <!-- Stars populated by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div class="reviews-list" id="reviewsList">
+                                    <div class="reviews-empty">
+                                        <i class="fa-regular fa-comment-dots"></i>
+                                        <p>No reviews yet. Be the first to review this course!</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Right Sidebar -->
                     <div class="cd-grid-side">
-                        <!-- Progress -->
+                        <!-- Progress Card -->
                         <div class="cd-side-card">
-                            <div class="side-card-title" data-i18n="yourProgress">تقدمك</div>
+                            <div class="side-card-header">
+                                <span class="side-card-title">Your Progress</span>
+                                <span class="side-card-link" onclick="window.location.href='courses.html?v=2'">View
+                                    all</span>
+                            </div>
                             <div class="progress-ring-wrap">
                                 <div class="progress-ring">
-                                    <svg width="100" height="100" viewBox="0 0 100 100">
+                                    <svg width="90" height="90" viewBox="0 0 100 100">
                                         <circle class="track" cx="50" cy="50" r="42" />
                                         <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42"
                                             stroke-dasharray="263.9" stroke-dashoffset="263.9" />
@@ -990,7 +1643,7 @@
                                     <div class="pct" id="cdProgressPct">0%</div>
                                 </div>
                                 <div class="progress-ring-info">
-                                    <h4 data-i18n="courseProgress">تقدم الكورس</h4>
+                                    <div class="label">Course Progress</div>
                                     <div class="pct-text" id="cdProgressText">0% Complete</div>
                                     <div class="lessons-text" id="cdProgressLessons">Completed 0 of 0 lessons</div>
                                 </div>
@@ -998,26 +1651,49 @@
                             <div class="progress-bar-full">
                                 <div class="bar" id="cdProgressBar" style="width:0%"></div>
                             </div>
-                            <button class="btn-outline" style="width:100%;justify-content:center;margin-top:8px"
-                                id="resumeBtn"><i class="fa-solid fa-play"></i> <span data-i18n="resumeLesson">كمّل من
-                                    آخر درس</span></button>
+                            <button class="btn-blue-full" id="resumeBtn"><i class="fa-solid fa-play"></i> Resume
+                                Lesson</button>
                         </div>
 
                         <!-- What You'll Learn -->
                         <div class="cd-side-card">
-                            <div class="side-card-title" data-i18n="whatYoullLearn">هتتعلم إيه</div>
+                            <div class="side-card-title" style="margin-bottom:14px">What You'll Learn</div>
                             <ul class="learn-list" id="learnList">
-                                <li><i data-lucide="check" size="16"></i> Build smart AI automations from scratch</li>
-                                <li><i data-lucide="check" size="16"></i> Connect APIs and automate workflows</li>
-                                <li><i data-lucide="check" size="16"></i> Deploy AI-powered customer support bots</li>
-                                <li><i data-lucide="check" size="16"></i> Process and classify data automatically</li>
+                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Build AI
+                                    automations from scratch</li>
+                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Save 10+ hours
+                                    every week</li>
+                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Use AI tools like
+                                    a pro</li>
+                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Integrate APIs and
+                                    workflows</li>
+                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Create real world
+                                    AI solutions</li>
                             </ul>
                         </div>
 
-                        <!-- Top Students Leaderboard -->
+                        <!-- Guest of Honor -->
+                        <div class="cd-side-card" id="gohCard" style="display:none">
+                            <div class="side-card-header">
+                                <span class="side-card-title">Guest of Honor</span>
+                                <span class="side-card-link"
+                                    onclick="window.location.href='guest-of-honors.html?v=2'">View all</span>
+                            </div>
+                            <div class="goh-card">
+                                <div class="goh-avatar" id="gohAvatar"></div>
+                                <div class="goh-info">
+                                    <div class="goh-name" id="gohName"></div>
+                                    <div class="goh-title" id="gohTitle"></div>
+                                    <div class="goh-bio" id="gohBio"></div>
+                                    <button class="btn-outline-sm" id="gohProfileBtn">View Profile</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top Students -->
                         <div class="cd-side-card">
-                            <div class="card-header" style="margin-bottom:10px">
-                                <div class="side-card-title" style="margin-bottom:0">🏆 أفضل الطلاب</div>
+                            <div class="side-card-header" style="margin-bottom:10px">
+                                <span class="side-card-title">🏆 Top Students</span>
                                 <span id="leaderboardUpdated" style="color:#555;font-size:11px;"></span>
                             </div>
                             <div id="leaderboardList">
@@ -1027,26 +1703,35 @@
                             </div>
                         </div>
 
-                        <!-- Filter & Search -->
-                        <div class="cd-side-card">
-                            <div class="side-card-title" data-i18n="filterSearch">بحث وتصفية الدروس</div>
-                            <div class="cd-search"><i data-lucide="search" size="16"></i><input type="text"
-                                    data-i18n-placeholder="searchLessons" placeholder="ابحث في الدروس..."
-                                    id="lessonSearch" /></div>
-                            <div class="filter-pills">
-                                <button class="filter-pill active" data-filter="all">All</button>
-                                <button class="filter-pill" data-filter="video">Videos</button>
-                                <button class="filter-pill" data-filter="quiz">Quizzes</button>
-                                <button class="filter-pill" data-filter="project">Projects</button>
-                                <button class="filter-pill" data-filter="resource">Resources</button>
+                        <!-- Resources -->
+                        <div class="cd-side-card" id="sideResources">
+                            <div class="side-card-header">
+                                <span class="side-card-title">Resources</span>
+                                <span class="side-card-link" id="resourcesViewAll" onclick="switchToResourcesTab()">View
+                                    all</span>
+                            </div>
+                            <div class="resources-grid" id="resourcesGrid">
+                                <div class="resource-item">
+                                    <div class="res-name">Cheat Sheet</div>
+                                    <div class="res-type">PDF</div>
+                                </div>
+                                <div class="resource-item">
+                                    <div class="res-name">Workflow Templates</div>
+                                    <div class="res-type">ZIP</div>
+                                </div>
+                                <div class="resource-item">
+                                    <div class="res-name">Prompt Library</div>
+                                    <div class="res-type">DOCS</div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Build With Me Live Promo -->
+                        <!-- Build With Me Live -->
                         <div class="cd-live-promo">
-                            <h4 data-i18n="buildWithMeLive">ابني معايا لايف</h4>
+                            <div class="live-badge"><span class="dot"></span> Live</div>
+                            <h4>Build With Me Live</h4>
                             <p>Join our live sessions and build real projects with experts.</p>
-                            <button class="btn-gold" style="width:100%;justify-content:center"><i
+                            <button class="btn-blue-full" onclick="window.location.href='build-with-me.html'"><i
                                     class="fa-regular fa-calendar"></i> View Live Schedule</button>
                         </div>
                     </div>
@@ -1060,9 +1745,13 @@
         <div class="cd-modal-box" id="cdModalBox"></div>
     </div>
 
-    <script src="src/js/utils.js?v=2"></script>
-    <script src="src/js/i18n.js"></script>
     <script>
+        // ═══ AUTH GUARD ═══
+        (async () => {
+            const user = await requireActiveUser();
+            if (!user) return;
+        })();
+
         const token = getToken();
         if (!token) window.location.href = 'login.html';
         const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -1093,7 +1782,7 @@
                 container.className = 'cd-toast-container';
                 document.body.appendChild(container);
             }
-            const bg = type === 'error' ? 'rgba(239,68,68,.9)' : type === 'success' ? 'rgba(34,197,94,.9)' : 'rgba(63,143,249,.9)';
+            const bg = type === 'error' ? 'rgba(239,68,68,.9)' : type === 'success' ? 'rgba(63,143,249,.9)' : 'rgba(63,143,249,.9)';
             const toast = document.createElement('div');
             toast.className = 'cd-toast';
             toast.style.background = bg;
@@ -1117,19 +1806,21 @@
                 const res = await apiFetch('/profile/me');
                 const u = await res.json();
                 currentUserData = u;
-                // Store user in localStorage for watermark
                 localStorage.setItem('user', JSON.stringify({ id: u.id, full_name: u.full_name, role: u.is_admin ? 'admin' : 'user' }));
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-                s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('streakCount', u.streak_days || 0);
+                s('sidebarName', u.full_name); s('sidebarBadge', getBadgeLabel(u.badge)); s('topbarName', u.full_name); s('streakCount', u.streak_days || 0);
                 ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
                     const el = document.getElementById(id);
-                    if (el && u.avatar_url) el.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+                    if (el) {
+                        const fullUrl = window.getAvatarSrc(u);
+                        el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+                    }
                 });
             } catch (e) { }
         }
 
         // ═══════════════════════════════════════════
-        //  PHASE 2 — VIDEO WATERMARK
+        //  VIDEO WATERMARK
         // ═══════════════════════════════════════════
 
         function initVideoWatermark() {
@@ -1138,9 +1829,6 @@
             let user;
             try { user = JSON.parse(raw); } catch (e) { return; }
             if (!user) return;
-
-            // Commented out admin check so you can see the watermark while testing
-            // if (user.role === 'admin') return;
 
             const watermark = document.getElementById('videoWatermark');
             const watermarkText = document.getElementById('watermarkText');
@@ -1152,17 +1840,12 @@
             function moveWatermark() {
                 const container = document.getElementById('videoContainer');
                 if (!container) return;
-
-                // Use percentage-based positioning so zoom never clips the watermark
                 const textWPct = ((watermark.offsetWidth || 180) / container.offsetWidth) * 100;
                 const textHPct = ((watermark.offsetHeight || 20) / container.offsetHeight) * 100;
-
                 const maxLeftPct = Math.max(90 - textWPct, 5);
                 const maxTopPct = Math.max(90 - textHPct, 5);
-
                 const randomLeftPct = 5 + Math.random() * maxLeftPct;
                 const randomTopPct = 5 + Math.random() * maxTopPct;
-
                 watermark.style.left = randomLeftPct.toFixed(1) + '%';
                 watermark.style.top = randomTopPct.toFixed(1) + '%';
             }
@@ -1170,8 +1853,6 @@
             moveWatermark();
             if (watermarkInterval) clearInterval(watermarkInterval);
             watermarkInterval = setInterval(moveWatermark, 8000);
-
-            // Reposition immediately on browser zoom / window resize
             window.addEventListener('resize', moveWatermark);
         }
 
@@ -1192,20 +1873,18 @@
         });
 
         // ═══════════════════════════════════════════
-        //  PHASE 3 — LESSON COMPLETION
+        //  LESSON COMPLETION
         // ═══════════════════════════════════════════
 
         async function autoCompleteLesson(cId, lId) {
-            // Only allow completing, not uncompleting, since it's automatic now
             const row = document.querySelector(`[data-lesson-id="${lId}"]`);
             const btn = row ? row.querySelector('.complete-btn') : null;
             const isCompleted = btn ? btn.classList.contains('completed') : false;
 
-            if (isCompleted) return; // Already completed
+            if (isCompleted) return;
 
             const method = 'PATCH';
 
-            // Optimistic UI
             if (btn) {
                 btn.classList.add('completed');
                 btn.textContent = '✅';
@@ -1222,16 +1901,14 @@
 
                 if (data.course_progress) {
                     updateProgressUI(data.course_progress);
-                    showToast('✅ تم إتمام الدرس تلقائياً', 'success');
+                    showToast('✅ Lesson automatically completed', 'success');
                     if (data.course_progress.percentage === 100) {
                         showCertificateModal(data.course_progress.certificate_id);
                     }
                 }
-                // Refresh leaderboard
                 loadTopStudents(cId);
             } catch (err) {
                 console.error('Auto-complete failed:', err);
-                // Revert on failure
                 if (btn) {
                     btn.classList.remove('completed');
                     btn.textContent = '○';
@@ -1251,11 +1928,11 @@
             if (isCompleted) {
                 pBtn.classList.add('completed');
                 pIcon.textContent = '✅';
-                pText.textContent = 'تم الإتمام';
+                pText.textContent = 'Completed';
             } else {
                 pBtn.classList.remove('completed');
                 pIcon.textContent = '○';
-                pText.textContent = 'جاري مشاهدة الدرس... سيتم الإتمام تلقائياً';
+                pText.textContent = 'Watching lesson... will be completed automatically';
             }
         }
 
@@ -1263,17 +1940,12 @@
             const area = document.getElementById('lessonCompleteArea');
             const pBtn = document.getElementById('currentLessonCompleteBtn');
             if (!area || !pBtn) return;
-
-            // Check if already completed
             const row = document.querySelector(`[data-lesson-id="${lId}"]`);
             const alreadyCompleted = row && row.querySelector('.complete-btn.completed');
             updatePlayerCompleteBtn(!!alreadyCompleted);
-
-            // We now rely on the global 'message' event listener for accurate video progress tracking.
-            area.style.display = 'flex'; // Always show status text
+            area.style.display = 'flex';
         }
 
-        // Global flag to prevent multiple triggers for the same lesson
         let videoCompletionTriggered = false;
 
         function formatVideoTime(seconds) {
@@ -1367,7 +2039,6 @@
             } catch (err) { /* ignore parse errors */ }
         });
 
-        // Helper: update seek bar UI
         function updateSeekBar(current, duration) {
             const timeEl = document.getElementById('vslTime');
             if (timeEl) timeEl.textContent = `${formatVideoTime(current)} / ${formatVideoTime(duration)}`;
@@ -1375,15 +2046,11 @@
             if (fill) fill.style.width = ((current / duration) * 100) + '%';
         }
 
-        // Fallback: Timer-based auto-complete
         function initVideoAutoCompleteTimer(cId, lId, durationMinutes) {
             if (!durationMinutes) return;
-
             let hasAutoCompleted = false;
-            const ninetyPercent = durationMinutes * 60 * 0.9 * 1000; // in milliseconds
-
+            const ninetyPercent = durationMinutes * 60 * 0.9 * 1000;
             if (completionTimer) clearTimeout(completionTimer);
-
             completionTimer = setTimeout(function () {
                 if (document.visibilityState === 'visible' && !hasAutoCompleted && currentLessonId == lId) {
                     hasAutoCompleted = true;
@@ -1398,15 +2065,13 @@
         function updateProgressUI(progress) {
             const { completed_lessons, total_lessons, percentage, is_completed, certificate_id } = progress;
 
-            // Progress header bar
             const pt = document.getElementById('progressText');
             const pp = document.getElementById('progressPercent');
             const pb = document.getElementById('progressBar');
-            if (pt) pt.textContent = `${completed_lessons} / ${total_lessons} دروس مكتملة`;
+            if (pt) pt.textContent = `${completed_lessons} / ${total_lessons} lessons completed`;
             if (pp) pp.textContent = `${percentage}%`;
             if (pb) pb.style.width = `${percentage}%`;
 
-            // Sidebar progress ring
             const pctEl = document.getElementById('cdProgressPct');
             const pctText = document.getElementById('cdProgressText');
             const pctLessons = document.getElementById('cdProgressLessons');
@@ -1418,7 +2083,6 @@
             if (fillEl) fillEl.style.strokeDashoffset = 263.9 - (263.9 * percentage / 100);
             if (barEl) barEl.style.width = percentage + '%';
 
-            // Certificate section
             const certSec = document.getElementById('certificateSection');
             if (certSec) {
                 certSec.style.display = is_completed ? 'block' : 'none';
@@ -1436,7 +2100,6 @@
 
                 updateProgressUI(progress);
 
-                // Mark completed lessons in curriculum
                 if (progress.completed_lesson_ids) {
                     progress.completed_lesson_ids.forEach(lId => {
                         const row = document.querySelector(`[data-lesson-id="${lId}"]`);
@@ -1451,7 +2114,6 @@
                     });
                 }
 
-                // Update section counts
                 document.querySelectorAll('.section-block').forEach(block => {
                     const rows = block.querySelectorAll('.lesson-row');
                     const completedCount = block.querySelectorAll('.lesson-row.completed').length;
@@ -1465,11 +2127,11 @@
             showModal(`
         <div style="text-align:center;padding:32px;">
             <div style="font-size:56px;margin-bottom:16px;">🎓</div>
-            <h2 style="color:#fff;margin:0 0 8px;font-size:1.4rem;">مبروك! أكملت الكورس</h2>
-            <p style="color:#888;margin:0 0 8px;">شهادتك جاهزة</p>
+            <h2 style="color:#fff;margin:0 0 8px;font-size:1.4rem;">Congratulations! You completed the course</h2>
+            <p style="color:#888;margin:0 0 8px;">Your certificate is ready</p>
             <p style="color:#3f8ff9;font-size:12px;margin-bottom:24px;font-family:'IBM Plex Mono',monospace;">ID: ${certificateId || '---'}</p>
-            <button onclick="closeModal()" class="btn-gold" style="width:100%;justify-content:center;padding:14px;">
-                ✨ أحسنت!
+            <button onclick="closeModal()" class="btn-blue-full" style="padding:14px;">
+                ✨ Well done!
             </button>
         </div>
     `);
@@ -1481,12 +2143,12 @@
             if (certId) {
                 showCertificateModal(certId);
             } else {
-                showToast('الشهادة غير متاحة بعد', 'info');
+                showToast('Certificate not available yet', 'info');
             }
         }
 
         // ═══════════════════════════════════════════
-        //  PHASE 4 — TOP STUDENTS LEADERBOARD
+        //  TOP STUDENTS LEADERBOARD
         // ═══════════════════════════════════════════
 
         async function loadTopStudents(cId) {
@@ -1500,8 +2162,8 @@
                 if (!students || students.length === 0) {
                     container.innerHTML = `
                 <div style="text-align:center;padding:20px;color:#555;">
-                    <p>لا يوجد طلاب بعد</p>
-                    <p style="font-size:12px;">كن أول من يكمل درساً! 🚀</p>
+                    <p>No students yet</p>
+                    <p style="font-size:12px;">Be the first to complete a lesson! 🚀</p>
                 </div>`;
                     return;
                 }
@@ -1537,15 +2199,15 @@
                     ${rankDisplay}
                     <div class="leaderboard-avatar">${avatarContent}</div>
                     <div class="leaderboard-info">
-                        <div class="leaderboard-name">${escapeHtml(student.full_name)}${student.is_current_user ? ' (أنت)' : ''}</div>
-                        <div class="leaderboard-progress-mini">${student.completed_lessons} / ${student.total_lessons} دروس · ${percentage}%</div>
+                        <div class="leaderboard-name">${escapeHtml(student.full_name)}${student.is_current_user ? ' (You)' : ''}</div>
+                        <div class="leaderboard-progress-mini">${student.completed_lessons} / ${student.total_lessons} lessons · ${percentage}%</div>
                     </div>
-                    ${student.is_completed ? '<span class="completed-badge">✅ مكتمل</span>' : ''}
+                    ${student.is_completed ? '<span class="completed-badge">✅ Completed</span>' : ''}
                 </div>`;
                 }).join('');
 
                 const updEl = document.getElementById('leaderboardUpdated');
-                if (updEl) updEl.textContent = 'آخر تحديث: الآن';
+                if (updEl) updEl.textContent = 'Last updated: Just now';
             } catch (e) { console.error('Leaderboard load error:', e); }
         }
 
@@ -1563,10 +2225,46 @@
 
                 document.title = `${course.title} — Ghawy`;
                 document.getElementById('breadcrumbTitle').textContent = course.title;
-                document.getElementById('courseDesc').textContent = course.description || 'Learn how to build smart automations and save 10+ hours every week.';
+                document.getElementById('cdHeroTitle').textContent = course.title;
+                document.getElementById('cdHeroDesc').textContent = course.description || 'Learn how to build smart automations and save 10+ hours every week.';
                 document.getElementById('statLessons').textContent = course.total_lessons;
                 document.getElementById('totalLessonsBadge').textContent = course.total_lessons + ' Lessons';
                 document.getElementById('overviewText').textContent = course.description || '';
+
+                // Set hero background image
+                if (course.thumbnail_url) {
+                    const thumbSrc = course.thumbnail_url.startsWith('/') ? API + course.thumbnail_url : course.thumbnail_url;
+                    document.getElementById('cdHeroBg').style.backgroundImage = `url('${thumbSrc}')`;
+                }
+
+                // Continue Learning button — start first uncompleted lesson
+                document.getElementById('continueLearningBtn').onclick = () => {
+                    if (course.lessons && course.lessons.length > 0) {
+                        playLesson(course.lessons[0].id);
+                        // Switch to curriculum tab
+                        document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelector('[data-tab="curriculum"]').classList.add('active');
+                        ['curriculum', 'overview', 'projects', 'resources', 'reviews'].forEach(t => {
+                            const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                            if (el) el.style.display = t === 'curriculum' ? '' : 'none';
+                        });
+                    }
+                };
+
+                // Resume button
+                document.getElementById('resumeBtn').onclick = () => {
+                    if (course.lessons && course.lessons.length > 0) {
+                        playLesson(course.lessons[0].id);
+                    }
+                };
+
+                // Preview button
+                document.getElementById('previewCourseBtn').onclick = () => {
+                    if (course.lessons && course.lessons.length > 0) {
+                        const preview = course.lessons.find(l => l.is_free_preview) || course.lessons[0];
+                        playLesson(preview.id);
+                    }
+                };
 
                 // Render curriculum sections
                 renderCurriculum(course.lessons || []);
@@ -1578,33 +2276,68 @@
                         const pdfHref = course.pdf_url.startsWith('/') ? API + course.pdf_url : course.pdf_url;
                         resourcesTab.innerHTML = `
                     <div class="cd-side-card">
-                        <div class="side-card-title">Course Resources</div>
-                        <a href="${pdfHref}" target="_blank" class="btn-outline" style="width:100%;justify-content:center;margin-top:10px;">
-                            <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Download Course PDF
+                        <div class="side-card-title" style="margin-bottom:14px">Course Resources</div>
+                        <a href="${pdfHref}" target="_blank" class="btn-blue-full" style="text-decoration:none;">
+                            <i class="fa-solid fa-file-pdf"></i> Download Course PDF
                         </a>
                     </div>
                 `;
+                        // Update sidebar resources card
+                        const resGrid = document.getElementById('resourcesGrid');
+                        if (resGrid) {
+                            resGrid.innerHTML = `
+                            <a href="${pdfHref}" target="_blank" class="resource-item" style="text-decoration:none;">
+                                <div class="res-name">Course PDF</div>
+                                <div class="res-type">PDF</div>
+                            </a>`;
+                        }
                     } else {
                         resourcesTab.innerHTML = `<div class="cd-side-card"><p style="color:var(--text-muted)">No resources available for this course.</p></div>`;
                     }
                 }
 
-                // Set Hero Background if thumbnail exists
-                const hero = document.querySelector('.cd-hero');
-                if (hero && course.thumbnail_url) {
-                    const thumbSrc = course.thumbnail_url.startsWith('/') ? API + course.thumbnail_url : course.thumbnail_url;
-                    hero.style.backgroundImage = `linear-gradient(to right, rgba(10,10,10,0.9) 20%, rgba(10,10,10,0.4)), url('${thumbSrc}')`;
-                    hero.style.backgroundSize = 'cover';
-                    hero.style.backgroundPosition = 'center';
+                // Update what you'll learn if course has outcomes
+                if (course.outcomes && course.outcomes.length > 0) {
+                    const learnList = document.getElementById('learnList');
+                    learnList.innerHTML = course.outcomes.map(o =>
+                        `<li><span class="check-icon"><i class="fa-solid fa-check"></i></span> ${escapeHtml(o)}</li>`
+                    ).join('');
                 }
 
-                // Load progress (Phase 3)
+                // Load progress
                 await loadCourseProgress(courseId);
 
-                // Load leaderboard (Phase 4)
+                // Load leaderboard
                 loadTopStudents(courseId);
 
+                // Load guest of honor if available
+                if (course.guest_id || course.guest) {
+                    loadGuestOfHonor(course.guest || course.guest_id);
+                }
+
             } catch (e) { console.error('Course load error:', e); }
+        }
+
+        // ═══ GUEST OF HONOR ═══
+        function loadGuestOfHonor(guest) {
+            if (!guest) return;
+            const card = document.getElementById('gohCard');
+            if (!card) return;
+
+            if (typeof guest === 'object') {
+                card.style.display = 'block';
+                const avatar = document.getElementById('gohAvatar');
+                if (guest.avatar_url) {
+                    const src = guest.avatar_url.startsWith('http') ? guest.avatar_url : API + guest.avatar_url;
+                    avatar.innerHTML = `<img src="${src}" alt="${guest.name || ''}" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user\\' style=\\'color:var(--text-muted)\\'></i>'"/>`;
+                }
+                document.getElementById('gohName').textContent = guest.name || '';
+                document.getElementById('gohTitle').textContent = guest.title || '';
+                document.getElementById('gohBio').textContent = guest.bio || '';
+                document.getElementById('gohProfileBtn').onclick = () => {
+                    if (guest.id) window.location.href = `guest-of-honors.html?v=2&id=${guest.id}`;
+                };
+            }
         }
 
         // ═══ CURRICULUM RENDERER ═══
@@ -1634,7 +2367,9 @@
             <div class="section-header" onclick="toggleSection(this)">
                 <div class="sec-left">
                     <i class="fa-solid fa-chevron-right sec-toggle" style="${isFirst ? 'transform:rotate(90deg)' : ''}"></i>
-                    <span class="sec-title">${secIdx + 1}. ${secTitle}</span>
+                    <div>
+                        <span class="sec-title">${secIdx + 1}. ${escapeHtml(secTitle)}</span>
+                    </div>
                 </div>
                 <div class="sec-right">
                     <span class="sec-count">0 / ${secLessons.length}</span>
@@ -1661,8 +2396,11 @@
         function toggleSection(header) {
             const lessons = header.nextElementSibling;
             const toggle = header.querySelector('.sec-toggle');
+            const expandIcon = header.querySelector('.sec-expand i');
             lessons.classList.toggle('open');
-            toggle.style.transform = lessons.classList.contains('open') ? 'rotate(90deg)' : '';
+            const isOpen = lessons.classList.contains('open');
+            toggle.style.transform = isOpen ? 'rotate(90deg)' : '';
+            if (expandIcon) expandIcon.className = isOpen ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
         }
 
         function escapeHtml(str) {
@@ -1674,7 +2412,7 @@
 
         // ═══ PLAY LESSON ═══
         function playLesson(lessonId) {
-            const hero = document.querySelector('.cd-hero');
+            const hero = document.getElementById('cdHero');
             if (hero) hero.style.display = 'none';
             const vidSec = document.getElementById('videoSection');
             vidSec.style.display = 'block';
@@ -1684,7 +2422,7 @@
             if (!lesson) return;
 
             currentLessonId = lessonId;
-            videoCompletionTriggered = false; // Reset the completion flag for the new video
+            videoCompletionTriggered = false;
 
             if (lesson.bunny_video_url) {
                 document.getElementById('videoPlayer').style.display = 'block';
@@ -1695,28 +2433,23 @@
 
                 try {
                     const urlObj = new URL(finalUrl);
-
                     if (!urlObj.searchParams.has('autoplay')) {
                         urlObj.searchParams.set('autoplay', 'false');
                     }
-
-                    urlObj.searchParams.set('controls', 'false');
+                    urlObj.searchParams.set('controls', 'true');
                     urlObj.searchParams.set('responsive', 'true');
                     urlObj.searchParams.set('api', 'true');
                     urlObj.searchParams.set('fs', 'false');
-
+                    urlObj.searchParams.set('pip', 'false');
                     finalUrl = urlObj.toString();
                 } catch (e) { }
 
                 window.courseFrame = frame;
                 frame.src = finalUrl;
 
-                // Phase 2: Init watermark
                 initVideoWatermark();
-
-                // Phase 3: Setup completion button & Fallback Timer
                 setupPlayerCompleteBtn(courseId, lessonId, lesson);
-                
+
                 if (typeof playerjs !== 'undefined') {
                     frame.onload = () => {
                         const player = new playerjs.Player(frame);
@@ -1766,7 +2499,6 @@
                             window.courseData?.lessons?.find(x => x.id == currentLessonId)?.duration_minutes);
                     };
                 } else {
-                    // Fallback: postMessage-based control (no playerjs)
                     frame.onload = () => {
                         const sendEvent = (method, value) => {
                             if (frame.contentWindow) {
@@ -1810,6 +2542,9 @@
             document.querySelectorAll('.sec-toggle').forEach(t => {
                 t.style.transform = allClosed ? 'rotate(90deg)' : '';
             });
+            document.querySelectorAll('.sec-expand i').forEach(i => {
+                i.className = allClosed ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+            });
             document.getElementById('expandAllBtn').textContent = allClosed ? 'Collapse All' : 'Expand All';
         });
 
@@ -1825,28 +2560,6 @@
                 });
             });
         });
-
-        // ═══ FILTER PILLS ═══
-        document.querySelectorAll('.filter-pill').forEach(p => {
-            p.addEventListener('click', () => {
-                document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
-                p.classList.add('active');
-            });
-        });
-
-        // ═══ HAMBURGER ═══
-        const hamburger = document.getElementById('hamburgerBtn');
-        const sidebar = document.getElementById('dashSidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        if (hamburger) {
-            hamburger.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
-                hamburger.classList.toggle('active');
-                if (sidebarOverlay) sidebarOverlay.classList.toggle('visible');
-            });
-        }
-
-        // (Custom controls removed — using native player controls)
 
         // ═══ CUSTOM FULLSCREEN ═══
         function updateFsIcon() {
@@ -1873,21 +2586,228 @@
             });
         }
 
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('open');
-                if (hamburger) hamburger.classList.remove('active');
-                sidebarOverlay.classList.remove('visible');
+        // ═══ SWITCH TO RESOURCES TAB ═══
+        function switchToResourcesTab() {
+            document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+            const resTab = document.querySelector('[data-tab="resources"]');
+            if (resTab) resTab.classList.add('active');
+            ['curriculum', 'overview', 'projects', 'resources', 'reviews'].forEach(t => {
+                const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (el) el.style.display = t === 'resources' ? '' : 'none';
             });
+            // Scroll to the tabs area
+            const tabsEl = document.getElementById('cdTabs');
+            if (tabsEl) tabsEl.scrollIntoView({ behavior: 'smooth' });
         }
+
+        // ═══ REVIEWS LOGIC ═══
+        (function () {
+            const ratingLabels = {
+                1: '⭐ Terrible — Very disappointed',
+                2: '⭐⭐ Poor — Below expectations',
+                3: '⭐⭐⭐ Average — Meets basic expectations',
+                4: '⭐⭐⭐⭐ Good — Above average experience',
+                5: '⭐⭐⭐⭐⭐ Excellent — Outstanding course!'
+            };
+
+            let selectedRating = 0;
+            const starBtns = document.querySelectorAll('#starRatingSelect .star-btn');
+            const ratingLabel = document.getElementById('ratingLabel');
+            const submitBtn = document.getElementById('submitReviewBtn');
+            const reviewsList = document.getElementById('reviewsList');
+
+            // State variable to store reviews memory
+            let currentReviews = [];
+
+            // Load reviews from API
+            async function fetchReviews() {
+                try {
+                    const res = await apiFetch(`/courses/${courseId}/reviews`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        currentReviews = data;
+                        renderReviews();
+                        updateAverageDisplay();
+                    }
+                } catch (e) {
+                    console.error("Error fetching reviews", e);
+                }
+            }
+
+            function updateAverageDisplay() {
+                const reviews = currentReviews;
+                const avgNum = document.getElementById('avgRatingNum');
+                const avgStars = document.getElementById('avgStars');
+                const heroRatingText = document.getElementById('heroRatingText');
+                const reviewsSummary = document.getElementById('reviewsSummary');
+
+                if (reviews.length === 0) {
+                    if (avgNum) avgNum.textContent = '0 / 5';
+                    if (heroRatingText) heroRatingText.textContent = '0 / 5';
+                    if (avgStars) avgStars.innerHTML = '';
+                    if (reviewsSummary) reviewsSummary.style.display = 'none';
+                    return;
+                }
+
+                if (reviewsSummary) reviewsSummary.style.display = 'flex';
+
+                const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+                const avg = (sum / reviews.length).toFixed(1);
+
+                if (avgNum) avgNum.textContent = avg + ' / 5';
+                if (heroRatingText) heroRatingText.textContent = avg + ' / 5';
+
+                if (avgStars) {
+                    let starsHtml = '';
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= Math.floor(avg)) {
+                            starsHtml += '<i class="fa-solid fa-star" style="color:#f59e0b"></i>';
+                        } else if (i === Math.ceil(avg) && !Number.isInteger(parseFloat(avg))) {
+                            starsHtml += '<i class="fa-solid fa-star-half-stroke" style="color:#f59e0b"></i>';
+                        } else {
+                            starsHtml += '<i class="fa-regular fa-star" style="color:#f59e0b"></i>';
+                        }
+                    }
+                    avgStars.innerHTML = starsHtml;
+                }
+            }
+
+            function renderReviews() {
+                const reviews = currentReviews;
+                if (reviews.length === 0) {
+                    reviewsList.innerHTML = `
+                        <div class="reviews-empty">
+                            <i class="fa-regular fa-comment-dots"></i>
+                            <p>No reviews yet. Be the first to review this course!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                reviews.forEach(r => {
+                    const initials = (r.user?.full_name || 'User').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    const avatarUrl = r.user?.avatar_url ? (r.user.avatar_url.startsWith('http') ? r.user.avatar_url : API + r.user.avatar_url) : null;
+                    const avatarContent = avatarUrl
+                        ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.textContent='${initials}'">`
+                        : initials;
+
+                    const starsHtml = Array.from({ length: 5 }, (_, i) =>
+                        `<i class="fa-solid fa-star ${i < r.rating ? 'star-filled' : 'star-empty'}"></i>`
+                    ).join('');
+
+                    const dateStr = new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                    const isAdmin = currentUserData && currentUserData.is_admin;
+                    const deleteBtnHtml = isAdmin ? `<button onclick="deleteReview(${r.id})" style="background:none;border:none;color:var(--danger);margin-left:10px;cursor:pointer;font-size:14px;" title="Delete Review"><i class="fa-solid fa-trash"></i></button>` : '';
+
+                    html += `
+                        <div class="review-card">
+                            <div class="review-card-header">
+                                <div class="review-avatar">${avatarContent}</div>
+                                <div class="review-meta">
+                                    <div class="review-author">${escapeHtml(r.user?.full_name || 'User')}</div>
+                                    <div class="review-date">${dateStr}</div>
+                                </div>
+                                <div class="review-stars" style="display:flex;align-items:center;">
+                                    ${starsHtml}
+                                    ${deleteBtnHtml}
+                                </div>
+                            </div>
+                            ${r.comment ? `<div class="review-text">${escapeHtml(r.comment)}</div>` : ''}
+                        </div>`;
+                });
+                reviewsList.innerHTML = html;
+            }
+
+            window.deleteReview = async function (reviewId) {
+                if (!confirm("Are you sure you want to delete this review?")) return;
+                try {
+                    const res = await apiFetch(`/courses/${courseId}/reviews/${reviewId}`, { method: 'DELETE' });
+                    if (!res.ok) throw new Error("Failed");
+                    showToast('✅ Review deleted successfully!', 'success');
+                    fetchReviews();
+                } catch (e) {
+                    showToast('❌ Error deleting review', 'error');
+                }
+            };
+
+            // Init displays
+            fetchReviews();
+
+            function updateStarDisplay(rating, isHover) {
+                starBtns.forEach(btn => {
+                    const val = parseInt(btn.dataset.value);
+                    const icon = btn.querySelector('i');
+                    if (val <= rating) {
+                        icon.className = 'fa-solid fa-star';
+                        btn.classList.add(isHover ? 'hovered' : 'active');
+                        if (!isHover) btn.classList.remove('hovered');
+                    } else {
+                        icon.className = 'fa-regular fa-star';
+                        btn.classList.remove('hovered', 'active');
+                    }
+                });
+            }
+
+            starBtns.forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    const val = parseInt(btn.dataset.value);
+                    updateStarDisplay(val, true);
+                    ratingLabel.textContent = ratingLabels[val];
+                });
+
+                btn.addEventListener('mouseleave', () => {
+                    updateStarDisplay(selectedRating, false);
+                    ratingLabel.textContent = selectedRating ? ratingLabels[selectedRating] : '';
+                });
+
+                btn.addEventListener('click', () => {
+                    selectedRating = parseInt(btn.dataset.value);
+                    updateStarDisplay(selectedRating, false);
+                    ratingLabel.textContent = ratingLabels[selectedRating];
+                    submitBtn.disabled = false;
+                });
+            });
+
+            // Submit review
+            submitBtn.addEventListener('click', async () => {
+                if (!selectedRating) return;
+                const textarea = document.getElementById('reviewTextarea');
+                const text = textarea.value.trim();
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+                try {
+                    const res = await apiFetch(`/courses/${courseId}/reviews`, {
+                        method: 'POST',
+                        body: JSON.stringify({ rating: selectedRating, comment: text })
+                    });
+
+                    if (!res.ok) throw new Error("Failed to submit");
+                    showToast('✅ Review submitted successfully!', 'success');
+                } catch (e) {
+                    showToast('❌ Error submitting review', 'error');
+                }
+
+                // Update UI by fetching the new list
+                await fetchReviews();
+
+                // Reset form
+                selectedRating = 0;
+                updateStarDisplay(0, false);
+                ratingLabel.textContent = '';
+                textarea.value = '';
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Review';
+                submitBtn.disabled = true;
+            });
+        })();
 
         // ═══ INIT ═══
         loadProfile();
         loadCourseDetail();
-
-
     </script>
-
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
