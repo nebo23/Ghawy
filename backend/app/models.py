@@ -301,6 +301,21 @@ class Message(Base):
     sender = relationship("User", back_populates="messages")
     reply_to = relationship("Message", remote_side=[id])
     reads = relationship("MessageRead", back_populates="message", cascade="all, delete-orphan")
+    reactions = relationship("ChatMessageReaction", back_populates="message", cascade="all, delete-orphan")
+
+
+class ChatMessageReaction(Base):
+    __tablename__ = "chat_message_reactions"
+    __table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_chat_message_reaction_user"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    emoji = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    message = relationship("Message", back_populates="reactions")
+    user = relationship("User")
 
 
 class MessageRead(Base):

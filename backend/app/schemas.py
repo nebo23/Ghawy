@@ -265,6 +265,7 @@ class MessageOut(BaseModel):
     sender_avatar: Optional[str] = None
     sender_badge: Optional[str] = None
     channel_name: Optional[str] = None
+    reactions_summary: Optional[list[dict]] = []
 
     class Config:
         from_attributes = True

@@ -9,6 +9,7 @@ from jose import jwt, JWTError
 from app.database import SessionLocal
 from app.models import User, Message, ChatMember, Channel, MessageType
 from app.services.ws_manager import manager
+from app.services.chat_reactions import get_reaction_summary, set_message_reaction
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -97,9 +98,13 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 continue
 
             action = data.get("action")
+            event = data.get("event")
 
             if action == "send_message":
                 await handle_send_message(user, data, db)
+
+            elif event == "message_reaction":
+                await handle_message_reaction(user, data.get("data") or {}, db)
 
             elif action == "typing":
                 channel_id = data.get("channel_id")
@@ -196,3 +201,43 @@ async def handle_send_message(user: User, data: dict, db: Session):
     }
 
     await manager.broadcast_to_channel(channel_id, broadcast_data)
+
+
+async def handle_message_reaction(user: User, data: dict, db: Session):
+    """Save/delete a reaction and broadcast personalized reaction summaries."""
+    message_id = data.get("message_id")
+    emoji = data.get("emoji")
+    action = data.get("action")
+
+    if not message_id or not emoji or action not in {"add", "remove"}:
+        await manager.send_personal(user.id, {
+            "event": "reaction_error",
+            "data": {"message": "Invalid reaction payload"}
+        })
+        return
+
+    try:
+        message = set_message_reaction(
+            db,
+            message_id=int(message_id),
+            user_id=user.id,
+            emoji=emoji,
+            action=action,
+        )
+    except (LookupError, PermissionError, ValueError) as exc:
+        await manager.send_personal(user.id, {
+            "event": "reaction_error",
+            "data": {"message": str(exc)}
+        })
+        return
+
+    subscribers = list(manager.channel_subscriptions.get(message.channel_id, set()))
+    for subscriber_id in subscribers:
+        await manager.send_personal(subscriber_id, {
+            "event": "reaction_updated",
+            "type": "reaction_updated",
+            "data": {
+                "message_id": message.id,
+                "reactions_summary": get_reaction_summary(db, message.id, subscriber_id),
+            }
+        })

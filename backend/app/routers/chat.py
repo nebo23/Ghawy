@@ -12,6 +12,7 @@ from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRo
 from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, ChatMemberOut
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
+from app.services.chat_reactions import get_reaction_summaries
 from pydantic import BaseModel
 
 import json
@@ -109,6 +110,8 @@ def get_messages_simple(
     for mid, name in reads_raw:
         reads_map.setdefault(mid, []).append(name)
 
+    reactions_map = get_reaction_summaries(db, msg_ids, current_user.id)
+
     # ── Online status: single query ──
     one_min_ago = datetime.utcnow() - timedelta(seconds=60)
     online_user_ids = set(
@@ -138,6 +141,7 @@ def get_messages_simple(
             "read_count": len(read_by),
             "read_by": read_by,
             "is_online": msg.sender_id in online_user_ids,
+            "reactions_summary": reactions_map.get(msg.id, []),
         })
     return result
 
@@ -194,6 +198,7 @@ async def post_message_simple(
         "author_id": current_user.id,
         "read_count": 0,
         "read_by": [],
+        "reactions_summary": [],
     }
 
     # Broadcast to all channel members so they receive it instantly without refreshing
@@ -214,6 +219,7 @@ async def post_message_simple(
             "reply_to_id": getattr(msg, 'reply_to_id', None),
             "created_at": msg.created_at.isoformat() if msg.created_at else None,
             "author_id": current_user.id,
+            "reactions_summary": [],
         }
     }
     await manager.broadcast_to_channel(msg.channel_id, broadcast_data)
@@ -465,6 +471,7 @@ def list_messages(
 
     messages = q.order_by(desc(Message.created_at)).limit(limit).all()
     messages.reverse()  # Return in chronological order
+    reactions_map = get_reaction_summaries(db, [msg.id for msg in messages], current_user.id)
 
     result = []
     for msg in messages:
@@ -484,6 +491,7 @@ def list_messages(
             sender_name=sender.full_name if sender else "Unknown",
             sender_avatar=sender.avatar_url if sender else None,
             sender_badge=sender.badge if sender else "Member",
+            reactions_summary=reactions_map.get(msg.id, []),
         ))
 
     return result
@@ -529,6 +537,7 @@ def send_message(
         sender_name=current_user.full_name,
         sender_avatar=current_user.avatar_url,
         sender_badge=current_user.badge or "Member",
+        reactions_summary=[],
     )
 
 

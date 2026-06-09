@@ -1688,6 +1688,7 @@
             display: none;
             align-items: center;
             gap: 4px;
+            position: relative;
         }
 
         .msg:hover .msg-actions {
@@ -1712,6 +1713,125 @@
         .msg-action-btn:hover {
             background: #2a2a2a;
             color: #fff;
+        }
+
+        .msg-reaction-popover {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 5px;
+            border-radius: 999px;
+            background: rgba(12, 12, 12, 0.96);
+            border: 1px solid rgba(193, 255, 17, 0.22);
+            box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(193, 255, 17, 0.12);
+            backdrop-filter: blur(12px);
+            z-index: 60;
+            white-space: nowrap;
+        }
+
+        .msg-actions:hover .msg-reaction-popover,
+        .msg-reaction-popover.open {
+            display: flex;
+            animation: reactionBarIn 0.14s ease-out forwards;
+        }
+
+        @keyframes reactionBarIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.96); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+
+        .msg-reaction-option {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.12rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.14s ease, background 0.14s ease;
+        }
+
+        .msg-reaction-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px) scale(1.12);
+        }
+
+        .msg-reactions-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            min-height: 0;
+            margin-top: 5px;
+        }
+
+        .msg.msg-own .msg-reactions-wrap {
+            justify-content: flex-end;
+        }
+
+        .msg-reactions-wrap:empty {
+            display: none;
+        }
+
+        .msg-reaction-badge {
+            height: 24px;
+            min-width: 34px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.045);
+            color: #d8d8d8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.16s ease;
+        }
+
+        .msg-reaction-badge:hover {
+            border-color: rgba(193, 255, 17, 0.25);
+            background: rgba(255, 255, 255, 0.075);
+        }
+
+        .msg-reaction-badge.user-reacted {
+            color: var(--gold, #c1ff11);
+            border-color: rgba(193, 255, 17, 0.44);
+            background: rgba(193, 255, 17, 0.12);
+            box-shadow: 0 0 16px rgba(193, 255, 17, 0.08);
+        }
+
+        @media(max-width:768px) {
+            .msg-actions {
+                display: flex;
+            }
+
+            .msg-reaction-popover {
+                left: auto;
+                right: 0;
+                transform: translateY(4px);
+            }
+
+            .msg-actions:hover .msg-reaction-popover,
+            .msg-reaction-popover.open {
+                animation: reactionBarInMobile 0.14s ease-out forwards;
+            }
+
+            @keyframes reactionBarInMobile {
+                from { opacity: 0; transform: translateY(8px) scale(0.96); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
         }
 
         .msg-reply-indicator {
@@ -2207,6 +2327,8 @@
         let audioChunks = [];
         let isRecording = false;
         let ws = null;
+        const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+        const messageReactionsCache = {};
 
         // ── Post-mode state ──
         const POST_CHANNELS = ['announcements', 'introduce-yourself', 'wins', 'workflows-help', 'share-your-build', 'general-questions', 'hiring-opportunities'];
@@ -2240,6 +2362,11 @@
                         loadDmList();
                     } else if (msg.event === 'message_read') {
                         // Refresh to show updated read receipts
+                        loadMessages();
+                    } else if (msg.event === 'reaction_updated' || msg.type === 'reaction_updated') {
+                        if (msg.data) applyReactionUpdate(msg.data.message_id, msg.data.reactions_summary || []);
+                    } else if (msg.event === 'reaction_error') {
+                        notifyToast(msg.data?.message || 'Reaction could not be saved', 'error');
                         loadMessages();
                     } else if (msg.event === 'connected') {
                         document.getElementById('onlineCount').textContent = msg.data.online_count + ' online';
@@ -2644,6 +2771,11 @@
         }
 
         function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function notifyToast(message, type = 'success') {
+            if (typeof showToast === 'function') showToast(message, type);
+            else if (typeof commToast === 'function') commToast(message);
+        }
+
         function getBadgeClass(badge) {
             if (!badge) return 'member';
             const b = badge.toLowerCase();
@@ -2651,6 +2783,94 @@
             if (b.includes('admin')) return 'admin';
             return 'member';
         }
+
+        function renderMessageReactionPopover(messageId) {
+            return `<div class="msg-reaction-popover" id="reaction-popover-${messageId}">
+                ${MESSAGE_REACTION_EMOJIS.map(emoji => `
+                    <button class="msg-reaction-option" type="button" aria-label="React ${emoji}" onclick="toggleMessageReaction(${messageId}, '${emoji}')">${emoji}</button>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderMessageReactions(messageId, summary = []) {
+            messageReactionsCache[messageId] = summary;
+            return summary
+                .filter(item => Number(item.count) > 0)
+                .map(item => `
+                    <button class="msg-reaction-badge ${item.user_reacted ? 'user-reacted' : ''}" type="button" onclick="toggleMessageReaction(${messageId}, '${item.emoji}')">
+                        <span>${item.emoji}</span><span>${item.count}</span>
+                    </button>
+                `).join('');
+        }
+
+        function applyReactionUpdate(messageId, summary) {
+            if (!messageId) return;
+            messageReactionsCache[messageId] = summary || [];
+            const wrap = document.getElementById(`msg-reactions-${messageId}`);
+            if (wrap) wrap.innerHTML = renderMessageReactions(messageId, messageReactionsCache[messageId]);
+        }
+
+        function getOptimisticReactionSummary(messageId, emoji, action) {
+            const current = (messageReactionsCache[messageId] || []).map(item => ({ ...item }));
+            let item = current.find(r => r.emoji === emoji);
+            if (!item) {
+                item = { emoji, count: 0, user_reacted: false };
+                current.push(item);
+            }
+
+            if (action === 'add' && !item.user_reacted) {
+                current.forEach(reaction => {
+                    if (reaction.emoji !== emoji && reaction.user_reacted) {
+                        reaction.count = Math.max(reaction.count - 1, 0);
+                        reaction.user_reacted = false;
+                    }
+                });
+                item.count += 1;
+                item.user_reacted = true;
+            } else if (action === 'remove' && item.user_reacted) {
+                item.count = Math.max(item.count - 1, 0);
+                item.user_reacted = false;
+            }
+
+            return MESSAGE_REACTION_EMOJIS
+                .map(allowed => current.find(r => r.emoji === allowed))
+                .filter(item => item && (item.count > 0 || item.user_reacted));
+        }
+
+        function toggleMessageReaction(messageId, emoji) {
+            const summary = messageReactionsCache[messageId] || [];
+            const existing = summary.find(item => item.emoji === emoji);
+            const action = existing && existing.user_reacted ? 'remove' : 'add';
+
+            applyReactionUpdate(messageId, getOptimisticReactionSummary(messageId, emoji, action));
+            document.querySelectorAll('.msg-reaction-popover.open').forEach(el => el.classList.remove('open'));
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                notifyToast('Reconnecting. Reaction will sync after the socket is back.', 'error');
+                loadMessages();
+                return;
+            }
+
+            ws.send(JSON.stringify({
+                event: 'message_reaction',
+                data: { message_id: messageId, emoji, action }
+            }));
+        }
+
+        function toggleReactionBar(messageId) {
+            const popover = document.getElementById(`reaction-popover-${messageId}`);
+            if (!popover) return;
+            document.querySelectorAll('.msg-reaction-popover.open').forEach(el => {
+                if (el !== popover) el.classList.remove('open');
+            });
+            popover.classList.toggle('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.msg-actions') && !e.target.closest('.msg-reaction-badge')) {
+                document.querySelectorAll('.msg-reaction-popover.open').forEach(el => el.classList.remove('open'));
+            }
+        });
 
         // ── Render Message ──
         function renderMsg(m) {
@@ -2688,6 +2908,7 @@
                 contentInnerHtml = `<div class="msg-txt">${escHtml(actualContent)}</div>`;
             }
             const contentHtml = `<div class="msg-content-bubble">${contentInnerHtml}</div>`;
+            const reactionsHtml = renderMessageReactions(m.id, m.reactions_summary || []);
 
             // Read by tooltip
             const readNames = (m.read_by || []);
@@ -2708,12 +2929,14 @@
             const rawText = actualContent.replace(/'/g, "\\'").replace(/\n/g, " ");
             const actionsHtml = `
                 <div class="msg-actions">
+                    ${renderMessageReactionPopover(m.id)}
+                    <button class="msg-action-btn" title="React" onclick="toggleReactionBar(${m.id})"><i class="fa-regular fa-face-smile"></i></button>
                     <button class="msg-action-btn" title="Reply" onclick="replyToMsg(${m.id}, '${escHtml(m.author_name).replace(/'/g, "\\'")}', '${m.author_avatar_url || ''}', '${rawText}')"><i class="fa-solid fa-reply"></i></button>
                     ${deleteBtn}
                 </div>
             `;
 
-            return `<div class="${msgClass}" id="msg-${m.id}" ${msgDataAttr}>
+            return `<div class="${msgClass}" id="msg-${m.id}" data-message-id="${m.id}" ${msgDataAttr}>
                 <div class="msg-avatar-wrap msg-user-trigger" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})">
                     <div class="msg-av">${avatarHtml}</div>
                 </div>
@@ -2728,6 +2951,7 @@
                         ${contentHtml}
                         ${actionsHtml}
                     </div>
+                    <div class="msg-reactions-wrap" id="msg-reactions-${m.id}">${reactionsHtml}</div>
                     <div class="msg-read"><i class="fa-solid fa-eye"></i> Read by ${readCount}${readTooltipHtml}</div>
                 </div>
             </div>`;
@@ -2913,7 +3137,7 @@
                 document.getElementById('fileInput').value = '';
                 document.getElementById('chatInput').value = '';
                 setTimeout(loadMessages, 300);
-            } catch (e) { console.error(e); alert('Failed to upload image'); }
+            } catch (e) { console.error(e); notifyToast('Failed to upload image', 'error'); }
         }
 
         // ── Voice Recording ──
@@ -2949,7 +3173,7 @@
                 mediaRecorder.start(); isRecording = true;
                 btn.classList.add('recording');
                 btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-            } catch (e) { alert('Microphone access denied'); }
+            } catch (e) { notifyToast('Microphone access denied', 'error'); }
         }
 
         // ── Lightbox ──
