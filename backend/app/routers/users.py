@@ -122,7 +122,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "email": user.email,
             "full_name": user.full_name,
             "is_active": user.is_active,
-            "completed_onboarding": user.onboarding_completed,
+            "onboarding_completed": user.onboarding_completed,
             "avatar_url": user.avatar_url
         }
     }
@@ -153,7 +153,7 @@ def token_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             "email": user.email,
             "full_name": user.full_name,
             "is_active": user.is_active,
-            "completed_onboarding": user.onboarding_completed,
+            "onboarding_completed": user.onboarding_completed,
             "avatar_url": user.avatar_url
         }
     }
@@ -193,7 +193,7 @@ def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
             "email": user.email,
             "full_name": user.full_name,
             "is_active": user.is_active,
-            "completed_onboarding": user.onboarding_completed,
+            "onboarding_completed": user.onboarding_completed,
             "avatar_url": user.avatar_url
         }
     }

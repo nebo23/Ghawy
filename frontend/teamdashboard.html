@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+  <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css" />
   <link rel="stylesheet" href="src/css/team.css?v=2" />
   <style>
@@ -755,55 +755,10 @@
 
 <body>
   <div class="dash-layout">
-    <!-- SIDEBAR -->
-    <aside class="dash-sidebar" id="dashSidebar">
-      <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
-      <nav class="sidebar-nav">
-        <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
-            data-i18n="dashboard">الرئيسية</span></a>
-        <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
-            data-i18n="courses">الكورسات</span></a>
-        <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
-            data-i18n="buildWithMe">ابني معايا (لايف)</span></a>
-        <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
-            data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                        <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
-                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
-<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
-            data-i18n="communityChat">شات المجتمع</span></a>
-        <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
-          <span>Direct
-            Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
-            style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-        <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
-            data-i18n="achievements">الإنجازات</span></a>
-        <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
-            data-i18n="settings">الإعدادات</span></a>
-        <a href="teamdashboard.html?v=2" class="nav-item active" data-admin-only="true"><i data-lucide="users"
-            class="nav-icon"></i>
-          <span data-i18n='teamDashboard'>Team Dashboard</span></a>
-      </nav>
-      <div class="sidebar-user" id="sidebarUser">
-        <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i>
-        </div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name" id="sidebarName">—</div>
-          <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
-        </div>
-      </div>
-      <div class="sidebar-streak" id="sidebarStreak">
-        <span class="streak-fire">🔥</span>
-        <span><span class="streak-count" id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span>
-      </div>
-    </aside>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
     <!-- MAIN -->
-    <div class="dash-main">
+    <div class="dash-main" style="margin-left: 0;">
       <header class="dash-topbar">
-        <button class="hamburger-btn" id="hamburgerBtn"
-          aria-label="Open menu"><span></span><span></span><span></span></button>
-        
+
         <div class="topbar-actions">
           <div class="notif-wrapper" id="notifWrapper">
             <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications"><i
@@ -828,13 +783,36 @@
             <span class="topbar-user-name" id="topbarName">—</span>
             <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
           </div>
-          <div class="user-dropdown" id="userDropdown">
-            <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> <span
-                data-i18n="profile">الملف الشخصي</span></a>
-            <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i> <span
-                data-i18n="settings">الإعدادات</span></a>
-            <button class="dd-danger" onclick="logout()"><i data-lucide="log-out" style="width:16px;height:16px;"></i>
-              <span data-i18n="logout">تسجيل الخروج</span></button>
+          <div class="user-dropdown whop-style" id="userDropdown">
+            <div class="dropdown-profile-header">
+              <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                <img src="./imgs/nabil.jpg" id="dropdownAvatarImg" alt="User Avatar"
+                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22></path><circle cx=%2212%22 cy=%227%22 r=%224%22></circle></svg>';">
+              </div>
+              <div class="dropdown-profile-info">
+                <div class="dropdown-name" id="dropdownName">Nabil Ahmed</div>
+                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+              </div>
+              <a href="profile-settings.html" class="dropdown-settings-icon"><i data-lucide="settings"></i></a>
+            </div>
+
+            <div class="dropdown-section">
+              <a href="profile.html#achievements"><i data-lucide="award"></i> Achievements</a>
+              <a href="javascript:void(0)"><i data-lucide="help-circle"></i> Help and support</a>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <div class="dropdown-section">
+              <button onclick="logout()"><i data-lucide="log-out"></i> Sign out</button>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <div class="theme-toggle-segmented">
+              <button class="theme-btn" data-theme="light"><i data-lucide="sun"></i></button>
+              <button class="theme-btn" data-theme="dark"><i data-lucide="moon"></i></button>
+            </div>
           </div>
         </div>
       </header>
@@ -1519,11 +1497,11 @@
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="lesson-order" value="0" /></div>
         </div>
         <div class="fg" style="display:flex; flex-direction:column; gap:8px;">
-          <label>رابط الفيديو من Bunny.net Stream *</label>
+          <label>Bunny.net Stream Video Link *</label>
           <input type="url" id="lesson-video-url"
             placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
             style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
-          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الفيديو → Embed → انسخ الـ
+          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الVideo → Embed → انسخ الـ
             iframe src</small>
         </div>
       </div>

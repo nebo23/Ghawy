@@ -73,17 +73,40 @@ async function loadDashboard() {
 function renderUser(u) {
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setTxt('sidebarName', u.full_name);
-    setTxt('sidebarBadge', getBadgeLabel(u.badge));
-    setTxt('topbarName', u.full_name);
-    setTxt('streakCount', u.streak_days || 0);
-
-    ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            const fullUrl = window.getAvatarSrc(u);
-            el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+        setTxt('topbarName', u.full_name);
+        
+        // Update Badge
+        const badgeLabel = getBadgeLabel(u.badge);
+        const badgeEl = document.getElementById('sidebarBadge');
+        if (badgeEl) {
+            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
         }
-    });
+
+        // Update Level & XP
+        const level = u.level || 1;
+        const xp = u.xp || 0;
+        const nextLevelXp = u.next_level_xp || (level * 100);
+        
+        setTxt('sidebarLevelNum', level);
+        setTxt('sidebarLevelTitle', badgeLabel);
+        setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
+        
+        const xpBar = document.getElementById('sidebarXpBar');
+        if (xpBar) {
+            const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
+            xpBar.style.width = `${pct}%`;
+        }
+
+        // Update Streak
+        setTxt('streakCount', u.streak_days || 0);
+        
+        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const fullUrl = window.getAvatarSrc(u);
+                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+            }
+        });
 }
 
 function renderCourses(courses) {
@@ -100,8 +123,11 @@ function renderCourses(courses) {
             </div>
             <div class="course-body">
                 <h3>${c.title}</h3>
-                <div class="course-meta"><i class="fa-solid fa-book"></i> ${c.total_lessons} Lessons</div>
-                <div style="display:flex;align-items:center;gap:10px">
+                <div class="course-meta" style="display:flex;justify-content:space-between;width:100%;">
+                    <span><i class="fa-solid fa-book"></i> ${c.total_lessons} Lessons</span>
+                    <span>${c.completed_lessons || 0}/${c.total_lessons} Completed</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
                     <div class="course-progress" style="flex:1"><div class="course-progress-bar" style="width:${pct}%"></div></div>
                     <span style="font-size:.72rem;color:var(--text-muted)">${pct}%</span>
                 </div>
@@ -112,14 +138,16 @@ function renderCourses(courses) {
 
 function renderPosts(posts) {
     const grid = document.getElementById('aiUpdatesGrid');
-    if (!grid || !posts || posts.length === 0) {
+    if (!grid) return;
+
+    if (!posts || posts.length === 0) {
         // Show placeholder AI updates
         grid.innerHTML = [
             { icon: '🤖', source: 'OpenAI', title: 'OpenAI launches new reasoning model', desc: 'Stronger, faster and more accurate than ever.', time: '2h ago' },
             { icon: '🧠', source: 'Anthropic', title: 'Anthropic releases Claude 3.5', desc: 'The most advanced Claude model yet.', time: '5h ago' },
             { icon: '🔧', source: 'Tools', title: 'Revolutionary AI tool for creators', desc: 'Create, edit and automate like never before.', time: '1d ago' },
             { icon: '🌐', source: 'Google', title: 'New Gemini features announced', desc: 'Google\'s latest updates will blow your mind.', time: '1d ago' },
-        ].map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=4'">
+        ].map(p => `<div class="post-card-dash" onclick="window.location.href='ai-updates.html?v=5'" style="cursor:pointer">
             <div class="post-author"><div class="avatar-sm" style="display:flex;align-items:center;justify-content:center;font-size:1rem">${p.icon}</div> ${p.source}</div>
             <h4>${p.title}</h4>
             <div class="post-preview">${p.desc}</div>
@@ -127,11 +155,39 @@ function renderPosts(posts) {
         </div>`).join('');
         return;
     }
-    grid.innerHTML = posts.map(p => `<div class="post-card-dash" onclick="window.location.href='chat.html?v=4'">
-        <div class="post-author"><div class="avatar-sm"></div> ${p.author_name}</div>
-        <h4>${p.title}</h4>
-        <div class="post-stats"><span><i class="fa-solid fa-heart"></i> ${p.likes_count}</span><span>${timeAgo(p.created_at)}</span></div>
-    </div>`).join('');
+
+    grid.innerHTML = posts.map(p => {
+        // Build avatar HTML
+        let avatarHtml = '';
+        const avUrl = p.author_avatar_url;
+        const selAv = p.author_selected_avatar;
+        if (avUrl) {
+            const fullUrl = avUrl.startsWith('http') ? avUrl : API + avUrl;
+            avatarHtml = `<img src="${fullUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        } else if (selAv) {
+            avatarHtml = `<img src="./imgs/avatars/${selAv}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        } else {
+            const initials = (p.author_name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            avatarHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:var(--gold);">${initials}</div>`;
+        }
+
+        // Truncate body for preview
+        const bodyPreview = p.body ? (p.body.length > 80 ? p.body.substring(0, 80) + '...' : p.body) : '';
+
+        return `<div class="post-card-dash" onclick="window.location.href='ai-updates.html?v=5#post-${p.id}'" style="cursor:pointer">
+            <div class="post-author">
+                <div class="avatar-sm" style="overflow:hidden;">${avatarHtml}</div>
+                <span>${p.author_name || 'Unknown'}</span>
+            </div>
+            <h4>${p.title}</h4>
+            ${bodyPreview ? `<div class="post-preview">${bodyPreview}</div>` : ''}
+            <div class="post-stats">
+                <span><i class="fa-solid fa-heart"></i> ${p.likes_count || 0}</span>
+                <span><i class="fa-regular fa-comment"></i> ${p.comment_count || 0}</span>
+                <span>${timeAgo(p.created_at)}</span>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function renderChatPreview(messages) {

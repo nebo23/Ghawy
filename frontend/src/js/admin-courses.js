@@ -44,13 +44,38 @@ async function loadProfile() {
     const u = await res.json();
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setTxt('sidebarName', u.full_name);
-    setTxt('sidebarBadge', getBadgeLabel(u.badge));
     setTxt('topbarName', u.full_name);
-    ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
+    
+    // Update Badge
+    const badgeLabel = getBadgeLabel(u.badge);
+    const badgeEl = document.getElementById('sidebarBadge');
+    if (badgeEl) {
+        badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+    }
+
+    // Update Level & XP
+    const level = u.level || 1;
+    const xp = u.xp || 0;
+    const nextLevelXp = u.next_level_xp || (level * 100);
+    
+    setTxt('sidebarLevelNum', level);
+    setTxt('sidebarLevelTitle', badgeLabel);
+    setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
+    
+    const xpBar = document.getElementById('sidebarXpBar');
+    if (xpBar) {
+        const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
+        xpBar.style.width = `${pct}%`;
+    }
+
+    // Update Streak
+    setTxt('streakCount', u.streak_days || 0);
+    
+    ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         const fullUrl = window.getAvatarSrc(u);
-        el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+        el.innerHTML = `<img src="${fullUrl}" alt="" />`;
       }
     });
   } catch (e) { console.error(e); }

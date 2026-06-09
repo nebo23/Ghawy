@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
         if (!token) throw new Error("No token in localStorage");
         
-        const res = await fetch('http://localhost:8000/profile/me', {
+        const res = await fetch(API + '/profile/me', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch user profile");
@@ -15,14 +15,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('user', JSON.stringify(currentUser));
         
         // Setup UI
-        document.getElementById('sidebarName').textContent = currentUser.full_name;
-        document.getElementById('topbarName').textContent = currentUser.full_name;
-        const avatarSrc = window.getAvatarSrc(currentUser);
-        if (avatarSrc) {
-            document.getElementById('sidebarAvatar').innerHTML = `<img src="${avatarSrc}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-            document.getElementById('topbarAvatar').innerHTML = `<img src="${avatarSrc}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        const u = currentUser;
+        const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        
+        setTxt('sidebarName', u.full_name);
+        setTxt('topbarName', u.full_name);
+        
+        // Update Badge
+        const badgeLabel = getBadgeLabel(u.badge);
+        const badgeEl = document.getElementById('sidebarBadge');
+        if (badgeEl) {
+            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
         }
-        document.getElementById('sidebarBadge').textContent = getBadgeLabel(currentUser.badge);
+
+        // Update Level & XP
+        const level = u.level || 1;
+        const xp = u.xp || 0;
+        const nextLevelXp = u.next_level_xp || (level * 100);
+        
+        setTxt('sidebarLevelNum', level);
+        setTxt('sidebarLevelTitle', badgeLabel);
+        setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
+        
+        const xpBar = document.getElementById('sidebarXpBar');
+        if (xpBar) {
+            const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
+            xpBar.style.width = `${pct}%`;
+        }
+
+        // Update Streak
+        setTxt('streakCount', u.streak_days || 0);
+        
+        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const fullUrl = window.getAvatarSrc(u);
+                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+            }
+        });
         
         if (currentUser.is_admin) {
             document.getElementById('newPostBtn').style.display = 'block';
@@ -48,7 +78,7 @@ async function loadFeed(page = 1) {
     if (page === 1) feed.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
     
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts?page=${page}&limit=20`, {
+        const res = await fetch(`${API}/ai-updates/posts?page=${page}&limit=20`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!res.ok) throw new Error('Failed to load posts');
@@ -74,6 +104,23 @@ async function loadFeed(page = 1) {
         });
         
         lucide.createIcons();
+
+        // Handle scrolling to a specific post if a hash is present
+        if (page === 1 && window.location.hash) {
+            const targetId = window.location.hash.substring(1); // remove the '#'
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                setTimeout(() => {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Optional: Add a brief highlight effect
+                    targetEl.style.transition = 'box-shadow 0.5s ease';
+                    targetEl.style.boxShadow = '0 0 15px rgba(193, 255, 17, 0.5)';
+                    setTimeout(() => {
+                        targetEl.style.boxShadow = '';
+                    }, 2000);
+                }, 100);
+            }
+        }
 
     } catch (err) {
         console.error(err);
@@ -109,7 +156,7 @@ function createPostElement(post) {
     
     // Photo
     if (post.post_type === 'photo' && post.image_url) {
-        const fullUrl = post.image_url.startsWith('http') ? post.image_url : (window.API || 'http://localhost:8000') + post.image_url;
+        const fullUrl = post.image_url.startsWith('http') ? post.image_url : API + post.image_url;
         contentHtml += `<div class="ai-post-media"><img src="${fullUrl}" alt="Post Image"></div>`;
     }
     
@@ -217,7 +264,7 @@ function renderPollHtml(poll) {
 // ── Interactions ──────────────────────────────────────────
 async function toggleReaction(postId, emoji) {
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/${postId}/react`, {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}/react`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -254,7 +301,7 @@ async function toggleReaction(postId, emoji) {
 
 async function submitVote(pollId, optionId) {
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/polls/${pollId}/vote`, {
+        const res = await fetch(`${API}/ai-updates/polls/${pollId}/vote`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -295,7 +342,7 @@ async function loadComments(postId) {
     list.innerHTML = '<div style="text-align:center;color:#888;font-size:0.8rem;">Loading...</div>';
     
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/${postId}/comments`, {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}/comments`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!res.ok) throw new Error();
@@ -377,7 +424,7 @@ async function submitComment(postId) {
     if (!text) return;
 
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/${postId}/comments`, {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}/comments`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -404,7 +451,7 @@ async function submitComment(postId) {
 async function deleteComment(postId, commentId) {
     if (!confirm("Are you sure you want to delete this comment?")) return;
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/comments/${commentId}`, {
+        const res = await fetch(`${API}/ai-updates/comments/${commentId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -436,7 +483,7 @@ async function likeComment(postId, commentId, btnElement) {
     localStorage.setItem('ai_comment_likes', JSON.stringify(localLikes));
 
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/comments/${commentId}/like`, {
+        const res = await fetch(`${API}/ai-updates/posts/comments/${commentId}/like`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -518,7 +565,7 @@ function setupAdminControls() {
                     const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
                     try {
-                        const uploadRes = await fetch('http://localhost:8000/chat/upload', {
+                        const uploadRes = await fetch(API + '/chat/upload', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                             body: formData
@@ -563,7 +610,7 @@ function setupAdminControls() {
             }
 
             try {
-                const res = await fetch('http://localhost:8000/ai-updates/posts', {
+                const res = await fetch(API + '/ai-updates/posts', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -606,7 +653,7 @@ function closeCreateModal() {
 async function deletePost(postId) {
     if (!confirm("Are you sure you want to delete this post?")) return;
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/${postId}`, {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -622,7 +669,7 @@ async function deletePost(postId) {
 
 async function togglePin(postId) {
     try {
-        const res = await fetch(`http://localhost:8000/ai-updates/posts/${postId}/pin`, {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}/pin`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -657,7 +704,7 @@ async function loadActiveUsers() {
             if (streakElem) streakElem.textContent = currentUser.streak_days || 0;
         }
         
-        const membersRes = await fetch('http://localhost:8000/chat/members', {
+        const membersRes = await fetch(API + '/chat/members', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const members = await membersRes.json();
@@ -715,7 +762,7 @@ async function openUserProfile(userId) {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:8000/profile/${userId}/public`, {
+        const res = await fetch(`${API}/profile/${userId}/public`, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (!res.ok) throw new Error('Failed to load profile');
@@ -744,7 +791,7 @@ function renderProfilePanel(p) {
     // Avatar
     const avatarEl = document.getElementById('ppAvatar');
     if (p.avatar_url) {
-        avatarEl.src = p.avatar_url.startsWith('http') ? p.avatar_url : 'http://localhost:8000' + p.avatar_url;
+        avatarEl.src = p.avatar_url.startsWith('http') ? p.avatar_url : API + p.avatar_url;
     } else if (p.selected_avatar) {
         avatarEl.src = `src/imgs/avatars/${p.selected_avatar}`;
     } else {
@@ -856,5 +903,5 @@ function generateInitialsAvatar(name) {
 async function startDmFromProfile() {
     if (!currentProfileUserId || currentProfileUserId === currentUser?.id) return;
     closeUserProfile();
-    window.location.href = `chat.html?v=5&channel=messages&dm=${currentProfileUserId}`;
+    window.location.href = `direct-messages.html?v=5&dm=${currentProfileUserId}`;
 }

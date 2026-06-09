@@ -152,7 +152,7 @@ def complete_onboarding(
         welcome_msg = Message(
             channel_id=start_here_ch.id,
             sender_id=current_user.id,
-            content="مرحباً بك في Ghawy! 🎉 ابدأ بمشاهدة الفيديو التعريفي في قسم Start Here",
+            content="Welcome to Ghawy! 🎉 Start by watching the introductory video in the Start Here section.",
             message_type=MessageType.TEXT,
         )
         db.add(welcome_msg)
@@ -212,12 +212,12 @@ def get_public_profile(
     # Username from email
     username = user.email.split("@")[0] if user.email else "user"
 
-    # Joined date (Arabic)
-    months_ar = {1:"يناير",2:"فبراير",3:"مارس",4:"أبريل",5:"مايو",6:"يونيو",
-                 7:"يوليو",8:"أغسطس",9:"سبتمبر",10:"أكتوبر",11:"نوفمبر",12:"ديسمبر"}
+    # Joined date
+    months_en = {1:"January",2:"February",3:"March",4:"April",5:"May",6:"June",
+                 7:"July",8:"August",9:"September",10:"October",11:"November",12:"December"}
     joined_at = ""
     if user.created_at:
-        joined_at = f"انضم في {months_ar.get(user.created_at.month, '')} {user.created_at.year}"
+        joined_at = f"Joined {months_en.get(user.created_at.month, '')} {user.created_at.year}"
 
     # Online status (heartbeat-based: last_seen within 60 seconds)
     is_online = False
@@ -294,17 +294,17 @@ async def send_phone_otp(
     """
     phone = req.phone.strip()
 
-    # تحقق إن الرقم مصري صحيح
+    # Check if number is valid
     if not (phone.startswith("01") and len(phone) == 11 and phone.isdigit()):
-        raise HTTPException(status_code=400, detail="رقم التليفون غير صحيح")
+        raise HTTPException(status_code=400, detail="Invalid phone number")
 
-    # تحقق إن الرقم مش مستخدم من حساب تاني
+    # Check if number is used
     existing = db.query(User).filter(
         User.phone == phone,
         User.id != current_user.id
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="الرقم ده مسجل بحساب تاني")
+        raise HTTPException(status_code=400, detail="This number is registered to another account")
 
     # احذف أي OTP قديم لنفس المستخدم
     db.query(PhoneOTP).filter(PhoneOTP.user_id == current_user.id).delete()
@@ -322,9 +322,9 @@ async def send_phone_otp(
 
     success = send_otp_sms(phone, code)
     if not success:
-        raise HTTPException(status_code=500, detail="فشل إرسال الكود، حاول تاني")
+        raise HTTPException(status_code=500, detail="Failed to send code, try again")
 
-    return {"message": "تم إرسال الكود على رقمك"}
+    return {"message": "Code sent to your number"}
 
 
 @router.post("/verify-phone-otp")
@@ -343,17 +343,17 @@ async def verify_phone_otp(
     ).first()
 
     if not otp:
-        raise HTTPException(status_code=400, detail="كود غير صحيح")
+        raise HTTPException(status_code=400, detail="Invalid code")
 
     if datetime.utcnow() > otp.expires_at:
-        raise HTTPException(status_code=400, detail="انتهت صلاحية الكود، اطلب كود جديد")
+        raise HTTPException(status_code=400, detail="Code expired, request a new one")
 
     if otp.code != req.code:
-        raise HTTPException(status_code=400, detail="الكود غير صحيح")
+        raise HTTPException(status_code=400, detail="Invalid code")
 
-    # احفظ الرقم في الـ User
+    # Save number
     current_user.phone = req.phone
     otp.is_used = True
     db.commit()
 
-    return {"message": "تم التحقق من رقمك بنجاح ✅"}
+    return {"message": "Phone verified successfully ✅"}

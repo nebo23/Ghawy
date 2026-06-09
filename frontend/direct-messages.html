@@ -629,10 +629,10 @@
                         data-i18n="guestOfHonors">Guest of Honors</span></a>
                 <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
                         data-i18n="aiUpdates">AI Updates</span></a>
-                <a href="chat.html?v=5" class="nav-item active"><i data-lucide="message-circle" class="nav-icon"></i>
+                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
                     <span data-i18n="communityChat">Community Chat</span></a>
 
-                <a href="direct-messages.html" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                <a href="direct-messages.html" class="nav-item active"><i data-lucide="mail" class="nav-icon"></i>
                     <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
                         style="display:none; margin-left:auto; margin-right:4px;"></span></a>
 
@@ -716,7 +716,7 @@
             <div class="chat-layout">
                 <!-- Left: Channels -->
                 <div class="chat-channels"
-                    style="background:#0a0a0a; border-right:1px solid rgba(255,255,255,0.06); width:220px; padding:16px 0; gap:0;">
+                    style="display:none; background:#0a0a0a; border-right:1px solid rgba(255,255,255,0.06); width:220px; padding:16px 0; gap:0;">
                     <!-- CHAT Section -->
                     <div
                         style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase;">
@@ -807,7 +807,7 @@
                 </div>
                 <!-- Center: Feed -->
                 <div class="chat-feed">
-                    <div class="chat-feed-header" id="chatFeedHeader">
+                    <div class="chat-feed-header" id="chatFeedHeader" style="display:none;">
                         <span class="ch-hash-lg" id="channelHashIcon">#</span>
                         <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
                         <div style="flex:1; min-width:0;">
@@ -853,16 +853,22 @@
                 <!-- Right Sidebar (shown only in posts mode) -->
                 <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
                     <div class="comm-rs-panel" id="rsActiveNow">
-                        <h4><i data-lucide="users" style="width:14px;height:14px;margin-right:4px;"></i> ACTIVE NOW</h4>
+                        <h4><span class="rs-dot"></span> ACTIVE NOW</h4>
                         <div class="comm-active-avatars" id="rsActiveAvatars"></div>
                     </div>
                     <div class="comm-rs-panel" id="rsTopTopics">
-                        <h4><i data-lucide="hash" style="width:14px;height:14px;margin-right:4px;"></i> TOP TOPICS</h4>
+                        <h4><span class="rs-dot"></span> TOP TOPICS</h4>
                         <div id="rsTopTopicsList"></div>
                     </div>
                     <div class="comm-rs-panel" id="rsPinned">
-                        <h4><i data-lucide="pin" style="width:14px;height:14px;margin-right:4px;"></i> PINNED MESSAGES</h4>
+                        <h4>PINNED MESSAGES</h4>
                         <div id="rsPinnedList"></div>
+                    </div>
+                    <div class="comm-cta-card">
+                        <h5>Introduce Yourself 👋</h5>
+                        <p>New here? Introduce yourself to the community!</p>
+                        <button class="comm-cta-btn" onclick="selectChannel('introduce-yourself')">Post
+                            Introduction</button>
                     </div>
                 </div>
             </div>
@@ -942,70 +948,6 @@
     </div>
 
     <div class="lightbox-overlay" id="lightbox"><img id="lightboxImg" src="" alt="" /></div>
-
-    <!-- ══ Introduce Yourself Welcome Modal ══ -->
-    <div id="introduceWelcomeOverlay" style="
-        display:none;
-        position:fixed;
-        inset:0;
-        background:rgba(0,0,0,0.75);
-        backdrop-filter:blur(6px);
-        z-index:9998;
-        align-items:center;
-        justify-content:center;
-        opacity:0;
-        transition:opacity 0.3s ease;
-    ">
-        <div id="introduceWelcomeCard" style="
-            background: linear-gradient(145deg, #111 0%, #1a1a1a 100%);
-            border: 1px solid rgba(193,255,17,0.3);
-            border-radius: 20px;
-            padding: 36px 28px 28px;
-            width: 90%;
-            max-width: 360px;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(193,255,17,0.12), 0 20px 60px rgba(0,0,0,0.7);
-            transform: translateY(30px) scale(0.95);
-            transition: all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
-            position: relative;
-            overflow: hidden;
-        ">
-            <!-- Glow ring -->
-            <div style="position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(193,255,17,0.25),transparent 60%);pointer-events:none;"></div>
-            <!-- Hands image area -->
-            <img src="./imgs/welcome-hands.png" alt="Welcome to Ghawy" style="width: 100%; height: auto; border-radius: 14px; margin-bottom: 20px; display: block; object-fit: cover;">
-            <!-- Title -->
-            <h2 style="
-                color:#fff;
-                font-size:1.35rem;
-                font-weight:800;
-                margin:0 0 20px;
-                line-height:1.3;
-            ">Welcome To Ghawy</h2>
-            <!-- CTA Button -->
-            <button id="introduceWelcomeBtn" onclick="closeIntroWelcomeAndPost()" style="
-                width: 100%;
-                padding: 14px;
-                background: linear-gradient(135deg, #c1ff11 0%, #a8e010 100%);
-                color: #0a0a0a;
-                border: none;
-                border-radius: 12px;
-                font-size: 0.95rem;
-                font-weight: 800;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                transition: all 0.2s;
-                font-family: inherit;
-                box-shadow: 0 4px 20px rgba(193,255,17,0.35);
-                letter-spacing: 0.02em;
-            " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(193,255,17,0.5)';"
-               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(193,255,17,0.35)';"
-            >🤝 Post Your Introduction</button>
-        </div>
-    </div>
 
 
     <!-- User Profile Panel -->
@@ -2259,9 +2201,6 @@
                                 loadInlineComments(msg.data.post_id);
                             }
                         }
-                    } else if (msg.event === 'notification') {
-                        commToast('New Notification: ' + msg.data.title);
-                        loadNotifications();
                     }
                 } catch (err) { console.error('WS parse error', err); }
             };
@@ -2349,46 +2288,6 @@
         let activeDmUserName = '';
 
         function selectChannel(name) {
-            // ── First-time introduce-yourself welcome modal ──
-            if (name === 'introduce-yourself') {
-                const _uid = currentUserId || (token ? token.slice(0, 16) : 'guest');
-                const storageKey = 'ghawy_intro_welcomed_' + _uid;
-                const alreadySeen = localStorage.getItem(storageKey);
-                if (!alreadySeen) {
-                    localStorage.setItem(storageKey, '1');
-                    // Show the channel in background first
-                    _doSelectChannel(name);
-                    // Then show the welcome overlay
-                    const overlay = document.getElementById('introduceWelcomeOverlay');
-                    const card = document.getElementById('introduceWelcomeCard');
-                    if (overlay) {
-                        overlay.style.display = 'flex';
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                overlay.style.opacity = '1';
-                                if (card) { card.style.transform = 'translateY(0) scale(1)'; }
-                            });
-                        });
-                    }
-                    return;
-                }
-            }
-            _doSelectChannel(name);
-        }
-
-        function closeIntroWelcomeAndPost() {
-            const overlay = document.getElementById('introduceWelcomeOverlay');
-            const card = document.getElementById('introduceWelcomeCard');
-            if (overlay) {
-                overlay.style.opacity = '0';
-                if (card) card.style.transform = 'translateY(30px) scale(0.95)';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            }
-            // Auto-open new post modal after overlay closes
-            setTimeout(() => { openNewPostModal(); }, 320);
-        }
-
-        function _doSelectChannel(name) {
             currentChannel = name;
             const headerHash = document.getElementById('channelHashIcon');
             const headerName = document.getElementById('currentChannelName');
@@ -2497,10 +2396,9 @@
                     const btn = document.createElement('button');
                     btn.className = 'comm-new-post-btn';
                     btn.id = 'newPostHeaderBtn';
-                    btn.innerHTML = '<i data-lucide="square-pen" style="width:16px;height:16px;"></i> New Post';
+                    btn.innerHTML = '+ New Post';
                     btn.onclick = openNewPostModal;
                     chatFeedHeader.appendChild(btn);
-                    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
                 } else if (chatFeedHeader) {
                     const existing = chatFeedHeader.querySelector('.comm-new-post-btn');
                     if (existing) existing.style.display = 'flex';
@@ -2971,14 +2869,12 @@
             connectWS();
             fetchOnlineCount();
             loadDmList();
-            loadNotifications();
             setInterval(fetchOnlineCount, 30000);
             setInterval(loadDmList, 30000);
-            setInterval(loadNotifications, 30000);
             const urlParams = new URLSearchParams(window.location.search);
             const channelParam = urlParams.get('channel');
             if (channelParam) selectChannel(channelParam);
-            else selectChannel('general');
+            else selectChannel('messages');
         })();
 
         // ═══════════════════════════════════════
@@ -3217,59 +3113,6 @@
             } catch (e) { console.error(e); }
         }
 
-        async function loadNotifications() {
-            try {
-                const res = await apiFetch('/notifications');
-                if (!res) return;
-                
-                const notifList = document.getElementById('notifList');
-                if (!notifList) return;
-
-                const unread = res.filter(n => !n.is_read).length;
-                const badge = document.getElementById('notifBadge');
-                const dot = document.getElementById('notifDot');
-
-                if (unread > 0) {
-                    if (badge) { badge.textContent = unread > 99 ? '99+' : unread; badge.style.display = 'flex'; }
-                    if (dot) dot.style.display = 'none';
-                } else {
-                    if (badge) badge.style.display = 'none';
-                    if (dot) dot.style.display = 'none';
-                }
-
-                if (res.length === 0) {
-                    notifList.innerHTML = '<div class="notif-empty">No new notifications</div>';
-                    return;
-                }
-
-                let html = '';
-                res.forEach(n => {
-                    html += `
-                    <div class="notif-item ${n.is_read ? 'read' : 'unread'}" onclick="markNotificationRead(${n.id}, '${n.link}')" style="cursor:pointer; ${n.is_read ? 'opacity:0.7;' : 'font-weight:bold;'}">
-                        <div class="notif-item-body">
-                            <div class="notif-item-name">${n.title}</div>
-                            <div class="notif-item-text">${n.body}</div>
-                            <div class="notif-item-time" style="font-size:10px; color:#888;">${n.time_ago}</div>
-                        </div>
-                    </div>`;
-                });
-                notifList.innerHTML = html;
-            } catch (e) {
-                console.error("Failed to load notifications", e);
-            }
-        }
-
-        async function markNotificationRead(id, link) {
-            try {
-                await apiFetch(`/notifications/${id}/read`, { method: 'PATCH' });
-                if (link && link !== 'null') {
-                    window.location.href = link;
-                } else {
-                    loadNotifications();
-                }
-            } catch(e) { console.error(e); }
-        }
-
         async function loadDmList() {
             try {
                 const res = await apiFetch('/chat/dm/list');
@@ -3495,14 +3338,8 @@
                     }
                 } else {
                     html += `<div class="comm-empty-state">
-                        <div class="empty-icon-container">
-                            <i data-lucide="message-square" style="width:32px;height:32px;stroke:#c1ff11;"></i>
-                        </div>
-                        <h3>No posts yet in this channel</h3>
-                        <p>Be the first to introduce yourself and start a great conversation!</p>
-                        <button class="empty-cta-btn" onclick="openNewPostModal()">
-                            <i data-lucide="square-pen" style="width:16px;height:16px;"></i> Be the First to Post
-                        </button>
+                        <div class="comm-empty-icon">✍️</div>
+                        <p style="color:#5a5648;">No posts yet in this channel. Be the first to post!</p>
                     </div>`;
                 }
 
@@ -3520,7 +3357,6 @@
                 }
 
                 el.innerHTML = html;
-                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
             } catch (e) {
                 console.error('Failed to load posts', e);
                 el.innerHTML = '<div class="comm-empty-state"><p style="color:#ef4444;">Failed to load posts. Try again.</p></div>';
@@ -3566,9 +3402,8 @@
             // Pinned badge
             const pinnedBadge = p.is_pinned ? '<span class="comm-post-pinned-badge">📌 Pinned</span> ' : '';
 
-            // Like (heart) reaction — AI Updates style
-            const _heartCount = (p.reaction_counts || {})['❤️'] || 0;
-            const _isHeartActive = (p.user_reactions || []).includes('❤️');
+            // Reactions bar
+            let reactionsHtml = buildReactionsBar(p.reaction_counts || {}, p.user_reactions || [], p.id, 'post');
 
             // Menu
             let menuHtml = '';
@@ -3602,13 +3437,9 @@
                     ${menuHtml}
                 </div>
                 <div class="comm-post-footer">
-                    <button class="comm-ai-like-btn ${_isHeartActive ? 'active' : ''}" id="like-btn-${p.id}" onclick="toggleLikePost(${p.id})">
-                        <i data-lucide="heart"></i>
-                        <span class="like-count" id="like-count-${p.id}">${_heartCount}</span>
-                    </button>
-                    <button class="comm-ai-comment-btn" onclick="toggleInlineComments(${p.id})">
-                        <i data-lucide="message-circle-more"></i>
-                        <span id="comment-count-${p.id}">${p.comment_count || 0}</span>
+                    ${reactionsHtml}
+                    <button class="comm-comments-toggle" onclick="toggleInlineComments(${p.id})">
+                        💬 <span id="comment-count-${p.id}">${p.comment_count || 0}</span> Comments
                     </button>
                 </div>
                 <div id="comments-section-${p.id}" style="display:none;"></div>
@@ -3668,45 +3499,7 @@
             }
         }
 
-        // ── Like Post (AI Updates Style Heart Button) ──
-        async function toggleLikePost(postId) {
-            const btn = document.getElementById(`like-btn-${postId}`);
-            if (!btn) return;
-            const countEl = document.getElementById(`like-count-${postId}`);
-            const icon = btn.querySelector('svg');
-            const isActive = btn.classList.contains('active');
-
-            // Optimistic UI update
-            if (isActive) {
-                btn.classList.remove('active');
-                countEl.textContent = Math.max(0, parseInt(countEl.textContent || '0') - 1);
-            } else {
-                btn.classList.add('active');
-                countEl.textContent = parseInt(countEl.textContent || '0') + 1;
-            }
-
-            try {
-                const res = await apiFetch(`/posts/${postId}/react`, {
-                    method: 'POST',
-                    body: JSON.stringify({ emoji: '❤️' }),
-                });
-                const data = await res.json();
-                const heartCount = (data.reaction_counts || {})['❤️'] || 0;
-                const heartActive = (data.user_reactions || []).includes('❤️');
-                countEl.textContent = heartCount;
-                if (heartActive) { btn.classList.add('active'); } else { btn.classList.remove('active'); }
-                if (postsCache[postId]) {
-                    postsCache[postId].reaction_counts = data.reaction_counts;
-                    postsCache[postId].user_reactions = data.user_reactions;
-                }
-            } catch (e) {
-                console.error('Like failed', e);
-                // Revert optimistic update on error
-                if (isActive) { btn.classList.add('active'); } else { btn.classList.remove('active'); }
-            }
-        }
-
-        // ── Reactions (kept for comment reactions) ──
+        // ── Reactions (Optimistic UI) ──
         async function toggleReaction(entityId, emoji, type) {
             // Close any open picker
             document.querySelectorAll('.comm-emoji-picker.open').forEach(p => p.classList.remove('open'));
@@ -3718,7 +3511,7 @@
                     body: JSON.stringify({ emoji }),
                 });
                 const data = await res.json();
-                
+
                 // Update the card's reactions bar
                 const card = type === 'post' ? document.getElementById(`post-${entityId}`) : document.getElementById(`comment-${entityId}`);
                 if (card) {
@@ -3728,6 +3521,7 @@
                     }
                 }
 
+                // Update cached post data
                 if (type === 'post' && postsCache[entityId]) {
                     postsCache[entityId].reaction_counts = data.reaction_counts;
                     postsCache[entityId].user_reactions = data.user_reactions;
@@ -3773,10 +3567,6 @@
             if (!section) return;
             try {
                 const res = await apiFetch(`/posts/${postId}/comments`);
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || 'API Error ' + res.status);
-                }
                 const comments = await res.json();
 
                 let html = '<div class="comm-inline-comments">';
@@ -3810,26 +3600,19 @@
                 if (countEl && postsCache[postId]) {
                     countEl.textContent = postsCache[postId].comment_count || comments.length;
                 }
-                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
             } catch (e) {
                 console.error('Failed to load comments', e);
-                section.innerHTML = `<div class="comm-inline-comments"><div style="color:#ef4444;font-size:0.82rem;">Failed to load comments: ${e.message}</div></div>`;
+                section.innerHTML = '<div class="comm-inline-comments"><div style="color:#ef4444;font-size:0.82rem;">Failed to load comments.</div></div>';
             }
         }
 
         function renderInlineComment(c, postId, isReply) {
             const a = c.author || {};
             const canManage = a.id === currentUserId || currentUserIsAdmin;
-            
-            // Check if user liked (has any reaction)
-            const hasLiked = (c.user_reactions || []).length > 0;
-            const likeCount = Object.values(c.reaction_counts || {}).reduce((a,b)=>a+b, 0);
+            let reactionsHtml = buildReactionsBar(c.reaction_counts || {}, c.user_reactions || [], c.id, 'comment');
 
             let actionsHtml = `<div class="comm-inline-comment-actions">
-                <button class="comm-ai-action-btn comm-ai-like-btn ${hasLiked ? 'liked' : ''}" onclick="toggleCommentLike(${c.id}, this)">
-                    <i data-lucide="heart" class="${hasLiked ? 'fill-current' : ''}"></i> 
-                    <span>${likeCount}</span>
-                </button>
+                ${reactionsHtml}
                 ${!isReply ? `<button onclick="showReplyInput(${postId}, ${c.id})">Reply</button>` : ''}
                 ${canManage ? `<button class="danger" style="color:#ef4444;" onclick="confirmDeleteComment(${postId}, ${c.id})">Delete</button>` : ''}
             </div>`;
@@ -3860,30 +3643,6 @@
             document.getElementById(`reply-text-${commentId}`)?.focus();
         }
 
-        async function toggleCommentLike(commentId, btnElement) {
-            try {
-                const isLiked = btnElement.classList.contains('liked');
-                // Optimistic UI update
-                btnElement.classList.toggle('liked');
-                const icon = btnElement.querySelector('i');
-                if (icon) icon.classList.toggle('fill-current');
-                
-                const span = btnElement.querySelector('span');
-                if (span) {
-                    let count = parseInt(span.textContent || '0');
-                    span.textContent = isLiked ? Math.max(0, count - 1) : count + 1;
-                }
-
-                // Call API with a heart emoji
-                await apiFetch(`/posts/comments/${commentId}/react`, {
-                    method: 'POST',
-                    body: JSON.stringify({ emoji: '❤️' })
-                });
-            } catch (e) {
-                console.error("Failed to toggle like", e);
-            }
-        }
-
         async function submitInlineComment(postId) {
             const input = document.getElementById(`comment-input-${postId}`);
             if (!input || !input.value.trim()) return;
@@ -3903,7 +3662,6 @@
             } catch (e) {
                 console.error('Failed to post comment', e);
                 commToast('Failed to post comment');
-                input.disabled = false;
             }
             input.disabled = false;
         }

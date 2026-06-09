@@ -20,28 +20,79 @@ function logout() { localStorage.removeItem('token'); window.location.href = 'lo
 
 let currentUser = null;
 
+// ─── Check if viewing another user's profile ───────────────────
+const _profileUserId = new URLSearchParams(window.location.search).get('user_id');
+const _isViewingOther = !!_profileUserId;
+
 // ═══ LOAD PROFILE ═══
 async function loadProfile() {
     try {
-        const res = await apiFetch('/profile/me');
-        if (!res.ok) return;
-        currentUser = await res.json();
-        const u = currentUser;
-
-        // Sidebar
-        const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        setTxt('sidebarName', u.full_name);
-        setTxt('sidebarBadge', getBadgeLabel(u.badge));
-        setTxt('topbarName', u.full_name);
-        setTxt('streakCount', u.streak_days || 0);
-
-        ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                const fullUrl = window.getAvatarSrc(u);
-                el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+        // ── Load sidebar (always the logged-in user) ──
+        const sidebarRes = await apiFetch('/profile/me');
+        if (sidebarRes.ok) {
+            const me = await sidebarRes.json();
+            const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setTxt('sidebarName', me.full_name);
+            setTxt('topbarName', me.full_name);
+            const badgeLabel = getBadgeLabel(me.badge);
+            const badgeEl = document.getElementById('sidebarBadge');
+            if (badgeEl) badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+            setTxt('sidebarLevelNum', me.level || 1);
+            setTxt('sidebarLevelTitle', badgeLabel);
+            setTxt('sidebarXpText', `${me.xp || 0} / ${me.next_level_xp || (me.level || 1) * 100} XP`);
+            const xpBar = document.getElementById('sidebarXpBar');
+            if (xpBar) {
+                const pct = Math.min(100, Math.round(((me.xp || 0) / (me.next_level_xp || (me.level || 1) * 100)) * 100));
+                xpBar.style.width = `${pct}%`;
             }
-        });
+            setTxt('streakCount', me.streak_days || 0);
+            ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<img src="${window.getAvatarSrc(me)}" alt="" />`;
+            });
+        }
+
+        // ── Load profile content ──
+        let u;
+        if (_isViewingOther) {
+            // Viewing someone else's public profile
+            const pubRes = await apiFetch(`/profile/${_profileUserId}/public`);
+            if (!pubRes.ok) throw new Error('User not found');
+            u = await pubRes.json();
+
+            // Update page title
+            document.title = `${u.full_name}'s Profile — Ghawy`;
+
+            // Hide Edit Profile button
+            const editBtn = document.getElementById('editProfileBtn');
+            if (editBtn) editBtn.style.display = 'none';
+
+            // Remove active from Achievements nav (user navigated from leaderboard, not from nav)
+            const navAch = document.getElementById('navAchievements');
+            if (navAch) navAch.classList.remove('active');
+
+            // Show "← Back" in breadcrumb
+            const breadcrumb = document.querySelector('.breadcrumb');
+            if (breadcrumb) {
+                const back = document.createElement('a');
+                back.href = 'javascript:history.back()';
+                back.innerHTML = '← Back';
+                back.style.cssText = 'font-size:13px; color:#3f8ff9; font-weight:600; margin-right:12px;';
+                breadcrumb.prepend(back);
+            }
+        } else {
+            // Own profile
+            const res = await apiFetch('/profile/me');
+            if (!res.ok) return;
+            u = await res.json();
+            currentUser = u;
+
+            // Highlight Achievements nav as active (own profile)
+            const navAch = document.getElementById('navAchievements');
+            if (navAch) navAch.classList.add('active');
+        }
+
+        const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
         // Profile page elements
         setTxt('profileName', u.full_name);
@@ -51,37 +102,63 @@ async function loadProfile() {
         setTxt('statStreak', u.streak_days || 0);
         setTxt('statCourses', 0);
 
-        const badgeEl = document.getElementById('profileBadge');
-        if (badgeEl) badgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getBadgeLabel(u.badge)}`;
+        // Quick Stats & Badges
+        setTxt('qsXP', u.xp || 0);
+        setTxt('qsLongestStreak', (u.streak_days || 0) + ' Days');
+        setTxt('avatarLevel', u.level || 1);
+        setTxt('xpLevelNum', u.level || 1);
+
+        // Next Achievement
+        const streakDays = u.streak_days || 0;
+        setTxt('nextAchProgress', streakDays);
+        const nextAchBar = document.getElementById('nextAchBar');
+        if (nextAchBar) nextAchBar.style.width = Math.min((streakDays / 7) * 100, 100) + '%';
+
+        // Update XP Progress Bar
+        const xpCurrent = u.xp || 0;
+        const xpTarget = (u.level || 1) * 1000;
+        setTxt('xpCurrent', xpCurrent);
+        setTxt('xpTarget', xpTarget);
+        const profileXpBar = document.getElementById('xpProgressBar');
+        if (profileXpBar) profileXpBar.style.width = Math.min((xpCurrent / xpTarget) * 100, 100) + '%';
+
+        const profileBadgeEl = document.getElementById('profileBadge');
+        if (profileBadgeEl) profileBadgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getBadgeLabel(u.badge)}`;
 
         const avatarLg = document.getElementById('profileAvatarLg');
         if (avatarLg && u.avatar_url) avatarLg.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
 
-        // Update online dot on profile page
+        // Online dot
         const dot = document.getElementById('profileOnlineDot');
         if (dot) {
-            // Current user is always online on their own profile
-            dot.className = 'profile-online-dot online';
-            dot.title = 'Online Now';
+            if (_isViewingOther) {
+                dot.className = u.is_online ? 'profile-online-dot online' : 'profile-online-dot offline';
+                dot.title = u.is_online ? 'Online Now' : 'Offline';
+            } else {
+                dot.className = 'profile-online-dot online';
+                dot.title = 'Online Now';
+            }
         }
 
-        // Settings form
-        const nameInput = document.getElementById('settingsName');
-        if (nameInput) nameInput.value = u.full_name || '';
-        const bioInput = document.getElementById('settingsBio');
-        if (bioInput) bioInput.value = u.bio || '';
-        const emailInput = document.getElementById('settingsEmail');
-        if (emailInput) emailInput.value = u.email || '';
-        const previewBox = document.getElementById('avatarPreviewBox');
-        if (previewBox && u.avatar_url) previewBox.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
-        const socialInput = document.getElementById('settingsSocial');
-        if (socialInput) socialInput.value = u.social_media_url || '';
-        const toggleShowSocial = document.getElementById('toggleShowSocial');
-        if (toggleShowSocial) {
-            if (u.show_social_media === false) {
-                toggleShowSocial.classList.remove('on');
-            } else {
-                toggleShowSocial.classList.add('on');
+        // Settings form (own profile only)
+        if (!_isViewingOther) {
+            const nameInput = document.getElementById('settingsName');
+            if (nameInput) nameInput.value = u.full_name || '';
+            const bioInput = document.getElementById('settingsBio');
+            if (bioInput) bioInput.value = u.bio || '';
+            const emailInput = document.getElementById('settingsEmail');
+            if (emailInput) emailInput.value = u.email || '';
+            const previewBox = document.getElementById('avatarPreviewBox');
+            if (previewBox && u.avatar_url) previewBox.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
+            const socialInput = document.getElementById('settingsSocial');
+            if (socialInput) socialInput.value = u.social_media_url || '';
+            const toggleShowSocial = document.getElementById('toggleShowSocial');
+            if (toggleShowSocial) {
+                if (u.show_social_media === false) {
+                    toggleShowSocial.classList.remove('on');
+                } else {
+                    toggleShowSocial.classList.add('on');
+                }
             }
         }
 
@@ -280,13 +357,11 @@ if (confirmDeleteBtn) {
     });
 })();
 
-// ═══ PROGRESS CIRCLES ═══
-function setCircle(id, pct) {
+// ═══ PROGRESS STATS ═══
+function setBar(id, pct) {
     const el = document.getElementById(id);
     if (!el) return;
-    const circumference = 427.26; // 2 * PI * 68
-    const offset = circumference - (pct / 100) * circumference;
-    setTimeout(() => { el.style.strokeDashoffset = offset; }, 300);
+    setTimeout(() => { el.style.width = pct + '%'; }, 300);
 }
 
 function getMotivation(pct) {
@@ -297,7 +372,7 @@ function getMotivation(pct) {
     return 'Amazing!!';
 }
 
-async function loadProgressCircles() {
+async function loadProgressStats() {
     try {
         const res = await apiFetch('/dashboard/summary');
         if (!res.ok) return;
@@ -307,36 +382,39 @@ async function loadProgressCircles() {
         // Calculate totals
         let totalLessons = 0;
         let completedLessons = 0;
+        let completedCourses = 0;
         courses.forEach(c => {
             totalLessons += (c.total_lessons || 0);
             completedLessons += Math.round((c.percent || 0) / 100 * (c.total_lessons || 0));
+            if (c.percent >= 100) completedCourses++;
         });
+
+        const qsCourses = document.getElementById('qsCourses');
+        if (qsCourses) qsCourses.textContent = completedCourses;
+        const statCourses = document.getElementById('statCourses');
+        if (statCourses) statCourses.textContent = courses.length;
 
         // Videos percentage
         const videoPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-        setCircle('circleVideos', videoPct);
+        setBar('barVideos', videoPct);
         const pctV = document.getElementById('pctVideos');
         if (pctV) pctV.textContent = videoPct + '%';
         const countV = document.getElementById('countVideos');
-        if (countV) countV.textContent = completedLessons + ' videos';
+        if (countV) countV.textContent = completedLessons;
         const totalV = document.getElementById('totalVideos');
-        if (totalV) totalV.textContent = 'of ' + totalLessons;
-        const motV = document.getElementById('motVideos');
-        if (motV) motV.textContent = getMotivation(videoPct);
+        if (totalV) totalV.textContent = totalLessons;
 
         // Exams
         const totalExams = courses.length * 5;
         const completedExams = 0;
         const examPct = totalExams > 0 ? Math.round((completedExams / totalExams) * 100) : 0;
-        setCircle('circleExams', examPct);
+        setBar('barExams', examPct);
         const pctE = document.getElementById('pctExams');
         if (pctE) pctE.textContent = examPct + '%';
         const countE = document.getElementById('countExams');
-        if (countE) countE.textContent = completedExams + ' exams';
+        if (countE) countE.textContent = completedExams;
         const totalE = document.getElementById('totalExams');
-        if (totalE) totalE.textContent = 'of ' + totalExams;
-        const motE = document.getElementById('motExams');
-        if (motE) motE.textContent = getMotivation(examPct);
+        if (totalE) totalE.textContent = totalExams;
 
         // Overall level
         let avgPct = 0;
@@ -344,17 +422,15 @@ async function loadProgressCircles() {
             const sum = courses.reduce((s, c) => s + (c.percent || 0), 0);
             avgPct = Math.round(sum / courses.length);
         }
-        setCircle('circleLevel', avgPct);
+        setBar('barLevel', avgPct);
         const pctL = document.getElementById('pctLevel');
         if (pctL) pctL.textContent = avgPct + '%';
-        const motL = document.getElementById('motLevel');
-        if (motL) motL.textContent = getMotivation(avgPct);
 
-    } catch (e) { console.error('Progress circles error:', e); }
+    } catch (e) { console.error('Progress stats error:', e); }
 }
 
 // ═══ INIT ═══
 loadProfile();
-loadProgressCircles();
+loadProgressStats();
 
 

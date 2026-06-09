@@ -16,7 +16,7 @@
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="icon" type="image/png" href="./imgs/g-icon-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
         /* Dashboard-specific overrides */
@@ -356,7 +356,7 @@
         <!-- SIDEBAR -->
         <aside class="dash-sidebar" id="dashSidebar">
             <div class="sidebar-logo">
-                <img src="./imgs/ghawi-logo.png" alt="Ghawy" />
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
                 <span>Ghawy</span>
             </div>
             <nav class="sidebar-nav">
@@ -365,18 +365,16 @@
                 <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i>
                     <span>Courses</span></a>
                 <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
-                    <span>Build With Me (Live)</span></a>
+                    <span>Build With Me</span></a>
                 <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
                     <span>Guest of Honors</span></a>
                 <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span>AI
                         Updates</span></a>
                 <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
                     <span>Community Chat</span></a>
-
-                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                <a href="direct-messages.html" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
                     <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
                         style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-
                 <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i>
                     <span>Achievements</span></a>
                 <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
@@ -384,17 +382,43 @@
                 <a href="teamdashboard.html?v=2" target="_blank" class="nav-item" data-admin-only="true"><i
                         data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
             </nav>
-            <div class="sidebar-user" id="sidebarUser">
-                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
-                        style="width:16px;height:16px;"></i></div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="sidebarName">—</div>
-                    <div class="sidebar-user-badge" id="sidebarBadge">Member</div>
+            <!-- ═══ NEW PREMIUM COMBINED PROFILE & LEVEL CARD ═══ -->
+            <div class="sb-combined-card">
+                <div class="sb-profile-section">
+                    <div class="sb-profile-avatar-wrap">
+                        <div class="sb-profile-avatar" id="sidebarAvatar">
+                            <i data-lucide="user" style="width:20px;height:20px;"></i>
+                        </div>
+                    </div>
+                    <div class="sb-profile-info">
+                        <div class="sb-profile-name" id="sidebarName">—</div>
+                        <div class="sb-profile-badge" id="sidebarBadge">
+                            <span>Member</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sb-level-section">
+                    <div class="sb-level-top">
+                        <div class="sb-level-number" id="sidebarLevel">Level <span id="sidebarLevelNum">1</span></div>
+                        <div class="sb-level-title" id="sidebarLevelTitle">Member</div>
+                    </div>
+                    <div class="sb-xp-bar-wrap">
+                        <div class="sb-xp-bar-bg">
+                            <div class="sb-xp-bar-fill" id="sidebarXpBar" style="width:0%"></div>
+                        </div>
+                        <div class="sb-xp-text" id="sidebarXpText">0 / 0 XP</div>
+                    </div>
                 </div>
             </div>
-            <div class="sidebar-streak" id="sidebarStreak">
-                <span class="streak-fire">🔥</span>
-                <span><span class="streak-count" id="streakCount">0</span> <span>Day Streak</span></span>
+
+            <!-- ═══ STREAK CARD ═══ -->
+            <div class="sb-streak-card">
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-info">
+                    <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                </div>
             </div>
         </aside>
         <!-- Sidebar overlay (mobile) -->
@@ -435,13 +459,35 @@
                         <span class="topbar-user-name" id="topbarName">—</span>
                         <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                     </div>
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i>
-                            <span>Profile</span></a>
-                        <a href="profile-settings.html"><i data-lucide="settings" class="nav-icon"></i>
-                            <span>Settings</span></a>
-                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
-                                style="width:16px;height:16px;"></i> <span>Logout</span></button>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <img src="./imgs/nabil.jpg" id="dropdownAvatarImg" alt="User Avatar" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22></path><circle cx=%2212%22 cy=%227%22 r=%224%22></circle></svg>';">
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">Nabil Ahmed</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i data-lucide="settings"></i></a>
+                        </div>
+                        
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i data-lucide="award"></i> Achievements</a>
+                            <a href="javascript:void(0)"><i data-lucide="help-circle"></i> Help and support</a>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i data-lucide="log-out"></i> Sign out</button>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="theme-toggle-segmented">
+                            <button class="theme-btn" data-theme="light"><i data-lucide="sun"></i></button>
+                            <button class="theme-btn" data-theme="dark"><i data-lucide="moon"></i></button>
+                        </div>
                     </div>
                 </div>
             </header>

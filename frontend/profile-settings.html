@@ -15,7 +15,7 @@
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
 
     <script>
@@ -47,50 +47,75 @@
 <body>
     <div class="dash-layout">
         <aside class="dash-sidebar" id="dashSidebar">
-            <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
+            <div class="sidebar-logo"><img src="./imgs/community-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
-                        data-i18n="dashboard">الرئيسية</span></a>
+                        data-i18n="dashboard">Dashboard</span></a>
                 <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
-                        data-i18n="courses">الكورسات</span></a>
+                        data-i18n="courses">Courses</span></a>
                 <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
-                        data-i18n="buildWithMe">???? ?????
-                        (????)</span></a>
+                        data-i18n="buildWithMe">Build With Me</span></a>
                 <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
-                        data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
-                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
-<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
-                        data-i18n="communityChat">شات المجتمع</span></a>
-
-                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                        data-i18n="guestOfHonors">Guest of Honors</span></a>
+                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
+                        data-i18n="aiUpdates">AI Updates</span></a>
+                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
+                        data-i18n="communityChat">Community Chat</span></a>
+                <a href="direct-messages.html" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
                     <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
                         style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-
                 <a href="profile.html#achievements" class="nav-item"><i data-lucide="trophy" class="nav-icon"></i> <span
-                        data-i18n="achievements">الإنجازات</span></a>
+                        data-i18n="achievements">Achievements</span></a>
                 <a href="profile-settings.html" class="nav-item active"><i data-lucide="settings" class="nav-icon"></i>
-                    <span data-i18n="settings">الإعدادات</span></a>
-                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
-                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+                    <span data-i18n="settings">Settings</span></a>
+                <a href="teamdashboard.html?v=2" target="_blank" class="nav-item" data-admin-only="true"><i
+                        data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
             </nav>
-            <div class="sidebar-user">
-                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
-                        style="width:16px;height:16px;"></i></div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="sidebarName">—</div>
-                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+            <!-- ═══ NEW PREMIUM COMBINED PROFILE & LEVEL CARD ═══ -->
+            <div class="sb-combined-card">
+                <div class="sb-profile-section">
+                    <div class="sb-profile-avatar-wrap">
+                        <div class="sb-profile-avatar" id="sidebarAvatar">
+                            <i data-lucide="user" style="width:20px;height:20px;"></i>
+                        </div>
+                    </div>
+                    <div class="sb-profile-info">
+                        <div class="sb-profile-name" id="sidebarName">—</div>
+                        <div class="sb-profile-badge" id="sidebarBadge">
+                            <span>Member</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sb-level-section">
+                    <div class="sb-level-top">
+                        <div class="sb-level-number" id="sidebarLevel">Level <span id="sidebarLevelNum">1</span></div>
+                        <div class="sb-level-title" id="sidebarLevelTitle">Member</div>
+                    </div>
+                    <div class="sb-xp-bar-wrap">
+                        <div class="sb-xp-bar-bg">
+                            <div class="sb-xp-bar-fill" id="sidebarXpBar" style="width:0%"></div>
+                        </div>
+                        <div class="sb-xp-text" id="sidebarXpText">0 / 0 XP</div>
+                    </div>
                 </div>
             </div>
-            <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count"
-                        id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+
+            <!-- ═══ STREAK CARD ═══ -->
+            <div class="sb-streak-card">
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-info">
+                    <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                </div>
+            </div>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="dash-main">
             <header class="dash-topbar">
                 <button class="hamburger-btn" id="hamburgerBtn"
                     aria-label="Open menu"><span></span><span></span><span></span></button>
-                
+
                 <div class="topbar-actions">
 
                     <div class="notif-wrapper" id="notifWrapper">
@@ -123,19 +148,19 @@
                         <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
                         <span>Settings</span>
                     </div>
-                    <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px" data-i18n="settings">الإعدادات</h2>
+                    <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px" data-i18n="settings">Settings</h2>
 
                     <!-- Personal Info -->
                     <div class="settings-section">
                         <h3><i data-lucide="user" style="width:16px;height:16px;"></i> <span
-                                data-i18n="personalInfo">المعلومات الشخصية</span>
+                                data-i18n="personalInfo">Personal Info</span>
                         </h3>
                         <div class="form-group">
-                            <label for="settingsName" data-i18n="fullName">الاسم الكامل</label>
+                            <label for="settingsName" data-i18n="fullName">Full Name</label>
                             <input type="text" id="settingsName" placeholder="Your name" />
                         </div>
                         <div class="form-group">
-                            <label for="settingsBio" data-i18n="bio">نبذة شخصية</label>
+                            <label for="settingsBio" data-i18n="bio">Bio</label>
                             <textarea id="settingsBio" placeholder="Tell us about yourself..."></textarea>
                         </div>
                         <div class="form-group">
@@ -170,48 +195,48 @@
                             </div>
                         </div>
                         <button class="btn-gold" id="saveProfileBtn"><i data-lucide="check" size="16"></i> <span
-                                data-i18n="saveChanges">حفظ التغييرات</span></button>
+                                data-i18n="saveChanges">Save Changes</span></button>
                         <span id="saveStatus"
                             style="margin-right:12px;font-size:.82rem;color:var(--gold);display:none">✓ Saved</span>
                     </div>
 
                     <!-- Account -->
                     <div class="settings-section">
-                        <h3><i class="fa-solid fa-shield"></i> <span data-i18n="account">الحساب</span></h3>
+                        <h3><i class="fa-solid fa-shield"></i> <span data-i18n="account">Account</span></h3>
                         <div class="form-group">
-                            <label data-i18n="email">البريد الإلكتروني</label>
+                            <label data-i18n="email">Email</label>
                             <input type="email" id="settingsEmail" readonly />
                         </div>
                         <div class="form-group">
-                            <label for="currentPw" data-i18n="currentPassword">كلمة المرور الحالية</label>
+                            <label for="currentPw" data-i18n="currentPassword">Current Password</label>
                             <input type="password" id="currentPw" placeholder="••••••••" />
                         </div>
                         <div class="form-group">
-                            <label for="newPw" data-i18n="newPassword">كلمة المرور الجديدة</label>
+                            <label for="newPw" data-i18n="newPassword">New Password</label>
                             <input type="password" id="newPw" placeholder="••••••••" />
                         </div>
                         <div class="form-group">
-                            <label for="confirmPw" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
+                            <label for="confirmPw" data-i18n="confirmPassword">Confirm Password</label>
                             <input type="password" id="confirmPw" placeholder="••••••••" />
                         </div>
                         <button class="btn-gold" id="changePwBtn"><i data-lucide="key" size="14"></i> <span
-                                data-i18n="changePassword">تغيير كلمة المرور</span></button>
+                                data-i18n="changePassword">Change Password</span></button>
                         <span id="pwStatus" style="margin-right:12px;font-size:.82rem;display:none"></span>
                     </div>
 
                     <!-- Notifications -->
                     <div class="settings-section">
-                        <h3><i data-lucide="bell" size="18"></i> <span data-i18n="notifications">الإشعارات</span></h3>
-                        <div class="toggle-row"><span data-i18n="emailNotifications">إشعارات البريد</span>
+                        <h3><i data-lucide="bell" size="18"></i> <span data-i18n="notifications">Notifications</span></h3>
+                        <div class="toggle-row"><span data-i18n="emailNotifications">Email Notifications</span>
                             <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
                         </div>
-                        <div class="toggle-row"><span data-i18n="newCourseAlerts">تنبيهات الكورسات الجديدة</span>
+                        <div class="toggle-row"><span data-i18n="newCourseAlerts">New Course Alerts</span>
                             <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
                         </div>
-                        <div class="toggle-row"><span data-i18n="communityMentions">إشارات المجتمع</span>
+                        <div class="toggle-row"><span data-i18n="communityMentions">Community Mentions</span>
                             <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
                         </div>
-                        <div class="toggle-row"><span data-i18n="chatNotifications">إشعارات الشات</span>
+                        <div class="toggle-row"><span data-i18n="chatNotifications">Chat Notifications</span>
                             <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
                         </div>
                     </div>
@@ -219,11 +244,11 @@
                     <!-- Danger Zone -->
                     <div class="settings-section" style="border-color:rgba(239,68,68,.2)">
                         <h3 style="color:var(--red-notif)"><i class="fa-solid fa-triangle-exclamation"></i> <span
-                                data-i18n="dangerZone">منطقة الخطر</span></h3>
+                                data-i18n="dangerZone">Danger Zone</span></h3>
                         <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:14px"
-                            data-i18n="deleteWarning">بمجرد حذف حسابك لا يمكن التراجع عن ذلك.</p>
+                            data-i18n="deleteWarning">Once you delete your account, there is no going back.</p>
                         <button class="btn-danger" id="deleteAccountBtn"><i data-lucide="trash-2" size="14"></i> <span
-                                data-i18n="deleteAccount">حذف الحساب</span></button>
+                                data-i18n="deleteAccount">Delete Account</span></button>
                     </div>
                 </div>
             </div>

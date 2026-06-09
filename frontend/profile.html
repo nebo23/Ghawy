@@ -15,7 +15,7 @@
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
 
     <script>
@@ -47,49 +47,75 @@
 <body>
     <div class="dash-layout">
         <aside class="dash-sidebar" id="dashSidebar">
-            <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
+            <div class="sidebar-logo"><img src="./imgs/community-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i> <span
-                        data-i18n="dashboard">الرئيسية</span></a>
-                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i> <span
-                        data-i18n="courses">الكورسات</span></a>
-                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i> <span
-                        data-i18n="buildWithMe">???? ????? (????)</span></a>
-                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i> <span
-                        data-i18n="guestOfHonors">ضيوف الشرف</span></a>
-                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span
-                        data-i18n="aiUpdates">أخبار الذكاء الاصطناعي</span></a>
-<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span
-                        data-i18n="communityChat">شات المجتمع</span></a>
-
-                <a href="chat.html?v=5&channel=messages" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
+                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i>
+                    <span>Dashboard</span></a>
+                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i>
+                    <span>Courses</span></a>
+                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
+                    <span>Build With Me</span></a>
+                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
+                    <span>Guest of Honors</span></a>
+                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i>
+                    <span>AI Updates</span></a>
+                <a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i>
+                    <span>Community Chat</span></a>
+                <a href="direct-messages.html" class="nav-item"><i data-lucide="mail" class="nav-icon"></i>
                     <span>Direct Messages</span> <span id="dmTotalBadge" class="dm-unread-badge"
                         style="display:none; margin-left:auto; margin-right:4px;"></span></a>
-
-                <a href="profile.html#achievements" class="nav-item active"><i data-lucide="trophy"
-                        class="nav-icon"></i> <span data-i18n="achievements">الإنجازات</span></a>
-                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i> <span
-                        data-i18n="settings">الإعدادات</span></a>
-                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
-                        class="nav-icon"></i> <span data-i18n='teamDashboard'>Team Dashboard</span></a>
+                <a href="profile.html#achievements" class="nav-item" id="navAchievements"><i data-lucide="trophy"
+                        class="nav-icon"></i> <span>Achievements</span></a>
+                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
+                    <span>Settings</span></a>
+                <a href="teamdashboard.html?v=2" target="_blank" class="nav-item" data-admin-only="true"><i
+                        data-lucide="users" class="nav-icon"></i> <span>Team Dashboard</span></a>
             </nav>
-            <div class="sidebar-user">
-                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
-                        style="width:16px;height:16px;"></i></div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="sidebarName">—</div>
-                    <div class="sidebar-user-badge" id="sidebarBadge" data-i18n="member">عضو</div>
+            <!-- ═══ NEW PREMIUM COMBINED PROFILE & LEVEL CARD ═══ -->
+            <div class="sb-combined-card">
+                <div class="sb-profile-section">
+                    <div class="sb-profile-avatar-wrap">
+                        <div class="sb-profile-avatar" id="sidebarAvatar">
+                            <i data-lucide="user" style="width:20px;height:20px;"></i>
+                        </div>
+                    </div>
+                    <div class="sb-profile-info">
+                        <div class="sb-profile-name" id="sidebarName">—</div>
+                        <div class="sb-profile-badge" id="sidebarBadge">
+                            <span>Member</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sb-level-section">
+                    <div class="sb-level-top">
+                        <div class="sb-level-number" id="sidebarLevel">Level <span id="sidebarLevelNum">1</span></div>
+                        <div class="sb-level-title" id="sidebarLevelTitle">Member</div>
+                    </div>
+                    <div class="sb-xp-bar-wrap">
+                        <div class="sb-xp-bar-bg">
+                            <div class="sb-xp-bar-fill" id="sidebarXpBar" style="width:0%"></div>
+                        </div>
+                        <div class="sb-xp-text" id="sidebarXpText">0 / 0 XP</div>
+                    </div>
                 </div>
             </div>
-            <div class="sidebar-streak"><span class="streak-fire">🔥</span><span><span class="streak-count"
-                        id="streakCount">0</span> <span data-i18n="daysStreak">يوم متواصل</span></span></div>
+
+            <!-- ═══ STREAK CARD ═══ -->
+            <div class="sb-streak-card">
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-info">
+                    <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                </div>
+            </div>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="dash-main">
             <header class="dash-topbar">
                 <button class="hamburger-btn" id="hamburgerBtn"
                     aria-label="Open menu"><span></span><span></span><span></span></button>
-                
+
                 <div class="topbar-actions">
 
                     <div class="notif-wrapper" id="notifWrapper">
@@ -117,169 +143,198 @@
                 </div>
             </header>
             <div class="dash-content">
+                <div class="breadcrumb">
+                    <a href="dashboard.html?v=2"><i data-lucide="layout-grid" class="nav-icon"></i></a>
+                    <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
+                    <span data-i18n="profile">Profile</span>
+                </div>
                 <!-- Cover -->
                 <div class="profile-cover" id="profileCover"></div>
                 <!-- Header -->
-                <div class="profile-header">
-                    <div class="profile-avatar-wrap">
-                        <div class="profile-avatar-lg" id="profileAvatarLg"><i data-lucide="user"
-                                style="width:16px;height:16px;"></i></div>
-                        <span id="profileOnlineDot" class="profile-online-dot"></span>
+                <div class="profile-header-card">
+                    <div class="profile-header-top">
+                        <div class="profile-avatar-wrap-premium">
+                            <div class="profile-avatar-lg" id="profileAvatarLg"><i data-lucide="user"
+                                    style="width:16px;height:16px;"></i></div>
+                            <span class="avatar-level-badge">[L<span id="avatarLevel">1</span>]</span>
+                            <span id="profileOnlineDot" class="profile-online-dot-premium"></span>
+                        </div>
+                        <div class="profile-info-premium">
+                            <div class="profile-title-row">
+                                <h2 id="profileName">—</h2>
+                                <span class="badge-premium" id="profileBadge"><i data-lucide="shield-check"></i> Member</span>
+                                <span class="member-since">Member since July 2025</span>
+                            </div>
+                            <p class="bio-premium" id="profileBio"></p>
+                            
+                            <div class="profile-stats-row">
+                                <div class="stat-badge-inline"><i data-lucide="zap"></i> Level <span id="statLevel">1</span></div>
+                                <div class="stat-badge-inline"><i data-lucide="flame"></i> <span id="statStreak">0</span> Day Streak</div>
+                                <div class="stat-badge-inline"><i data-lucide="book-open"></i> <span id="statCourses">0</span> Courses</div>
+                                <span id="statXP" style="display: none;">0</span>
+                            </div>
+                        </div>
+                        <a href="profile-settings.html" class="btn-outline" id="editProfileBtn" style="margin-left: auto; align-self: center;"><i
+                                class="fa-solid fa-pen"></i> <span data-i18n="editProfile">Edit Profile</span></a>
                     </div>
-                    <div class="profile-info">
-                        <h2 id="profileName">—</h2>
-                        <span class="badge-pill" id="profileBadge"><i class="fa-solid fa-shield"></i> Member</span>
-                        <p class="bio" id="profileBio"></p>
+                    
+                    <div class="xp-progress-container-hero">
+                        <div class="xp-header">
+                            <span class="xp-label">LEVEL <span id="xpLevelNum">1</span></span>
+                            <span class="xp-values"><span id="xpCurrent">0</span> / <span id="xpTarget">1000</span> XP</span>
+                        </div>
+                        <div class="xp-bar-bg-hero">
+                            <div class="xp-bar-fill-hero" id="xpProgressBar" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <a href="profile-settings.html" class="btn-outline" style="margin-right:auto"><i
-                            class="fa-solid fa-pen"></i> <span data-i18n="editProfile">تعديل الملف الشخصي</span></a>
                 </div>
-                <!-- Stats -->
-                <div class="profile-stats" id="profileStats">
-                    <div class="profile-stat">
-                        <div class="stat-val" id="statLevel">1</div>
-                        <div class="stat-label">Level</div>
-                    </div>
-                    <div class="profile-stat">
-                        <div class="stat-val" id="statXP">0</div>
-                        <div class="stat-label">XP</div>
-                    </div>
-                    <div class="profile-stat">
-                        <div class="stat-val" id="statStreak">0</div>
-                        <div class="stat-label">Streak</div>
-                    </div>
-                    <div class="profile-stat">
-                        <div class="stat-val" id="statCourses">0</div>
-                        <div class="stat-label">Courses</div>
-                    </div>
+
+                <!-- Quick Stats Row -->
+                <div class="quick-stats-row">
+                    <div class="q-stat-card"><i data-lucide="trophy"></i> Achievements <span>3</span></div>
+                    <div class="q-stat-card"><i data-lucide="flame"></i> Longest Streak <span id="qsLongestStreak">12 Days</span></div>
+                    <div class="q-stat-card"><i data-lucide="graduation-cap"></i> Courses Completed <span id="qsCourses">2</span></div>
+                    <div class="q-stat-card"><i data-lucide="star"></i> XP Earned <span id="qsXP">0</span></div>
                 </div>
+
                 <!-- Achievements -->
                 <div id="achievements">
-                    <div class="card-header">
-                        <h3 class="card-title" data-i18n="achievements">الإنجازات</h3>
+                    <div class="card-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title" data-i18n="achievements" style="font-size: 1.1rem; margin: 0;">Achievements</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">3 / 8 Unlocked</span>
                     </div>
-                    <div class="achievements-grid" id="achievementsGrid">
-                        <div class="achievement unlocked">
-                            <div class="ach-icon">🚀</div>
-                            <div class="ach-name">First Login</div>
+                    <div class="achievements-grid-premium" id="achievementsGrid">
+                        <!-- First Login: Bronze -->
+                        <div class="achievement-card ach-tier-bronze">
+                            <div class="ach-icon-wrapper"><i data-lucide="rocket"></i></div>
+                            <div class="ach-info">
+                                <div class="ach-name">First Login</div>
+                                <div class="ach-desc">Joined the platform</div>
+                            </div>
                         </div>
-                        <div class="achievement unlocked">
-                            <div class="ach-icon">📝</div>
-                            <div class="ach-name">First Post</div>
+                        <!-- First Post: Silver -->
+                        <div class="achievement-card ach-tier-silver">
+                            <div class="ach-icon-wrapper"><i data-lucide="pen-square"></i></div>
+                            <div class="ach-info">
+                                <div class="ach-name">First Post</div>
+                                <div class="ach-desc">Shared your voice</div>
+                            </div>
                         </div>
-                        <div class="achievement unlocked">
-                            <div class="ach-icon">💬</div>
-                            <div class="ach-name">Chatterbox</div>
+                        <!-- Chatterbox: Gold -->
+                        <div class="achievement-card ach-tier-gold">
+                            <div class="ach-icon-wrapper"><i data-lucide="message-square"></i></div>
+                            <div class="ach-info">
+                                <div class="ach-name">Chatterbox</div>
+                                <div class="ach-desc">Active community member</div>
+                            </div>
                         </div>
-                        <div class="achievement locked">
-                            <div class="ach-icon">🔥</div>
-                            <div class="ach-name">7-Day Streak</div>
+                        <!-- 7-Day Streak: Locked -->
+                        <div class="achievement-card locked">
+                            <div class="ach-icon-wrapper"><i data-lucide="flame"></i><div class="lock-indicator"><i data-lucide="lock"></i></div></div>
+                            <div class="ach-info">
+                                <div class="ach-name">7-Day Streak</div>
+                                <div class="ach-desc">Login 7 days in a row</div>
+                            </div>
                         </div>
-                        <div class="achievement locked">
-                            <div class="ach-icon">🏆</div>
-                            <div class="ach-name">Top Student</div>
+                        <!-- Top Student: Locked -->
+                        <div class="achievement-card locked">
+                            <div class="ach-icon-wrapper"><i data-lucide="trophy"></i><div class="lock-indicator"><i data-lucide="lock"></i></div></div>
+                            <div class="ach-info">
+                                <div class="ach-name">Top Student</div>
+                                <div class="ach-desc">Reach the top of the leaderboard</div>
+                            </div>
                         </div>
-                        <div class="achievement locked">
-                            <div class="ach-icon">⭐</div>
-                            <div class="ach-name">Course Complete</div>
+                        <!-- Course Complete: Locked -->
+                        <div class="achievement-card locked">
+                            <div class="ach-icon-wrapper"><i data-lucide="graduation-cap"></i><div class="lock-indicator"><i data-lucide="lock"></i></div></div>
+                            <div class="ach-info">
+                                <div class="ach-name">Course Complete</div>
+                                <div class="ach-desc">Finish a full course</div>
+                            </div>
                         </div>
-                        <div class="achievement locked">
-                            <div class="ach-icon">🎯</div>
-                            <div class="ach-name">100% Progress</div>
+                        <!-- 100% Progress: Locked -->
+                        <div class="achievement-card locked">
+                            <div class="ach-icon-wrapper"><i data-lucide="target"></i><div class="lock-indicator"><i data-lucide="lock"></i></div></div>
+                            <div class="ach-info">
+                                <div class="ach-name">100% Progress</div>
+                                <div class="ach-desc">Complete all modules</div>
+                            </div>
                         </div>
-                        <div class="achievement locked">
-                            <div class="ach-icon">💎</div>
-                            <div class="ach-name">Pro Member</div>
+                        <!-- Pro Member: Diamond -->
+                        <div class="achievement-card ach-tier-diamond">
+                            <div class="ach-icon-wrapper"><i data-lucide="gem"></i></div>
+                            <div class="ach-info">
+                                <div class="ach-name">Pro Member</div>
+                                <div class="ach-desc">Active subscription</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Recent Activity — Progress Circles -->
-                <div style="margin-top:48px">
-                    <div class="card-header">
-                        <h3 class="card-title">Recent Activity</h3>
+
+                <!-- Next Achievement Widget -->
+                <div class="next-achievement-widget">
+                    <div class="next-ach-left">
+                        <div class="next-ach-icon"><i data-lucide="flame"></i></div>
+                        <div class="next-ach-info">
+                            <h4>Next Achievement</h4>
+                            <h3>7-Day Streak</h3>
+                        </div>
                     </div>
-                    <div style="display:flex;gap:60px;justify-content:center;flex-wrap:wrap;padding:36px 0;"
-                        id="progressCircles">
+                    <div class="next-ach-right">
+                        <span>Progress: <span id="nextAchProgress">0</span> / 7 Days</span>
+                        <div class="next-ach-bar-bg">
+                            <div class="next-ach-bar-fill" id="nextAchBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning Progress — Stat Cards -->
+                <div style="margin-top:48px">
+                    <div class="card-header" style="margin-bottom: 24px;">
+                        <h3 class="card-title" style="font-size: 1.1rem;">Learning Progress</h3>
+                    </div>
+                    <div class="stats-grid-premium">
                         <!-- Videos Watched -->
-                        <div style="text-align:center;">
-                            <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
-                                <svg width="160" height="160" viewBox="0 0 160 160">
-                                    <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)"
-                                        stroke-width="9" />
-                                    <circle id="circleVideos" cx="80" cy="80" r="68" fill="none" stroke="var(--gold)"
-                                        stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26"
-                                        stroke-dashoffset="427.26" transform="rotate(-90 80 80)"
-                                        style="transition:stroke-dashoffset 1.5s ease;" />
-                                </svg>
-                                <div
-                                    style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                    <span id="pctVideos"
-                                        style="font-size:1.8rem;font-weight:900;color:var(--gold);">0%</span>
-                                    <span id="motVideos"
-                                        style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Start
-                                        now!</span>
-                                </div>
+                        <div class="stat-card-premium">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Videos Watched</span>
+                                <span class="stat-card-value"><span id="countVideos">0</span> / <span id="totalVideos">0</span></span>
                             </div>
-                            <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">
-                                Videos Watched</div>
-                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <span
-                                    style="background:var(--gold);color:#000;padding:4px 14px;border-radius:12px;font-size:.78rem;font-weight:800;"
-                                    id="countVideos">0 videos</span>
-                                <span style="font-size:.78rem;color:var(--text-muted);" id="totalVideos">of 0</span>
+                            <div class="stat-progress-bg">
+                                <div class="stat-progress-fill blue" id="barVideos" style="width: 0%"></div>
+                            </div>
+                            <div class="stat-card-footer">
+                                <span class="pct-text" id="pctVideos">0%</span>
+                                <span class="meta-text" id="motVideos">Last Activity: 2 days ago</span>
                             </div>
                         </div>
                         <!-- Exams Completed -->
-                        <div style="text-align:center;">
-                            <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
-                                <svg width="160" height="160" viewBox="0 0 160 160">
-                                    <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)"
-                                        stroke-width="9" />
-                                    <circle id="circleExams" cx="80" cy="80" r="68" fill="none" stroke="#22d3ee"
-                                        stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26"
-                                        stroke-dashoffset="427.26" transform="rotate(-90 80 80)"
-                                        style="transition:stroke-dashoffset 1.5s ease;" />
-                                </svg>
-                                <div
-                                    style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                    <span id="pctExams"
-                                        style="font-size:1.8rem;font-weight:900;color:#22d3ee;">0%</span>
-                                    <span id="motExams"
-                                        style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Get
-                                        started!</span>
-                                </div>
+                        <div class="stat-card-premium">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Exams Completed</span>
+                                <span class="stat-card-value"><span id="countExams">0</span> / <span id="totalExams">0</span></span>
                             </div>
-                            <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">
-                                Exams Completed</div>
-                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <span
-                                    style="background:#22d3ee;color:#000;padding:4px 14px;border-radius:12px;font-size:.78rem;font-weight:800;"
-                                    id="countExams">0 exams</span>
-                                <span style="font-size:.78rem;color:var(--text-muted);" id="totalExams">of 0</span>
+                            <div class="stat-progress-bg">
+                                <div class="stat-progress-fill green" id="barExams" style="width: 0%"></div>
+                            </div>
+                            <div class="stat-card-footer">
+                                <span class="pct-text" id="pctExams">0%</span>
+                                <span class="meta-text" id="motExams">Best Score: 85%</span>
                             </div>
                         </div>
-                        <!-- Overall Level -->
-                        <div style="text-align:center;">
-                            <div style="position:relative;width:160px;height:160px;margin:0 auto 16px;">
-                                <svg width="160" height="160" viewBox="0 0 160 160">
-                                    <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border-light)"
-                                        stroke-width="9" />
-                                    <circle id="circleLevel" cx="80" cy="80" r="68" fill="none" stroke="#a855f7"
-                                        stroke-width="9" stroke-linecap="round" stroke-dasharray="427.26"
-                                        stroke-dashoffset="427.26" transform="rotate(-90 80 80)"
-                                        style="transition:stroke-dashoffset 1.5s ease;" />
-                                </svg>
-                                <div
-                                    style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                    <span id="pctLevel"
-                                        style="font-size:1.8rem;font-weight:900;color:#a855f7;">0%</span>
-                                    <span id="motLevel"
-                                        style="font-size:.72rem;color:var(--text-muted);font-weight:600;">Let's
-                                        go!</span>
-                                </div>
+                        <!-- Average Score -->
+                        <div class="stat-card-premium">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">Average Score</span>
+                                <span class="stat-card-value">--</span>
                             </div>
-                            <div style="font-size:.92rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">
-                                Average Score</div>
+                            <div class="stat-progress-bg">
+                                <div class="stat-progress-fill purple" id="barLevel" style="width: 0%"></div>
+                            </div>
+                            <div class="stat-card-footer">
+                                <span class="pct-text" id="pctLevel">0%</span>
+                                <span class="meta-text" id="motLevel">Community Avg: 72%</span>
+                            </div>
                         </div>
                     </div>
                 </div>

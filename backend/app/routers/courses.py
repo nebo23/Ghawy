@@ -40,71 +40,39 @@ def get_course_detail(course_id: int, db: Session = Depends(get_db)):
     return out
 
 def issue_certificate(user_id: int, course_id: int, db: Session):
-    cert = db.query(Certificate).filter_by(user_id=user_id, course_id=course_id).first()
-    if not cert:
-        from datetime import datetime
-        import uuid
-        cert_id = f"GHAWY-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
-        cert = Certificate(user_id=user_id, course_id=course_id, certificate_id=cert_id)
-        db.add(cert)
-        db.commit()
-        db.refresh(cert)
-    return cert
+    from app.services.progress_service import issue_certificate as issue_cert
+    return issue_cert(user_id, course_id, db)
 
-@router.patch("/{course_id}/lessons/{lesson_id}/complete")
-async def mark_lesson_complete(
+@router.patch("/{course_id}/lessons/{lesson_id}/duration")
+async def update_lesson_duration(
     course_id: int,
     lesson_id: int,
+    duration_seconds: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # تأكد إن الدرس موجود في الكورس
+    """Called by the frontend player to save real video duration to DB."""
     lesson = db.query(Lesson).filter(
         Lesson.id == lesson_id,
         Lesson.course_id == course_id
     ).first()
     if not lesson:
         raise HTTPException(404, "Lesson not found")
-
-    # إضافة progress لو مش موجود
-    existing = db.query(UserProgress).filter_by(
-        user_id=current_user.id,
-        lesson_id=lesson_id
-    ).first()
-
-    if not existing:
-        progress = UserProgress(
-            user_id=current_user.id,
-            lesson_id=lesson_id,
-            course_id=course_id
-        )
-        db.add(progress)
+    # Only update if currently 0 to avoid overwriting manually-set durations
+    if lesson.duration_minutes == 0 and duration_seconds > 0:
+        lesson.duration_minutes = max(1, round(duration_seconds / 60))
         db.commit()
+    return {"duration_minutes": lesson.duration_minutes}
 
-    # حساب الـ progress
-    total = db.query(Lesson).filter(Lesson.course_id == course_id).count()
-    completed = db.query(UserProgress).filter_by(
-        user_id=current_user.id,
-        course_id=course_id
-    ).count()
-    percentage = round((completed / total) * 100) if total > 0 else 0
-
-    # لو اكتمل 100% → issue certificate
-    certificate_url = None
-    if percentage == 100:
-        cert = issue_certificate(current_user.id, course_id, db)
-        certificate_url = cert.certificate_id
-
-    return {
-        "completed": True,
-        "course_progress": {
-            "completed_lessons": completed,
-            "total_lessons": total,
-            "percentage": percentage,
-            "is_completed": percentage == 100,
-            "certificate_id": certificate_url
-        }
-    }
+@router.post("/{course_id}/lessons/{lesson_id}/complete")
+async def mark_lesson_complete(
+    course_id: int,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from app.services.progress_service import mark_lesson_complete
+    return mark_lesson_complete(course_id, lesson_id, current_user.id, db)
 
 @router.delete("/{course_id}/lessons/{lesson_id}/complete")
 async def unmark_lesson_complete(
@@ -126,41 +94,8 @@ async def get_top_students(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    total_lessons = db.query(Lesson).filter(
-        Lesson.course_id == course_id
-    ).count()
-
-    # أكتر الطلاب إتمامًا
-    from sqlalchemy import func
-    top = db.query(
-        UserProgress.user_id,
-        func.count(UserProgress.id).label("completed_count")
-    ).filter(
-        UserProgress.course_id == course_id
-    ).group_by(
-        UserProgress.user_id
-    ).order_by(
-        func.count(UserProgress.id).desc()
-    ).limit(10).all()
-
-    result = []
-    for rank, (user_id, count) in enumerate(top, 1):
-        user = db.query(User).filter(User.id == user_id).first()
-        result.append({
-            "rank": rank,
-            "user_id": user_id,
-            "full_name": user.full_name,
-            "avatar_url": user.avatar_url,
-            "completed_lessons": count,
-            "total_lessons": total_lessons,
-            "is_completed": count == total_lessons,
-            "is_current_user": user_id == current_user.id
-        })
-
-    return {
-        "top_students": result,
-        "total_lessons": total_lessons
-    }
+    from app.services.progress_service import get_top_students_for_course
+    return get_top_students_for_course(course_id, current_user.id, db)
 
 @router.get("/{course_id}/progress")
 async def get_course_progress(
@@ -168,11 +103,27 @@ async def get_course_progress(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    total = db.query(Lesson).filter(Lesson.course_id == course_id).count()
-    completed_rows = db.query(UserProgress).filter_by(
-        user_id=current_user.id,
-        course_id=course_id
+    # بنحسب بس الـ lessons الـ ready، لو ما فيش ready نحسب كل الـ lessons
+    ready_lesson_ids_rows = db.query(Lesson.id).filter(
+        Lesson.course_id == course_id,
+        Lesson.video_status == "ready"
     ).all()
+    ready_ids_set = {r.id for r in ready_lesson_ids_rows}
+
+    if ready_ids_set:
+        total = len(ready_ids_set)
+        completed_rows = db.query(UserProgress).filter(
+            UserProgress.user_id == current_user.id,
+            UserProgress.course_id == course_id,
+            UserProgress.lesson_id.in_(ready_ids_set)
+        ).all()
+    else:
+        # Fallback: كل الـ lessons
+        total = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+        completed_rows = db.query(UserProgress).filter(
+            UserProgress.user_id == current_user.id,
+            UserProgress.course_id == course_id
+        ).all()
     completed_ids = [r.lesson_id for r in completed_rows]
     percentage = round((len(completed_ids) / total) * 100) if total > 0 else 0
 

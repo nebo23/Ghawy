@@ -69,7 +69,7 @@ function logout() {
 // ─── Auth Guard ─────────────────────────────────────────────
 async function enforceAuthGuard() {
   const currentPath = window.location.pathname;
-  const communityPages = ['dashboard.html', 'chat.html', 'courses.html', 'course-detail.html', 'build-with-me.html', 'guest-of-honors.html', 'teamdashboard.html', 'profile.html', 'profile-settings.html', 'ai-updates.html'];
+  const communityPages = ['dashboard.html', 'chat.html', 'direct-messages.html', 'courses.html', 'course-detail.html', 'build-with-me.html', 'guest-of-honors.html', 'teamdashboard.html', 'profile.html', 'profile-settings.html', 'ai-updates.html'];
   const isCommunityPage = communityPages.some(p => currentPath.endsWith(p));
 
   if (!isCommunityPage) return;
@@ -243,7 +243,7 @@ if (getToken()) {
 // ─── Global Notifications ──────────────────────────────────────
 async function fetchGlobalNotifications() {
   // chat.html has its own polling loop for loadDmList which handles this
-  if (window.location.pathname.endsWith('chat.html')) return;
+  if (window.location.pathname.endsWith('chat.html') || window.location.pathname.endsWith('direct-messages.html')) return;
 
   const token = getToken();
   if (!token) return;
@@ -295,7 +295,7 @@ function renderGlobalNotifList(dms) {
   }
 
   let html = '';
-  const isChat = window.location.pathname.endsWith('chat.html');
+  const isDmChat = window.location.pathname.endsWith('direct-messages.html');
   dms.forEach(dm => {
     const u = dm.user;
     const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : '?';
@@ -307,9 +307,9 @@ function renderGlobalNotifList(dms) {
     const preview = formattedMsg ? formattedMsg.substring(0, 40) + (formattedMsg.length > 40 ? '...' : '') : 'Sent you a message';
 
     const safeName = u.full_name.replace(/'/g, "\\'");
-    const onClickAction = isChat
+    const onClickAction = isDmChat
       ? `activeDmUserName='${safeName}'; selectChannel('${dm.channel_name}'); toggleNotifPanel();`
-      : `window.location.href='chat.html?v=4&channel=${dm.channel_name}'`;
+      : `window.location.href='direct-messages.html?v=4&channel=${dm.channel_name}'`;
 
     html += `
         <div class="notif-item" onclick="${onClickAction}">
@@ -371,4 +371,39 @@ function initSidebar() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initSidebar();
+});
+
+
+// ─── Theme Toggle ─────────────────────────────────────────────
+function setTheme(theme) {
+    if (theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    } else {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+    localStorage.setItem('theme', theme);
+    
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.dataset.theme === theme) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setTheme(btn.dataset.theme);
+        });
+    });
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (localStorage.getItem('theme') === 'system') {
+        setTheme('system');
+    }
 });

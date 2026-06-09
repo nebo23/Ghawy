@@ -27,14 +27,38 @@ async function loadProfile() {
         const u = res;
         const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt('sidebarName', u.full_name);
-        setTxt('sidebarBadge', u.badge || 'Member');
         setTxt('topbarName', u.full_name);
+        
+        // Update Badge
+        const badgeLabel = u.badge || 'Member';
+        const badgeEl = document.getElementById('sidebarBadge');
+        if (badgeEl) {
+            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+        }
+
+        // Update Level & XP
+        const level = u.level || 1;
+        const xp = u.xp || 0;
+        const nextLevelXp = u.next_level_xp || (level * 100);
+        
+        setTxt('sidebarLevelNum', level);
+        setTxt('sidebarLevelTitle', badgeLabel);
+        setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
+        
+        const xpBar = document.getElementById('sidebarXpBar');
+        if (xpBar) {
+            const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
+            xpBar.style.width = `${pct}%`;
+        }
+
+        // Update Streak
         setTxt('streakCount', u.streak_days || 0);
-        ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
+        
+        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
             const el = document.getElementById(id);
             if (el && u.avatar_url) {
                 const fullUrl = u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url;
-                el.innerHTML = `<img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
             }
         });
     } catch (e) { console.error("Profile error:", e); }

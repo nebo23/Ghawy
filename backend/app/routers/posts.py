@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.models import (
     User, Post, Comment, PostLike, PostReaction, CommentReaction,
-    Category, Channel
+    Category, Channel, Notification
 )
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
@@ -284,7 +284,7 @@ def get_pinned_posts(
 #  GET SINGLE POST WITH COMMENTS
 # ══════════════════════════════════════════════════════════════
 
-@router.get("/{channel}/{post_id}")
+@router.get("/{channel}/{post_id:int}")
 def get_post(
     channel: str,
     post_id: int,
@@ -324,7 +324,7 @@ class PostUpdateBody(BaseModel):
     body: Optional[str] = None
     tags: Optional[str] = None
 
-@router.patch("/{channel}/{post_id}")
+@router.patch("/{channel}/{post_id:int}")
 def edit_post(
     channel: str,
     post_id: int,
@@ -365,7 +365,7 @@ def edit_post(
 #  DELETE POST
 # ══════════════════════════════════════════════════════════════
 
-@router.delete("/{channel}/{post_id}")
+@router.delete("/{channel}/{post_id:int}")
 def delete_post(
     channel: str,
     post_id: int,
@@ -387,7 +387,7 @@ def delete_post(
 #  PIN / UNPIN POST
 # ══════════════════════════════════════════════════════════════
 
-@router.patch("/{channel}/{post_id}/pin")
+@router.patch("/{channel}/{post_id:int}/pin")
 def toggle_pin(
     channel: str,
     post_id: int,
@@ -414,7 +414,7 @@ class ReactionBody(BaseModel):
     emoji: str
 
 @router.post("/{post_id}/react")
-def react_to_post(
+async def react_to_post(
     post_id: int,
     data: ReactionBody,
     current_user: User = Depends(get_current_active_member),
@@ -433,22 +433,38 @@ def react_to_post(
         PostReaction.user_id == current_user.id,
     ).first()
 
+    is_new_reaction = not existing
     if existing:
         if existing.emoji == data.emoji:
-            # Remove — toggle off
             db.delete(existing)
             post.like_count = max((post.like_count or 0) - 1, 0)
+            is_new_reaction = False
         else:
-            # Change existing reaction, no need to increment like_count
             existing.emoji = data.emoji
     else:
-        # Add new reaction
         db.add(PostReaction(post_id=post_id, user_id=current_user.id, emoji=data.emoji))
         post.like_count = (post.like_count or 0) + 1
 
     db.commit()
 
-    # Return updated counts
+    # Notify post author if a new reaction was added
+    if is_new_reaction and post.user_id != current_user.id:
+        channel_name = post.category_slug or 'general'
+        notif = Notification(
+            user_id=post.user_id,
+            title="New Reaction",
+            body=f"{current_user.full_name} reacted {data.emoji} to your post.",
+            type="reaction",
+            link=f"/community/{channel_name}/{post_id}"
+        )
+        db.add(notif)
+        db.commit()
+        db.refresh(notif)
+        await manager.send_personal(post.user_id, {
+            "event": "notification",
+            "data": {"id": notif.id, "title": notif.title, "body": notif.body, "type": notif.type, "link": notif.link, "is_read": notif.is_read}
+        })
+
     reactions = db.query(PostReaction).filter(PostReaction.post_id == post_id).all()
     return {
         "reaction_counts": get_reaction_counts(reactions),
@@ -543,6 +559,24 @@ async def add_comment(
 
     comment_data = build_comment_dict(comment, current_user.id, include_replies=False)
 
+    # Notify post author on new comment (if not a reply and not self)
+    if not data.parent_id and post.user_id != current_user.id:
+        channel_name_for_link = post.category_slug or 'general'
+        notif = Notification(
+            user_id=post.user_id,
+            title="New Comment",
+            body=f"{current_user.full_name} commented on your post.",
+            type="comment",
+            link=f"/community/{channel_name_for_link}/{post_id}"
+        )
+        db.add(notif)
+        db.commit()
+        db.refresh(notif)
+        await manager.send_personal(post.user_id, {
+            "event": "notification",
+            "data": {"id": notif.id, "title": notif.title, "body": notif.body, "type": notif.type, "link": notif.link, "is_read": notif.is_read}
+        })
+
     # Broadcast via WebSocket
     channel_name = post.category_slug
     if channel_name:
@@ -552,6 +586,37 @@ async def add_comment(
                 "event": "new_comment",
                 "data": {**comment_data, "post_id": post_id},
             })
+
+    # Notification for reply
+    if data.parent_id:
+        parent_comment = db.query(Comment).filter(Comment.id == data.parent_id).first()
+        if parent_comment and parent_comment.user_id != current_user.id:
+            notif = Notification(
+                user_id=parent_comment.user_id,
+                title="New Reply",
+                body=f"{current_user.full_name} replied to your comment.",
+                type="reply",
+                link=f"/community/{channel_name}/{post_id}" if channel_name else f"/community/general/{post_id}"
+            )
+            db.add(notif)
+            db.commit()
+            db.refresh(notif)
+
+            await manager.send_personal(
+                parent_comment.user_id,
+                {
+                    "event": "notification",
+                    "data": {
+                        "id": notif.id,
+                        "title": notif.title,
+                        "body": notif.body,
+                        "type": notif.type,
+                        "link": notif.link,
+                        "is_read": notif.is_read,
+                        "created_at": notif.created_at.isoformat(),
+                    }
+                }
+            )
 
     return comment_data
 
@@ -630,7 +695,7 @@ def delete_comment(
 # ══════════════════════════════════════════════════════════════
 
 @router.post("/comments/{comment_id}/react")
-def react_to_comment(
+async def react_to_comment(
     comment_id: int,
     data: ReactionBody,
     current_user: User = Depends(get_current_active_member),
@@ -648,15 +713,36 @@ def react_to_comment(
         CommentReaction.user_id == current_user.id,
     ).first()
 
+    is_new_reaction = not existing
     if existing:
         if existing.emoji == data.emoji:
             db.delete(existing)
+            is_new_reaction = False
         else:
             existing.emoji = data.emoji
     else:
         db.add(CommentReaction(comment_id=comment_id, user_id=current_user.id, emoji=data.emoji))
 
     db.commit()
+
+    # Notify comment author on new reaction
+    if is_new_reaction and comment.user_id != current_user.id:
+        post = db.query(Post).filter(Post.id == comment.post_id).first()
+        channel_name_for_link = (post.category_slug if post else None) or 'general'
+        notif = Notification(
+            user_id=comment.user_id,
+            title="New Like",
+            body=f"{current_user.full_name} liked your comment.",
+            type="like",
+            link=f"/community/{channel_name_for_link}/{comment.post_id}"
+        )
+        db.add(notif)
+        db.commit()
+        db.refresh(notif)
+        await manager.send_personal(comment.user_id, {
+            "event": "notification",
+            "data": {"id": notif.id, "title": notif.title, "body": notif.body, "type": notif.type, "link": notif.link, "is_read": notif.is_read}
+        })
 
     reactions = db.query(CommentReaction).filter(CommentReaction.comment_id == comment_id).all()
     return {

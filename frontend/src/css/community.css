@@ -875,13 +875,83 @@
 
 .comm-empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #5a5648;
+  padding: 80px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.comm-empty-state .comm-empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
+.comm-empty-state h3 {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.comm-empty-state p {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 0 0 24px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.empty-icon-container {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(193, 255, 17, 0.05);
+  border: 1px solid rgba(193, 255, 17, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+  box-shadow: 0 0 40px rgba(193, 255, 17, 0.1);
+}
+
+.empty-icon-container::before {
+  content: '';
+  position: absolute;
+  top: -10px; right: 10px;
+  width: 12px; height: 3px;
+  background: var(--gold, #c1ff11);
+  transform: rotate(45deg);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+.empty-icon-container::after {
+  content: '';
+  position: absolute;
+  top: 5px; right: -5px;
+  width: 12px; height: 3px;
+  background: var(--gold, #c1ff11);
+  transform: rotate(15deg);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.empty-cta-btn {
+  background: var(--gold, #c1ff11);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(193, 255, 17, 0.2);
+}
+
+.empty-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(193, 255, 17, 0.3);
 }
 
 /* ═══ START HERE VIDEO CARD ═══ */
@@ -1098,11 +1168,58 @@
 .comm-post-footer {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 12px;
   margin-top: 12px;
-  flex-wrap: wrap;
 }
 
+/* ── AI Updates-style Like & Comment Buttons ── */
+.comm-ai-like-btn,
+.comm-ai-comment-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 4px 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border-radius: 8px;
+  font-family: 'Cairo', sans-serif;
+}
+
+.comm-ai-like-btn svg,
+.comm-ai-comment-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.comm-ai-like-btn:hover,
+.comm-ai-comment-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #f1f0ea;
+}
+
+.comm-ai-like-btn.active,
+.comm-ai-like-btn.liked {
+  color: #ef4444;
+}
+
+.comm-ai-like-btn.active svg,
+.comm-ai-like-btn.liked svg,
+.comm-ai-like-btn.liked i {
+  fill: #ef4444;
+  stroke: #ef4444;
+  color: #ef4444;
+}
+
+/* Legacy toggle (kept for backward compat) */
 .comm-comments-toggle {
   background: none;
   border: none;
@@ -1297,20 +1414,34 @@
 
 /* ═══ RIGHT SIDEBAR ═══ */
 .comm-right-sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: 280px;
+  min-width: 280px;
   background: #0a0a0a;
   border-left: 1px solid rgba(255,255,255,0.06);
   overflow-y: auto;
-  padding: 16px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
 .comm-right-sidebar::-webkit-scrollbar { width: 4px; }
 .comm-right-sidebar::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
+
+.comm-rs-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+
+.comm-rs-panel:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
 
 .comm-rs-panel h4 {
   font-size: 0.75rem;
@@ -1318,18 +1449,10 @@
   color: var(--gold, #c1ff11);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.comm-rs-panel h4 .rs-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--gold, #c1ff11);
-  border-radius: 50%;
-  display: inline-block;
 }
 
 /* Active Now */
@@ -1697,44 +1820,7 @@
 }
 .comm-pagination button:disabled { opacity: 0.4; cursor: default; }
 
-/* Introduce Yourself CTA Card */
-.comm-cta-card {
-  background: #0f0f0f;
-  border: 1px solid rgba(193,255,17,0.15);
-  border-radius: 12px;
-  padding: 16px;
-  text-align: center;
-}
 
-.comm-cta-card h5 {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #f1f0ea;
-  margin: 0 0 4px;
-}
-
-.comm-cta-card p {
-  font-size: 0.78rem;
-  color: #888;
-  margin: 0 0 12px;
-}
-
-.comm-cta-btn {
-  background: var(--gold, #c1ff11);
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 20px;
-  font-weight: 700;
-  font-size: 0.82rem;
-  cursor: pointer;
-  font-family: 'Cairo', sans-serif;
-  transition: all 0.2s;
-}
-
-.comm-cta-btn:hover {
-  box-shadow: 0 0 16px rgba(193,255,17,0.3);
-}
 
 /* Toast */
 .comm-toast {

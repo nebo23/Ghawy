@@ -209,7 +209,7 @@ class Comment(Base):
 
     post = relationship("Post", back_populates="comments")
     author = relationship("User", back_populates="comments")
-    replies = relationship("Comment", backref="parent", remote_side=[id])
+    replies = relationship("Comment", foreign_keys=[parent_id], backref=backref("parent_ref", remote_side=[id]), cascade="all, delete-orphan")
     reactions = relationship("CommentReaction", back_populates="comment", cascade="all, delete-orphan")
 
 
@@ -660,3 +660,23 @@ class CourseReview(Base):
 
     course = relationship("Course", backref=backref("reviews", cascade="all, delete-orphan"))
     user = relationship("User")
+
+
+# ══════════════════════════════════════════════════════════════
+#  NOTIFICATIONS
+# ══════════════════════════════════════════════════════════════
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    type = Column(String, nullable=False, default="info")
+    link = Column(String, nullable=True)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    user = relationship("User")
+

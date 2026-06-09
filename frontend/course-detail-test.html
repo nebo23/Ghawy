@@ -231,7 +231,7 @@
 
         .expand-btn {
             font-size: .85rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255,255,255,0.7);
             font-weight: 600;
             cursor: pointer;
         }
@@ -243,7 +243,7 @@
 
         .section-block {
             background: #0b0d12;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 12px;
             margin-bottom: 16px;
             overflow: hidden;
@@ -259,7 +259,7 @@
         }
 
         .section-header:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255,255,255,0.02);
         }
 
         .section-header .sec-left {
@@ -283,7 +283,7 @@
 
         .section-header .sec-desc {
             font-size: .8rem;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255,255,255,0.5);
             margin-top: 6px;
         }
 
@@ -317,7 +317,7 @@
         }
 
         .section-lessons {
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255,255,255,0.05);
             display: none;
         }
 
@@ -330,7 +330,7 @@
             align-items: center;
             gap: 16px;
             padding: 16px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
             transition: background .15s;
             font-size: .85rem;
             cursor: pointer;
@@ -339,9 +339,8 @@
         .lesson-row:last-child {
             border-bottom: none;
         }
-
         .lesson-row:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255,255,255,0.02);
         }
 
         .progress-ring {
@@ -366,13 +365,13 @@
 
         .lesson-row .lesson-title {
             flex: 1;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255,255,255,0.85);
             font-size: .9rem;
         }
 
         .lesson-row .lesson-dur {
             font-size: .8rem;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255,255,255,0.5);
         }
 
         .progress-ring .pct {
@@ -385,7 +384,7 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(255,255,255,0.1);
             color: transparent;
             display: flex;
             align-items: center;
@@ -656,7 +655,7 @@
             flex: 1;
             min-width: 0;
             background: #0b0d12;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 8px;
             padding: 10px 12px;
             display: flex;
@@ -667,8 +666,8 @@
         }
 
         .resource-item:hover {
-            background: rgba(255, 255, 255, 0.02);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.02);
+            border-color: rgba(255,255,255,0.1);
         }
 
         .resource-item .res-icon {
@@ -690,7 +689,7 @@
         .resource-item .res-name {
             font-size: .68rem;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255,255,255,0.9);
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
@@ -699,7 +698,7 @@
 
         .resource-item .res-type {
             font-size: .55rem;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255,255,255,0.5);
             font-weight: 600;
             line-height: 1.2;
         }
@@ -771,7 +770,7 @@
             flex-direction: column;
             gap: 16px;
             background:
-                linear-gradient(135deg, rgba(63, 143, 249, 0.16), rgba(193, 255, 17, 0.045) 42%, rgba(255, 255, 255, 0.025)),
+                linear-gradient(135deg, rgba(63, 143, 249, 0.16), rgba(132, 204, 22, 0.045) 42%, rgba(255, 255, 255, 0.025)),
                 #080a0f;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
@@ -995,75 +994,75 @@
         .leaderboard-item {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 10px 0;
-            border-radius: 0;
-            margin-bottom: 8px;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
             transition: background .2s;
         }
 
         .leaderboard-item:hover {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-left: -12px;
-            margin-right: -12px;
+            background: #252525
         }
 
         .leaderboard-item.current-user {
-            background: rgba(63, 143, 249, .05);
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-left: -12px;
-            margin-right: -12px;
+            background: rgba(63, 143, 249, .1);
+            border: 1px solid rgba(63, 143, 249, .2);
         }
 
         .rank-badge {
-            width: 16px;
+            width: 24px;
             text-align: center;
             font-size: 13px;
-            font-weight: 600;
-            color: #555;
+            font-weight: 700;
+            color: #888;
             flex-shrink: 0;
-            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .rank-badge.gold {
+            color: #f59e0b
+        }
+
+        .rank-badge.silver {
+            color: #94a3b8
+        }
+
+        .rank-badge.bronze {
+            color: #b45309
         }
 
         .leaderboard-avatar {
-            width: 38px;
-            height: 38px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
+            background: #333;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            font-weight: 800;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
             flex-shrink: 0;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.1);
-            color: #aaa;
         }
 
         .leaderboard-info {
             flex: 1;
-            min-width: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            min-width: 0
         }
 
         .leaderboard-name {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 13px;
             color: #fff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .leaderboard-progress-pct {
-            font-size: 14px;
-            font-weight: 800;
-            font-family: 'IBM Plex Mono', monospace;
+        .leaderboard-progress-mini {
+            font-size: 11px;
+            color: #555;
+            margin-top: 2px;
         }
 
         .completed-badge {
@@ -1380,7 +1379,6 @@
             .course-progress-header {
                 padding: 18px;
             }
-
             .cd-grid {
                 grid-template-columns: 1fr
             }
@@ -1467,163 +1465,6 @@
             position: fixed !important;
             z-index: 2147483647 !important;
         }
-
-        /* ═══ NEW PREMIUM SIDEBAR CARDS ═══ */
-
-        /* Combined Card */
-        .sb-combined-card {
-            margin: 8px 10px 6px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 14px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .sb-profile-section {
-            padding: 16px 14px 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sb-profile-avatar-wrap {
-            flex-shrink: 0;
-        }
-
-        .sb-profile-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(193, 255, 17, 0.15), rgba(63, 143, 249, 0.1));
-            border: 2px solid rgba(193, 255, 17, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            font-size: .9rem;
-            color: var(--gold);
-        }
-
-        .sb-profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .sb-profile-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .sb-profile-name {
-            font-size: .95rem;
-            font-weight: 800;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 2px;
-        }
-
-        .sb-profile-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: .75rem;
-            font-weight: 700;
-            color: #22d3ee;
-        }
-
-        /* Level Section (nested inside combined card) */
-        .sb-level-section {
-            background: rgba(0, 0, 0, 0.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            padding: 16px;
-        }
-
-        .sb-level-top {
-            margin-bottom: 14px;
-        }
-
-        .sb-level-number {
-            font-size: 1.45rem;
-            font-weight: 900;
-            color: #fff;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .sb-level-title {
-            font-size: .8rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.55);
-        }
-
-        .sb-xp-bar-wrap {}
-
-        .sb-xp-bar-bg {
-            height: 7px;
-            background: rgba(255, 255, 255, 0.07);
-            border-radius: 99px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .sb-xp-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #c1ff11, #8fdb00);
-            border-radius: 99px;
-            transition: width .8s ease;
-            box-shadow: 0 0 8px rgba(193, 255, 17, 0.4);
-        }
-
-        .sb-xp-text {
-            font-size: .72rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.45);
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
-        /* Streak Card */
-        .sb-streak-card {
-            margin: 0 10px 14px;
-            background: linear-gradient(135deg, rgba(255, 100, 0, 0.1), rgba(255, 60, 0, 0.05));
-            border: 1px solid rgba(255, 120, 0, 0.2);
-            border-radius: 14px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sb-streak-fire {
-            font-size: 1.8rem;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .sb-streak-info {
-            flex: 1;
-        }
-
-        .sb-streak-title {
-            font-size: .9rem;
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 2px;
-        }
-
-        .sb-streak-title span {
-            color: #ff8c00;
-        }
-
-        .sb-streak-sub {
-            font-size: .75rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 600;
-        }
     </style>
 </head>
 
@@ -1637,7 +1478,7 @@
                 <a href="courses.html?v=2" class="nav-item active"><i data-lucide="presentation" class="nav-icon"></i>
                     <span>Courses</span></a>
                 <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
-                    <span>Build With Me</span></a>
+                    <span>Build With Me (Live)</span></a>
                 <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
                     <span>Guest of Honors</span></a>
                 <a href="ai-updates.html" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i> <span>AI
@@ -1688,13 +1529,10 @@
 
             <!-- ═══ STREAK CARD ═══ -->
             <div class="sb-streak-card">
-                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire"
-                        style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
                 <div class="sb-streak-info">
                     <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
-                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire"
-                            style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" />
-                    </div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
                 </div>
             </div>
         </aside>
@@ -1782,9 +1620,9 @@
                             <div id="lessonCompleteArea"
                                 style="display:none; margin-top:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                                 <div class="complete-btn" id="currentLessonCompleteBtn"
-                                    style="width:auto;border-radius:8px;padding:10px 20px;font-size:14px;gap:8px;height:auto;font-family:inherit;font-weight:600;background:var(--bg-card);cursor:pointer;">
-                                    <span id="completeBtnIcon">○</span> <span id="completeBtnText">Mark lesson as
-                                        complete</span>
+                                    style="width:auto;border-radius:8px;padding:10px 20px;font-size:14px;gap:8px;height:auto;font-family:inherit;font-weight:600;background:var(--bg-card);">
+                                    <span id="completeBtnIcon"> </span> <span id="completeBtnText">Watching lesson...
+                                        will be completed automatically</span>
                                 </div>
                             </div>
                             <div id="videoLocked"
@@ -1884,58 +1722,35 @@
                     <!-- Right Sidebar -->
                     <div class="cd-grid-side">
                         <!-- Premium Progress Card -->
-                        <div class="course-progress-header" id="courseProgressHeader"
-                            style="background: #09090b; border: 1px solid rgba(255,255,255,0.05); padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                            <div class="progress-eyebrow"
-                                style="margin-bottom: 20px; font-weight: 600; color: #fff; font-size: 1.05rem;">Your
-                                Progress</div>
+                        <div class="course-progress-header" id="courseProgressHeader" style="background: #09090b; border: 1px solid rgba(255,255,255,0.05); padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                            <div class="progress-eyebrow" style="margin-bottom: 20px; font-weight: 600; color: #fff; font-size: 1.05rem;">Your Progress</div>
                             <div style="display: flex; gap: 20px; align-items: stretch;">
-                                <div class="progress-ring-wrap"
-                                    style="flex-shrink: 0; display: flex; align-items: center;">
-                                    <div class="progress-ring" aria-label="Course progress"
-                                        style="width: 90px; height: 90px; position: relative;">
-                                        <svg width="90" height="90" viewBox="0 0 100 100"
-                                            style="transform: rotate(-90deg);">
+                                <div class="progress-ring-wrap" style="flex-shrink: 0; display: flex; align-items: center;">
+                                    <div class="progress-ring" aria-label="Course progress" style="width: 90px; height: 90px; position: relative;">
+                                        <svg width="90" height="90" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
                                             <defs>
                                                 <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                                     <stop offset="0%" stop-color="#3b82f6" />
-                                                    <stop offset="100%" stop-color="#c1ff11" />
+                                                    <stop offset="100%" stop-color="#a3e635" />
                                                 </linearGradient>
                                             </defs>
-                                            <circle class="track" cx="50" cy="50" r="42" fill="none" stroke="#1f2937"
-                                                stroke-width="8" />
-                                            <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42" fill="none"
-                                                stroke="url(#ringGrad)" stroke-width="8" stroke-dasharray="263.9"
-                                                stroke-dashoffset="263.9" stroke-linecap="round"
-                                                style="transition: stroke-dashoffset 0.8s ease;" />
+                                            <circle class="track" cx="50" cy="50" r="42" fill="none" stroke="#1f2937" stroke-width="8" />
+                                            <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42" fill="none" stroke="url(#ringGrad)" stroke-width="8"
+                                                stroke-dasharray="263.9" stroke-dashoffset="263.9" stroke-linecap="round" style="transition: stroke-dashoffset 0.8s ease;" />
                                         </svg>
-                                        <div class="pct" id="cdProgressPct"
-                                            style="font-size: 1.25rem; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-family: 'IBM Plex Mono', monospace;">
-                                            0%</div>
+                                        <div class="pct" id="cdProgressPct" style="font-size: 1.25rem; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-family: 'IBM Plex Mono', monospace;">0%</div>
                                     </div>
                                 </div>
-                                <div class="progress-card-body"
-                                    style="display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0;">
-                                    <div
-                                        style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px; font-weight: 500;">
-                                        Course Progress</div>
+                                <div class="progress-card-body" style="display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px; font-weight: 500;">Course Progress</div>
                                     <div class="progress-card-headline" style="margin-bottom: 12px;">
-                                        <div class="pct-text" id="cdProgressText"
-                                            style="font-size: 1.1rem; font-weight: 700; color: #fff;">0% Complete</div>
+                                        <div class="pct-text" id="cdProgressText" style="font-size: 1.1rem; font-weight: 700; color: #fff;">0% Complete</div>
                                     </div>
-                                    <div class="progress-bar-full"
-                                        style="height: 6px; background: #1f2937; border-radius: 9999px; margin-bottom: 10px; width: 100%; overflow: hidden;">
-                                        <div class="bar" id="cdProgressBar"
-                                            style="width:0%; height: 100%; background: #c1ff11; border-radius: 9999px; transition: width 0.8s ease;">
-                                        </div>
+                                    <div class="progress-bar-full" style="height: 6px; background: #1f2937; border-radius: 9999px; margin-bottom: 10px; width: 100%; overflow: hidden;">
+                                        <div class="bar" id="cdProgressBar" style="width:0%; height: 100%; background: #a3e635; border-radius: 9999px; transition: width 0.8s ease;"></div>
                                     </div>
-                                    <div class="lessons-text" id="cdProgressLessons"
-                                        style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 16px;">Completed 0 of
-                                        0 lessons</div>
-                                    <button class="btn-progress-resume" id="resumeBtn"
-                                        style="background: transparent; border: 1px solid #c1ff11; color: #c1ff11; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: all 0.2s; cursor: pointer;"
-                                        onmouseover="this.style.background='rgba(193, 255, 17, 0.1)'"
-                                        onmouseout="this.style.background='transparent'">
+                                    <div class="lessons-text" id="cdProgressLessons" style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 16px;">Completed 0 of 0 lessons</div>
+                                    <button class="btn-progress-resume" id="resumeBtn" style="background: transparent; border: 1px solid #a3e635; color: #a3e635; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(163, 230, 53, 0.1)'" onmouseout="this.style.background='transparent'">
                                         <i class="fa-solid fa-play" style="font-size: 0.8rem;"></i>
                                         <span id="resumeBtnLabel">Resume Lesson</span>
                                     </button>
@@ -1945,8 +1760,7 @@
 
                         <!-- Certificate section (hidden until 100%) -->
                         <div id="certificateSection" style="display:none; margin-bottom: 24px;">
-                            <button onclick="downloadCertificate()" class="btn-certificate" style="width: 100%;">🎓
-                                Download Certificate</button>
+                            <button onclick="downloadCertificate()" class="btn-certificate" style="width: 100%;">🎓 Download Certificate</button>
                         </div>
 
                         <!-- What You'll Learn -->
@@ -1985,49 +1799,15 @@
                         </div>
 
                         <!-- Top Students -->
-                        <div class="cd-side-card" style="padding: 24px;">
-                            <div class="side-card-header"
-                                style="margin-bottom:20px; display: flex; justify-content: space-between; align-items: center;">
-                                <span class="side-card-title"
-                                    style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;">Top
-                                    Students</span>
-                                <button onclick="openLeaderboardModal()"
-                                    style="background: #18181b; border: 1px solid #27272a; color: #a1a1aa; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;"
-                                    onmouseover="this.style.background='#27272a';this.style.color='#fff'"
-                                    onmouseout="this.style.background='#18181b';this.style.color='#a1a1aa'">View
-                                    Leaderboard</button>
+                        <div class="cd-side-card">
+                            <div class="side-card-header" style="margin-bottom:10px">
+                                <span class="side-card-title">🏆 Top Students</span>
+                                <span id="leaderboardUpdated" style="color:#555;font-size:11px;"></span>
                             </div>
                             <div id="leaderboardList">
                                 <div class="skeleton-row"></div>
                                 <div class="skeleton-row"></div>
                                 <div class="skeleton-row"></div>
-                            </div>
-                        </div>
-
-                        <!-- Leaderboard Full Modal -->
-                        <div id="leaderboardModal"
-                            style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-                            <div
-                                style="background:#0d0f14; border:1px solid rgba(255,255,255,0.08); border-radius:20px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 80px rgba(0,0,0,0.7);">
-                                <div
-                                    style="padding:24px 28px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06);">
-                                    <div>
-                                        <div
-                                            style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:-0.5px;">
-                                            🏆 Course Leaderboard</div>
-                                        <div id="lbModalSubtitle" style="font-size:12px; color:#555; margin-top:4px;">
-                                            Top students in this course</div>
-                                    </div>
-                                    <button onclick="closeLeaderboardModal()"
-                                        style="background:rgba(255,255,255,0.06); border:none; color:#aaa; width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">×</button>
-                                </div>
-                                <div id="leaderboardModalList" style="overflow-y:auto; padding:16px 20px; flex:1;">
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -2090,7 +1870,7 @@
         })();
 
         const token = getToken();
-        if (!token) window.location.href = 'login.html';
+        if (!token) console.log('Redirect prevented');
         const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
         // ═══ GLOBALS ═══
@@ -2107,7 +1887,7 @@
         async function apiFetch(url, opts = {}) {
             opts.headers = { ...hdrs, ...opts.headers };
             const res = await fetch(API + url, opts);
-            if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+            if (res.status === 401) { localStorage.removeItem('token'); console.log('Redirect prevented'); }
             return res;
         }
 
@@ -2144,13 +1924,11 @@
                 const u = await res.json();
                 currentUserData = u;
                 localStorage.setItem('user', JSON.stringify({ id: u.id, full_name: u.full_name, role: u.is_admin ? 'admin' : 'user' }));
-
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-
                 // Update Name
-                s('sidebarName', u.full_name);
-                s('topbarName', u.full_name);
-
+                s('sidebarName', u.full_name); 
+                s('topbarName', u.full_name); 
+                
                 // Update Badge
                 const badgeLabel = getBadgeLabel(u.badge);
                 const badgeEl = document.getElementById('sidebarBadge');
@@ -2161,12 +1939,12 @@
                 // Update Level & XP
                 const level = u.level || 1;
                 const xp = u.xp || 0;
-                const nextLevelXp = u.next_level_xp || (level * 100); // fallback calculation
-
+                const nextLevelXp = u.next_level_xp || (level * 100);
+                
                 s('sidebarLevelNum', level);
                 s('sidebarLevelTitle', badgeLabel);
                 s('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
-
+                
                 const xpBar = document.getElementById('sidebarXpBar');
                 if (xpBar) {
                     const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
@@ -2175,7 +1953,7 @@
 
                 // Update Streak
                 s('streakCount', u.streak_days || 0);
-
+                
                 // Update Avatars
                 ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
                     const el = document.getElementById(id);
@@ -2184,7 +1962,7 @@
                         el.innerHTML = `<img src="${fullUrl}" alt="" />`;
                     }
                 });
-            } catch (e) { console.error('Failed to load profile', e); }
+            } catch (e) { }
         }
 
         // ═══════════════════════════════════════════
@@ -2251,7 +2029,7 @@
 
             if (isCompleted) return;
 
-            const method = 'POST';
+            const method = 'PATCH';
 
             if (btn) {
                 btn.classList.add('completed');
@@ -2277,7 +2055,7 @@
 
                 if (data.course_progress) {
                     updateProgressUI(data.course_progress);
-                    showToast('Lesson completed! 🎉', 'success');
+                    showToast('✅ Lesson automatically completed', 'success');
                     if (data.course_progress.percentage === 100) {
                         showCertificateModal(data.course_progress.certificate_id);
                     }
@@ -2302,14 +2080,12 @@
             if (!pBtn) return;
             if (isCompleted) {
                 pBtn.classList.add('completed');
-                pBtn.style.cursor = 'default';
                 pIcon.textContent = '✅';
                 pText.textContent = 'Completed';
             } else {
                 pBtn.classList.remove('completed');
-                pBtn.style.cursor = 'pointer';
                 pIcon.textContent = '○';
-                pText.textContent = 'Mark lesson as complete';
+                pText.textContent = 'Watching lesson... will be completed automatically';
             }
         }
 
@@ -2321,53 +2097,19 @@
             const alreadyCompleted = row && row.querySelector('.complete-btn.completed');
             updatePlayerCompleteBtn(!!alreadyCompleted);
             area.style.display = 'flex';
-
-            pBtn.onclick = () => {
-                if (!pBtn.classList.contains('completed')) {
-                    videoCompletionTriggered = true;
-                    autoCompleteLesson(cId, lId);
-                }
-            };
         }
 
         let videoCompletionTriggered = false;
 
         function handleVideoTimeUpdate(currentTime, duration) {
-            if (!currentTime) return;
+            if (!currentTime || !duration) return;
+            
+            window.currentVideoTime = currentTime;
+            window.currentVideoDuration = duration;
+            updateSeekBar(currentTime, duration);
 
-            // لو duration = 0 استخدم الـ duration_minutes من الـ courseData
-            if (!duration && window.courseData && currentLessonId) {
-                const lesson = window.courseData.lessons.find(x => x.id == currentLessonId);
-                if (lesson && lesson.duration_minutes) duration = lesson.duration_minutes * 60;
-            }
-
-            if (currentTime > 0) window.currentVideoTime = currentTime;
-            if (duration > 0) window.currentVideoDuration = duration;
-
-            if (duration > 0) {
-                updateSeekBar(currentTime, duration);
-
-                // Dynamically update duration in curriculum row if it was 0
-                if (currentLessonId) {
-                    const row = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
-                    if (row) {
-                        const durEl = row.querySelector('.lesson-dur');
-                        const storedMins = parseInt(row.dataset.duration || '0');
-                        // Update if stored duration was 0 and we haven't updated it yet
-                        if (durEl && storedMins === 0 && !row.dataset.durationUpdated) {
-                            row.dataset.durationUpdated = '1';
-                            const totalMins = Math.floor(duration / 60);
-                            const totalSecs = Math.floor(duration % 60);
-                            durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
-                            // Persist to DB silently
-                            apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(duration)}`, { method: 'PATCH' }).catch(() => { });
-                        }
-                    }
-                }
-            }
-
-            const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
-            if (pct >= 90 && currentLessonId && !videoCompletionTriggered) {
+            const percentage = (currentTime / duration) * 100;
+            if (percentage >= 90 && currentLessonId && !videoCompletionTriggered) {
                 const row = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
                 const alreadyDone = row && row.querySelector('.complete-btn.completed');
                 if (!alreadyDone) {
@@ -2389,38 +2131,14 @@
         window.addEventListener('message', (e) => {
             try {
                 let data = e.data;
-                if (typeof data === 'string') {
-                    try {
-                        data = JSON.parse(data);
-                    } catch (err) {
-                        return; // Ignore non-JSON strings silently
-                    }
-                }
+                if (typeof data === 'string') data = JSON.parse(data);
                 if (typeof data !== 'object' || !data) return;
 
                 const eventName = data.event || data.type || data.eventName || '';
 
                 if (eventName === 'ready' || eventName === 'durationchange' || eventName === 'loadedmetadata') {
                     const dur = (data.value && data.value.duration) ? data.value.duration : (data.duration || data.videoDuration);
-                    if (dur) {
-                        window.currentVideoDuration = dur;
-                        // Also update the curriculum row duration immediately on ready
-                        if (currentLessonId) {
-                            const row = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
-                            if (row) {
-                                const durEl = row.querySelector('.lesson-dur');
-                                const storedMins = parseInt(row.dataset.duration || '0');
-                                if (durEl && storedMins === 0 && !row.dataset.durationUpdated) {
-                                    row.dataset.durationUpdated = '1';
-                                    const totalMins = Math.floor(dur / 60);
-                                    const totalSecs = Math.floor(dur % 60);
-                                    durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
-                                    // Persist to DB silently
-                                    apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(dur)}`, { method: 'PATCH' }).catch(() => { });
-                                }
-                            }
-                        }
-                    }
+                    if (dur) window.currentVideoDuration = dur;
 
                     if (eventName === 'ready' && data.context === 'player.js' && window.courseFrame && window.courseFrame.contentWindow) {
                         const sendEvent = (method, value) => {
@@ -2454,8 +2172,7 @@
                     }
 
                     current = current ?? 0;
-                    // استخدم duration اللي عندنا لو مجالتش من الـ event
-                    duration = duration || window.currentVideoDuration;
+                    duration = duration ?? window.currentVideoDuration;
 
                     if (!duration && window.courseData && currentLessonId) {
                         const lesson = window.courseData.lessons.find(x => x.id == currentLessonId);
@@ -2471,10 +2188,12 @@
                     window.isVideoPlaying = false;
                     const pi = document.getElementById('vslPlayIcon');
                     if (pi) pi.className = 'fa-solid fa-play';
-                    // لما الفيديو يخلص auto-complete مباشرة
                     if (currentLessonId && !videoCompletionTriggered) {
-                        videoCompletionTriggered = true;
-                        autoCompleteLesson(courseId, currentLessonId);
+                        const row = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
+                        if (row && !row.querySelector('.complete-btn.completed')) {
+                            videoCompletionTriggered = true;
+                            autoCompleteLesson(courseId, currentLessonId);
+                        }
                     }
                 }
 
@@ -2564,8 +2283,8 @@
                 }
 
                 return progress;
-            } catch (e) {
-                console.error('Progress load error:', e);
+            } catch (e) { 
+                console.error('Progress load error:', e); 
                 return null;
             }
         }
@@ -2598,41 +2317,6 @@
         //  TOP STUDENTS LEADERBOARD
         // ═══════════════════════════════════════════
 
-        function buildStudentRow(student, clickable = false) {
-            const rankThemes = [
-                { text: '#c1ff11', bg: 'rgba(193, 255, 17, 0.15)' },
-                { text: '#3f8ff9', bg: 'rgba(63, 143, 249, 0.15)' },
-                { text: '#ff8c00', bg: 'rgba(255, 140, 0, 0.15)' }
-            ];
-            const initials = student.full_name
-                .split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-            const avatarUrl = student.avatar_url
-                ? (student.avatar_url.startsWith('http') ? student.avatar_url : API + student.avatar_url)
-                : null;
-            const theme = student.rank <= 3 ? rankThemes[student.rank - 1] : { text: '#aaa', bg: 'rgba(255,255,255,0.1)' };
-            const percentage = student.total_lessons > 0
-                ? Math.round((student.completed_lessons / student.total_lessons) * 100) : 0;
-
-            const profileLink = `profile.html?user_id=${student.user_id}#achievements`;
-            const avatarClick = clickable
-                ? `onclick="window.location.href='${profileLink}'" style="cursor:pointer;"`
-                : '';
-
-            const avatarContent = avatarUrl
-                ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.textContent='${initials}';this.parentElement.style.color='${theme.text}';this.parentElement.style.background='${theme.bg}'">`
-                : `<span style="color:${theme.text};">${initials}</span>`;
-
-            return `
-            <div class="leaderboard-item ${student.is_current_user ? 'current-user' : ''}">
-                <span class="rank-badge">${student.rank}</span>
-                <div class="leaderboard-avatar" ${avatarClick} style="background:${avatarUrl ? '#333' : theme.bg}; ${clickable ? 'cursor:pointer; transition:transform 0.15s; border:2px solid transparent;' : ''}" onmouseover="${clickable ? "this.style.borderColor='" + theme.text + "';this.style.transform='scale(1.08)'" : ''}" onmouseout="${clickable ? "this.style.borderColor='transparent';this.style.transform='scale(1)'" : ''}">${avatarContent}</div>
-                <div class="leaderboard-info">
-                    <div class="leaderboard-name">${escapeHtml(student.full_name)}${student.is_current_user ? ' (You)' : ''}</div>
-                    <div class="leaderboard-progress-pct" style="color:${theme.text};">${percentage}%</div>
-                </div>
-            </div>`;
-        }
-
         async function loadTopStudents(cId) {
             const container = document.getElementById('leaderboardList');
             try {
@@ -2650,59 +2334,53 @@
                     return;
                 }
 
-                // Show top 5 in sidebar, with clickable avatars
-                const top5 = students.slice(0, 5);
-                container.innerHTML = top5.map(s => buildStudentRow(s, true)).join('');
+                const rankEmojis = ['🥇', '🥈', '🥉'];
+                const rankClasses = ['gold', 'silver', 'bronze'];
+
+                container.innerHTML = students.map(student => {
+                    const initials = student.full_name
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .substring(0, 2)
+                        .toUpperCase();
+
+                    const avatarUrl = student.avatar_url
+                        ? (student.avatar_url.startsWith('http') ? student.avatar_url : API + student.avatar_url)
+                        : null;
+
+                    const avatarContent = avatarUrl
+                        ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.textContent='${initials}'">`
+                        : initials;
+
+                    const rankDisplay = student.rank <= 3
+                        ? `<span class="rank-badge ${rankClasses[student.rank - 1]}">${rankEmojis[student.rank - 1]}</span>`
+                        : `<span class="rank-badge">#${student.rank}</span>`;
+
+                    const percentage = student.total_lessons > 0
+                        ? Math.round((student.completed_lessons / student.total_lessons) * 100)
+                        : 0;
+
+                    return `
+                <div class="leaderboard-item ${student.is_current_user ? 'current-user' : ''}">
+                    ${rankDisplay}
+                    <div class="leaderboard-avatar">${avatarContent}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${escapeHtml(student.full_name)}${student.is_current_user ? ' (You)' : ''}</div>
+                        <div class="leaderboard-progress-mini">${student.completed_lessons} / ${student.total_lessons} lessons · ${percentage}%</div>
+                    </div>
+                    ${student.is_completed ? '<span class="completed-badge">✅ Completed</span>' : ''}
+                </div>`;
+                }).join('');
+
+                const updEl = document.getElementById('leaderboardUpdated');
+                if (updEl) updEl.textContent = 'Last updated: Just now';
 
             } catch (e) {
                 console.error('Leaderboard error:', e);
                 if (container) container.innerHTML = `<div style="text-align:center;padding:20px;color:#555;">Failed to load students</div>`;
             }
         }
-
-        async function openLeaderboardModal() {
-            const modal = document.getElementById('leaderboardModal');
-            const listEl = document.getElementById('leaderboardModalList');
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-
-            try {
-                const res = await apiFetch(`/courses/${courseId}/top-students`);
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                const students = data.top_students || [];
-
-                const subtitle = document.getElementById('lbModalSubtitle');
-                if (subtitle) subtitle.textContent = `${students.length} student${students.length !== 1 ? 's' : ''} ranked`;
-
-                if (students.length === 0) {
-                    listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#555;"><p>No students yet. Be the first! 🚀</p></div>`;
-                    return;
-                }
-
-                listEl.innerHTML = students.map(s => buildStudentRow(s, true)).join('');
-
-            } catch (e) {
-                listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#555;">Failed to load leaderboard</div>`;
-            }
-        }
-
-        function closeLeaderboardModal() {
-            const modal = document.getElementById('leaderboardModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        // Close modal on backdrop click
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('leaderboardModal');
-            if (e.target === modal) closeLeaderboardModal();
-        });
-
-        // Close on Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeLeaderboardModal();
-        });
 
         // ═══════════════════════════════════════════
         //  COURSE DETAIL LOAD
@@ -2867,21 +2545,18 @@
                     </div>
                 </div>
                 <div class="sec-right">
-                    <span class="sec-count">${secLessons.filter(l => l.completed).length} / ${secLessons.length}</span>
+                    <span class="sec-count">${secLessons.filter(l=>l.completed).length} / ${secLessons.length}</span>
                     <span class="sec-expand"><i class="fa-solid fa-${isFirst ? 'minus' : 'plus'}"></i></span>
                 </div>
             </div>
             <div class="section-lessons${isFirst ? ' open' : ''}">
                 ${secLessons.map((l, lIdx) => {
                     const mins = l.duration_minutes || 0;
-                    let durStr = "0:00";
-                    if (mins > 0) {
-                        durStr = mins + ':00'; // Since DB only stores minutes
-                    }
+                    const dur = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
                     return `<div class="lesson-row" data-lesson-id="${l.id}" data-course-id="${courseId}" data-duration="${mins}">
                         <div class="lesson-icon" onclick="playLesson(${l.id})"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
                         <span class="lesson-title" onclick="playLesson(${l.id})">${secIdx + 1}.${lIdx + 1} ${escapeHtml(l.title)}</span>
-                        <span class="lesson-dur">${durStr}</span>
+                        <span class="lesson-dur">${dur}</span>
                         <span class="complete-btn"><i class="fa-solid fa-check"></i></span>
                     </div>`;
                 }).join('')}
@@ -2952,50 +2627,13 @@
                     frame.onload = () => {
                         const player = new playerjs.Player(frame);
                         window.coursePlayer = player;
-
-                        let actualDuration = 0;
-
-                        function applyDurationToRow(dur) {
-                            if (!dur || dur <= 0) return;
-                            actualDuration = dur;
-                            window.currentVideoDuration = dur;
-                            // Update curriculum row
-                            if (currentLessonId) {
-                                const row = document.querySelector(`[data-lesson-id="${currentLessonId}"]`);
-                                if (row) {
-                                    const durEl = row.querySelector('.lesson-dur');
-                                    const storedMins = parseInt(row.dataset.duration || '0');
-                                    if (durEl && (storedMins === 0 || durEl.textContent === '0:00')) {
-                                        const totalMins = Math.floor(dur / 60);
-                                        const totalSecs = Math.floor(dur % 60);
-                                        durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
-                                        // Persist to DB
-                                        apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(dur)}`, { method: 'PATCH' }).catch(() => { });
-                                    }
-                                }
-                            }
-                        }
-
                         player.on('ready', () => {
-                            // Try to get duration immediately
-                            player.getDuration((d) => {
-                                if (d > 0) {
-                                    applyDurationToRow(d);
-                                } else {
-                                    // Retry after 1s if not ready yet
-                                    setTimeout(() => player.getDuration((d2) => applyDurationToRow(d2)), 1000);
-                                    setTimeout(() => player.getDuration((d3) => applyDurationToRow(d3)), 3000);
-                                }
-                            });
-
+                            let actualDuration = 0;
+                            player.getDuration((d) => { actualDuration = d; });
+                            
                             player.on('timeupdate', (data) => {
                                 let duration = data.duration || actualDuration;
                                 const currentTime = data.seconds;
-                                // If we still don't have duration, try getDuration again
-                                if (!duration && actualDuration === 0) {
-                                    player.getDuration((d) => applyDurationToRow(d));
-                                }
-                                if (!duration) duration = actualDuration;
                                 if (!duration && window.courseData) {
                                     const les = window.courseData.lessons.find(x => x.id == currentLessonId);
                                     if (les && les.duration_minutes) duration = les.duration_minutes * 60;

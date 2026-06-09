@@ -15,7 +15,7 @@
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
+    <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <link rel="stylesheet" href="src/css/admin-courses.css" />
     <script>
@@ -34,7 +34,7 @@
     <div class="dash-layout">
         <!-- SIDEBAR -->
         <aside class="dash-sidebar" id="dashSidebar">
-            <div class="sidebar-logo"><img src="./imgs/ghawi-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
+            <div class="sidebar-logo"><img src="./imgs/community-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
             <nav class="sidebar-nav">
                 <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i>
                     <span>الرئيسية</span></a>
@@ -78,11 +78,35 @@
                         <span class="topbar-user-name" id="topbarName">—</span>
                         <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
                     </div>
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="profile.html"><i data-lucide="user" style="width:16px;height:16px;"></i> الملف
-                            الشخصي</a>
-                        <button class="dd-danger" onclick="logout()"><i data-lucide="log-out"
-                                style="width:16px;height:16px;"></i> تسجيل الخروج</button>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <img src="./imgs/nabil.jpg" id="dropdownAvatarImg" alt="User Avatar" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22></path><circle cx=%2212%22 cy=%227%22 r=%224%22></circle></svg>';">
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">Nabil Ahmed</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i data-lucide="settings"></i></a>
+                        </div>
+                        
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i data-lucide="award"></i> Achievements</a>
+                            <a href="javascript:void(0)"><i data-lucide="help-circle"></i> Help and support</a>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i data-lucide="log-out"></i> Sign out</button>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="theme-toggle-segmented">
+                            <button class="theme-btn" data-theme="light"><i data-lucide="sun"></i></button>
+                            <button class="theme-btn" data-theme="dark"><i data-lucide="moon"></i></button>
+                        </div>
                     </div>
                 </div>
             </header>
