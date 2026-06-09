@@ -246,6 +246,80 @@
   background: #252525;
 }
 
+.projects-admin-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.projects-admin-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.projects-admin-filters input,
+.projects-admin-filters select {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.projects-admin-filters input {
+  min-width: 260px;
+}
+
+.projects-admin-filters input:focus,
+.projects-admin-filters select:focus {
+  border-color: #3f8ff9;
+}
+
+.project-admin-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.project-admin-status.pending {
+  color: #3f8ff9;
+  background: rgba(63, 143, 249, 0.14);
+}
+
+.project-admin-status.approved {
+  color: #84cc16;
+  background: rgba(132, 204, 22, 0.14);
+}
+
+.project-admin-status.changes_requested {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.project-notes-input {
+  width: 100%;
+  min-height: 96px;
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+}
+
 .status-pill {
   font-size: 12px;
   padding: 4px 12px;

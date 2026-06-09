@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -59,6 +59,11 @@ class AiUpdatePostType(str, enum.Enum):
     PHOTO = "photo"
     POLL = "poll"
 
+class ProjectSubmissionStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    CHANGES_REQUESTED = "changes_requested"
+
 # ═══════════════════════════════════════════
 #  USER
 # ═══════════════════════════════════════════
@@ -118,6 +123,7 @@ class User(Base):
     messages = relationship("Message", back_populates="sender", cascade="all, delete-orphan")
     course_progress = relationship("UserCourseProgress", back_populates="user", cascade="all, delete-orphan")
     progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
+    project_submissions = relationship("ProjectSubmission", foreign_keys="ProjectSubmission.user_id", back_populates="user", cascade="all, delete-orphan")
 
 
 class PhoneOTP(Base):
@@ -347,6 +353,7 @@ class Course(Base):
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
     progress = relationship("UserCourseProgress", back_populates="course", cascade="all, delete-orphan")
+    project_submissions = relationship("ProjectSubmission", back_populates="course", cascade="all, delete-orphan")
 
 
 class Lesson(Base):
@@ -411,6 +418,27 @@ class Certificate(Base):
     certificate_id = Column(String, unique=True)  # GHAWY-2026-XXXXXX
     issued_at = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (UniqueConstraint("user_id", "course_id"),)
+
+
+class ProjectSubmission(Base):
+    __tablename__ = "project_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    file_name = Column(String, nullable=False)
+    file_url = Column(String, nullable=False)
+    json_payload = Column(JSON, nullable=False)
+    status = Column(String, nullable=False, default=ProjectSubmissionStatus.PENDING.value, server_default=text("'pending'"))
+    admin_notes = Column(Text, nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow, onupdate=func.now())
+
+    user = relationship("User", foreign_keys=[user_id], back_populates="project_submissions")
+    course = relationship("Course", back_populates="project_submissions")
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
 
 # ═══════════════════════════════════════════
 #  GUEST OF HONORS

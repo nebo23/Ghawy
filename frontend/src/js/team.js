@@ -32,7 +32,8 @@ function initTabs() {
     'analytics': 'Platform Analytics',
     'pending-requests': 'Pending Requests',
     'live-sessions': 'Live Sessions',
-    'courses': 'Courses Management'
+    'courses': 'Courses Management',
+    'projects': 'Projects Review'
   };
 
   tabs.forEach(tab => {
@@ -68,6 +69,9 @@ function initTabs() {
       }
       if (target === 'courses') {
         loadCoursesTab();
+      }
+      if (target === 'projects') {
+        loadProjectsTab();
       }
     });
   });
@@ -143,6 +147,13 @@ async function loadTeamPage() {
   });
   document.getElementById('pay-method-filter')?.addEventListener('change', () => {
     payCurrentPage = 1; loadPaymentsTab();
+  });
+
+  document.getElementById('project-search')?.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') loadProjectsTab();
+  });
+  document.getElementById('project-status-filter')?.addEventListener('change', () => {
+    loadProjectsTab();
   });
 
   loadManualPaymentStats(); // fetch badge count
@@ -1773,6 +1784,199 @@ async function handlePdfSelected(event, lessonId) {
     loadLessons();
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ==========================================
+//  PROJECTS REVIEW TAB
+// ==========================================
+
+let projectsCache = [];
+
+function projectAdminStatusLabel(status) {
+  const labels = {
+    pending: 'Pending',
+    approved: 'Approved',
+    changes_requested: 'Changes Requested'
+  };
+  return labels[status] || status || 'Pending';
+}
+
+function projectFileHref(project) {
+  if (!project || !project.file_url) return '#';
+  return project.file_url.startsWith('http') ? project.file_url : API + project.file_url;
+}
+
+async function loadProjectsTab() {
+  const tbody = document.getElementById('projects-body');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
+
+  const params = new URLSearchParams();
+  const status = document.getElementById('project-status-filter')?.value || 'all';
+  const search = document.getElementById('project-search')?.value.trim() || '';
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
+
+  try {
+    const res = await fetch(API + `/admin/projects?${params.toString()}`, { headers });
+    if (!res.ok) throw new Error('Failed to load projects');
+    projectsCache = await res.json();
+    renderProjectsTable();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#ef4444;">Failed to load projects.</td></tr>`;
+  }
+}
+
+function renderProjectsTable() {
+  const tbody = document.getElementById('projects-body');
+  if (!tbody) return;
+
+  if (!projectsCache.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;">No project submissions found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = projectsCache.map(project => {
+    return `
+      <tr>
+        <td>
+          <strong style="color:#fff;">${escapeHtml(project.member_name || 'Unknown member')}</strong>
+          <div style="color:#888;font-size:12px;margin-top:2px;">${escapeHtml(project.member_email || '')}</div>
+        </td>
+        <td>${escapeHtml(project.course_title || 'Unknown course')}</td>
+        <td>
+          <a href="${projectFileHref(project)}" target="_blank" style="color:#3f8ff9;text-decoration:none;">
+            ${escapeHtml(project.file_name || 'project.json')}
+          </a>
+        </td>
+        <td><span class="project-admin-status ${project.status}">${projectAdminStatusLabel(project.status)}</span></td>
+        <td>${formatDate(project.created_at)}</td>
+        <td>
+          <div class="lesson-actions">
+            <button class="lesson-action-btn" onclick="openProjectReviewModal(${project.id})" title="Review">Review</button>
+            <a class="lesson-action-btn" href="${projectFileHref(project)}" target="_blank" style="text-decoration:none;color:inherit;">Open</a>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function getProjectForReview(projectId) {
+  const cached = projectsCache.find(item => item.id === projectId);
+  if (cached) return cached;
+  const res = await fetch(API + `/admin/projects/${projectId}`, { headers });
+  if (!res.ok) throw new Error('Failed to load project');
+  return res.json();
+}
+
+async function openProjectReviewModal(projectId) {
+  try {
+    const project = await getProjectForReview(projectId);
+    let modal = document.getElementById('project-review-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'project-review-modal';
+      modal.className = 'modal-overlay-team';
+      modal.style.display = 'none';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="modal-box-team">
+        <div class="modal-header-team">
+          <h3>Review Project</h3>
+          <button class="modal-close-team" onclick="closeProjectReviewModal()">x</button>
+        </div>
+        <div class="modal-body-team">
+          <div style="display:grid;gap:10px;margin-bottom:14px;color:#ccc;font-size:14px;">
+            <div><strong style="color:#fff;">Member:</strong> ${escapeHtml(project.member_name || 'Unknown')} (${escapeHtml(project.member_email || '')})</div>
+            <div><strong style="color:#fff;">Course:</strong> ${escapeHtml(project.course_title || 'Unknown course')}</div>
+            <div><strong style="color:#fff;">Status:</strong> <span class="project-admin-status ${project.status}">${projectAdminStatusLabel(project.status)}</span></div>
+            <div><strong style="color:#fff;">File:</strong> <a href="${projectFileHref(project)}" target="_blank" style="color:#3f8ff9;">${escapeHtml(project.file_name || 'project.json')}</a></div>
+          </div>
+          <div class="fg">
+            <label>Review Notes</label>
+            <textarea id="project-review-notes" class="project-notes-input" placeholder="Write feedback for the member...">${escapeHtml(project.admin_notes || '')}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer-team">
+          <button class="btn-cancel-team" onclick="closeProjectReviewModal()">Cancel</button>
+          <button class="btn-confirm-team" onclick="saveProjectNotes(${project.id})">Save Notes</button>
+          <button class="btn-confirm-team" onclick="approveProject(${project.id})">Approve</button>
+          <button class="btn-confirm-team" style="background:#f59e0b;color:#111;" onclick="requestProjectChanges(${project.id})">Request Changes</button>
+        </div>
+      </div>`;
+    modal.style.display = 'flex';
+  } catch (e) {
+    showToast(e.message || 'Failed to open project', 'error');
+  }
+}
+
+function closeProjectReviewModal() {
+  const modal = document.getElementById('project-review-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function currentProjectNotes() {
+  return document.getElementById('project-review-notes')?.value.trim() || '';
+}
+
+async function sendProjectReviewAction(projectId, action, notes) {
+  const res = await fetch(API + `/admin/projects/${projectId}/${action}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ notes })
+  });
+  if (!res.ok) {
+    let message = 'Project review failed';
+    try {
+      const body = await res.json();
+      message = body.detail || message;
+    } catch (e) { }
+    throw new Error(message);
+  }
+  return res.json();
+}
+
+async function saveProjectNotes(projectId) {
+  try {
+    await sendProjectReviewAction(projectId, 'notes', currentProjectNotes());
+    showToast('Project notes saved', 'success');
+    closeProjectReviewModal();
+    loadProjectsTab();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function approveProject(projectId) {
+  try {
+    await sendProjectReviewAction(projectId, 'approve', currentProjectNotes());
+    showToast('Project approved', 'success');
+    closeProjectReviewModal();
+    loadProjectsTab();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function requestProjectChanges(projectId) {
+  const notes = currentProjectNotes();
+  if (!notes) {
+    showToast('Review notes are required when requesting changes', 'error');
+    return;
+  }
+
+  try {
+    await sendProjectReviewAction(projectId, 'request-changes', notes);
+    showToast('Change request sent', 'success');
+    closeProjectReviewModal();
+    loadProjectsTab();
+  } catch (e) {
+    showToast(e.message, 'error');
   }
 }
 

@@ -857,6 +857,10 @@
               <i data-lucide="presentation" style="width:18px;height:18px;"></i>
               <span class="tab-label">Courses</span>
             </button>
+            <button class="team-section-btn" data-tab="projects">
+              <i data-lucide="folder-check" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Projects</span>
+            </button>
           </nav>
 
           <!-- Tab Content Area -->
@@ -1233,6 +1237,48 @@
                 </div>
               </div>
 
+            </div>
+
+            <!-- Tab Content: Projects -->
+            <div id="tab-projects" class="tab-panel" style="display:none;">
+              <div class="projects-admin-toolbar">
+                <div>
+                  <h3 style="margin:0;color:#fff;">Projects Review</h3>
+                  <p style="margin:4px 0 0;color:#888;font-size:13px;">Review submitted course projects and send feedback.</p>
+                </div>
+                <div class="projects-admin-filters">
+                  <input type="text" id="project-search" placeholder="Search member, email, course..." />
+                  <select id="project-status-filter">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="changes_requested">Changes Requested</option>
+                  </select>
+                  <button class="btn-export" onclick="loadProjectsTab()">
+                    <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> Refresh
+                  </button>
+                </div>
+              </div>
+
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                <table class="team-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Course</th>
+                      <th>File</th>
+                      <th>Status</th>
+                      <th>Submitted</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="projects-body">
+                    <tr>
+                      <td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div><!-- end team-content-area -->

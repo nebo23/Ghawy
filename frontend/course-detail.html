@@ -640,6 +640,226 @@
             background: rgba(63, 143, 249, 0.06);
         }
 
+        /* Projects */
+        .projects-module {
+            display: grid;
+            gap: 18px;
+        }
+
+        .projects-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .projects-head h3 {
+            margin: 0 0 6px;
+            font-size: 1.05rem;
+            color: #fff;
+        }
+
+        .projects-head p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: .82rem;
+            line-height: 1.5;
+        }
+
+        .project-upload-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 180px;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .project-dropzone {
+            min-height: 132px;
+            border: 1px dashed rgba(63, 143, 249, .36);
+            background: rgba(63, 143, 249, .055);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }
+
+        .project-dropzone:hover,
+        .project-dropzone.dragover {
+            border-color: #3f8ff9;
+            background: rgba(63, 143, 249, .09);
+        }
+
+        .project-drop-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            background: rgba(63, 143, 249, .12);
+            color: #3f8ff9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .project-drop-copy strong {
+            display: block;
+            color: #fff;
+            font-size: .94rem;
+            margin-bottom: 4px;
+        }
+
+        .project-drop-copy span {
+            color: var(--text-muted);
+            font-size: .76rem;
+        }
+
+        .project-submit-panel {
+            border: 1px solid rgba(255, 255, 255, .06);
+            background: #0b0d12;
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .project-file-name {
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-file-meta {
+            color: var(--text-muted);
+            font-size: .72rem;
+            margin-top: 2px;
+        }
+
+        .project-progress {
+            height: 7px;
+            background: rgba(255, 255, 255, .07);
+            border-radius: 999px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .project-progress span {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: #3f8ff9;
+            transition: width .2s;
+        }
+
+        .project-submissions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .project-card {
+            border: 1px solid rgba(255, 255, 255, .06);
+            background: #0b0d12;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .project-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .project-card-title {
+            color: #fff;
+            font-size: .92rem;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        .project-card-meta {
+            color: var(--text-muted);
+            font-size: .74rem;
+            margin-top: 4px;
+        }
+
+        .project-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .project-status-badge.pending {
+            color: #3f8ff9;
+            background: rgba(63, 143, 249, .12);
+        }
+
+        .project-status-badge.approved {
+            color: #84cc16;
+            background: rgba(132, 204, 22, .12);
+        }
+
+        .project-status-badge.changes_requested {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, .12);
+        }
+
+        .project-notes {
+            border: 1px solid rgba(255, 255, 255, .06);
+            background: rgba(255, 255, 255, .025);
+            border-radius: 8px;
+            padding: 12px;
+            color: rgba(255, 255, 255, .82);
+            font-size: .8rem;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        .projects-empty {
+            border: 1px solid rgba(255, 255, 255, .06);
+            background: rgba(255, 255, 255, .025);
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .projects-empty i {
+            color: #3f8ff9;
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        @media(max-width: 768px) {
+            .project-upload-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .projects-head,
+            .project-card-top {
+                flex-direction: column;
+            }
+
+            .project-dropzone {
+                align-items: flex-start;
+            }
+        }
+
         /* ── Resources Grid ── */
         .resources-grid {
             display: flex;
@@ -1826,8 +2046,42 @@
                             <div id="curriculumSections"></div>
                         </div>
                         <div id="tabProjects" style="display:none">
-                            <div class="cd-side-card">
-                                <p style="color:var(--text-muted)">Projects coming soon...</p>
+                            <div class="cd-side-card projects-module">
+                                <div>
+                                    <div class="projects-head">
+                                        <div>
+                                            <h3>Projects</h3>
+                                            <p>Upload your course project as a JSON file. The Ghawy team will review it and send feedback here.</p>
+                                        </div>
+                                        <span class="project-status-badge pending" id="projectSummaryBadge">No submission</span>
+                                    </div>
+                                    <div class="project-upload-grid">
+                                        <label class="project-dropzone" id="projectDropzone" for="projectJsonInput">
+                                            <div class="project-drop-icon"><i class="fa-solid fa-code"></i></div>
+                                            <div class="project-drop-copy">
+                                                <strong>Choose a JSON project file</strong>
+                                                <span>Validated locally before upload. Max size 2MB.</span>
+                                            </div>
+                                        </label>
+                                        <div class="project-submit-panel">
+                                            <div>
+                                                <div class="project-file-name" id="projectFileName">No file selected</div>
+                                                <div class="project-file-meta" id="projectFileMeta">Only .json files are accepted</div>
+                                            </div>
+                                            <div class="project-progress" id="projectUploadProgress"><span id="projectUploadProgressFill"></span></div>
+                                            <button class="btn-blue-full" id="submitProjectBtn" type="button" onclick="submitProjectFile()">
+                                                <i class="fa-solid fa-upload"></i> Submit Project
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="projectJsonInput" accept="application/json,.json" style="display:none" />
+                                </div>
+                                <div class="project-submissions" id="projectSubmissions">
+                                    <div class="projects-empty">
+                                        <i class="fa-regular fa-folder-open"></i>
+                                        <p>No project submitted yet.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div id="tabResources" style="display:none">
@@ -2103,6 +2357,8 @@
         window.isVideoMuted = false;
         window.currentVideoTime = 0;
         window.currentVideoDuration = 0;
+        let selectedProjectFile = null;
+        let projectSubmissionsCache = [];
 
         async function apiFetch(url, opts = {}) {
             opts.headers = { ...hdrs, ...opts.headers };
@@ -2598,6 +2854,246 @@
         //  TOP STUDENTS LEADERBOARD
         // ═══════════════════════════════════════════
 
+        // Projects
+        function projectStatusLabel(status) {
+            const labels = {
+                pending: 'Pending review',
+                approved: 'Approved',
+                changes_requested: 'Changes requested'
+            };
+            return labels[status] || status || 'Pending review';
+        }
+
+        function formatProjectDate(value) {
+            if (!value) return 'Unknown date';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Unknown date';
+            return date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function updateProjectFilePreview(file) {
+            const nameEl = document.getElementById('projectFileName');
+            const metaEl = document.getElementById('projectFileMeta');
+            if (!nameEl || !metaEl) return;
+
+            if (!file) {
+                nameEl.textContent = 'No file selected';
+                metaEl.textContent = 'Only .json files are accepted';
+                return;
+            }
+
+            nameEl.textContent = file.name;
+            metaEl.textContent = `${Math.ceil(file.size / 1024)} KB selected`;
+        }
+
+        function validateProjectFile(file) {
+            if (!file) return 'Choose a JSON file first';
+            if (!file.name.toLowerCase().endsWith('.json')) return 'Only .json files are accepted';
+            if (file.size === 0) return 'Project JSON file is empty';
+            if (file.size > 2 * 1024 * 1024) return 'Project JSON must be 2MB or smaller';
+            return '';
+        }
+
+        async function validateProjectJsonPayload(file) {
+            let text = '';
+            try {
+                text = await file.text();
+            } catch (e) {
+                throw new Error('Browser could not read this file. Choose it from your files folder and try again.');
+            }
+
+            let parsed;
+            try {
+                parsed = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Invalid JSON file');
+            }
+
+            if (!Array.isArray(parsed) && (typeof parsed !== 'object' || parsed === null)) {
+                throw new Error('Project JSON must contain an object or array');
+            }
+        }
+
+        function setProjectUploadProgress(percent, visible = true) {
+            const wrap = document.getElementById('projectUploadProgress');
+            const fill = document.getElementById('projectUploadProgressFill');
+            if (!wrap || !fill) return;
+            wrap.style.display = visible ? 'block' : 'none';
+            fill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+        }
+
+        async function loadProjectSubmissions() {
+            const listEl = document.getElementById('projectSubmissions');
+            const badge = document.getElementById('projectSummaryBadge');
+            if (!listEl) return;
+
+            listEl.innerHTML = `
+                <div class="projects-empty">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <p>Loading projects...</p>
+                </div>`;
+
+            try {
+                const res = await apiFetch(`/projects/my-projects?course_id=${courseId}`);
+                if (!res.ok) throw new Error('Failed to load projects');
+
+                projectSubmissionsCache = await res.json();
+                if (!projectSubmissionsCache.length) {
+                    listEl.innerHTML = `
+                        <div class="projects-empty">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <p>No project submitted yet.</p>
+                        </div>`;
+                    if (badge) {
+                        badge.className = 'project-status-badge pending';
+                        badge.textContent = 'No submission';
+                    }
+                    return;
+                }
+
+                const latest = projectSubmissionsCache[0];
+                if (badge) {
+                    badge.className = `project-status-badge ${latest.status}`;
+                    badge.textContent = projectStatusLabel(latest.status);
+                }
+
+                listEl.innerHTML = projectSubmissionsCache.map(item => {
+                    const fileHref = item.file_url ? (item.file_url.startsWith('http') ? item.file_url : API + item.file_url) : '#';
+                    const notes = item.admin_notes
+                        ? `<div class="project-notes">${escapeHtml(item.admin_notes)}</div>`
+                        : '';
+                    return `
+                        <div class="project-card">
+                            <div class="project-card-top">
+                                <div>
+                                    <div class="project-card-title">${escapeHtml(item.file_name || 'project.json')}</div>
+                                    <div class="project-card-meta">Submitted ${formatProjectDate(item.created_at)}</div>
+                                </div>
+                                <span class="project-status-badge ${item.status}">${projectStatusLabel(item.status)}</span>
+                            </div>
+                            ${notes}
+                            <a href="${fileHref}" target="_blank" class="btn-outline-sm" style="margin-top:12px;text-decoration:none;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open file
+                            </a>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                console.error('Projects load error:', e);
+                listEl.innerHTML = `
+                    <div class="projects-empty">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <p>Failed to load projects.</p>
+                    </div>`;
+            }
+        }
+
+        async function submitProjectFile() {
+            const btn = document.getElementById('submitProjectBtn');
+            const error = validateProjectFile(selectedProjectFile);
+            if (error) {
+                showToast(error, 'error');
+                return;
+            }
+
+            try {
+                await validateProjectJsonPayload(selectedProjectFile);
+            } catch (e) {
+                showToast(e.message || 'Invalid JSON file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('course_id', courseId);
+            formData.append('file', selectedProjectFile);
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            }
+            setProjectUploadProgress(8);
+
+            try {
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', API + '/projects/submit');
+                    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                    xhr.upload.onprogress = event => {
+                        if (event.lengthComputable) {
+                            setProjectUploadProgress((event.loaded / event.total) * 92);
+                        }
+                    };
+                    xhr.onload = () => {
+                        if (xhr.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            setProjectUploadProgress(100);
+                            resolve();
+                            return;
+                        }
+
+                        let message = 'Project upload failed';
+                        try {
+                            const body = JSON.parse(xhr.responseText);
+                            message = body.detail || message;
+                        } catch (e) { }
+                        reject(new Error(message));
+                    };
+                    xhr.onerror = () => reject(new Error('Project upload failed'));
+                    xhr.send(formData);
+                });
+
+                showToast('Project submitted for review', 'success');
+                selectedProjectFile = null;
+                const input = document.getElementById('projectJsonInput');
+                if (input) input.value = '';
+                updateProjectFilePreview(null);
+                await loadProjectSubmissions();
+            } catch (e) {
+                showToast(e.message || 'Project upload failed', 'error');
+            } finally {
+                setTimeout(() => setProjectUploadProgress(0, false), 500);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-upload"></i> Submit Project';
+                }
+            }
+        }
+
+        function setupProjectUploadUI() {
+            const input = document.getElementById('projectJsonInput');
+            const dropzone = document.getElementById('projectDropzone');
+            if (!input || !dropzone) return;
+
+            input.addEventListener('change', () => {
+                selectedProjectFile = input.files && input.files[0] ? input.files[0] : null;
+                updateProjectFilePreview(selectedProjectFile);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    dropzone.classList.remove('dragover');
+                });
+            });
+
+            dropzone.addEventListener('drop', event => {
+                const file = event.dataTransfer && event.dataTransfer.files[0];
+                if (!file) return;
+                selectedProjectFile = file;
+                updateProjectFilePreview(file);
+            });
+        }
+
         function buildStudentRow(student, clickable = false) {
             const rankThemes = [
                 { text: '#c1ff11', bg: 'rgba(193, 255, 17, 0.15)' },
@@ -2742,6 +3238,7 @@
                 // Render curriculum sections
                 renderCurriculum(course.lessons || []);
                 await new Promise(r => setTimeout(r, 50));
+                await loadProjectSubmissions();
 
                 // Render Resources Tab
                 const resourcesTab = document.getElementById('tabResources');
@@ -3334,6 +3831,7 @@
         })();
 
         // ═══ INIT ═══
+        setupProjectUploadUI();
         loadProfile();
         loadCourseDetail();
     </script>

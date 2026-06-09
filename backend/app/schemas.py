@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Any, Dict, Literal
 from datetime import datetime
 from app.models import PaymentMethod, PaymentStatus, ChannelType, MessageType, MemberRole
 
@@ -381,6 +381,35 @@ class CourseUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     pdf_url: Optional[str] = None
     is_published: Optional[bool] = None
+
+
+ProjectStatusLiteral = Literal["pending", "approved", "changes_requested"]
+
+class ProjectSubmissionOut(BaseModel):
+    id: int
+    user_id: int
+    course_id: int
+    file_name: str
+    file_url: str
+    json_payload: Dict[str, Any] | List[Any]
+    status: ProjectStatusLiteral
+    admin_notes: Optional[str] = None
+    reviewed_by: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class AdminProjectSubmissionOut(ProjectSubmissionOut):
+    member_name: str
+    member_email: str
+    course_title: str
+    reviewer_name: Optional[str] = None
+
+class ProjectNotesUpdate(BaseModel):
+    notes: str = ""
 
 # ─── Live Session Schemas ────────────────────────────────────
 
