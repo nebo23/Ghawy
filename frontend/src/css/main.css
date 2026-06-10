@@ -5067,6 +5067,7 @@ footer a:hover {
 .coursesSwiper {
     overflow: hidden;
     flex: 1;
+    min-width: 0;
     border-radius: 20px;
 }
 
@@ -5097,13 +5098,18 @@ footer a:hover {
     z-index: 10;
     box-shadow: 0 0 20px rgba(193, 255, 17, 0.1);
     font-size: 1.1rem;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
+.carousel-arrow.prev { right: -20px; }
+.carousel-arrow.next { left: -20px; }
 
 .carousel-arrow:hover {
     background: rgba(193, 255, 17, 0.12);
     border-color: var(--gold);
     box-shadow: 0 0 30px rgba(193, 255, 17, 0.35);
-    transform: scale(1.08);
+    transform: translateY(-50%) scale(1.08);
 }
 
 /* Individual Card — equal height via flex stretch */
@@ -5403,14 +5409,16 @@ footer a:hover {
     }
 
     .carousel-arrow {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        font-size: 0.8rem;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 0.9rem;
     }
+    .carousel-arrow.prev { right: -10px; }
+    .carousel-arrow.next { left: -10px; }
 
     .courses-carousel-wrapper {
-        gap: 5px;
+        margin-bottom: 30px;
     }
 }
 
@@ -7016,5 +7024,296 @@ footer a:hover {
         flex-direction: column;
         justify-content: center;
         text-align: center;
+    }
+}
+
+/* Responsive and language direction polish for the landing page */
+html[dir="rtl"],
+html[dir="rtl"] body {
+    direction: rtl;
+}
+
+html[dir="ltr"],
+html[dir="ltr"] body {
+    direction: ltr;
+}
+
+body {
+    min-width: 0;
+}
+
+.container,
+.main-nav,
+.hero-split,
+.features-grid,
+.pricing-grid,
+.courses-header-wrapper,
+.courses-carousel-wrapper,
+.pr-header,
+.footer-bottom {
+    min-width: 0;
+}
+
+html[dir="rtl"] .main-nav {
+    direction: rtl;
+}
+
+html[dir="ltr"] .main-nav {
+    direction: ltr;
+}
+
+html[dir="rtl"] .nav-links,
+html[dir="rtl"] .nav-auth,
+html[dir="rtl"] .hero-cta-row,
+html[dir="rtl"] .hero-stats-inline,
+html[dir="rtl"] .pricing-features li,
+html[dir="rtl"] .info-item {
+    flex-direction: row-reverse;
+}
+
+html[dir="ltr"] .nav-links,
+html[dir="ltr"] .nav-auth,
+html[dir="ltr"] .hero-cta-row,
+html[dir="ltr"] .hero-stats-inline,
+html[dir="ltr"] .pricing-features li,
+html[dir="ltr"] .info-item {
+    flex-direction: row;
+}
+
+html[dir="rtl"] .hero-left,
+html[dir="rtl"] .feature-card,
+html[dir="rtl"] .pricing-card,
+html[dir="rtl"] .pr-title-area,
+html[dir="rtl"] .footer-col {
+    text-align: right;
+}
+
+html[dir="ltr"] .hero-left,
+html[dir="ltr"] .feature-card,
+html[dir="ltr"] .pricing-card,
+html[dir="ltr"] .pr-title-area,
+html[dir="ltr"] .footer-col {
+    text-align: left;
+}
+
+html[dir="rtl"] .hero-left {
+    align-items: flex-end;
+}
+
+html[dir="ltr"] .hero-left {
+    align-items: flex-start;
+}
+
+html[dir="rtl"] .hero-sub {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+html[dir="ltr"] .hero-sub {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.mobile-lang-toggle {
+    color: var(--off-white);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.mobile-lang-toggle:hover {
+    border-color: var(--gold);
+}
+
+@media (max-width: 1200px) {
+    .main-nav {
+        padding-inline: 22px;
+    }
+
+    .nav-links {
+        gap: 20px;
+    }
+
+    .nav-auth {
+        gap: 8px;
+    }
+
+    .nav-auth-btn {
+        padding-inline: 14px;
+    }
+}
+
+@media (max-width: 1023px) {
+    .hero {
+        min-height: auto;
+    }
+
+    .hero-split {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-left,
+    html[dir="rtl"] .hero-left,
+    html[dir="ltr"] .hero-left {
+        align-items: center;
+        text-align: center;
+    }
+
+    .hero-heading-split {
+        align-items: center;
+    }
+
+    .hero-sub,
+    html[dir="rtl"] .hero-sub,
+    html[dir="ltr"] .hero-sub {
+        margin-inline: auto;
+        text-align: center !important;
+    }
+
+    .hero-stats-inline,
+    .hero-cta-row,
+    html[dir="rtl"] .hero-stats-inline,
+    html[dir="ltr"] .hero-stats-inline,
+    html[dir="rtl"] .hero-cta-row,
+    html[dir="ltr"] .hero-cta-row {
+        justify-content: center;
+    }
+
+    .courses-header-wrapper,
+    .pr-header {
+        align-items: center;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-nav {
+        height: 60px;
+        padding-inline: 16px;
+    }
+
+    .nav-logo img {
+        height: 88px;
+    }
+
+    .mobile-drawer {
+        top: 60px;
+        padding: 28px 20px;
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+
+    .hero {
+        padding-top: 82px !important;
+    }
+
+    .container {
+        width: 100%;
+        padding-inline: 16px;
+    }
+
+    .hero-stats-inline {
+        gap: 14px;
+    }
+
+    .hero-stat-inline {
+        min-width: calc(50% - 14px);
+        justify-content: center;
+    }
+
+    .btn-cta-solid,
+    .btn-cta-ghost,
+    .pricing-cta,
+    .vs-cta-btn {
+        width: 100%;
+        max-width: 360px;
+    }
+
+    .courses-info-bar {
+        width: 100%;
+        border-radius: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding-inline: 14px;
+    }
+
+    .courses-carousel-wrapper {
+        gap: 8px;
+    }
+
+    .carousel-arrow {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+    }
+
+    .pricing-grid {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .hero-heading-split {
+        font-size: clamp(2rem, 11vw, 2.7rem);
+    }
+
+    .pre-headline {
+        max-width: 100%;
+        white-space: normal;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .hero-stat-inline {
+        min-width: 100%;
+    }
+
+    .hero-cta-row,
+    html[dir="rtl"] .hero-cta-row,
+    html[dir="ltr"] .hero-cta-row {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .vsl-controls {
+        gap: 4px;
+        padding-inline: 8px;
+    }
+
+    .vsl-time {
+        display: none;
+    }
+
+    .courses-main-title,
+    .pr-title,
+    .section-title,
+    .vs-main-title {
+        font-size: clamp(1.65rem, 8vw, 2.1rem);
+        line-height: 1.25;
+    }
+
+    .courses-carousel-wrapper {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) 40px;
+    }
+
+    .pricing-card,
+    .vs-container,
+    .auth-modal {
+        padding-inline: 18px;
+    }
+
+    .vs-main-product,
+    .vs-bonus-item,
+    .vs-scarcity-text {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .footer-bottom {
+        padding-inline: 16px;
     }
 }

@@ -1,5 +1,4 @@
 from datetime import datetime, time
-import json
 import os
 from pathlib import Path
 import uuid
@@ -19,7 +18,7 @@ router = APIRouter(tags=["Projects"])
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 PROJECT_UPLOADS_DIR = BACKEND_DIR / "uploads" / "projects"
 PROJECT_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-MAX_PROJECT_FILE_SIZE = 2 * 1024 * 1024
+MAX_PROJECT_FILE_SIZE = 25 * 1024 * 1024
 
 
 def _status_to_api(status: str | ProjectSubmissionStatus) -> str:
@@ -38,6 +37,19 @@ def _status_to_api(status: str | ProjectSubmissionStatus) -> str:
 
 def _status_to_db(status: ProjectSubmissionStatus) -> str:
     return status.name
+
+
+def _uploaded_project_path(file_url: str | None) -> Path | None:
+    if not file_url:
+        return None
+    prefix = "/uploads/projects/"
+    if not file_url.startswith(prefix):
+        return None
+    candidate = (PROJECT_UPLOADS_DIR / file_url.removeprefix(prefix)).resolve()
+    uploads_root = PROJECT_UPLOADS_DIR.resolve()
+    if uploads_root not in candidate.parents and candidate != uploads_root:
+        return None
+    return candidate
 
 
 def _serialize_submission(submission: ProjectSubmission) -> dict:
@@ -80,24 +92,23 @@ def _parse_date_boundary(value: str | None, is_end: bool = False) -> datetime | 
         raise HTTPException(status_code=400, detail="Invalid date filter")
 
 
-async def _read_and_validate_json_file(file: UploadFile) -> tuple[bytes, object]:
+async def _read_and_validate_project_file(file: UploadFile) -> tuple[bytes, dict]:
     raw = await file.read()
+    if len(raw) == 0:
+        raise HTTPException(status_code=400, detail="Project file cannot be empty")
     if len(raw) > MAX_PROJECT_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="Project JSON must be 2MB or smaller")
+        raise HTTPException(status_code=400, detail="Project file must be 25MB or smaller")
 
     original_name = file.filename or ""
-    if not original_name.lower().endswith(".json"):
-        raise HTTPException(status_code=400, detail="Only JSON project files are allowed")
+    if not original_name:
+        raise HTTPException(status_code=400, detail="Project file must have a name")
 
-    try:
-        payload = json.loads(raw.decode("utf-8"))
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Project file must be UTF-8 encoded JSON")
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON file")
-
-    if not isinstance(payload, (dict, list)):
-        raise HTTPException(status_code=400, detail="Project JSON must contain an object or array")
+    payload = {
+        "kind": "uploaded_file",
+        "content_type": file.content_type or "application/octet-stream",
+        "size_bytes": len(raw),
+        "original_name": os.path.basename(original_name),
+    }
 
     return raw, payload
 
@@ -113,7 +124,7 @@ async def submit_project(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    raw, payload = await _read_and_validate_json_file(file)
+    raw, payload = await _read_and_validate_project_file(file)
 
     original_name = os.path.basename(file.filename or "project.json")
     safe_original = "".join(ch if ch.isalnum() or ch in ("-", "_", ".") else "_" for ch in original_name)
@@ -278,3 +289,26 @@ def update_project_notes(
     db.commit()
     db.refresh(submission)
     return _serialize_admin_submission(submission)
+
+
+@router.delete("/admin/projects/{project_id}", status_code=204)
+def delete_project_submission(
+    project_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Project submission not found")
+
+    file_path = _uploaded_project_path(submission.file_url)
+    db.delete(submission)
+    db.commit()
+
+    if file_path and file_path.exists():
+        try:
+            file_path.unlink()
+        except OSError:
+            pass
+
+    return None

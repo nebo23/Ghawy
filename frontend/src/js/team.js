@@ -1622,6 +1622,200 @@ async function handleCoursePdfSelected(event, courseId) {
 }
 
 
+async function loadCoursesTab() {
+  document.getElementById('courses-list-view').style.display = 'block';
+  document.getElementById('lessons-manager-view').style.display = 'none';
+  const tbody = document.getElementById('courses-body');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
+
+  try {
+    const res = await fetch(API + '/courses/admin/courses', { headers });
+    if (!res.ok) throw new Error('Failed to load courses');
+    coursesCache = await res.json();
+    renderCourses();
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:red;">Error loading courses.</td></tr>`;
+  }
+}
+
+function renderCourses() {
+  const tbody = document.getElementById('courses-body');
+  if (coursesCache.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No courses found. Add one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = coursesCache.map(c => {
+    const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
+    const pdfHref = c.pdf_url ? (c.pdf_url.startsWith('/') ? API + c.pdf_url : c.pdf_url) : '';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${thumbSrc
+        ? `<img src="${thumbSrc}" style="width:80px;height:45px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+               <div style="display:none;width:80px;height:45px;border-radius:4px;background:#222;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
+        : `<div style="width:80px;height:45px;border-radius:4px;background:#222;display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;">No img</div>`
+      }
+          <button class="btn-action" style="font-size:11px;padding:3px 6px;" onclick="uploadCourseThumbnail(${c.id})" title="Upload thumbnail"><i class="fa-solid fa-image"></i></button>
+          <input type="file" id="course-thumb-upload-${c.id}" accept="image/*" style="display:none" onchange="handleCourseThumbSelected(event, ${c.id})">
+        </div>
+      </td>
+      <td><strong>${escapeHtml(c.title)}</strong><br><small style="color:#888;">${escapeHtml((c.description || '').substring(0, 30))}...</small></td>
+      <td>${c.total_lessons || 0} lessons</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${pdfHref ? '<a href="' + pdfHref + '" target="_blank" style="color:#ef4444;text-decoration:none;"><i class="fa-solid fa-file-pdf"></i> View</a>' : '<span style="color:#555;">No PDF</span>'}
+          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadCoursePdf(${c.id})">${c.pdf_url ? 'Replace' : 'Upload'}</button>
+          <input type="file" id="course-pdf-upload-${c.id}" accept="application/pdf" style="display:none" onchange="handleCoursePdfSelected(event, ${c.id})">
+        </div>
+      </td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${c.is_published ? 'checked' : ''} onchange="toggleCoursePublish(${c.id}, this)">
+          <span class="slider round"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')\" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function toggleCoursePublish(id, checkbox) {
+  const isPub = checkbox.checked;
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ is_published: isPub })
+    });
+    if (!res.ok) throw new Error('Failed to update course');
+    showToast(`Course ${isPub ? 'published' : 'hidden'} successfully`, 'success');
+  } catch (err) {
+    checkbox.checked = !isPub;
+    showToast('Error updating course', 'error');
+  }
+}
+
+// -- Course Modals --
+function openAddCourseModal() {
+  document.getElementById('course-title').value = '';
+  document.getElementById('course-desc').value = '';
+  document.getElementById('course-thumbnail').value = '';
+  document.getElementById('course-total-lessons').value = '0';
+  document.getElementById('add-course-modal').style.display = 'flex';
+}
+
+async function submitAddCourse() {
+  const data = {
+    title: document.getElementById('course-title').value,
+    description: document.getElementById('course-desc').value,
+    thumbnail_url: document.getElementById('course-thumbnail').value,
+    total_lessons: parseInt(document.getElementById('course-total-lessons').value) || 0,
+    is_published: false
+  };
+  if (!data.title) return showToast('Title is required', 'error');
+
+  try {
+    const res = await fetch(API + '/courses/admin/courses', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Failed to create course');
+    closeModal('add-course-modal');
+    showToast('Course created successfully!', 'success');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function openEditCourseModal(id) {
+  const c = coursesCache.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('edit-course-id').value = c.id;
+  document.getElementById('edit-course-title').value = c.title;
+  document.getElementById('edit-course-desc').value = c.description || '';
+  document.getElementById('edit-course-thumbnail').value = c.thumbnail_url || '';
+  document.getElementById('edit-course-total-lessons').value = c.total_lessons || 0;
+  document.getElementById('edit-course-modal').style.display = 'flex';
+}
+
+async function submitEditCourse() {
+  const id = document.getElementById('edit-course-id').value;
+  const data = {
+    title: document.getElementById('edit-course-title').value,
+    description: document.getElementById('edit-course-desc').value,
+    thumbnail_url: document.getElementById('edit-course-thumbnail').value,
+    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0
+  };
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Update failed');
+    closeModal('edit-course-modal');
+    showToast('Course updated!', 'success');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function openDeleteCourseModal(id) {
+  document.getElementById('delete-course-id').value = id;
+  document.getElementById('delete-course-modal').style.display = 'flex';
+}
+
+async function confirmDeleteCourse() {
+  const id = document.getElementById('delete-course-id').value;
+  try {
+    const res = await fetch(API + `/courses/admin/courses/${id}`, {
+      method: 'DELETE', headers
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    closeModal('delete-course-modal');
+    showToast('Course deleted', 'info');
+    loadCoursesTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// -- Course PDF Upload --
+function uploadCoursePdf(courseId) {
+  document.getElementById(`course-pdf-upload-${courseId}`).click();
+}
+
+async function handleCoursePdfSelected(event, courseId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
+
+  showToast('Uploading PDF...', 'info');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Upload failed');
+    }
+
+    showToast('Course PDF uploaded successfully!', 'success');
+    loadCoursesTab();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+
 // -- Course Thumbnail Upload --
 function uploadCourseThumbnail(courseId) {
   document.getElementById(`course-thumb-upload-${courseId}`).click();
@@ -1689,40 +1883,87 @@ async function loadLessons() {
   }
 }
 
+function getUniqueChapters() {
+  const seen = new Set();
+  return lessonsCache
+    .map(l => l.section_title || '')
+    .filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
+}
+
 function renderLessons() {
   const tbody = document.getElementById('lessons-body');
+
   if (lessonsCache.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No lessons found. Add one above.</td></tr>`;
     return;
   }
-  tbody.innerHTML = lessonsCache.map(l => {
-    let statHtml = '';
-    if (l.video_status === 'ready') statHtml = '<span class="video-badge ready"><span class="dot"></span>Ready</span>';
-    else if (l.video_status === 'processing') statHtml = '<span class="video-badge processing"><span class="dot"></span>Processing...</span>';
-    else if (l.video_status === 'error') statHtml = '<span class="video-badge error"><span class="dot"></span>Error</span>';
-    else statHtml = '<span class="video-badge pending"><span class="dot"></span>Pending</span>';
 
-    const hasPdf = !!l.pdf_url;
+  // Group lessons by section_title (chapter)
+  const groups = {};
+  const groupOrder = [];
+  lessonsCache.forEach(l => {
+    const chap = l.section_title || '(No Chapter)';
+    if (!groups[chap]) { groups[chap] = []; groupOrder.push(chap); }
+    groups[chap].push(l);
+  });
 
-    return `
-    <tr>
-      <td style="color:#888;">${l.order}</td>
-      <td><strong>${escapeHtml(l.title)}</strong><br><small style="color:#888;">${escapeHtml(l.section_title || '')}</small></td>
-      <td>${l.duration_minutes} min</td>
-      <td id="status-cell-${l.id}">${statHtml}</td>
-      <td>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${hasPdf ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>' : '<span style="color:#555;">No PDF</span>'}
-          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadPdf(${l.id})">${hasPdf ? 'Replace' : 'Upload'}</button>
-          <input type="file" id="pdf-upload-${l.id}" accept="application/pdf" style="display:none" onchange="handlePdfSelected(event, ${l.id})">
+  let html = '';
+  groupOrder.forEach(chap => {
+    const lessons = groups[chap];
+    const chapEsc = escapeHtml(chap);
+    const chapRaw = chap === '(No Chapter)' ? '' : chap;
+
+    // Chapter header row
+    html += `
+    <tr style="background:rgba(63,143,249,0.06);">
+      <td colspan="5" style="padding:10px 16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fa-solid fa-layer-group" style="color:#3f8ff9;font-size:13px;"></i>
+          <strong style="color:#3f8ff9;font-size:13px;">${chapEsc}</strong>
+          <span style="color:#555;font-size:12px;">(${lessons.length} lesson${lessons.length !== 1 ? 's' : ''})</span>
         </div>
       </td>
-      <td>
-        <button class="btn-action" onclick="openEditLessonModal(${l.id})"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-action" onclick="openDeleteLessonModal(${l.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+      <td style="padding:10px 16px;">
+        <button class="btn-action" style="font-size:11px;padding:3px 8px;white-space:nowrap;"
+          onclick="openAddLessonModal(${JSON.stringify(chapRaw)})"
+          title="Add lesson to this chapter">
+          <i class="fa-solid fa-plus"></i> Add Lesson
+        </button>
       </td>
-    </tr>
-  `}).join('');
+    </tr>`;
+
+    // Lessons inside chapter
+    lessons.forEach(l => {
+      let statHtml = '';
+      if (l.video_status === 'ready') statHtml = '<span class="video-badge ready"><span class="dot"></span>Ready</span>';
+      else if (l.video_status === 'processing') statHtml = '<span class="video-badge processing"><span class="dot"></span>Processing...</span>';
+      else if (l.video_status === 'error') statHtml = '<span class="video-badge error"><span class="dot"></span>Error</span>';
+      else statHtml = '<span class="video-badge pending"><span class="dot"></span>Pending</span>';
+
+      const hasPdf = !!l.pdf_url;
+
+      html += `
+      <tr>
+        <td style="color:#888;padding-left:28px;">${l.order}</td>
+        <td><strong>${escapeHtml(l.title)}</strong></td>
+        <td>${l.duration_minutes} min</td>
+        <td id="status-cell-${l.id}">${statHtml}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            ${hasPdf ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>' : '<span style="color:#555;">No PDF</span>'}
+            <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadPdf(${l.id})">${hasPdf ? 'Replace' : 'Upload'}</button>
+            <input type="file" id="pdf-upload-${l.id}" accept="application/pdf" style="display:none" onchange="handlePdfSelected(event, ${l.id})">
+          </div>
+        </td>
+        <td>
+          <button class="btn-action" onclick="openEditLessonModal(${l.id})"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-action" onclick="openDeleteLessonModal(${l.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
 }
 
 // -- Polling CF Stream --
@@ -1852,10 +2093,17 @@ function renderProjectsTable() {
         </td>
         <td><span class="project-admin-status ${project.status}">${projectAdminStatusLabel(project.status)}</span></td>
         <td>${formatDate(project.created_at)}</td>
-        <td>
-          <div class="lesson-actions">
-            <button class="lesson-action-btn" onclick="openProjectReviewModal(${project.id})" title="Review">Review</button>
-            <a class="lesson-action-btn" href="${projectFileHref(project)}" target="_blank" style="text-decoration:none;color:inherit;">Open</a>
+        <td class="project-actions-cell">
+          <div class="project-actions">
+            <button class="project-action-btn review" onclick="openProjectReviewModal(${project.id})" title="Review">
+              <i class="fa-solid fa-pen-to-square"></i><span>Review</span>
+            </button>
+            <a class="project-action-btn open" href="${projectFileHref(project)}" target="_blank">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Open</span>
+            </a>
+            <button class="project-action-btn delete" onclick="deleteProjectSubmission(${project.id})" title="Delete">
+              <i class="fa-solid fa-trash"></i><span>Delete</span>
+            </button>
           </div>
         </td>
       </tr>`;
@@ -1907,6 +2155,7 @@ async function openProjectReviewModal(projectId) {
           <button class="btn-confirm-team" onclick="saveProjectNotes(${project.id})">Save Notes</button>
           <button class="btn-confirm-team" onclick="approveProject(${project.id})">Approve</button>
           <button class="btn-confirm-team" style="background:#f59e0b;color:#111;" onclick="requestProjectChanges(${project.id})">Request Changes</button>
+          <button class="btn-confirm-team danger" onclick="deleteProjectSubmission(${project.id})">Delete</button>
         </div>
       </div>`;
     modal.style.display = 'flex';
@@ -1977,6 +2226,32 @@ async function requestProjectChanges(projectId) {
     loadProjectsTab();
   } catch (e) {
     showToast(e.message, 'error');
+  }
+}
+
+async function deleteProjectSubmission(projectId) {
+  const project = projectsCache.find(item => item.id === projectId);
+  const label = project ? `${project.file_name} by ${project.member_name}` : 'this project submission';
+  if (!confirm(`Delete ${label}? This will remove the uploaded file too.`)) return;
+
+  try {
+    const res = await fetch(API + `/admin/projects/${projectId}`, {
+      method: 'DELETE',
+      headers
+    });
+    if (!res.ok && res.status !== 204) {
+      let message = 'Failed to delete project';
+      try {
+        const body = await res.json();
+        message = body.detail || message;
+      } catch (e) { }
+      throw new Error(message);
+    }
+    showToast('Project deleted', 'success');
+    closeProjectReviewModal();
+    loadProjectsTab();
+  } catch (e) {
+    showToast(e.message || 'Failed to delete project', 'error');
   }
 }
 
