@@ -515,17 +515,25 @@ document.addEventListener('DOMContentLoaded', () => {
             grabCursor: true,
             centeredSlides: false,
             speed: 500,
+            preventClicks: false,
+            preventClicksPropagation: false,
             breakpoints: {
-                0: { slidesPerView: 1, spaceBetween: 15 },
-                768: { slidesPerView: 2, spaceBetween: 20 },
+                0: { slidesPerView: 1, spaceBetween: 10 },
+                600: { slidesPerView: 2, spaceBetween: 15 },
                 1024: { slidesPerView: 3, spaceBetween: 30 }
             }
         });
 
         const prevBtn = document.getElementById('cPrevBtn');
         const nextBtn = document.getElementById('cNextBtn');
-        if (prevBtn) prevBtn.addEventListener('click', () => coursesSwiper.slidePrev());
-        if (nextBtn) nextBtn.addEventListener('click', () => coursesSwiper.slideNext());
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => coursesSwiper.slidePrev());
+            prevBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper.slidePrev(); });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => coursesSwiper.slideNext());
+            nextBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper.slideNext(); });
+        }
     }
 
     // 2. Logo Shine Effect

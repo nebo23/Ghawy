@@ -3631,8 +3631,19 @@ footer a:hover {
           width: 95%;
           height: 440px;
         } */
+    .reviews-section,
+    .carousel-wrapper {
+        overflow: hidden;
+    }
+
+    .video-carousel-track {
+        scroll-snap-type: x mandatory;
+    }
+
     .review-video-card {
-        width: 100%;
+        width: 85vw;
+        min-width: 85vw;
+        scroll-snap-align: center;
         /* خليناه 90% من عرض الشاشة عشان يسيب مسافة شياكة من الجناب */
         flex-shrink: 0;
         display: flex;
@@ -4875,30 +4886,36 @@ footer a:hover {
     padding-top: 30px;
     border-top: 1px solid var(--border);
 }
+
 .cd-learn-title {
     font-size: 1.4rem;
     font-weight: 800;
     color: var(--white);
     margin-bottom: 20px;
 }
+
 .cd-comparison-table {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
     margin-top: 24px;
 }
+
 .cd-comp-col {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 32px;
 }
+
 .cd-comp-col.before-col {
     border-top: 4px solid var(--red);
 }
+
 .cd-comp-col.after-col {
     border-top: 4px solid var(--green);
 }
+
 .cd-comp-col h4 {
     font-size: 1.2rem;
     margin-bottom: 20px;
@@ -4906,18 +4923,22 @@ footer a:hover {
     align-items: center;
     gap: 10px;
 }
+
 .cd-comp-col.before-col h4 {
     color: var(--red);
 }
+
 .cd-comp-col.after-col h4 {
     color: var(--green);
 }
+
 .cd-comp-list {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
+
 .cd-comp-list li {
     position: relative;
     padding-right: 28px;
@@ -4925,6 +4946,7 @@ footer a:hover {
     font-size: 0.95rem;
     line-height: 1.6;
 }
+
 .cd-comp-list li::before {
     content: "\f00d";
     font-family: "Font Awesome 6 Free";
@@ -4934,6 +4956,7 @@ footer a:hover {
     top: 2px;
     color: var(--red);
 }
+
 .cd-comp-col.after-col .cd-comp-list li::before {
     content: "\f00c";
     color: var(--green);
@@ -4958,6 +4981,7 @@ footer a:hover {
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .mini-comp-row {
     display: flex;
     align-items: flex-start;
@@ -4965,19 +4989,24 @@ footer a:hover {
     font-size: 0.85rem;
     line-height: 1.4;
 }
+
 .mini-comp-row i {
     margin-top: 3px;
     font-size: 0.8rem;
 }
+
 .mini-comp-row.before {
     color: var(--muted-light);
 }
+
 .mini-comp-row.before i {
     color: var(--red);
 }
+
 .mini-comp-row.after {
     color: var(--white);
 }
+
 .mini-comp-row.after i {
     color: var(--green);
 }
@@ -5068,7 +5097,7 @@ footer a:hover {
     overflow: hidden;
     flex: 1;
     min-width: 0;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
 /* Force all slides to equal height */
@@ -5082,13 +5111,14 @@ footer a:hover {
     align-self: stretch;
 }
 
+/* Arrows are flex siblings of the swiper — NOT absolutely positioned */
 .carousel-arrow {
     width: 52px;
     height: 52px;
     min-width: 52px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid rgb(255, 255, 255);
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.6);
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -5098,18 +5128,22 @@ footer a:hover {
     z-index: 10;
     box-shadow: 0 0 20px rgba(193, 255, 17, 0.1);
     font-size: 1.1rem;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    flex-shrink: 0;
 }
-.carousel-arrow.prev { right: -20px; }
-.carousel-arrow.next { left: -20px; }
+
+.carousel-arrow.prev {
+    /* nothing needed — flex order handles position */
+}
+
+.carousel-arrow.next {
+    /* nothing needed — flex order handles position */
+}
 
 .carousel-arrow:hover {
     background: rgba(193, 255, 17, 0.12);
     border-color: var(--gold);
     box-shadow: 0 0 30px rgba(193, 255, 17, 0.35);
-    transform: translateY(-50%) scale(1.08);
+    transform: scale(1.08);
 }
 
 /* Individual Card — equal height via flex stretch */
@@ -5123,9 +5157,7 @@ footer a:hover {
     display: flex;
     flex-direction: column;
     flex: 1;
-    /* fill the slide height */
     height: 100%;
-    /* match tallest card */
     scroll-snap-align: start;
     flex-shrink: 0;
     margin: 10px 0px;
@@ -5139,7 +5171,7 @@ footer a:hover {
 
 /* Button active "clicky" scale */
 .carousel-arrow:active {
-    transform: scale(0.88);
+    transform: scale(0.92);
     box-shadow: 0 0 10px rgba(193, 255, 17, 0.2);
 }
 
@@ -5390,8 +5422,6 @@ footer a:hover {
 
 /* ─── Responsive: Mobile ─── */
 @media (max-width: 600px) {
-
-
     .courses-main-title {
         font-size: 1.6rem;
     }
@@ -5401,21 +5431,11 @@ footer a:hover {
         padding: 6px 12px;
         gap: 6px;
         border-radius: 50px;
-        /* Maintains proportionate pill shape */
     }
 
     .tool-chip .icon {
         font-size: 0.85rem;
     }
-
-    .carousel-arrow {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        font-size: 0.9rem;
-    }
-    .carousel-arrow.prev { right: -10px; }
-    .carousel-arrow.next { left: -10px; }
 
     .courses-carousel-wrapper {
         margin-bottom: 30px;
@@ -5562,6 +5582,7 @@ footer a:hover {
     transition: transform 0.2s, box-shadow 0.2s;
     border: none;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .btn-cta-solid:hover {
@@ -5583,6 +5604,7 @@ footer a:hover {
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, color 0.2s;
     font-family: 'Cairo', sans-serif;
+    white-space: nowrap;
 }
 
 .btn-cta-ghost:hover {
@@ -7054,13 +7076,7 @@ body {
     min-width: 0;
 }
 
-html[dir="rtl"] .main-nav {
-    direction: rtl;
-}
-
-html[dir="ltr"] .main-nav {
-    direction: ltr;
-}
+/* removed main-nav direction overrides */
 
 html[dir="rtl"] .nav-links,
 html[dir="rtl"] .nav-auth,
@@ -7068,7 +7084,7 @@ html[dir="rtl"] .hero-cta-row,
 html[dir="rtl"] .hero-stats-inline,
 html[dir="rtl"] .pricing-features li,
 html[dir="rtl"] .info-item {
-    flex-direction: row-reverse;
+    /* Removed flex-direction: row-reverse; to let RTL flow naturally */
 }
 
 html[dir="ltr"] .nav-links,
@@ -7077,7 +7093,7 @@ html[dir="ltr"] .hero-cta-row,
 html[dir="ltr"] .hero-stats-inline,
 html[dir="ltr"] .pricing-features li,
 html[dir="ltr"] .info-item {
-    flex-direction: row;
+    /* Removed flex-direction: row; */
 }
 
 html[dir="rtl"] .hero-left,
@@ -7215,11 +7231,50 @@ html[dir="ltr"] .hero-sub {
     }
 
     .hero-stats-inline {
-        gap: 14px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
     }
 
     .hero-stat-inline {
-        min-width: calc(50% - 14px);
+        justify-content: center;
+        min-width: auto;
+        gap: 6px;
+    }
+
+    .hero-stat-inline i {
+        font-size: 1.3rem;
+    }
+
+    .stat-num-inline {
+        font-size: 1.1rem;
+    }
+
+    .stat-lbl-inline {
+        font-size: 0.75rem;
+    }
+
+    .hero-cta-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+        gap: 10px;
+    }
+
+    .hero-cta-row .btn-cta-solid,
+    .hero-cta-row .btn-cta-ghost {
+        flex: 1;
+        width: auto;
+        padding: 12px 6px;
+        font-size: 0.85rem;
         justify-content: center;
     }
 
@@ -7244,9 +7299,9 @@ html[dir="ltr"] .hero-sub {
     }
 
     .carousel-arrow {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
     }
 
     .pricing-grid {
@@ -7266,16 +7321,7 @@ html[dir="ltr"] .hero-sub {
         text-align: center;
     }
 
-    .hero-stat-inline {
-        min-width: 100%;
-    }
-
-    .hero-cta-row,
-    html[dir="rtl"] .hero-cta-row,
-    html[dir="ltr"] .hero-cta-row {
-        width: 100%;
-        flex-direction: column;
-    }
+    /* Removed overriding stacking rules for hero stats and CTA to keep them side-by-side */
 
     .vsl-controls {
         gap: 4px;
@@ -7295,8 +7341,28 @@ html[dir="ltr"] .hero-sub {
     }
 
     .courses-carousel-wrapper {
-        display: grid;
-        grid-template-columns: 40px minmax(0, 1fr) 40px;
+        display: block;
+        position: relative;
+        padding: 0 42px; /* مساحة للأسهم عشان متغطيش على الكارت */
+    }
+
+    .carousel-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 20;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 0.8rem;
+    }
+
+    .carousel-arrow.prev {
+        right: 0;
+    }
+
+    .carousel-arrow.next {
+        left: 0;
     }
 
     .pricing-card,
@@ -7316,4 +7382,12 @@ html[dir="ltr"] .hero-sub {
     .footer-bottom {
         padding-inline: 16px;
     }
+}
+
+html[dir="rtl"] .hero-split {
+    direction: rtl;
+}
+
+html[dir="rtl"] .hero-left {
+    text-align: right;
 }

@@ -62,17 +62,7 @@
         }
 
         /* ─── NAVBAR ─── */
-        [dir="rtl"] .main-nav {
-            flex-direction: row-reverse;
-        }
-
-        [dir="rtl"] .nav-links {
-            flex-direction: row-reverse;
-        }
-
-        [dir="rtl"] .nav-auth {
-            flex-direction: row-reverse;
-        }
+        /* removed flex-direction overrides */
 
         /* ─── HERO SECTION (Text + Video side by side) ─── */
         [dir="rtl"] .hero-left {
@@ -86,10 +76,7 @@
             text-align: right !important;
         }
 
-        [dir="rtl"] .hero-cta-row {
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-        }
+        /* removed hero-cta-row override */
 
         [dir="rtl"] .hero-rating-info {
             text-align: right;
@@ -188,16 +175,7 @@
             text-align: left !important;
         }
 
-        [dir="ltr"] .hero-cta-row {
-            flex-direction: row;
-            justify-content: flex-start;
-        }
-
-        [dir="ltr"] .main-nav,
-        [dir="ltr"] .nav-links,
-        [dir="ltr"] .nav-auth {
-            flex-direction: row;
-        }
+        /* removed hero-cta-row and main-nav overrides */
 
         [dir="ltr"] .feature-card,
         [dir="ltr"] .feature-card p,
@@ -256,10 +234,10 @@
             </button>
             <!-- Logged out state (default) -->
             <div id="navLoggedOut">
-                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-ar="ابدا الان"
-                    data-en="Start Now">ابدا الان</a>
                 <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;" data-ar="تسجيل الدخول"
                     data-en="Login">تسجيل الدخول</a>
+                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-ar="ابدا الان"
+                    data-en="Start Now">ابدا الان</a>
             </div>
             <!-- Logged in state -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
@@ -286,6 +264,24 @@
         <div id="mobileAuthLoggedIn" style="display:none">
             <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج"
                 data-en="Logout">تسجيل الخروج</button>
+        </div>
+        <div style="display: flex; justify-content: center; padding: 8px 0;">
+            <button id="mobileLangToggleBtn" onclick="toggleLanguage()" style="
+                background: none;
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 8px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                font-family: inherit;
+                transition: all 0.2s;
+                width: 100%;
+            ">
+                <i class="fa-solid fa-globe" style="margin-left: 6px; margin-right: 6px;"></i>
+                <span id="mobileLangToggleText">English</span>
+            </button>
         </div>
         <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()"
             data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
@@ -1490,90 +1486,666 @@
     </section>
 
     <!-- ═══════════════════════════════════
-         PAYMENT SECTION — Pricing Card
+         PAYMENT SECTION — Pricing Cards
     ═══════════════════════════════════ -->
-    <section class="pricing-section" id="payment">
+    <section class="pricing-section" id="payment" data-pricing-currency="EGP">
+        <style>
+            #payment {
+                position: relative;
+                overflow: hidden;
+                padding: 104px 0;
+                background:
+                    radial-gradient(circle at 50% 0%, rgba(63, 143, 249, 0.2), transparent 34%),
+                    radial-gradient(circle at 18% 72%, rgba(132, 204, 22, 0.12), transparent 26%),
+                    linear-gradient(180deg, #030507 0%, #070a10 48%, #020304 100%);
+            }
+
+            #payment::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 64px 64px;
+                mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 78%, transparent);
+            }
+
+            #payment .container {
+                position: relative;
+                z-index: 1;
+            }
+
+            #payment .section-title {
+                letter-spacing: 0;
+            }
+
+            #payment .section-title span {
+                color: #3f8ff9 !important;
+            }
+
+            .ghawy-pricing-intro {
+                max-width: 720px;
+                margin: 0 auto 34px;
+            }
+
+            .ghawy-pricing-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 18px;
+                align-items: stretch;
+                margin-top: 34px;
+            }
+
+            .ghawy-pricing-card {
+                position: relative;
+                display: flex;
+                min-height: 100%;
+                flex-direction: column;
+                padding: 26px;
+                border: 1px solid rgba(148, 163, 184, 0.18);
+                border-radius: 8px;
+                background:
+                    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+                    rgba(9, 13, 20, 0.84);
+                box-shadow: 0 22px 70px rgba(0, 0, 0, 0.44);
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+                isolation: isolate;
+            }
+
+            .ghawy-pricing-card::before {
+                content: "";
+                position: absolute;
+                inset: 1px;
+                z-index: -1;
+                border-radius: 7px;
+                background: linear-gradient(135deg, rgba(63, 143, 249, 0.09), transparent 42%, rgba(132, 204, 22, 0.08));
+                opacity: 0.8;
+            }
+
+            .ghawy-pricing-card.is-featured {
+                transform: translateY(-12px);
+                border-color: rgba(132, 204, 22, 0.6);
+                box-shadow:
+                    0 28px 90px rgba(0, 0, 0, 0.56),
+                    0 0 48px rgba(132, 204, 22, 0.15);
+            }
+
+            .ghawy-pricing-card.is-featured::after {
+                content: "";
+                position: absolute;
+                inset: -1px;
+                z-index: -2;
+                border-radius: 8px;
+                background: linear-gradient(135deg, rgba(132, 204, 22, 0.52), rgba(63, 143, 249, 0.14), transparent 64%);
+                filter: blur(16px);
+                opacity: 0.42;
+            }
+
+            .ghawy-pricing-badge {
+                align-self: flex-start;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                min-height: 30px;
+                padding: 6px 12px;
+                border: 1px solid rgba(132, 204, 22, 0.38);
+                border-radius: 999px;
+                color: #101807;
+                background: linear-gradient(135deg, #84cc16, #b5f24f);
+                font-size: 12px;
+                font-weight: 900;
+                box-shadow: 0 12px 30px rgba(132, 204, 22, 0.16);
+            }
+
+            .ghawy-plan-top {
+                display: flex;
+                min-height: 78px;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 18px;
+            }
+
+            .ghawy-plan-name {
+                margin: 0 0 8px;
+                color: #ffffff;
+                font-size: 24px;
+                font-weight: 900;
+                line-height: 1.15;
+            }
+
+            .ghawy-plan-description {
+                margin: 0;
+                color: #aeb8c8;
+                font-size: 14px;
+                line-height: 1.8;
+            }
+
+            .ghawy-price-row {
+                display: flex;
+                align-items: flex-end;
+                gap: 10px;
+                margin: 12px 0 8px;
+                direction: ltr;
+                justify-content: flex-end;
+            }
+
+            [dir="ltr"] .ghawy-price-row {
+                justify-content: flex-start;
+            }
+
+            .ghawy-price-amount {
+                color: #ffffff;
+                font-size: clamp(46px, 5vw, 64px);
+                font-weight: 950;
+                line-height: 0.92;
+                letter-spacing: 0;
+            }
+
+            .ghawy-pricing-card.is-featured .ghawy-price-amount {
+                color: #84cc16;
+                text-shadow: 0 0 32px rgba(132, 204, 22, 0.18);
+            }
+
+            .ghawy-price-meta {
+                display: grid;
+                gap: 2px;
+                padding-bottom: 7px;
+                color: #aeb8c8;
+                font-size: 13px;
+                font-weight: 800;
+                line-height: 1.1;
+                text-align: start;
+            }
+
+            .ghawy-billing-period {
+                color: #d7deea;
+            }
+
+            .ghawy-savings {
+                min-height: 28px;
+                margin: 0 0 20px;
+                color: #b8c1ce;
+                font-size: 13px;
+                line-height: 1.7;
+            }
+
+            .ghawy-pricing-card.is-featured .ghawy-savings {
+                color: #d7f7a6;
+            }
+
+            .ghawy-card-divider {
+                height: 1px;
+                margin: 0 0 20px;
+                background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent);
+            }
+
+            .ghawy-feature-list {
+                display: grid;
+                gap: 12px;
+                margin: 0 0 24px;
+                padding: 0;
+                list-style: none;
+            }
+
+            .ghawy-feature-list li {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #e5edf8;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+
+            [dir="rtl"] .ghawy-feature-list li {
+                flex-direction: row-reverse;
+                text-align: right;
+            }
+
+            .ghawy-feature-list i {
+                display: inline-grid;
+                width: 20px;
+                height: 20px;
+                flex: 0 0 20px;
+                place-items: center;
+                border-radius: 999px;
+                color: #84cc16;
+                background: rgba(132, 204, 22, 0.1);
+                font-size: 13px;
+            }
+
+            .ghawy-pricing-cta {
+                width: 100%;
+                min-height: 56px;
+                margin-top: auto;
+                border: 0;
+                border-radius: 8px;
+                color: #fff;
+                background: linear-gradient(135deg, #3f8ff9, #2f7bea);
+                box-shadow: 0 18px 44px rgba(63, 143, 249, 0.26);
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 16px;
+                font-weight: 900;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            }
+
+            .ghawy-pricing-cta:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 22px 54px rgba(63, 143, 249, 0.34);
+            }
+
+            .ghawy-pricing-cta:disabled {
+                cursor: wait;
+                opacity: 0.74;
+            }
+
+            .ghawy-pricing-card.is-featured .ghawy-pricing-cta {
+                color: #101807;
+                background: linear-gradient(135deg, #84cc16, #b6f54e);
+                box-shadow: 0 18px 48px rgba(132, 204, 22, 0.24);
+            }
+
+            .ghawy-payment-methods {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                min-height: 34px;
+                margin-top: 14px;
+                color: #9aa7b8;
+                font-size: 12px;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .ghawy-payment-methods i {
+                color: #d7deea;
+            }
+
+            .ghawy-trust-row {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                margin: 28px auto 0;
+            }
+
+            .ghawy-trust-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                min-height: 40px;
+                padding: 9px 14px;
+                border: 1px solid rgba(148, 163, 184, 0.14);
+                border-radius: 999px;
+                color: #d7deea;
+                background: rgba(255, 255, 255, 0.045);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+                font-size: 13px;
+                font-weight: 800;
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+            }
+
+            .ghawy-trust-item i {
+                color: #84cc16;
+            }
+
+            @media (max-width: 1024px) {
+                .ghawy-pricing-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .ghawy-pricing-card.is-featured {
+                    transform: none;
+                }
+            }
+
+            @media (max-width: 680px) {
+                #payment {
+                    padding: 78px 0;
+                }
+
+                .ghawy-pricing-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .ghawy-pricing-card {
+                    padding: 22px;
+                }
+
+                .ghawy-plan-top {
+                    min-height: 0;
+                }
+
+                .ghawy-price-row {
+                    justify-content: flex-end;
+                }
+
+                [dir="ltr"] .ghawy-price-row {
+                    justify-content: flex-start;
+                }
+            }
+        </style>
+
         <div class="container">
-            <div class="centered">
+            <div class="centered ghawy-pricing-intro">
                 <span class="section-eyebrow">ابدأ دلوقتي</span>
-                <h2 class="section-title">Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
+                <h2 class="section-title">Simple <span>Pricing.</span> Maximum Value.</h2>
                 <p class="section-sub">Choose the plan that fits your journey.</p>
             </div>
 
-            <!-- Toggle -->
-            <div class="pricing-toggle-wrapper">
-                <span class="pricing-toggle-label" id="labelMonthly">Monthly</span>
-                <label class="pricing-toggle">
-                    <input type="checkbox" id="pricingToggle">
-                    <span class="pricing-toggle-slider"></span>
-                </label>
-                <span class="pricing-toggle-label" id="labelYearly">Yearly</span>
-                <span class="pricing-save-badge">Save 33%</span>
-            </div>
+            <input type="checkbox" id="pricingToggle" hidden aria-hidden="true">
 
-            <!-- Single Card -->
-            <div class="pricing-card pricing-card-featured">
-                <div class="pricing-card-glow"></div>
-
-                <span class="pricing-badge">🔥 الأكثر مبيعاً</span>
-                <h3 class="pricing-plan-name">اشتراك كامل</h3>
-                <p class="pricing-plan-sub">وصول لكل الكورسات + الدعم + التحديثات</p>
-
-                <div class="pricing-price-block">
-                    <div class="pricing-current">
-                        <span class="pricing-amount" id="priceAmount">500</span>
-                        <div class="pricing-currency-col">
-                            <span class="pricing-currency">EGP</span>
-                            <span class="pricing-period-label" id="pricePeriod">/شهر</span>
+            <div class="ghawy-pricing-grid" role="list">
+                <article class="ghawy-pricing-card" data-plan-card="monthly" role="listitem">
+                    <div class="ghawy-plan-top">
+                        <div>
+                            <h3 class="ghawy-plan-name">Monthly</h3>
+                            <p class="ghawy-plan-description">مرونة كاملة للبدء وتجربة المنصة بدون التزام طويل.</p>
                         </div>
                     </div>
-                    <span class="pricing-period" id="priceNote">اشتراك شهري — إلغاء في أي وقت</span>
-                </div>
 
-                <div class="pricing-divider"></div>
+                    <div class="ghawy-price-row" aria-label="Monthly price">
+                        <span class="ghawy-price-amount pricing-amount" data-plan-amount>500</span>
+                        <span class="ghawy-price-meta">
+                            <span class="pricing-currency" data-plan-currency>EGP</span>
+                            <span class="ghawy-billing-period" data-plan-period>/شهر</span>
+                        </span>
+                    </div>
+                    <p class="ghawy-savings" data-plan-savings>ابدأ فوراً وادفع شهرياً.</p>
 
-                <ul class="pricing-features">
-                    <li><i class="fa-solid fa-circle-check"></i> وصول لجميع الكورسات والمحتوى</li>
-                    <li><i class="fa-solid fa-circle-check"></i> +60 ساعة محتوى عملي</li>
-                    <li><i class="fa-solid fa-circle-check"></i> تواصل مباشر مع المدرب والتيم</li>
-                    <li><i class="fa-solid fa-circle-check"></i> محتوى متجدد ومحدّث باستمرار</li>
-                    <li><i class="fa-solid fa-circle-check"></i> جروب دعم VIP خاص</li>
-                    <li><i class="fa-solid fa-circle-check"></i> ضمان استرداد 3 أيام</li>
-                </ul>
+                    <div class="ghawy-card-divider"></div>
 
-                <button class="pricing-cta" id="pricingCta" onclick="handleKashierPayment()">
-                    اشترك الآن
-                </button>
+                    <ul class="ghawy-feature-list">
+                        <li><i class="fa-solid fa-check"></i> Access to all courses</li>
+                        <li><i class="fa-solid fa-check"></i> Community access</li>
+                        <li><i class="fa-solid fa-check"></i> Build With Me content</li>
+                        <li><i class="fa-solid fa-check"></i> Guest of Honors access</li>
+                        <li><i class="fa-solid fa-check"></i> Weekly updates</li>
+                        <li><i class="fa-solid fa-check"></i> Premium support</li>
+                        <li><i class="fa-solid fa-check"></i> Future course updates</li>
+                    </ul>
 
-                <!-- INSTAPAY OPTION -->
-                <div style="margin-top: 12px; margin-bottom: 16px; display: flex; justify-content: center;">
-                    <a href="javascript:void(0)" onclick="handleInstapayPayment()"
-                        style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
-                        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                        <span>الدفع عن طريق انستاباي / فودافون كاش &rarr;</span>
-                    </a>
-                </div>
+                    <button class="ghawy-pricing-cta" type="button" data-plan-checkout="monthly">ابدأ الآن</button>
+                    <div class="ghawy-payment-methods">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <span data-plan-methods>Kashier / Instapay</span>
+                    </div>
+                </article>
 
-                <a href="https://wa.me/201033903334?text=%D8%AA%D9%85%20%D8%A7%D9%84%D8%AF%D9%81%D8%B9" target="_blank"
-                    class="pricing-whatsapp">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                        <path
-                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                        <path
-                            d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.845L.057 23.272a.75.75 0 00.921.921l5.427-1.471A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.653-.523-5.168-1.432l-.362-.214-3.75 1.017 1.017-3.75-.214-.362A9.954 9.954 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-                    </svg>
-                    تواصل مع الدعم
-                </a>
+                <article class="ghawy-pricing-card is-featured" data-plan-card="quarterly" role="listitem">
+                    <div class="ghawy-plan-top">
+                        <div>
+                            <h3 class="ghawy-plan-name">Quarterly</h3>
+                            <p class="ghawy-plan-description">الخطة الأذكى للالتزام الجاد وبناء نتائج خلال 90 يوم.</p>
+                        </div>
+                        <span class="ghawy-pricing-badge">Best Value</span>
+                    </div>
+
+                    <div class="ghawy-price-row" aria-label="Quarterly price">
+                        <span class="ghawy-price-amount pricing-amount" data-plan-amount>1200</span>
+                        <span class="ghawy-price-meta">
+                            <span class="pricing-currency" data-plan-currency>EGP</span>
+                            <span class="ghawy-billing-period" data-plan-period>/3 شهور</span>
+                        </span>
+                    </div>
+                    <p class="ghawy-savings" data-plan-savings>وفّر 300 EGP مقارنة بالدفع الشهري.</p>
+
+                    <div class="ghawy-card-divider"></div>
+
+                    <ul class="ghawy-feature-list">
+                        <li><i class="fa-solid fa-check"></i> Access to all courses</li>
+                        <li><i class="fa-solid fa-check"></i> Community access</li>
+                        <li><i class="fa-solid fa-check"></i> Build With Me content</li>
+                        <li><i class="fa-solid fa-check"></i> Guest of Honors access</li>
+                        <li><i class="fa-solid fa-check"></i> Weekly updates</li>
+                        <li><i class="fa-solid fa-check"></i> Premium support</li>
+                        <li><i class="fa-solid fa-check"></i> Future course updates</li>
+                    </ul>
+
+                    <button class="ghawy-pricing-cta" type="button" data-plan-checkout="quarterly">أفضل قيمة</button>
+                    <div class="ghawy-payment-methods">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <span data-plan-methods>Kashier / Instapay</span>
+                    </div>
+                </article>
+
+                <article class="ghawy-pricing-card" data-plan-card="yearly" role="listitem">
+                    <div class="ghawy-plan-top">
+                        <div>
+                            <h3 class="ghawy-plan-name">Yearly</h3>
+                            <p class="ghawy-plan-description">أقل تكلفة شهرية لمن يريد الوصول الكامل طوال السنة.</p>
+                        </div>
+                    </div>
+
+                    <div class="ghawy-price-row" aria-label="Yearly price">
+                        <span class="ghawy-price-amount pricing-amount" data-plan-amount>3000</span>
+                        <span class="ghawy-price-meta">
+                            <span class="pricing-currency" data-plan-currency>EGP</span>
+                            <span class="ghawy-billing-period" data-plan-period>/سنة</span>
+                        </span>
+                    </div>
+                    <p class="ghawy-savings" data-plan-savings>وفّر 3000 EGP مقارنة بالدفع الشهري.</p>
+
+                    <div class="ghawy-card-divider"></div>
+
+                    <ul class="ghawy-feature-list">
+                        <li><i class="fa-solid fa-check"></i> Access to all courses</li>
+                        <li><i class="fa-solid fa-check"></i> Community access</li>
+                        <li><i class="fa-solid fa-check"></i> Build With Me content</li>
+                        <li><i class="fa-solid fa-check"></i> Guest of Honors access</li>
+                        <li><i class="fa-solid fa-check"></i> Weekly updates</li>
+                        <li><i class="fa-solid fa-check"></i> Premium support</li>
+                        <li><i class="fa-solid fa-check"></i> Future course updates</li>
+                    </ul>
+
+                    <button class="ghawy-pricing-cta" type="button" data-plan-checkout="yearly">وفر أكثر</button>
+                    <div class="ghawy-payment-methods">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <span data-plan-methods>Kashier / Instapay</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="ghawy-trust-row" aria-label="Trust guarantees">
+                <span class="ghawy-trust-item"><i class="fa-solid fa-shield-halved"></i> 3-day refund guarantee</span>
+                <span class="ghawy-trust-item"><i class="fa-solid fa-lock"></i> Secure payments</span>
+                <span class="ghawy-trust-item"><i class="fa-solid fa-rotate-left"></i> Cancel anytime</span>
             </div>
         </div>
+
+        <script>
+            (function () {
+                const section = document.getElementById('payment');
+                if (!section) return;
+
+                const pricingPlans = {
+                    EGP: {
+                        monthly: {
+                            amount: 500,
+                            display: '500',
+                            currency: 'EGP',
+                            period: '/شهر',
+                            savings: 'billed monthly',
+                            methods: 'Kashier / Instapay',
+                            planKey: 'monthly_egp'
+                        },
+                        quarterly: {
+                            amount: 1200,
+                            display: '1200',
+                            currency: 'EGP',
+                            period: '/3 شهور',
+                            savings: 'billed every 3 months - save 300 EGP vs monthly',
+                            methods: 'Kashier / Instapay',
+                            planKey: 'quarterly_egp'
+                        },
+                        yearly: {
+                            amount: 3000,
+                            display: '3000',
+                            currency: 'EGP',
+                            period: '/سنة',
+                            savings: 'billed yearly - save 3000 EGP vs monthly',
+                            methods: 'Kashier / Instapay',
+                            planKey: 'yearly_egp'
+                        }
+                    },
+                    USD: {
+                        monthly: {
+                            amount: 15,
+                            display: '15',
+                            currency: '$',
+                            period: '/month',
+                            savings: 'billed monthly',
+                            methods: 'PayPal',
+                            planKey: 'monthly_usd'
+                        },
+                        quarterly: {
+                            amount: 35,
+                            display: '35',
+                            currency: '$',
+                            period: '/3 months',
+                            savings: 'billed every 3 months - save $10 vs monthly',
+                            methods: 'PayPal',
+                            planKey: 'quarterly_usd'
+                        },
+                        yearly: {
+                            amount: 85,
+                            display: '85',
+                            currency: '$',
+                            period: '/year',
+                            savings: 'billed yearly - save $95 vs monthly',
+                            methods: 'PayPal',
+                            planKey: 'yearly_usd'
+                        }
+                    }
+                };
+
+                function selectedCurrency() {
+                    return localStorage.getItem('user_currency') === 'USD' ? 'USD' : 'EGP';
+                }
+
+                function setLegacyCycle(plan) {
+                    const legacyToggle = document.getElementById('pricingToggle');
+                    if (legacyToggle) legacyToggle.checked = plan === 'yearly';
+                    localStorage.setItem('ghawy_selected_plan', plan);
+                }
+
+                function applyPricingCurrency(currency) {
+                    const safeCurrency = currency === 'USD' ? 'USD' : 'EGP';
+                    section.dataset.pricingCurrency = safeCurrency;
+
+                    section.querySelectorAll('[data-plan-card]').forEach(card => {
+                        const plan = card.dataset.planCard;
+                        const data = pricingPlans[safeCurrency][plan];
+                        if (!data) return;
+
+                        const amount = card.querySelector('[data-plan-amount]');
+                        const currencyLabel = card.querySelector('[data-plan-currency]');
+                        const period = card.querySelector('[data-plan-period]');
+                        const savings = card.querySelector('[data-plan-savings]');
+                        const methods = card.querySelector('[data-plan-methods]');
+
+                        if (amount) amount.textContent = data.display;
+                        if (currencyLabel) currencyLabel.textContent = data.currency;
+                        if (period) period.textContent = data.period;
+                        if (savings) savings.textContent = data.savings;
+                        if (methods) methods.textContent = data.methods;
+                    });
+                }
+
+                async function startKashierCheckout(plan, trigger) {
+                    const currency = section.dataset.pricingCurrency === 'USD' ? 'USD' : 'EGP';
+                    const data = pricingPlans[currency][plan];
+                    const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
+                    const apiBase = typeof API !== 'undefined' ? API : 'http://127.0.0.1:8000';
+
+                    if (!token) {
+                        window.location.href = `register.html?plan=${encodeURIComponent(plan)}`;
+                        return;
+                    }
+
+                    if (currency === 'USD') {
+                        if (typeof window.handlePayPalPayment === 'function') {
+                            window.handlePayPalPayment(plan, data);
+                            return;
+                        }
+                        window.location.href = `payment.html?plan=${encodeURIComponent(plan)}&method=paypal`;
+                        return;
+                    }
+
+                    const originalText = trigger ? trigger.textContent : '';
+                    if (trigger) {
+                        trigger.disabled = true;
+                        trigger.textContent = 'جاري التحويل...';
+                    }
+
+                    try {
+                        const response = await fetch(`${apiBase}/payment/kashier/create`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                amount: data.amount,
+                                currency,
+                                plan_key: data.planKey
+                            })
+                        });
+                        const result = await response.json();
+                        const checkoutUrl = result.payment_url || result.approval_url;
+
+                        if (response.ok && checkoutUrl) {
+                            window.location.href = checkoutUrl;
+                            return;
+                        }
+
+                        throw new Error(result.detail || 'Payment unavailable');
+                    } catch (error) {
+                        alert('تعذر بدء عملية الدفع حالياً. من فضلك جرّب مرة أخرى.');
+                    } finally {
+                        if (trigger) {
+                            trigger.disabled = false;
+                            trigger.textContent = originalText;
+                        }
+                    }
+                }
+
+                section.querySelectorAll('[data-plan-checkout]').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const plan = button.dataset.planCheckout;
+                        setLegacyCycle(plan);
+                        startKashierCheckout(plan, button);
+                    });
+                });
+
+                document.addEventListener('DOMContentLoaded', async () => {
+                    const originalApplyCurrencyUI = window.applyCurrencyUI;
+                    if (typeof originalApplyCurrencyUI === 'function' && !originalApplyCurrencyUI.ghawyPricingWrapped) {
+                        window.applyCurrencyUI = function (currency) {
+                            const result = originalApplyCurrencyUI.apply(this, arguments);
+                            applyPricingCurrency(currency);
+                            return result;
+                        };
+                        window.applyCurrencyUI.ghawyPricingWrapped = true;
+                    }
+
+                    if (typeof initCurrency === 'function') {
+                        const currency = await initCurrency();
+                        applyPricingCurrency(currency);
+                    } else {
+                        applyPricingCurrency(selectedCurrency());
+                    }
+
+                    setTimeout(() => applyPricingCurrency(selectedCurrency()), 350);
+                });
+            })();
+        </script>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -2304,10 +2876,14 @@
                     : el.getAttribute('data-en-placeholder');
             });
 
-            // 4. Update toggle button
+            // 4. Update toggle button (desktop + mobile)
             const toggleText = document.getElementById('langToggleText');
             if (toggleText) {
                 toggleText.textContent = config.toggleBtn;
+            }
+            const mobileToggleText = document.getElementById('mobileLangToggleText');
+            if (mobileToggleText) {
+                mobileToggleText.textContent = config.toggleBtn;
             }
 
             // 5. Force reflow for flex containers (fix layout on toggle)
