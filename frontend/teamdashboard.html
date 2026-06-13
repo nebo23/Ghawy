@@ -853,6 +853,10 @@
               <i data-lucide="radio" style="width:18px;height:18px;"></i>
               <span class="tab-label">Live Sessions</span>
             </button>
+            <button class="team-section-btn" data-tab="guest-of-honors">
+              <i data-lucide="star" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Guest of Honors</span>
+            </button>
             <button class="team-section-btn" data-tab="courses">
               <i data-lucide="presentation" style="width:18px;height:18px;"></i>
               <span class="tab-label">Courses</span>
@@ -860,6 +864,14 @@
             <button class="team-section-btn" data-tab="projects">
               <i data-lucide="folder-check" style="width:18px;height:18px;"></i>
               <span class="tab-label">Projects</span>
+            </button>
+            <button class="team-section-btn" data-tab="reports">
+              <i data-lucide="file-text" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Reports</span>
+            </button>
+            <button class="team-section-btn" data-tab="feedbacks">
+              <i data-lucide="message-square" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Feedbacks</span>
             </button>
           </nav>
 
@@ -916,32 +928,7 @@
                 <button class="btn-add-member" onclick="openAddModal()">+ Add Member</button>
               </div>
 
-              <!-- Recurring Status Panel -->
-              <div class="recurring-panel">
-                <div class="recurring-panel-header" onclick="toggleRecurringPanel()">
-                  <span>💳 Recurring Subscriptions Overview</span>
-                  <span id="recurring-toggle">▼</span>
-                </div>
-                <div class="recurring-panel-body" id="recurring-body" style="display:none">
-                  <div class="recurring-stats">
-                    <div class="rec-stat">
-                      <div class="rec-num" id="rec-total">—</div>
-                      <div class="rec-label">Total Subscribers</div>
-                    </div>
-                    <div class="rec-stat">
-                      <div class="rec-num" id="rec-due" style="color:#ef4444">—</div>
-                      <div class="rec-label">Due Now</div>
-                    </div>
-                    <div class="rec-stat">
-                      <div class="rec-num" id="rec-soon" style="color:#f59e0b">—</div>
-                      <div class="rec-label">Due in 7 Days</div>
-                    </div>
-                  </div>
-                  <button class="btn-trigger-recurring" onclick="triggerRecurring()">
-                    ⚡ Run Recurring Charges Now
-                  </button>
-                </div>
-              </div>
+
 
               <!-- Table -->
               <div class="team-table-wrap">
@@ -953,8 +940,7 @@
                       <th>Phone</th>
                       <th>Country</th>
                       <th>Joined</th>
-                      <th>Subscription</th>
-                      <th>Next Charge</th>
+                      <th>End Date</th>
                       <th>Status</th>
                       <th>Role</th>
                       <th>Actions</th>
@@ -1281,8 +1267,291 @@
               </div>
             </div>
 
+            <!-- ══════════════════════════════════════════════
+                 Tab Content: Reports
+                 المكان: teamdashboard.html — بعد tab-projects
+                 ══════════════════════════════════════════════ -->
+            <div id="tab-reports" class="tab-panel" style="display:none;">
+
+              <!-- Header + Actions -->
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+                <div>
+                  <h3 style="margin:0;color:#fff;font-size:1.1rem;">📋 Daily Reports</h3>
+                  <p style="margin:4px 0 0;color:#888;font-size:13px;">ريبورتات الفريق اليومية — إنجازات وملاحظات التحسين</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <!-- فلتر بالدور — Admin فقط -->
+                  <select id="reports-role-filter" class="reports-select" onchange="loadReportsTab()" style="display:none;">
+                    <option value="all">كل الأدوار</option>
+                    <option value="community_manager">Community Manager</option>
+                    <option value="technical_engineer">Technical Engineer</option>
+                    <option value="customer_success">Customer Success</option>
+                  </select>
+                  <!-- فلتر بالتاريخ -->
+                  <input type="date" id="reports-date-filter" class="reports-date-input" onchange="loadReportsTab()" title="Filter by date" />
+                  <!-- زرار كتابة ريبورت -->
+                  <button class="btn-add-member" onclick="openReportModal()">
+                    <i data-lucide="plus" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                    كتابة ريبورت
+                  </button>
+                </div>
+              </div>
+
+              <!-- Stats Row (Admin فقط) -->
+              <div id="reports-stats-row" style="display:none;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+                <div class="report-stat-card">
+                  <div class="report-stat-icon" style="background:rgba(63,143,249,0.12);">
+                    <i data-lucide="file-text" style="width:22px;height:22px;stroke:#3f8ff9;"></i>
+                  </div>
+                  <div>
+                    <div class="report-stat-num" id="rpt-stat-total">0</div>
+                    <div class="report-stat-lbl">Total Reports</div>
+                  </div>
+                </div>
+                <div class="report-stat-card">
+                  <div class="report-stat-icon" style="background:rgba(34,197,94,0.12);">
+                    <i data-lucide="zap" style="width:22px;height:22px;stroke:#22c55e;"></i>
+                  </div>
+                  <div>
+                    <div class="report-stat-num" id="rpt-stat-ai">0</div>
+                    <div class="report-stat-lbl">AI Updates</div>
+                  </div>
+                </div>
+                <div class="report-stat-card">
+                  <div class="report-stat-icon" style="background:rgba(245,158,11,0.12);">
+                    <i data-lucide="message-circle" style="width:22px;height:22px;stroke:#f59e0b;"></i>
+                  </div>
+                  <div>
+                    <div class="report-stat-num" id="rpt-stat-msgs">0</div>
+                    <div class="report-stat-lbl">Messages Replied</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cards Container -->
+              <div id="reports-cards-container" class="reports-cards-grid">
+                <div style="padding:60px;text-align:center;color:#555;grid-column:1/-1;">
+                  <i data-lucide="file-text" style="width:40px;height:40px;opacity:.3;display:block;margin:0 auto 12px;"></i>
+                  Loading...
+                </div>
+              </div>
+
+            </div>
+            <!-- ═══════════════════════════════════════════════ -->
+
+            <!-- Tab Content: Guest of Honors -->
+            <div id="tab-guest-of-honors" class="tab-panel" style="display:none;">
+              <div class="projects-admin-toolbar">
+                <div>
+                  <h3 style="margin:0;color:#fff;">Guest of Honors</h3>
+                  <p style="margin:4px 0 0;color:#888;font-size:13px;">Manage featured guests and their sessions.</p>
+                </div>
+                <div class="projects-admin-filters">
+                  <button class="btn-add-member" onclick="openGuestModal()">+ Add Guest</button>
+                  <button class="btn-add-member" onclick="openGuestSessionModal()">+ Add Session</button>
+                </div>
+              </div>
+
+              <!-- Guests Table -->
+              <h4 style="color:#fff; margin-bottom: 10px;">Featured Guests</h4>
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;margin-bottom:30px;">
+                <table class="team-table">
+                  <thead>
+                    <tr>
+                      <th>Avatar</th>
+                      <th>Name</th>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="goh-guests-body">
+                    <tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Sessions Table -->
+              <h4 style="color:#fff; margin-bottom: 10px;">Sessions</h4>
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                <table class="team-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Guest</th>
+                      <th>Title</th>
+                      <th>Platform</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="goh-sessions-body">
+                    <tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Suggested Guests Table -->
+              <h4 style="color:#fff; margin-top: 30px; margin-bottom: 10px;">Community Suggestions</h4>
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                <table class="team-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Suggested By</th>
+                      <th>Guest Name</th>
+                      <th>Reason</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="goh-suggestions-body">
+                    <tr><td colspan="5" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab Content: Feedbacks -->
+            <div id="tab-feedbacks" class="tab-panel" style="display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+                <div>
+                  <h3 style="margin:0;color:#fff;font-size:1.1rem;">💬 Community Feedbacks</h3>
+                  <p style="margin:4px 0 0;color:#888;font-size:13px;">سجل آراء أعضاء الكوميونتي</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <button class="btn-add-member" onclick="openFeedbackModal()">
+                    <i data-lucide="plus" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                    + New Feedback
+                  </button>
+                </div>
+              </div>
+
+              <!-- Feedbacks Container -->
+              <div id="feedbacks-cards-container" class="reports-cards-grid">
+                <div style="padding:60px;text-align:center;color:#555;grid-column:1/-1;">
+                  <i data-lucide="message-square" style="width:40px;height:40px;opacity:.3;display:block;margin:0 auto 12px;"></i>
+                  Loading...
+                </div>
+              </div>
+            </div>
+
           </div><!-- end team-content-area -->
         </div><!-- end team-layout -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Guest Modal -->
+  <div class="modal-overlay-team" id="add-guest-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>🌟 Add/Edit Guest</h3><button class="modal-close-team" onclick="closeModal('add-guest-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="guest-id" />
+        <div class="fg"><label>Name *</label><input type="text" id="guest-name" /></div>
+        <div class="fg"><label>Title *</label><input type="text" id="guest-title" /></div>
+        <div class="fg"><label>Company</label><input type="text" id="guest-company" /></div>
+        <div class="fg"><label>Bio</label><textarea id="guest-bio" rows="3" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
+        <div class="fg"><label>Avatar (Upload Image)</label><input type="file" id="guest-avatar-file" accept="image/*" /></div>
+        <div class="fg"><label>Category</label><input type="text" id="guest-category" /></div>
+        <div class="form-row-team" style="flex-direction:row; gap:10px;">
+          <div class="fg" style="flex:1;"><label>Sessions Count</label><input type="number" id="guest-sessions-count" value="0" min="0" /></div>
+          <div class="fg" style="flex:1;"><label>Attendees Count</label><input type="number" id="guest-attendees-count" value="0" min="0" /></div>
+          <div class="fg" style="flex:1;"><label>Rating</label><input type="number" id="guest-rating" value="0.0" step="0.1" min="0" max="5" /></div>
+        </div>
+        <div class="fg" style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="guest-featured" style="width:auto; margin:0;" /><label style="margin:0;">Is Featured?</label></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-guest-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitGuest()">Save Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Guest Session Modal -->
+  <div class="modal-overlay-team" id="add-guest-session-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>🎙️ Add/Edit Session</h3><button class="modal-close-team" onclick="closeModal('add-guest-session-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="session-goh-id" />
+        <div class="fg"><label>Guest *</label><select id="session-guest-id" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;"></select></div>
+        <div class="fg"><label>Title *</label><input type="text" id="session-goh-title" /></div>
+        <div class="fg"><label>Description</label><textarea id="session-goh-description" rows="3" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea></div>
+        <div class="fg"><label>Date *</label><input type="datetime-local" id="session-goh-date" style="color-scheme:dark;"/></div>
+        <div class="fg"><label>Platform</label><input type="text" id="session-goh-platform" placeholder="e.g. Zoom" /></div>
+        <div class="fg"><label>URL</label><input type="url" id="session-goh-url" /></div>
+        <div class="fg"><label>Status</label><select id="session-goh-status" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;"><option value="upcoming">Upcoming</option><option value="past">Past</option></select></div>
+        <div class="fg"><label>Attendees Count</label><input type="number" id="session-goh-attendees" value="0" /></div>
+        <div class="fg"><label>Rating</label><input type="number" id="session-goh-rating" step="0.1" value="0" /></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-guest-session-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitGuestSession()">Save Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Guest Modal -->
+  <div class="modal-overlay-team" id="delete-guest-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🗑️ Delete Guest</h3><button class="modal-close-team" onclick="closeModal('delete-guest-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this guest? All their sessions will also be deleted.</p>
+        <input type="hidden" id="delete-goh-id" />
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('delete-guest-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="confirmDeleteGuest()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Guest Session Modal -->
+  <div class="modal-overlay-team" id="delete-goh-session-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🗑️ Delete Session</h3><button class="modal-close-team" onclick="closeModal('delete-goh-session-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this session?</p>
+        <input type="hidden" id="delete-goh-session-id" />
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('delete-goh-session-modal')">Cancel</button>
+        <button class="btn-confirm-team danger" onclick="confirmDeleteGohSession()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Feedback Modal -->
+  <div class="modal-overlay-team" id="add-feedback-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>💬 New Feedback</h3><button class="modal-close-team" onclick="closeModal('add-feedback-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg">
+          <label>Role *</label>
+          <select id="fb-role" style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;">
+            <option value="community_manager">Community Manager</option>
+            <option value="technical_engineer">Technical Engineer</option>
+            <option value="customer_success">Customer Success</option>
+          </select>
+        </div>
+        <div class="fg"><label>Person Name *</label><input type="text" id="fb-person-name" placeholder="Member Name" /></div>
+        <div class="fg"><label>Person Email *</label><input type="email" id="fb-person-email" placeholder="member@example.com" /></div>
+        <div class="fg">
+          <label>Feedback *</label>
+          <textarea id="fb-text" rows="4" placeholder="Their feedback..." style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('add-feedback-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitFeedback()">Save Feedback</button>
       </div>
     </div>
   </div>
@@ -1298,201 +1567,6 @@
         <div class="fg"><label>Email *</label><input type="email" id="add-email" placeholder="ahmed@gmail.com" /></div>
         <div class="fg"><label>Password *</label><input type="password" id="add-password"
             placeholder="Min 6 characters" /></div>
-        <div class="fg"><label>Phone</label><input type="text" id="add-phone" placeholder="01000000000" /></div>
-        <div class="fg"><label>Country</label><input type="text" id="add-country" placeholder="Egypt" /></div>
-        <div class="form-row-team">
-          <label class="checkbox-label-team"><input type="checkbox" id="add-active" checked /> Active (can access
-            community)</label>
-          <label class="checkbox-label-team"><input type="checkbox" id="add-admin" /> Admin (can manage
-            platform)</label>
-        </div>
-      </div>
-      <div class="modal-footer-team"><button class="btn-cancel-team"
-          onclick="closeModal('add-modal')">Cancel</button><button class="btn-confirm-team"
-          onclick="submitAddMember()">Add Member</button></div>
-    </div>
-  </div>
-
-  <!-- Reset Password Modal -->
-  <div class="modal-overlay-team" id="reset-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3>🔑 Reset Password</h3><button class="modal-close-team" onclick="closeModal('reset-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <div class="fg"><label>New Password</label><input type="password" id="reset-password"
-            placeholder="Enter new password" /></div>
-      </div>
-      <div class="modal-footer-team"><button class="btn-cancel-team"
-          onclick="closeModal('reset-modal')">Cancel</button><button class="btn-confirm-team"
-          onclick="submitResetPassword()">Reset</button></div>
-    </div>
-  </div>
-
-  <!-- Delete Confirmation Modal -->
-  <div class="modal-overlay-team" id="delete-modal" style="display:none">
-    <div class="modal-box-team small">
-      <div class="modal-header-team">
-        <h3>🗑️ Delete Member</h3><button class="modal-close-team" onclick="closeModal('delete-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <p>Are you sure you want to delete <strong id="delete-name"></strong>?</p>
-        <p style="color:#ef4444;font-size:13px">⚠️ This will delete all their data permanently.</p>
-      </div>
-      <div class="modal-footer-team"><button class="btn-cancel-team"
-          onclick="closeModal('delete-modal')">Cancel</button><button class="btn-confirm-team danger"
-          onclick="submitDelete()">Delete</button></div>
-    </div>
-  </div>
-
-  <!-- Rejection Modal -->
-  <div class="modal-overlay-team" id="reject-modal" style="display:none">
-    <div class="modal-box-team small">
-      <div class="modal-header-team">
-        <h3>❌ Reject Payment Request</h3><button class="modal-close-team"
-          onclick="closeModal('reject-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <div class="fg">
-          <label>Rejection Reason *</label>
-          <textarea id="reject-reason" rows="3" placeholder="e.g. Receipt is blurry, amount doesn't match..."
-            style="width: 100%; background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; font-family: inherit; resize: none;"></textarea>
-        </div>
-        <p style="color:#aaa;font-size:12px;margin-top:8px;">This reason will be sent to the user via email.</p>
-      </div>
-      <div class="modal-footer-team">
-        <button class="btn-cancel-team" onclick="closeModal('reject-modal')">Cancel</button>
-        <button class="btn-confirm-team danger" onclick="submitRejectRequest()">Reject Request</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Receipt Lightbox -->
-  <div class="receipt-lightbox" id="receipt-lightbox" style="display:none" onclick="closeLightbox(event)">
-    <div class="lightbox-content">
-      <img id="lightbox-img" src="" alt="Receipt">
-      <button class="lightbox-close" onclick="closeLightbox(event)">✕</button>
-    </div>
-  </div>
-
-  <!-- Add Live Session Modal -->
-  <div class="modal-overlay-team" id="add-session-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3>📺 Add Live Session</h3><button class="modal-close-team"
-          onclick="closeModal('add-session-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <div class="fg"><label>Title *</label><input type="text" id="session-title"
-            placeholder="e.g. Build an AI Agent Live" /></div>
-        <div class="fg"><label>Description</label><textarea id="session-desc" rows="3"
-            placeholder="Session description..."
-            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
-        </div>
-        <div class="fg"><label>Scheduled At *</label><input type="datetime-local" id="session-datetime"
-            style="color-scheme:dark;" /></div>
-        <div class="fg"><label>Meet URL</label><input type="url" id="session-youtube"
-            placeholder="https://youtube.com/..." /></div>
-        <div class="fg"><label>Zoom URL</label><input type="url" id="session-zoom" placeholder="https://zoom.us/..." />
-        </div>
-      </div>
-      <div class="modal-footer-team">
-        <button class="btn-cancel-team" onclick="closeModal('add-session-modal')">Cancel</button>
-        <button class="btn-confirm-team" onclick="submitAddSession()">Create Session</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Live Session Modal -->
-  <div class="modal-overlay-team" id="edit-session-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3>✏️ Edit Session</h3><button class="modal-close-team" onclick="closeModal('edit-session-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <input type="hidden" id="edit-session-id" />
-        <div class="fg"><label>Title</label><input type="text" id="edit-session-title" /></div>
-        <div class="fg"><label>Description</label><textarea id="edit-session-desc" rows="3"
-            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
-        </div>
-        <div class="fg"><label>Scheduled At</label><input type="datetime-local" id="edit-session-datetime"
-            style="color-scheme:dark;" /></div>
-        <div class="fg"><label>Meet URL</label><input type="url" id="edit-session-youtube" /></div>
-        <div class="fg"><label>Zoom URL</label><input type="url" id="edit-session-zoom" /></div>
-      </div>
-      <div class="modal-footer-team">
-        <button class="btn-cancel-team" onclick="closeModal('edit-session-modal')">Cancel</button>
-        <button class="btn-confirm-team" onclick="submitEditSession()">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Session Confirm Modal -->
-  <div class="modal-overlay-team" id="delete-session-modal" style="display:none">
-    <div class="modal-box-team small">
-      <div class="modal-header-team">
-        <h3>🗑️ Delete Session</h3><button class="modal-close-team"
-          onclick="closeModal('delete-session-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <p style="color:#ccc;font-size:14px;">Are you sure you want to delete this session? This action cannot be
-          undone.</p>
-        <input type="hidden" id="delete-session-id" />
-      </div>
-      <div class="modal-footer-team">
-        <button class="btn-cancel-team" onclick="closeModal('delete-session-modal')">Cancel</button>
-        <button class="btn-confirm-team danger" onclick="confirmDeleteSession()">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Attendees Modal -->
-  <div class="modal-overlay-team" id="attendees-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3>👥 Attendees</h3><button class="modal-close-team" onclick="closeModal('attendees-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <div id="attendees-list" style="max-height:400px;overflow-y:auto;">Loading...</div>
-        <div style="text-align:right;margin-top:12px;">
-          <button class="btn-confirm-team" id="export-csv-btn" style="background:#1e1e1e;color:#ccc;font-weight:600;">📥
-            Export CSV</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  </div>
-
-  <!-- Add Course Modal -->
-  <div class="modal-overlay-team" id="add-course-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3> Add Course</h3><button class="modal-close-team" onclick="closeModal('add-course-modal')">✕</button>
-      </div>
-      <div class="modal-body-team">
-        <div class="fg"><label>Title *</label><input type="text" id="course-title"
-            placeholder="e.g. Master AI Agents" /></div>
-        <div class="fg"><label>Description</label><textarea id="course-desc" rows="3"
-            placeholder="Course description..."
-            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
-        </div>
-        <div class="fg"><label>Thumbnail URL</label><input type="url" id="course-thumbnail" placeholder="https://..." />
-        </div>
-        <div class="fg"><label>Total Lessons</label><input type="number" id="course-total-lessons" value="0" min="0" />
-        </div>
-      </div>
-      <div class="modal-footer-team">
-        <button class="btn-cancel-team" onclick="closeModal('add-course-modal')">Cancel</button>
-        <button class="btn-confirm-team" onclick="submitAddCourse()">Create Course</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Course Modal -->
-  <div class="modal-overlay-team" id="edit-course-modal" style="display:none">
-    <div class="modal-box-team">
-      <div class="modal-header-team">
-        <h3>✏️ Edit Course</h3><button class="modal-close-team" onclick="closeModal('edit-course-modal')">✕</button>
         <div class="fg"><label>Phone</label><input type="text" id="add-phone" placeholder="01000000000" /></div>
         <div class="fg"><label>Country</label><input type="text" id="add-country" placeholder="Egypt" /></div>
         <div class="form-row-team">
@@ -1725,34 +1799,36 @@
 
   <!-- Add Lesson Modal -->
   <div class="modal-overlay-team" id="add-lesson-modal" style="display:none">
-    <div class="modal-box-team">
+    <div class="modal-box-team" style="width:560px;">
       <div class="modal-header-team">
-        <h3>📹 Add Lesson</h3><button class="modal-close-team" onclick="closeModal('add-lesson-modal')">✕</button>
+        <h3>📹 Add Lessons</h3><button class="modal-close-team" onclick="closeModal('add-lesson-modal')">✕</button>
       </div>
       <div class="modal-body-team">
-        <div class="fg"><label>Title *</label><input type="text" id="lesson-title" placeholder="Lesson Title" /></div>
+        <!-- Chapter selector (shared for all lessons) -->
         <div class="fg">
           <label>Chapter / Section</label>
           <select id="lesson-section-select"
-            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;font-size:14px;">
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;font-size:14px;"
+            onchange="handleSectionSelectChange(this)">
           </select>
           <input type="text" id="lesson-section-custom" placeholder="New chapter name..."
             style="display:none;margin-top:8px;background:#111;border:1px solid #3f8ff9;border-radius:8px;padding:10px;color:#fff;font-family:inherit;font-size:14px;width:100%;box-sizing:border-box;" />
         </div>
-        <div style="display:flex;gap:12px;">
-          <div class="fg" style="flex:1"><label>Order</label><input type="number" id="lesson-order" value="0" /></div>
-        </div>
-        <div class="fg" style="display:flex; flex-direction:column; gap:8px;">
-          <label>Bunny.net Stream Video Link *</label>
-          <input type="url" id="lesson-video-url"
-            placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
-            style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
-          <small style="color:#555; line-height:1.6;">من Bunny Dashboard → Stream → اختار الVideo → Embed → انسخ الـ iframe src</small>
-        </div>
+
+        <!-- Lessons list -->
+        <div id="lessons-entries" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;"></div>
+
+        <!-- Add another lesson button -->
+        <button type="button" onclick="addAnotherLessonEntry()"
+          style="margin-top:4px;background:transparent;border:1px dashed #444;color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;width:100%;transition:all .2s;"
+          onmouseover="this.style.borderColor='#3f8ff9';this.style.color='#3f8ff9'"
+          onmouseout="this.style.borderColor='#444';this.style.color='#888'">
+          <i class="fa-solid fa-plus"></i> Add Another Lesson
+        </button>
       </div>
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('add-lesson-modal')">Cancel</button>
-        <button class="btn-confirm-team" id="addLessonSubmitBtn" onclick="submitAddLesson()">Create Lesson</button>
+        <button class="btn-confirm-team" id="addLessonSubmitBtn" onclick="submitAddLesson()">Create Lessons</button>
       </div>
     </div>
   </div>
@@ -1810,11 +1886,603 @@
 
   <!-- Close dropdowns on outside click -->
   <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
-  <script src="src/js/utils.js"></script>
-  <script src="src/js/i18n.js"></script>
-  <script src="src/js/team.js?v=3"></script>
+  <script src="src/js/utils.js?v=2"></script>
+  <script src="src/js/i18n.js?v=2"></script>
+  <script src="src/js/team.js?v=4"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+
+  <!-- ═══════════════════════════════════════════════════════
+       REPORTS MODAL — كتابة ريبورت يومي
+       ═══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay-team" id="report-modal" style="display:none">
+    <div class="modal-box-team" style="width:540px;">
+      <div class="modal-header-team">
+        <h3>📋 كتابة ريبورت يومي</h3>
+        <button class="modal-close-team" onclick="closeModal('report-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+
+        <!-- اختيار الدور -->
+        <div class="fg">
+          <label>دورك في الفريق *</label>
+          <select id="rpt-role" class="fg-select" onchange="handleRoleChange()">
+            <option value="">-- اختر دورك --</option>
+            <option value="community_manager">Community Manager</option>
+            <option value="technical_engineer">Technical Engineer</option>
+            <option value="customer_success">Customer Success</option>
+          </select>
+        </div>
+
+        <div id="rpt-dynamic-fields" style="display:none; flex-direction:column; gap:16px;">
+          <!-- س1 و س2 (مشتركة في الكل) -->
+          <div class="fg">
+            <label>&#x2705; ايه اللي كان كويس النهارده؟ *</label>
+            <textarea id="rpt-went-well" class="fg-textarea" rows="3" placeholder="اكتب إنجازاتك وأفضل اللحظات في اليوم ده..."></textarea>
+          </div>
+          <div class="fg">
+            <label>&#x1F4A1; ايه اللي ممكن يتحسن؟ *</label>
+            <textarea id="rpt-improve" class="fg-textarea" rows="3" placeholder="اكتب أي حاجة ممكن تتعمل بشكل أحسن..."></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="fg" id="fg-hours" style="display:none;">
+              <label>⏱ ساعات العمل *</label>
+              <input type="number" id="rpt-hours" step="0.5" min="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-prod" style="display:none;">
+              <label>⚡ الإنتاجية (0-10) *</label>
+              <input type="number" id="rpt-productivity" min="0" max="10" class="fg-input-num" />
+            </div>
+            
+            <div class="fg" id="fg-ai-count" style="display:none;">
+              <label>&#x1F916; عملت كام AI Update؟ *</label>
+              <input type="number" id="rpt-ai-count" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-msg-count" style="display:none;">
+              <label>&#x1F4AC; ريبلاي لكام ماسدج؟ *</label>
+              <input type="number" id="rpt-msg-count" min="0" value="0" class="fg-input-num" />
+            </div>
+
+            <div class="fg" id="fg-comm-posts" style="display:none;">
+              <label>📝 كام بوست في الكوميونيتي؟</label>
+              <input type="number" id="rpt-comm-posts" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-welcomed" style="display:none;">
+              <label>👋 عملت Welcome لكام عضو؟</label>
+              <input type="number" id="rpt-welcomed" min="0" value="0" class="fg-input-num" />
+            </div>
+
+            <div class="fg" id="fg-wins" style="display:none;">
+              <label>🏆 شجعت كام حد في الـ Wins؟</label>
+              <input type="number" id="rpt-wins" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-reply-speed" style="display:none;">
+              <label>🚀 سرعة الرد (بالدقايق)</label>
+              <input type="text" id="rpt-reply-speed" placeholder="مثال: 5" class="fg-input-num" />
+            </div>
+
+            <div class="fg" id="fg-engagement" style="display:none;">
+              <label>📊 حالة التفاعل</label>
+              <select id="rpt-engagement" class="fg-select">
+                <option value="high">عالي</option>
+                <option value="medium">متوسط</option>
+                <option value="low">منخفض</option>
+              </select>
+            </div>
+
+            <div class="fg" id="fg-proj-rev" style="display:none;">
+              <label>🔍 مشاريع Review</label>
+              <input type="number" id="rpt-proj-rev" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-proj-acc" style="display:none;">
+              <label>✅ مشاريع اتقبلت</label>
+              <input type="number" id="rpt-proj-acc" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-proj-rej" style="display:none;">
+              <label>❌ مشاريع اترفضت</label>
+              <input type="number" id="rpt-proj-rej" min="0" value="0" class="fg-input-num" />
+            </div>
+            
+            <div class="fg" id="fg-wf-resolved" style="display:none;">
+              <label>🛠 مشاكل Workflows اتحلت</label>
+              <input type="number" id="rpt-wf-resolved" min="0" value="0" class="fg-input-num" />
+            </div>
+            <div class="fg" id="fg-res-time" style="display:none;">
+              <label>⏱ متوسط وقت الحل</label>
+              <input type="text" id="rpt-res-time" placeholder="مثال: 10 دقايق" class="fg-input-num" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('report-modal')">إلغاء</button>
+        <button class="btn-confirm-team" id="rpt-submit-btn" onclick="submitReport()">إرسال الريبورت</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       REPORTS CSS
+       ═══════════════════════════════════════════════════════ -->
+  <style>
+    .reports-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .report-card {
+      background: #141414;
+      border: 1px solid #242424;
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color .2s, transform .15s;
+    }
+    .report-card:hover { border-color: #3f8ff9; transform: translateY(-2px); }
+    .rc-header { display: flex; align-items: center; gap: 12px; }
+    .rc-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #2a2a2a; }
+    .rc-avatar-placeholder {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #1e3a5f, #3f8ff9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .rc-meta { flex: 1; min-width: 0; }
+    .rc-name { font-weight: 600; color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-date { font-size: 12px; color: #666; margin-top: 2px; }
+    .rc-role-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+    .rc-role-badge.community_manager { background: rgba(139,92,246,.15); color: #a78bfa; }
+    .rc-role-badge.technical_engineer { background: rgba(63,143,249,.15); color: #3f8ff9; }
+    .rc-role-badge.customer_success { background: rgba(34,197,94,.15); color: #22c55e; }
+    .rc-questions { display: flex; flex-direction: column; gap: 10px; }
+    .rc-question { background: #1a1a1a; border-radius: 8px; padding: 12px 14px; }
+    .rc-q-label { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+    .rc-q-text { font-size: 13px; color: #ccc; line-height: 1.5; white-space: pre-wrap; }
+    .rc-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rc-num-box { background: #1a1a1a; border-radius: 8px; padding: 10px 14px; }
+    .rc-num-val { font-size: 1.4rem; font-weight: 800; color: #fff; }
+    .rc-num-lbl { font-size: 11px; color: #666; line-height: 1.3; }
+    .report-stat-card { background: #1a1a1a; border: 1px solid #242424; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+    .report-stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .report-stat-num { font-size: 1.6rem; font-weight: 800; color: #fff; }
+    .report-stat-lbl { font-size: 12px; color: #666; margin-top: 2px; }
+    .fg-select, .reports-select {
+      background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px 14px;
+      color: #fff; font-size: 14px; outline: none; transition: border-color .2s;
+      font-family: inherit; width: 100%; cursor: pointer;
+    }
+    .fg-select:focus, .reports-select:focus { border-color: #3f8ff9; }
+    .fg-textarea {
+      background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px 14px;
+      color: #fff; font-size: 14px; outline: none; resize: vertical;
+      transition: border-color .2s; font-family: inherit; width: 100%; box-sizing: border-box;
+    }
+    .fg-textarea:focus { border-color: #3f8ff9; }
+    .fg-input-num { background:#111;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:1.1rem;font-weight:600;outline:none;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .2s; }
+    .fg-input-num:focus { border-color: #3f8ff9; }
+    .reports-date-input {
+      background: #111; border: 1px solid #333; border-radius: 8px; padding: 9px 12px;
+      color: #fff; font-size: 13px; outline: none; font-family: inherit;
+      cursor: pointer; transition: border-color .2s;
+    }
+    .reports-date-input:focus { border-color: #3f8ff9; }
+    .reports-date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+    .reports-empty { grid-column: 1 / -1; padding: 60px 20px; text-align: center; color: #555; }
+    .reports-empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: .4; }
+    .reports-empty p { font-size: 14px; }
+    @media (max-width: 640px) {
+      .reports-cards-grid { grid-template-columns: 1fr; }
+      #reports-stats-row { grid-template-columns: 1fr !important; }
+    }
+  </style>
+
+  <!-- ═══════════════════════════════════════════════════════
+       REPORTS JAVASCRIPT
+       ═══════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      var RPT_API = (window.API_BASE || 'http://localhost:8000');
+
+      function rptToken() { return localStorage.getItem('token') || ''; }
+
+      function rptCurrentUser() {
+        try { return JSON.parse(localStorage.getItem('user') || '{}'); }
+        catch (e) { return {}; }
+      }
+
+      function rptRoleLabel(role) {
+        var map = { community_manager: 'Community Manager', technical_engineer: 'Technical Engineer', customer_success: 'Customer Success' };
+        return map[role] || role;
+      }
+
+      function rptFmtDate(iso) {
+        if (!iso) return '—';
+        try {
+          return new Date(iso).toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return iso; }
+      }
+
+      function rptInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase();
+      }
+
+      function rptEscape(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+      }
+
+      // ─── Load Tab ──────────────────────────────────────────
+      window.loadReportsTab = async function () {
+        var me = rptCurrentUser();
+        var isAdmin = !!me.is_admin;
+        var container = document.getElementById('reports-cards-container');
+        var statsRow   = document.getElementById('reports-stats-row');
+        var roleFilter = document.getElementById('reports-role-filter');
+        var dateFilter = document.getElementById('reports-date-filter');
+
+        if (roleFilter) roleFilter.style.display = isAdmin ? 'block' : 'none';
+        if (statsRow)   statsRow.style.display   = isAdmin ? 'grid'  : 'none';
+
+        container.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:#555;">Loading...</div>';
+
+        var url    = RPT_API + (isAdmin ? '/reports/admin' : '/reports/my');
+        var params = new URLSearchParams();
+        if (isAdmin && roleFilter && roleFilter.value && roleFilter.value !== 'all') params.set('role', roleFilter.value);
+        if (dateFilter && dateFilter.value) params.set('report_date', dateFilter.value);
+        var qs = params.toString();
+        if (qs) url += '?' + qs;
+
+        try {
+          var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + rptToken() } });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var reports = await res.json();
+          renderReports(reports, isAdmin);
+        } catch (err) {
+          container.innerHTML = '<div class="reports-empty"><div class="empty-icon">⚠️</div><p style="color:#ef4444;">فشل في تحميل الريبورتات — ' + err.message + '</p></div>';
+        }
+      };
+
+      // ─── Render ────────────────────────────────────────────
+      function renderReports(reports, isAdmin) {
+        var container = document.getElementById('reports-cards-container');
+        // Remove grid class to avoid styling conflicts
+        container.className = '';
+
+        if (isAdmin && reports.length > 0) {
+          var totalAI   = reports.reduce(function (s, r) { return s + (r.ai_updates_count || 0); }, 0);
+          var totalMsgs = reports.reduce(function (s, r) { return s + (r.messages_replied_count || 0); }, 0);
+          var el;
+          el = document.getElementById('rpt-stat-total'); if (el) el.textContent = reports.length;
+          el = document.getElementById('rpt-stat-ai');    if (el) el.textContent = totalAI;
+          el = document.getElementById('rpt-stat-msgs');  if (el) el.textContent = totalMsgs;
+        }
+
+        if (!reports || reports.length === 0) {
+          container.innerHTML = '<div class="reports-empty"><div class="empty-icon">📋</div><p>مفيش ريبورتات لحد دلوقتي</p>' +
+            (!isAdmin ? '<p style="margin-top:8px;"><button class="btn-add-member" style="font-size:13px;" onclick="openReportModal()">كتابة أول ريبورت</button></p>' : '') + '</div>';
+          return;
+        }
+
+        var html = '<div class="team-table-wrap" style="padding-bottom: 20px; overflow-x: auto; max-width: 100%; border: 1px solid #2a2a2a; border-radius: 12px;"><table class="team-table" style="white-space: nowrap;">';
+        html += '<thead><tr>';
+        if (isAdmin) {
+          html += '<th style="min-width: 220px; padding-right: 32px;">Member</th>';
+        }
+        html += '<th>Date</th>';
+        html += '<th>Role</th>';
+        html += '<th style="min-width: 250px;">What Went Well</th>';
+        html += '<th style="min-width: 250px;">What Can Improve</th>';
+        html += '<th>Hours</th>';
+        html += '<th>Prod</th>';
+        html += '<th>AI</th>';
+        html += '<th>Msgs</th>';
+        html += '<th>Posts</th>';
+        html += '<th>Welcomes</th>';
+        html += '<th>Wins</th>';
+        html += '<th>Reply Spd</th>';
+        html += '<th>Engmnt</th>';
+        html += '<th>Proj Rev</th>';
+        html += '<th>Proj Acc</th>';
+        html += '<th>Proj Rej</th>';
+        html += '<th>WFs Res</th>';
+        html += '<th>WFs Time</th>';
+        html += '</tr></thead><tbody>';
+
+        html += reports.map(function (r) { return renderReportRow(r, isAdmin); }).join('');
+        
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function renderReportRow(r, isAdmin) {
+        var roleLabel = rptRoleLabel(r.team_role || '');
+        var memberHtml = '', dateHtml = '';
+
+        if (isAdmin) {
+          var name   = r.author_name || 'Member';
+          var avatar = r.author_avatar;
+          var avatarHtml = avatar
+            ? '<img class="member-avatar" src="' + avatar + '" alt="' + name + '" onerror="this.outerHTML=\'<div class=&quot;rc-avatar-placeholder&quot; style=&quot;width:38px;height:38px;font-size:14px;&quot;>' + rptInitials(name) + '</div>\'">'
+            : '<div class="rc-avatar-placeholder" style="width:38px;height:38px;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#333;color:#fff;font-weight:bold;">' + rptInitials(name) + '</div>';
+          
+          memberHtml = '<td class="member-cell" style="padding-right: 32px;">' + avatarHtml + '<div style="display:flex;flex-direction:column;gap:4px;"><span class="member-name" style="line-height:1.2;">' + rptEscape(name) + '</span><span class="text-secondary" style="font-size:11.5px;line-height:1.2;">' + rptEscape(r.author_email || '') + '</span></div></td>';
+          dateHtml = '<td>' + r.report_date + '</td>';
+        } else {
+          dateHtml = '<td><div style="display:flex;flex-direction:column;gap:4px;"><span style="line-height:1.2;">' + r.report_date + '</span><span class="text-secondary" style="font-size:11.5px;line-height:1.2;">' + rptFmtDate(r.created_at) + '</span></div></td>';
+        }
+
+        var cell = function(val, color) {
+          if (val === null || val === undefined || val === '') return '<td style="color:#555;">-</td>';
+          return '<td><span style="color:' + (color || '#fff') + ';font-weight:600;background:rgba(255,255,255,0.05);padding:4px 8px;border-radius:6px;font-size:12px;">' + val + '</span></td>';
+        };
+
+        var html = '<tr>';
+        if (isAdmin) html += memberHtml;
+        html += dateHtml;
+        html += '<td><span class="role-badge" style="background:rgba(255,255,255,0.07);color:#ccc;">' + roleLabel + '</span></td>';
+        
+        var wentWell = rptEscape(r.what_went_well) || '-';
+        var improve = rptEscape(r.what_can_improve) || '-';
+        html += '<td style="white-space: normal; line-height: 1.5; color: #ccc; font-size: 13px;">' + wentWell + '</td>';
+        html += '<td style="white-space: normal; line-height: 1.5; color: #ccc; font-size: 13px;">' + improve + '</td>';
+
+        html += cell(r.hours_worked, '#a78bfa');
+        var prod = (r.productivity !== null && r.productivity !== undefined) ? r.productivity + '/10' : null;
+        html += cell(prod, '#eab308');
+        html += cell((r.team_role !== 'technical_engineer') ? r.ai_updates_count : null, '#22c55e');
+        html += cell(r.messages_replied_count, '#f59e0b');
+        html += cell(r.community_posts_count, '#3f8ff9');
+        html += cell(r.members_welcomed_count, '#ec4899');
+        html += cell(r.wins_encouraged_count, '#fcd34d');
+        html += cell(r.avg_reply_speed, '#9ca3af');
+        html += cell(r.platform_engagement, '#9ca3af');
+        html += cell(r.projects_reviewed_count, '#60a5fa');
+        html += cell(r.projects_accepted_count, '#22c55e');
+        html += cell(r.projects_rejected_count, '#ef4444');
+        html += cell(r.workflows_resolved_count, '#a855f7');
+        html += cell(r.avg_resolution_time, '#9ca3af');
+
+        html += '</tr>';
+        return html;
+      }
+
+      window.handleRoleChange = function() {
+        var role = document.getElementById('rpt-role').value;
+        var dynFields = document.getElementById('rpt-dynamic-fields');
+        if(!role) { dynFields.style.display = 'none'; return; }
+        
+        dynFields.style.display = 'flex';
+        
+        var fieldsMap = {
+          community_manager: ['fg-hours', 'fg-prod', 'fg-ai-count', 'fg-msg-count', 'fg-comm-posts', 'fg-welcomed', 'fg-wins', 'fg-reply-speed', 'fg-engagement'],
+          technical_engineer: ['fg-hours', 'fg-prod', 'fg-msg-count', 'fg-proj-rev', 'fg-proj-acc', 'fg-proj-rej', 'fg-wf-resolved', 'fg-res-time'],
+          customer_success: ['fg-ai-count', 'fg-msg-count']
+        };
+
+        var allFields = ['fg-hours', 'fg-prod', 'fg-ai-count', 'fg-msg-count', 'fg-comm-posts', 'fg-welcomed', 'fg-wins', 'fg-reply-speed', 'fg-engagement', 'fg-proj-rev', 'fg-proj-acc', 'fg-proj-rej', 'fg-wf-resolved', 'fg-res-time'];
+        
+        var showFields = fieldsMap[role] || [];
+        allFields.forEach(function(f) {
+          document.getElementById(f).style.display = showFields.includes(f) ? 'block' : 'none';
+        });
+      };
+
+      // ─── Modal Open ────────────────────────────────────────
+      window.openReportModal = function () {
+        document.getElementById('rpt-role').value      = '';
+        document.getElementById('rpt-went-well').value = '';
+        document.getElementById('rpt-improve').value   = '';
+        
+        var nums = ['rpt-hours', 'rpt-productivity', 'rpt-ai-count', 'rpt-msg-count', 'rpt-comm-posts', 'rpt-welcomed', 'rpt-wins', 'rpt-proj-rev', 'rpt-proj-acc', 'rpt-proj-rej', 'rpt-wf-resolved'];
+        nums.forEach(function(id) { document.getElementById(id).value = ''; });
+        document.getElementById('rpt-ai-count').value = '0';
+        document.getElementById('rpt-msg-count').value = '0';
+        
+        document.getElementById('rpt-reply-speed').value = '';
+        document.getElementById('rpt-res-time').value = '';
+        document.getElementById('rpt-engagement').value = 'high';
+
+        handleRoleChange();
+
+        var btn = document.getElementById('rpt-submit-btn');
+        if (btn) { btn.disabled = false; btn.textContent = 'إرسال الريبورت'; }
+        document.getElementById('report-modal').style.display = 'flex';
+      };
+
+      // ─── Submit ────────────────────────────────────────────
+      window.submitReport = async function () {
+        var role      = document.getElementById('rpt-role').value.trim();
+        var wellText  = document.getElementById('rpt-went-well').value.trim();
+        var improveText = document.getElementById('rpt-improve').value.trim();
+
+        if (!role)             { showToast('من فضلك اختار دورك في الفريق', 'error'); return; }
+        if (wellText.length < 3)   { showToast('اكتب اللي كان كويس (3 حروف على الأقل)', 'error'); return; }
+        if (improveText.length < 3){ showToast('اكتب اللي ممكن يتحسن (3 حروف على الأقل)', 'error'); return; }
+
+        var payload = {
+          team_role: role,
+          what_went_well: wellText,
+          what_can_improve: improveText,
+          ai_updates_count: parseInt(document.getElementById('rpt-ai-count').value) || 0,
+          messages_replied_count: parseInt(document.getElementById('rpt-msg-count').value) || 0
+        };
+
+        if (role === 'community_manager') {
+            payload.hours_worked = parseFloat(document.getElementById('rpt-hours').value) || 0;
+            payload.productivity = parseInt(document.getElementById('rpt-productivity').value) || 0;
+            payload.community_posts_count = parseInt(document.getElementById('rpt-comm-posts').value) || 0;
+            payload.members_welcomed_count = parseInt(document.getElementById('rpt-welcomed').value) || 0;
+            payload.wins_encouraged_count = parseInt(document.getElementById('rpt-wins').value) || 0;
+            payload.avg_reply_speed = document.getElementById('rpt-reply-speed').value || '';
+            payload.platform_engagement = document.getElementById('rpt-engagement').value || 'high';
+        } else if (role === 'technical_engineer') {
+            payload.hours_worked = parseFloat(document.getElementById('rpt-hours').value) || 0;
+            payload.productivity = parseInt(document.getElementById('rpt-productivity').value) || 0;
+            payload.projects_reviewed_count = parseInt(document.getElementById('rpt-proj-rev').value) || 0;
+            payload.projects_accepted_count = parseInt(document.getElementById('rpt-proj-acc').value) || 0;
+            payload.projects_rejected_count = parseInt(document.getElementById('rpt-proj-rej').value) || 0;
+            payload.workflows_resolved_count = parseInt(document.getElementById('rpt-wf-resolved').value) || 0;
+            payload.avg_resolution_time = document.getElementById('rpt-res-time').value || '';
+        }
+
+        var btn = document.getElementById('rpt-submit-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'جاري الإرسال...'; }
+
+        try {
+          var res = await fetch(RPT_API + '/reports/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + rptToken() },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.detail || 'HTTP ' + res.status); }
+          closeModal('report-modal');
+          showToast('✅ تم إرسال الريبورت بنجاح!', 'success');
+          loadReportsTab();
+        } catch (err) {
+          showToast('❌ فشل الإرسال: ' + err.message, 'error');
+          if (btn) { btn.disabled = false; btn.textContent = 'إرسال الريبورت'; }
+        }
+      };
+
+      // ─── Auto-load when tab becomes visible ───────────────
+      var panel = document.getElementById('tab-reports');
+      if (panel) {
+        var loaded = false;
+        new MutationObserver(function () {
+          if (panel.style.display !== 'none') {
+            loadReportsTab();
+          }
+        }).observe(panel, { attributes: true, attributeFilter: ['style'] });
+      }
+
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FEEDBACKS JAVASCRIPT
+       ═══════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      var API_URL = (window.API_BASE || 'http://localhost:8000') + '/feedbacks/';
+
+      function fbToken() { return localStorage.getItem('token') || ''; }
+
+      function fbRoleLabel(role) {
+        var map = { community_manager: 'Community Manager', technical_engineer: 'Technical Engineer', customer_success: 'Customer Success' };
+        return map[role] || role;
+      }
+
+      function fbFmtDate(iso) {
+        if (!iso) return '—';
+        try {
+          return new Date(iso).toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return iso; }
+      }
+
+      function fbEscape(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+      }
+
+      // ─── Load Tab ──────────────────────────────────────────
+      window.loadFeedbacksTab = async function () {
+        var container = document.getElementById('feedbacks-cards-container');
+        container.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:#555;">Loading...</div>';
+
+        try {
+          var res = await fetch(API_URL, { headers: { 'Authorization': 'Bearer ' + fbToken() } });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var feedbacks = await res.json();
+          renderFeedbacks(feedbacks);
+        } catch (err) {
+          container.innerHTML = '<div class="reports-empty"><div class="empty-icon">⚠️</div><p style="color:#ef4444;">فشل في تحميل الـ Feedbacks — ' + err.message + '</p></div>';
+        }
+      };
+
+      // ─── Render ────────────────────────────────────────────
+      function renderFeedbacks(feedbacks) {
+        var container = document.getElementById('feedbacks-cards-container');
+
+        if (!feedbacks || feedbacks.length === 0) {
+          container.innerHTML = '<div class="reports-empty"><div class="empty-icon">💬</div><p>مفيش Feedbacks لحد دلوقتي</p>' +
+            '<p style="margin-top:8px;"><button class="btn-add-member" style="font-size:13px;" onclick="openFeedbackModal()">+ New Feedback</button></p></div>';
+          return;
+        }
+
+        container.innerHTML = feedbacks.map(function (f) { return renderCard(f); }).join('');
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function renderCard(f) {
+        var roleCls = (f.role || '').toLowerCase().replace(/ /g, '_');
+        var roleLabel = fbRoleLabel(f.role || '');
+        var avatarHtml = '<div class="rc-avatar-placeholder" style="background:linear-gradient(135deg,#f97316,#c2410c);font-size:18px;">💬</div>';
+        var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) + ' (' + fbEscape(f.person_email) + ')</div><div class="rc-date">' + fbFmtDate(f.created_at) + '</div>';
+
+        return '<div class="report-card">' +
+          '<div class="rc-header">' + avatarHtml + '<div class="rc-meta">' + nameHtml + '</div><span class="rc-role-badge ' + roleCls + '">' + roleLabel + '</span></div>' +
+          '<div class="rc-questions">' +
+            '<div class="rc-question"><div class="rc-q-text" style="white-space:pre-wrap;">' + fbEscape(f.feedback_text) + '</div></div>' +
+          '</div></div>';
+      }
+
+      // ─── Modal Open ────────────────────────────────────────
+      window.openFeedbackModal = function () {
+        document.getElementById('fb-role').value = 'community_manager';
+        document.getElementById('fb-person-name').value = '';
+        document.getElementById('fb-person-email').value = '';
+        document.getElementById('fb-text').value = '';
+        document.getElementById('add-feedback-modal').style.display = 'flex';
+      };
+
+      // ─── Submit ────────────────────────────────────────────
+      window.submitFeedback = async function () {
+        var role = document.getElementById('fb-role').value.trim();
+        var personName = document.getElementById('fb-person-name').value.trim();
+        var personEmail = document.getElementById('fb-person-email').value.trim();
+        var feedbackText = document.getElementById('fb-text').value.trim();
+
+        if (!personName) { showToast('Please enter person name', 'error'); return; }
+        if (!personEmail) { showToast('Please enter person email', 'error'); return; }
+        if (!feedbackText) { showToast('Please enter feedback', 'error'); return; }
+
+        try {
+          var res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + fbToken() },
+            body: JSON.stringify({
+              role: role, person_name: personName, person_email: personEmail, feedback_text: feedbackText
+            })
+          });
+          if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.detail || 'HTTP ' + res.status); }
+          closeModal('add-feedback-modal');
+          showToast('✅ Feedback saved successfully!', 'success');
+          loadFeedbacksTab();
+        } catch (err) {
+          showToast('❌ Failed to save feedback: ' + err.message, 'error');
+        }
+      };
+
+      // ─── Auto-load when tab becomes visible ───────────────
+      var panel = document.getElementById('tab-feedbacks');
+      if (panel) {
+        new MutationObserver(function () {
+          if (panel.style.display !== 'none') {
+            loadFeedbacksTab();
+          }
+        }).observe(panel, { attributes: true, attributeFilter: ['style'] });
+      }
+
+    })();
+  </script>
+
 </body>
 
 </html>

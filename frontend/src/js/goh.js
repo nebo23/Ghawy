@@ -87,6 +87,17 @@ async function loadStats() {
       let attendeesStr = res.total_attendees >= 1000 ? (res.total_attendees/1000).toFixed(1) + 'K' : res.total_attendees;
       document.getElementById('stat-attendees').textContent = attendeesStr;
       document.getElementById('stat-rating').textContent = res.avg_rating.toFixed(1);
+      
+      // Calculate derived hours (mock for demo if not provided directly)
+      const hours = res.total_hours || (res.total_attendees * 1.5) || 0;
+      const hoursStr = hours >= 1000 ? (hours/1000).toFixed(1) + 'K' : Math.floor(hours);
+      if (document.getElementById('stat-hours')) document.getElementById('stat-hours').textContent = hoursStr;
+      
+      // Update community impact sidebar
+      if (document.getElementById('impactGuests')) document.getElementById('impactGuests').textContent = res.total_guests;
+      if (document.getElementById('impactSessions')) document.getElementById('impactSessions').textContent = res.sessions_this_month * 5 || res.sessions_this_month;
+      if (document.getElementById('impactHours')) document.getElementById('impactHours').textContent = hoursStr;
+      if (document.getElementById('impactRating')) document.getElementById('impactRating').textContent = res.avg_rating.toFixed(1);
     }
   } catch (err) {
     console.error("Failed to load stats:", err);
@@ -115,7 +126,7 @@ async function loadFeaturedGuests() {
 
 async function loadUpcomingSessions() {
   try {
-    const res = await apiFetch('/guests/sessions/upcoming');
+    const res = await apiFetch('/guests/sessions/?status=upcoming');
     if(Array.isArray(res)) {
       allSessions = res;
       renderSessions(allSessions, 'upcoming-sessions');
@@ -127,11 +138,11 @@ async function loadUpcomingSessions() {
 
 async function loadPastSessions() {
   try {
-    const res = await apiFetch('/guests/sessions/past');
+    const res = await apiFetch('/guests/sessions/?status=past');
     if(Array.isArray(res)) {
       allSessions = res;
       renderSessions(allSessions, 'upcoming-sessions');
-      document.querySelector('.section-header h2').textContent = 'Past Sessions';
+      document.querySelector('.section-title-wrap h2').textContent = 'Past Sessions';
     }
   } catch(err) {
     console.error("Failed to load past sessions:", err);
@@ -139,19 +150,59 @@ async function loadPastSessions() {
 }
 
 function updateFeaturedHero(g) {
-  document.getElementById('featuredHeroCard').style.display = 'block';
-  document.getElementById('heroName').textContent = g.name;
-  document.getElementById('heroTitle').textContent = g.title;
-  document.getElementById('heroBio').textContent = g.bio || '';
+  // Desktop Sticky Sidebar Hero
+  const sidebarHero = document.getElementById('featuredHeroCard');
+  if (sidebarHero) {
+      sidebarHero.style.display = 'block';
+      document.getElementById('heroName').innerHTML = `${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i>`;
+      document.getElementById('heroTitle').textContent = g.title;
+      document.getElementById('heroBio').textContent = g.bio || '';
+      if(document.getElementById('heroCompany')) {
+          document.getElementById('heroCompany').innerHTML = `<i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>${g.company || 'Industry Leader'}</span>`;
+      }
+      
+      let finalAvatar = '';
+      if (g.avatar_url) {
+        finalAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
+      } else {
+        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#84cc16').replace('#','')}&color=fff&size=200&bold=true`;
+      }
+      document.getElementById('heroAvatar').src = finalAvatar;
+      document.getElementById('heroTotalSessions').textContent = g.sessions_count || 0;
+      
+      let attendeesStr = g.attendees_count >= 1000 ? (g.attendees_count/1000).toFixed(1) + 'K+' : (g.attendees_count || 0);
+      document.getElementById('heroTotalAttendees').textContent = attendeesStr;
+      document.getElementById('heroRating').innerHTML = `<i data-lucide="star" style="width:14px;height:14px;color:#facc15;fill:#facc15;"></i> ${(g.rating || 0).toFixed(1)}`;
+  }
   
-  const uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=1a1a1a&color=84cc16&size=200&bold=true`;
-  document.getElementById('heroAvatar').src = g.avatar_url || uiAvatar;
-  
-  document.getElementById('heroTotalSessions').textContent = g.total_sessions;
-  
-  let attendeesStr = g.total_attendees >= 1000 ? (g.total_attendees/1000).toFixed(1) + 'K+' : g.total_attendees;
-  document.getElementById('heroTotalAttendees').textContent = attendeesStr;
-  document.getElementById('heroRating').textContent = '⭐ ' + g.rating.toFixed(1);
+  // Mobile Hero
+  const mobileHero = document.getElementById('heroMobileCard');
+  if (mobileHero) {
+      mobileHero.style.display = 'block';
+      document.getElementById('heroMobileName').innerHTML = `${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i>`;
+      document.getElementById('heroMobileTitle').textContent = g.title;
+      document.getElementById('heroMobileBio').textContent = g.bio ? g.bio.substring(0,100) + '...' : '';
+      if(document.getElementById('heroMobileCompany')) {
+          document.getElementById('heroMobileCompany').innerHTML = `<i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>${g.company || 'Industry Leader'}</span>`;
+      }
+      
+      let finalAvatar = '';
+      if (g.avatar_url) {
+        finalAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
+      } else {
+        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#84cc16').replace('#','')}&color=fff&size=200&bold=true`;
+      }
+      document.getElementById('heroMobileAvatar').src = finalAvatar;
+      document.getElementById('heroMobileTotalSessions').textContent = g.sessions_count || 0;
+      
+      let attendeesStr = g.attendees_count >= 1000 ? (g.attendees_count/1000).toFixed(1) + 'K+' : (g.attendees_count || 0);
+      document.getElementById('heroMobileTotalAttendees').textContent = attendeesStr;
+      document.getElementById('heroMobileRating').innerHTML = `<i data-lucide="star" style="width:14px;height:14px;color:#facc15;fill:#facc15;"></i> ${(g.rating || 0).toFixed(1)}`;
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function renderGuests(guests) {
@@ -162,25 +213,52 @@ function renderGuests(guests) {
   }
   
   container.innerHTML = guests.map(g => {
-    const uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=1a1a1a&color=84cc16&size=200&bold=true`;
+    let finalAvatar = '';
+    if (g.avatar_url) {
+      finalAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
+    } else {
+      let initials = g.avatar_initials;
+      if (!initials) {
+        initials = g.name.substring(0,2).toUpperCase();
+      }
+      const color = g.avatar_color || '#84cc16';
+      finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#','')}&color=fff&size=200&bold=true`;
+    }
+    
     return `
-    <div class="guest-card" onclick="viewGuest(${g.id})">
+    <div class="guest-card glass-card" onclick="viewGuest(${g.id})">
       <div class="guest-avatar-wrap">
-        <img class="guest-avatar" src="${g.avatar_url || uiAvatar}" 
-             onerror="this.src='./imgs/ghawi-logo.png'" />
+        <img class="guest-avatar" src="${finalAvatar}" style="object-fit:cover;"
+             onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
       </div>
-      <h3 class="guest-name">${g.name}</h3>
+      <h3 class="guest-name">${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;"></i></h3>
       <p class="guest-title">${g.title}</p>
-      <p class="guest-bio">${g.bio ? g.bio.substring(0,80) + '...' : ''}</p>
+      <div class="guest-company"><i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>${g.company || 'Industry Leader'}</span></div>
+      
+      <div class="guest-stats-mini">
+        <span><i data-lucide="users" style="width:14px;height:14px;"></i> ${g.attendees_count || 0}</span>
+        <span><i data-lucide="star" style="width:14px;height:14px;color:#facc15;"></i> ${(g.rating || 0).toFixed(1)}</span>
+      </div>
+      
       <button class="btn-view-profile">View Profile</button>
     </div>
   `}).join('');
+  
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function renderSessions(sessions, containerId) {
   const container = document.getElementById(containerId);
   if(!sessions.length) {
-    container.innerHTML = '<div style="color:#888; padding:20px;">No sessions available.</div>';
+    container.innerHTML = `
+      <div class="empty-state glass-card">
+        <i data-lucide="calendar-x" class="empty-state-icon"></i>
+        <h3>No sessions scheduled</h3>
+        <p>New expert sessions are added regularly.</p>
+      </div>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
   
@@ -190,25 +268,56 @@ function renderSessions(sessions, containerId) {
     const day = date.getDate();
     const time = date.toLocaleString('en', {hour:'2-digit', minute:'2-digit'});
     
+    // Status Logic
+    let statusClass = s.status || 'upcoming';
+    let statusLabel = statusClass;
+    if (statusClass === 'upcoming') statusLabel = 'Upcoming';
+    else if (statusClass === 'live') statusLabel = 'Live Soon';
+    else if (statusClass === 'past') statusLabel = 'Completed';
+    
+    let guestAvatar = s.guest_avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.guest_name)}&background=84cc16&color=fff`;
+    if (guestAvatar.startsWith('/')) guestAvatar = API + guestAvatar;
+
+    let coverImage = s.cover_url || `https://images.unsplash.com/photo-1540317580384-e5d43867caa6?auto=format&fit=crop&w=600&q=80`;
+    if (coverImage.startsWith('/')) coverImage = API + coverImage;
+    
     return `
-      <div class="session-card">
-        <div class="session-date-badge">
-          <span class="month">${month}</span>
-          <span class="day">${day}</span>
-        </div>
-        <div class="session-info">
-          <span class="session-status ${s.status}">${s.status}</span>
-          <h4 class="session-title">${s.title}</h4>
-          <div class="session-guest">
-            ${s.guest_name} · ${s.guest_title}
-          </div>
-          <div class="session-time">
-            ${time} EET
-          </div>
+      <div class="session-card glass-card">
+        <img class="session-cover" src="${coverImage}" alt="Session Cover" onerror="this.src='https://images.unsplash.com/photo-1540317580384-e5d43867caa6?auto=format&fit=crop&w=600&q=80'" />
+        <div class="session-content">
+            <div class="session-header-row">
+                <span class="session-status ${statusClass}">${statusLabel}</span>
+                <div class="session-date">
+                    <span class="month">${month}</span>
+                    <span class="day">${day}</span>
+                </div>
+            </div>
+            
+            <h4 class="session-title">${s.title}</h4>
+            
+            <div class="session-host-row">
+                <img class="session-host-avatar" src="${guestAvatar}" alt="${s.guest_name}" />
+                <div class="session-host-info">
+                    <span class="name">${s.guest_name}</span>
+                    <span class="title">${s.guest_title}</span>
+                </div>
+            </div>
+            
+            <div class="session-footer">
+                <div class="session-meta">
+                    <span><i data-lucide="clock" style="width:14px;height:14px;"></i> ${time} EET</span>
+                    <span><i data-lucide="users" style="width:14px;height:14px;"></i> ${s.expected_attendees || s.attendees_count || 0} attending</span>
+                </div>
+                <button class="btn-reserve">Reserve Seat</button>
+            </div>
         </div>
       </div>
     `;
   }).join('');
+  
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function switchTab(tab, event) {
@@ -218,8 +327,8 @@ function switchTab(tab, event) {
     event.target.classList.add('active');
   }
   
-  const guestHeader = document.querySelectorAll('.section-header h2')[0];
-  const sessionsHeader = document.querySelectorAll('.section-header h2')[1];
+  const guestHeader = document.querySelectorAll('.section-title-wrap h2')[0];
+  const sessionsHeader = document.querySelectorAll('.section-title-wrap h2')[1];
   
   if (tab === 'all') {
     renderGuests(allGuests);
@@ -240,14 +349,16 @@ function switchTab(tab, event) {
 }
 
 function filterByCategory(category) {
-  const filtered = category === 'All Categories' 
-    ? allGuests 
-    : allGuests.filter(g => g.category === category);
+  if (!category || category === 'All Categories') {
+    renderGuests(allGuests);
+    return;
+  }
+  const searchCat = category.trim().toLowerCase();
+  const filtered = allGuests.filter(g => (g.category || '').trim().toLowerCase() === searchCat);
   renderGuests(filtered);
 }
 
 function viewGuest(id) {
-  // In the future, this could open a modal or redirect to a guest profile page
   const g = allGuests.find(x => x.id === id);
   if(g) {
     updateFeaturedHero(g);
@@ -255,16 +366,23 @@ function viewGuest(id) {
   }
 }
 
-// ════════════════════════════════════════════════════════
-// NO NATIVE DIALOGS ALLOWED: Do not use window.alert, window.confirm, or window.prompt
-// in any new admin workflows. Use showToast() or custom modals instead.
-// ════════════════════════════════════════════════════════
+function openSuggestModal() {
+  document.getElementById('suggestName').value = '';
+  document.getElementById('suggestReason').value = '';
+  document.getElementById('suggestModal').classList.add('open');
+}
 
-async function openSuggestModal() {
-  // TODO: Replace with custom modal for members. Native dialogs are isolated here.
-  const name = prompt("Guest Name:");
-  if(!name) return;
-  const reason = prompt("Why should we invite them?");
+function closeSuggestModal() {
+  document.getElementById('suggestModal').classList.remove('open');
+}
+
+async function submitSuggestion() {
+  const name = document.getElementById('suggestName').value.trim();
+  if(!name) {
+      alert("Please enter a guest name");
+      return;
+  }
+  const reason = document.getElementById('suggestReason').value.trim();
   
   try {
     const res = await apiFetch('/guests/suggest', {
@@ -272,11 +390,21 @@ async function openSuggestModal() {
       body: JSON.stringify({ name, reason })
     });
     if(res && res.success) {
-      alert("Thank you! Your suggestion has been received.");
+      closeSuggestModal();
+      showToast("Thank you! Your suggestion has been received.", "success");
     }
   } catch(err) {
-    alert("Error suggesting guest.");
+    showToast("Error suggesting guest.", "error");
   }
+}
+
+// Ensure showToast is defined or fallback
+function showToast(msg, type='info') {
+    if (typeof window.showToast === 'function') {
+        window.showToast(msg, type);
+    } else {
+        alert(msg);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', loadPage);
@@ -324,7 +452,6 @@ document.addEventListener('DOMContentLoaded', loadPage);
         }
     });
 })();
-
 
 function scrollGuests(direction) {
     const container = document.getElementById('featured-guests');

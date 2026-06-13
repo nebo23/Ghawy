@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment, CommunityFeedback
 from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
@@ -74,27 +74,9 @@ def apply_sqlite_compat_migrations():
         # User last_seen migration
         if "last_seen" not in user_columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN last_seen DATETIME"))
-        # ── Recurring / Subscription columns ──
-        if "card_token" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN card_token VARCHAR"))
-        if "shopper_reference" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN shopper_reference VARCHAR"))
-        if "subscription_type" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_type VARCHAR DEFAULT 'monthly'"))
-        if "subscription_start" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_start DATETIME"))
-        if "subscription_end" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN subscription_end DATETIME"))
-        if "last_charged_at" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN last_charged_at DATETIME"))
-        if "next_charge_at" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN next_charge_at DATETIME"))
-        # ── Payment recurring columns ──
-        payment_columns = {col["name"] for col in inspector.get_columns("payments")}
-        if "is_recurring" not in payment_columns:
-            conn.execute(text("ALTER TABLE payments ADD COLUMN is_recurring BOOLEAN DEFAULT 0"))
-        if "recurring_cycle" not in payment_columns:
-            conn.execute(text("ALTER TABLE payments ADD COLUMN recurring_cycle INTEGER DEFAULT 0"))
+        # ── End At column ──
+        if "end_at" not in user_columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN end_at DATETIME"))
         # Posts migration — new fields for community redesign
         if inspector.has_table("posts"):
             post_cols = {col["name"] for col in inspector.get_columns("posts")}
@@ -213,6 +195,39 @@ def apply_sqlite_compat_migrations():
                     UNIQUE(course_id, user_id)
                 )
             """))
+
+        # ── Daily Reports table ──
+        if not inspector.has_table("daily_reports"):
+            conn.execute(text("""
+                CREATE TABLE daily_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    team_role VARCHAR NOT NULL,
+                    what_went_well TEXT NOT NULL,
+                    what_can_improve TEXT NOT NULL,
+                    ai_updates_count INTEGER NOT NULL DEFAULT 0,
+                    messages_replied_count INTEGER NOT NULL DEFAULT 0,
+                    report_date DATE NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_daily_reports_user_id ON daily_reports (user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_daily_reports_report_date ON daily_reports (report_date)"))
+
+        # ── Feedbacks table ──
+        if not inspector.has_table("feedbacks"):
+            conn.execute(text("""
+                CREATE TABLE feedbacks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    role VARCHAR NOT NULL,
+                    person_name VARCHAR NOT NULL,
+                    person_email VARCHAR NOT NULL,
+                    feedback_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_feedbacks_user_id ON feedbacks (user_id)"))
 
         conn.commit()
 
@@ -469,6 +484,8 @@ app.include_router(live.router)
 app.include_router(ai_updates.router)
 app.include_router(notifications.router)
 app.include_router(projects.router)
+app.include_router(reports.router)
+app.include_router(feedbacks.router)
 
 @app.get("/")
 def root():

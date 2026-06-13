@@ -91,15 +91,15 @@ async function enforceAuthGuard() {
     }
 
     if (res.status === 403) {
-      // User exists but not active — redirect to payment
-      window.location.href = 'payment.html';
+      // User exists but not active — redirect to landing
+      window.location.href = 'index.html';
       return;
     }
 
     if (res.ok) {
       const u = await res.json();
-      if (!u.is_active || u.subscription_type === 'none') {
-        window.location.href = 'payment.html';
+      if (!u.is_active) {
+        window.location.href = 'index.html';
         return;
       }
       // If active but onboarding not yet completed — redirect there
@@ -134,7 +134,7 @@ async function requireActiveUser() {
 
 
     if (res.status === 403) {
-      window.location.href = 'payment.html';
+      window.location.href = 'index.html';
       return null;
     }
 
@@ -143,7 +143,7 @@ async function requireActiveUser() {
     const user = await res.json();
 
     if (!user.is_active) {
-      window.location.href = 'payment.html';
+      window.location.href = 'index.html';
       return null;
     }
 
@@ -227,14 +227,20 @@ if (getToken()) {
   fetchGlobalNotifications();
   setInterval(fetchGlobalNotifications, 10000); // Poll every 10s
 
-  // Hide admin-only sidebar links for non-admins
-  (async function hideAdminLinks() {
+  // Show admin-only sidebar links for admins
+  (async function showAdminLinks() {
     try {
       const res = await fetch(`${API}/profile/me?_t=`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
       if (!res.ok) return;
       const u = await res.json();
-      if (!u.is_admin) {
-        document.querySelectorAll('[data-admin-only="true"]').forEach(el => el.style.display = 'none');
+      if (u.is_admin) {
+        document.querySelectorAll('[data-admin-only="true"]').forEach(el => {
+          el.style.setProperty('display', 'flex', 'important');
+        });
+      } else {
+        document.querySelectorAll('[data-admin-only="true"]').forEach(el => {
+          el.style.setProperty('display', 'none', 'important');
+        });
       }
     } catch (e) { }
   })();

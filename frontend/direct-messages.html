@@ -675,10 +675,13 @@
 
             <!-- ═══ STREAK CARD ═══ -->
             <div class="sb-streak-card">
-                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire"
+                        style="width:32px; height:32px; object-fit:contain;" /></div>
                 <div class="sb-streak-info">
                     <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
-                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire"
+                            style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" />
+                    </div>
                 </div>
             </div>
         </aside>
@@ -3204,6 +3207,8 @@
                 const unreadBadge = dm.unread_count > 0 ? `<span class="dm-unread-badge">${dm.unread_count}</span>` : '';
                 const hasUnread = dm.unread_count > 0 ? 'has-unread' : '';
 
+                const pinIcon = dm.is_pinned ? '<i class="fa-solid fa-thumbtack" style="color:var(--gold); font-size:0.75rem; margin-right:4px;" title="Admin"></i>' : '';
+
                 return `
                 <div class="dm-inbox-item ${hasUnread}" onclick="activeDmUserName='${escHtml(u.full_name).replace(/'/g, "\\'")}'; selectChannel('${dm.channel_name}')">
                     <div class="dm-inbox-av">
@@ -3211,7 +3216,7 @@
                         ${onlineDot}
                     </div>
                     <div class="dm-inbox-body">
-                        <div class="dm-inbox-name">${escHtml(u.full_name)}</div>
+                        <div class="dm-inbox-name">${pinIcon}${escHtml(u.full_name)}</div>
                         <div class="dm-inbox-preview">${escHtml(preview)}</div>
                     </div>
                     <div class="dm-inbox-meta">

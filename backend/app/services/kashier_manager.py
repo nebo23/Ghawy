@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 KASHIER_MERCHANT_ID = os.getenv("KASHIER_MERCHANT_ID")   # MID-xxx-xxx
 KASHIER_API_KEY = os.getenv("KASHIER_API_KEY")
 KASHIER_SECRET_KEY = os.getenv("KASHIER_SECRET_KEY")
-KASHIER_BASE_URL = os.getenv("KASHIER_BASE_URL", "https://checkout.kashier.io")
+KASHIER_BASE_URL = os.getenv("KASHIER_BASE_URL", "https://payments.kashier.io")
 KASHIER_CURRENCY = os.getenv("KASHIER_CURRENCY", "EGP")
 KASHIER_MODE = os.getenv("KASHIER_MODE", "live")
 
@@ -81,16 +81,13 @@ async def create_kashier_payment_url(
         "merchantRedirect": os.getenv("KASHIER_RETURN_URL"),
         "failureRedirect": os.getenv("KASHIER_FAILURE_URL"),
         "serverWebhook": os.getenv("KASHIER_WEBHOOK_URL"),
-        "allowedMethods": "card,wallet,bank_installments",
+        "allowedMethods": "card,wallet",
         "display": "ar",
         "customerName": f"User {user_id}" if user_id else "Customer",
         "customerEmail": user_email or "customer@example.com",
         "customerMobile": user_phone or "",
         "merchantCustomerId": str(user_id) if user_id else order_id,
         "customerId": str(user_id) if user_id else order_id,
-        # ── Tokenization / Save Card ──
-        "shopperReference": f"user_{user_id}" if user_id else f"user_{order_id}",
-        "saveCard": "true",
     }
 
     query_string = urlencode(params)
@@ -98,7 +95,7 @@ async def create_kashier_payment_url(
     
     # Kashier's HPP URL is typically checkout.kashier.io or payments.kashier.io
     # For HPP it's best to explicitly use the checkout/payments domain instead of api.kashier.io
-    payment_url = f"https://checkout.kashier.io/?{query_string}"
+    payment_url = f"{base_url}/?{query_string}"
 
     logger.info("🔗 Generated Kashier HPP URL (with saveCard): %s", payment_url)
 
@@ -125,16 +122,14 @@ def _create_kashier_url_fallback(
         "merchantRedirect": os.getenv("KASHIER_RETURN_URL"),
         "failureRedirect": os.getenv("KASHIER_FAILURE_URL"),
         "serverWebhook": os.getenv("KASHIER_WEBHOOK_URL"),
-        "allowedMethods": "card,wallet,bank_installments",
+        "allowedMethods": "card,wallet",
         "display": "ar",
         "customerEmail": user_email or "customer@example.com",
         "customerName": f"User {user_id}" if user_id else "Customer",
-        "shopperReference": f"user_{user_id}" if user_id else f"user_{order_id}",
-        "saveCard": "true",
     }
 
     query_string = urlencode(params)
-    base_url = KASHIER_BASE_URL.rstrip('/') if KASHIER_BASE_URL else "https://checkout.kashier.io"
+    base_url = KASHIER_BASE_URL.rstrip('/') if KASHIER_BASE_URL else "https://payments.kashier.io"
     payment_url = f"{base_url}/?{query_string}"
 
     return {

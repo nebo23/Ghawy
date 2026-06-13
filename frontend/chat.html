@@ -675,10 +675,13 @@
 
             <!-- ═══ STREAK CARD ═══ -->
             <div class="sb-streak-card">
-                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire"
+                        style="width:32px; height:32px; object-fit:contain;" /></div>
                 <div class="sb-streak-info">
                     <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
-                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire"
+                            style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" />
+                    </div>
                 </div>
             </div>
         </aside>
@@ -861,7 +864,8 @@
                         <div id="rsTopTopicsList"></div>
                     </div>
                     <div class="comm-rs-panel" id="rsPinned">
-                        <h4><i data-lucide="pin" style="width:14px;height:14px;margin-right:4px;"></i> PINNED MESSAGES</h4>
+                        <h4><i data-lucide="pin" style="width:14px;height:14px;margin-right:4px;"></i> PINNED MESSAGES
+                        </h4>
                         <div id="rsPinnedList"></div>
                     </div>
                 </div>
@@ -971,9 +975,12 @@
             overflow: hidden;
         ">
             <!-- Glow ring -->
-            <div style="position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(193,255,17,0.25),transparent 60%);pointer-events:none;"></div>
+            <div
+                style="position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(193,255,17,0.25),transparent 60%);pointer-events:none;">
+            </div>
             <!-- Hands image area -->
-            <img src="./imgs/welcome-hands.png" alt="Welcome to Ghawy" style="width: 100%; height: auto; border-radius: 14px; margin-bottom: 20px; display: block; object-fit: cover;">
+            <img src="./imgs/welcome-hands.png" alt="Welcome to Ghawy"
+                style="width: 100%; height: auto; border-radius: 14px; margin-bottom: 20px; display: block; object-fit: cover;">
             <!-- Title -->
             <h2 style="
                 color:#fff;
@@ -1002,8 +1009,8 @@
                 box-shadow: 0 4px 20px rgba(193,255,17,0.35);
                 letter-spacing: 0.02em;
             " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(193,255,17,0.5)';"
-               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(193,255,17,0.35)';"
-            >🤝 Post Your Introduction</button>
+                onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(193,255,17,0.35)';">🤝 Post
+                Your Introduction</button>
         </div>
     </div>
 
@@ -1740,8 +1747,15 @@
         }
 
         @keyframes reactionBarIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.96); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(8px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
         }
 
         .msg-reaction-option {
@@ -1829,8 +1843,15 @@
             }
 
             @keyframes reactionBarInMobile {
-                from { opacity: 0; transform: translateY(8px) scale(0.96); }
-                to { opacity: 1; transform: translateY(0) scale(1); }
+                from {
+                    opacity: 0;
+                    transform: translateY(8px) scale(0.96);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
             }
         }
 
@@ -3445,7 +3466,7 @@
             try {
                 const res = await apiFetch('/notifications');
                 if (!res) return;
-                
+
                 const notifList = document.getElementById('notifList');
                 if (!notifList) return;
 
@@ -3491,7 +3512,7 @@
                 } else {
                     loadNotifications();
                 }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
 
         async function loadDmList() {
@@ -3942,7 +3963,7 @@
                     body: JSON.stringify({ emoji }),
                 });
                 const data = await res.json();
-                
+
                 // Update the card's reactions bar
                 const card = type === 'post' ? document.getElementById(`post-${entityId}`) : document.getElementById(`comment-${entityId}`);
                 if (card) {
@@ -4044,10 +4065,10 @@
         function renderInlineComment(c, postId, isReply) {
             const a = c.author || {};
             const canManage = a.id === currentUserId || currentUserIsAdmin;
-            
+
             // Check if user liked (has any reaction)
             const hasLiked = (c.user_reactions || []).length > 0;
-            const likeCount = Object.values(c.reaction_counts || {}).reduce((a,b)=>a+b, 0);
+            const likeCount = Object.values(c.reaction_counts || {}).reduce((a, b) => a + b, 0);
 
             let actionsHtml = `<div class="comm-inline-comment-actions">
                 <button class="comm-ai-action-btn comm-ai-like-btn ${hasLiked ? 'liked' : ''}" onclick="toggleCommentLike(${c.id}, this)">
@@ -4091,7 +4112,7 @@
                 btnElement.classList.toggle('liked');
                 const icon = btnElement.querySelector('i');
                 if (icon) icon.classList.toggle('fill-current');
-                
+
                 const span = btnElement.querySelector('span');
                 if (span) {
                     let count = parseInt(span.textContent || '0');

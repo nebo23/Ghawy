@@ -48,8 +48,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             await websocket.close(code=4001, reason="Invalid token")
             return
 
-        if not user.is_active or user.subscription_type == 'none':
-            await websocket.close(code=4003, reason="Subscription required")
+        if not user.is_active:
+            await websocket.close(code=4003, reason="Account is not active")
             return
 
         # Connect

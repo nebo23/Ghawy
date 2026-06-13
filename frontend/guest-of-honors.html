@@ -190,125 +190,214 @@
             <div class="dash-content" style="padding:0; overflow-y:auto;">
                 <div class="goh-layout">
                     <div class="goh-main-col">
-                        <!-- HERO -->
-                        <div class="goh-hero-content" style="margin-bottom: 40px;">
-                            <div class="goh-breadcrumb"><i data-lucide="star" class="nav-icon"></i> Guest of Honors
+                        <!-- PREMIUM HERO -->
+                        <div class="goh-hero-content">
+                            <div class="goh-hero-left">
+                                <div class="goh-breadcrumb"><i data-lucide="star" class="nav-icon" style="width:14px;height:14px;"></i> Guest of Honors</div>
+                                <h1>Learn From The Best.<br>Get Inspired.<br><span class="accent">Level Up.</span></h1>
+                                <p>Exclusive talks, workshops, and live sessions with top founders, marketers, engineers, creators, and industry leaders.</p>
+                                <div class="goh-hero-actions">
+                                    <button class="btn-primary" onclick="document.querySelector('.btn-watch')?.click()">Watch Latest Session</button>
+                                    <button class="btn-secondary" onclick="document.getElementById('featured-guests').scrollIntoView({behavior:'smooth'})">Explore Guests</button>
+                                </div>
                             </div>
-                            <h1>Learn From The Best.<br>Get Inspired. <span class="accent">Level Up.</span></h1>
-                            <p>Exclusive talks, insights and live sessions with top experts and industry leaders.</p>
-
-                            <div class="goh-stats">
-                                <div class="stat-item">
-                                    <span class="stat-icon">👥</span>
-                                    <div>
-                                        <div class="stat-number" id="stat-guests">0</div>
-                                        <div class="stat-label">Total Guests</div>
+                            <div class="goh-hero-right">
+                                <!-- Mobile Hero Featured Guest Card (Hidden on Desktop) -->
+                                <div class="featured-guest-card hero-mobile-card glass-card" id="heroMobileCard" style="display:none;">
+                                    <div class="featured-label"><i data-lucide="award" style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;margin-right:4px;"></i> Featured Guest</div>
+                                    <img class="featured-avatar" id="heroMobileAvatar" src="" alt="Guest" onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
+                                    <h3 class="featured-name" id="heroMobileName">...</h3>
+                                    <p class="featured-title" id="heroMobileTitle">...</p>
+                                    <p class="featured-company" id="heroMobileCompany">...</p>
+                                    <p class="featured-bio" id="heroMobileBio">...</p>
+                                    <div class="featured-meta">
+                                        <span>Sessions <strong id="heroMobileTotalSessions">0</strong></span>
+                                        <span>Attendees <strong id="heroMobileTotalAttendees">0</strong></span>
+                                        <span>Rating <strong id="heroMobileRating"><i data-lucide="star" style="width:14px;height:14px;color:#facc15;fill:#facc15;"></i> 0.0</strong></span>
                                     </div>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon">📅</span>
-                                    <div>
-                                        <div class="stat-number" id="stat-sessions">0</div>
-                                        <div class="stat-label">Sessions This Month</div>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon">🔥</span>
-                                    <div>
-                                        <div class="stat-number" id="stat-attendees">0</div>
-                                        <div class="stat-label">Total Attendees</div>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon"><i data-lucide="star" class="nav-icon"></i></span>
-                                    <div>
-                                        <div class="stat-number" id="stat-rating">0.0</div>
-                                        <div class="stat-label">Average Rating</div>
-                                    </div>
+                                    <button class="btn-watch" onclick="document.querySelector('.btn-watch')?.click()"><i data-lucide="play-circle" style="width:16px;height:16px;margin-right:6px;vertical-align:text-bottom;"></i> Watch Latest Session</button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TABS -->
-                        <div class="goh-tabs" style="padding:0; border-bottom: 1px solid #2a2a2a; margin-bottom: 32px;">
-                            <button class="tab active" onclick="switchTab('all')">All Guests</button>
-                            <button class="tab" onclick="switchTab('upcoming')">Upcoming</button>
-                            <button class="tab" onclick="switchTab('past')">Past Sessions</button>
-                            <button class="tab" onclick="switchTab('categories')">Categories</button>
+                        <!-- PREMIUM STATS -->
+                        <div class="goh-stats-grid">
+                            <div class="stat-card glass-card">
+                                <div class="stat-icon-wrap"><i data-lucide="users" class="stat-lucide"></i></div>
+                                <div>
+                                    <div class="stat-number" id="stat-guests">0</div>
+                                    <div class="stat-label">Total Guests</div>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-card">
+                                <div class="stat-icon-wrap"><i data-lucide="calendar-days" class="stat-lucide"></i></div>
+                                <div>
+                                    <div class="stat-number" id="stat-sessions">0</div>
+                                    <div class="stat-label">Sessions This Month</div>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-card">
+                                <div class="stat-icon-wrap"><i data-lucide="play-circle" class="stat-lucide"></i></div>
+                                <div>
+                                    <div class="stat-number" id="stat-hours">0</div>
+                                    <div class="stat-label">Hours Watched</div>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-card">
+                                <div class="stat-icon-wrap"><i data-lucide="star" class="stat-lucide" style="color:#facc15;"></i></div>
+                                <div>
+                                    <div class="stat-number" id="stat-rating">0.0</div>
+                                    <div class="stat-label">Average Rating</div>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-card">
+                                <div class="stat-icon-wrap"><i data-lucide="users-round" class="stat-lucide"></i></div>
+                                <div>
+                                    <div class="stat-number" id="stat-attendees">0</div>
+                                    <div class="stat-label">Total Attendees</div>
+                                </div>
+                            </div>
+                        </div>
 
-                            <select class="category-filter" onchange="filterByCategory(this.value)">
-                                <option>All Categories</option>
-                                <option>AI</option>
-                                <option>Tech</option>
-                                <option>Business</option>
-                            </select>
+                        <!-- PREMIUM SEGMENTED TABS -->
+                        <div class="goh-tabs-container">
+                            <div class="goh-tabs-segmented">
+                                <button class="tab active" onclick="switchTab('all', event)">All Guests</button>
+                                <button class="tab" onclick="switchTab('upcoming', event)">Upcoming</button>
+                                <button class="tab" onclick="switchTab('past', event)">Past Sessions</button>
+                                <button class="tab" onclick="switchTab('categories', event)">Categories</button>
+                            </div>
+                            <div class="goh-tabs-actions">
+                                <select class="category-filter glass-card" onchange="filterByCategory(this.value)">
+                                    <option>All Categories</option>
+                                    <option>AI</option>
+                                    <option>Tech</option>
+                                    <option>Business</option>
+                                    <option>Marketing</option>
+                                    <option>Design</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- GUEST CARDS -->
-                        <div class="section-header" style="padding:0; margin-bottom: 32px; align-items: center;">
-                            <h2>Featured Guests</h2>
-                            <div style="display: flex; gap: 12px; align-items: center;">
-                                <button class="goh-scroll-btn" onclick="scrollGuests(-1)"><i
-                                        class="fa-solid fa-chevron-left"></i></button>
-                                <button class="goh-scroll-btn" onclick="scrollGuests(1)"><i data-lucide="chevron-right"
-                                        style="width:12px;height:12px;"></i></button>
-                                <a href="#" class="view-all" style="margin-left: 8px;">View All Guests →</a>
+                        <div class="section-header">
+                            <div class="section-title-wrap">
+                                <h2>Featured Guests</h2>
+                            </div>
+                            <div class="section-actions">
+                                <button class="goh-scroll-btn glass-card" onclick="scrollGuests(-1)"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+                                <button class="goh-scroll-btn glass-card" onclick="scrollGuests(1)"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+                                <a href="#" class="view-all">View All Guests &rarr;</a>
                             </div>
                         </div>
 
-                        <div class="guests-scroll" id="featured-guests" style="padding: 0 0 20px;">
+                        <div class="guests-scroll" id="featured-guests">
                             <!-- Generated by JS -->
                         </div>
 
                         <!-- SESSIONS -->
-                        <div class="section-header" style="padding:0; margin-bottom: 16px;">
-                            <h2>Upcoming Sessions</h2>
-                            <a href="#" class="view-all">View Full Schedule →</a>
+                        <div class="section-header" style="margin-top: 16px;">
+                            <div class="section-title-wrap">
+                                <h2>Upcoming Sessions</h2>
+                            </div>
+                            <a href="#" class="view-all">View Full Schedule &rarr;</a>
                         </div>
 
-                        <div class="sessions-grid" id="upcoming-sessions" style="padding: 0 0 40px;">
+                        <div class="sessions-grid" id="upcoming-sessions">
                             <!-- Generated by JS -->
                         </div>
                     </div>
 
+                    <!-- PREMIUM STICKY SIDEBAR -->
                     <div class="goh-sidebar-col">
                         <!-- Featured Guest Card -->
-                        <div class="featured-guest-card" id="featuredHeroCard" style="display:none;">
-                            <div class="featured-label">Featured Guest</div>
-                            <img class="featured-avatar" id="heroAvatar" src="" alt="Guest"
-                                onerror="this.src='./imgs/community-logo.png'" />
-                            <h3 class="featured-name" id="heroName">...</h3>
+                        <div class="featured-guest-card glass-card" id="featuredHeroCard" style="display:none;">
+                            <div class="featured-label"><i data-lucide="award" style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;margin-right:4px;"></i> Featured Guest</div>
+                            <img class="featured-avatar" id="heroAvatar" src="" alt="Guest" onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
+                            <h3 class="featured-name" id="heroName">... <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i></h3>
                             <p class="featured-title" id="heroTitle">...</p>
-                            <p class="featured-bio" id="heroBio">...</p>
+                            <p class="featured-company" id="heroCompany"><i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>...</span></p>
+                            
                             <div class="featured-meta">
-                                <span>Session <strong id="heroTotalSessions">0</strong></span>
+                                <span>Sessions <strong id="heroTotalSessions">0</strong></span>
                                 <span>Attendees <strong id="heroTotalAttendees">0</strong></span>
-                                <span>Rating <strong id="heroRating"><i data-lucide="star" class="nav-icon"></i>
-                                        0.0</strong></span>
+                                <span>Rating <strong id="heroRating"><i data-lucide="star" style="width:14px;height:14px;color:#facc15;fill:#facc15;"></i> 0.0</strong></span>
                             </div>
-                            <button class="btn-watch">▶ Watch Latest Session</button>
+                            <p class="featured-bio" id="heroBio">...</p>
+                            <button class="btn-watch"><i data-lucide="play-circle" style="width:16px;height:16px;margin-right:6px;vertical-align:text-bottom;"></i> Watch Latest Session</button>
+                        </div>
 
-                            <div class="what-youll-gain">
-                                <h4>What You'll Gain</h4>
-                                <ul>
-                                    <li>✅ Learn from industry leaders</li>
-                                    <li>✅ Get insider insights and strategies</li>
-                                    <li>✅ Stay ahead with expert knowledge</li>
-                                    <li>✅ Network with top learners</li>
-                                    <li>✅ Real stories. Real impact.</li>
-                                </ul>
-                            </div>
+                        <!-- What You'll Gain -->
+                        <div class="sidebar-section glass-card">
+                            <h4 class="sidebar-heading"><i data-lucide="target" style="width:16px;height:16px;margin-right:6px;"></i> What You'll Gain</h4>
+                            <ul class="gain-list">
+                                <li><i data-lucide="briefcase"></i> Learn from industry leaders</li>
+                                <li><i data-lucide="graduation-cap"></i> Real-world case studies</li>
+                                <li><i data-lucide="sparkles"></i> Exclusive insights</li>
+                                <li><i data-lucide="users"></i> Networking opportunities</li>
+                                <li><i data-lucide="rocket"></i> Career acceleration</li>
+                                <li><i data-lucide="user-check"></i> Practical frameworks</li>
+                            </ul>
+                        </div>
 
-                            <div class="suggest-guest-box">
-                                <h4>Suggest a Guest</h4>
-                                <p>Know someone inspiring? Let us know!</p>
-                                <button class="btn-suggest" onclick="openSuggestModal()">✈ Suggest Now</button>
+                        <!-- Community Impact -->
+                        <div class="sidebar-section glass-card">
+                            <h4 class="sidebar-heading"><i data-lucide="trophy" style="width:16px;height:16px;margin-right:6px;"></i> Community Impact</h4>
+                            <div class="impact-stats">
+                                <div class="impact-stat">
+                                    <span class="impact-label">Guests Hosted</span>
+                                    <strong class="impact-value" id="impactGuests">0</strong>
+                                </div>
+                                <div class="impact-stat">
+                                    <span class="impact-label">Sessions Completed</span>
+                                    <strong class="impact-value" id="impactSessions">0</strong>
+                                </div>
+                                <div class="impact-stat">
+                                    <span class="impact-label">Hours Watched</span>
+                                    <strong class="impact-value" id="impactHours">0</strong>
+                                </div>
+                                <div class="impact-stat">
+                                    <span class="impact-label">Community Rating</span>
+                                    <strong class="impact-value" id="impactRating">0.0</strong>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Suggest Guest -->
+                        <div class="suggest-guest-box glass-card">
+                            <div class="suggest-icon"><i data-lucide="mic"></i></div>
+                            <h4>Know someone inspiring?</h4>
+                            <p>Help us find the next great guest.</p>
+                            <button class="btn-suggest" onclick="openSuggestModal()"><i data-lucide="plus" style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom;"></i> Suggest Guest</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Suggest Guest Modal -->
+    <div class="modal-overlay" id="suggestModal">
+      <div class="modal-content glass-card" style="max-width: 400px;">
+        <div class="modal-header">
+          <h3>Suggest a Guest</h3>
+          <button class="modal-close" onclick="closeSuggestModal()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" style="padding-top: 15px;">
+          <div class="form-group">
+            <label style="color:#aaa; font-size:13px;">Guest Name</label>
+            <input type="text" id="suggestName" placeholder="e.g. Sam Altman" class="form-input">
+          </div>
+          <div class="form-group" style="margin-top: 15px;">
+            <label style="color:#aaa; font-size:13px;">Why should we invite them?</label>
+            <textarea id="suggestReason" rows="3" placeholder="Brief reason..." class="form-input" style="resize: vertical;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="margin-top: 20px; text-align: right;">
+          <button type="button" class="btn-cancel" onclick="closeSuggestModal()" style="margin-right:10px;">Cancel</button>
+          <button type="button" class="btn-primary" onclick="submitSuggestion()">Submit Suggestion</button>
+        </div>
+      </div>
     </div>
 
     <script src="src/js/utils.js"></script>

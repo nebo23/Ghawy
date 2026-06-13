@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Any, Dict, Literal
 from datetime import datetime
-from app.models import PaymentMethod, PaymentStatus, ChannelType, MessageType, MemberRole
+from app.models import PaymentMethod, PaymentStatus, ChannelType, MessageType, MemberRole, TeamRole
 
 # ─── User Schemas ───────────────────────────────────────────
 
@@ -427,4 +427,24 @@ class LiveSessionUpdate(BaseModel):
     youtube_url: Optional[str] = None
     zoom_url: Optional[str] = None
     is_published: Optional[bool] = None
+
+# ─── Feedback Schemas ────────────────────────────────────────
+
+class FeedbackCreate(BaseModel):
+    role: TeamRole
+    person_name: str
+    person_email: EmailStr
+    feedback_text: str
+
+class FeedbackOut(BaseModel):
+    id: int
+    user_id: int
+    role: TeamRole
+    person_name: str
+    person_email: str
+    feedback_text: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 

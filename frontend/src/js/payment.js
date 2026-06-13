@@ -20,8 +20,10 @@ if (!getToken()) {
 // ─── Plans Configuration ────────────────────────────────────
 const PLANS = {
   monthly_egp: { amount: 500, currency: 'EGP', label: 'Monthly Subscription', period: 'Month', badge: null },
+  quarterly_egp: { amount: 1200, currency: 'EGP', label: 'Quarterly Subscription', period: '3 Months', badge: 'Save 300 EGP ' },
   yearly_egp: { amount: 3000, currency: 'EGP', label: 'Annual Subscription', period: 'Year', badge: 'Save 2000 EGP ' },
   monthly_usd: { amount: 15, currency: 'USD', label: 'Monthly Plan', period: 'Month', badge: null },
+  quarterly_usd: { amount: 35, currency: 'USD', label: 'Quarterly Plan', period: '3 Months', badge: 'Save 10 USD ' },
   yearly_usd: { amount: 100, currency: 'USD', label: 'Yearly Plan', period: 'Year', badge: 'Save $80 ' },
 };
 

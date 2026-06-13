@@ -4,17 +4,28 @@ from sqlalchemy import or_
 from app.database import get_db
 from app.models import Payment, PaymentStatus, User, PaymentMethod
 from datetime import datetime
-from fastapi import Depends
+from fastapi import Depends, BackgroundTasks
+import httpx
+import asyncio
 from app.services.kashier_manager import verify_kashier_webhook
 from datetime import timedelta
 import logging
 
 logger = logging.getLogger(__name__)
 
+async def send_n8n_webhook(payload: dict):
+    webhook_url = "https://n8n-vrtt.srv1552612.hstgr.cloud/webhook/d805c676-599f-43f5-b7f9-2a400e16d811"
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(webhook_url, json=payload, timeout=10.0)
+            logger.info("✅ Successfully sent webhook to N8N")
+    except Exception as e:
+        logger.error("❌ Failed to send N8N webhook: %s", e)
+
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
 @router.post("/kashier")
-async def kashier_webhook(request: Request, db: Session = Depends(get_db)):
+async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     body = await request.json()
     
     logger.info("📦 Kashier webhook received: %s", body)
@@ -49,53 +60,49 @@ async def kashier_webhook(request: Request, db: Session = Depends(get_db)):
             
             user = db.query(User).filter(User.id == payment.user_id).first()
             if user:
-                # 1. استخراج الـ card token من المسار المتداخل الصح
-                card_token = (
-                    data.get("sourceOfFunds", {})
-                        .get("cardInfo", {})
-                        .get("cardDataToken")
-                    or data.get("cardToken")
-                    or data.get("card_token")
-                )
+                # Determine subscription length from plan_key
+                days = 30
+                sub_type = "1_month"
+                if payment.plan_key:
+                    if "yearly" in payment.plan_key:
+                        days = 365
+                        sub_type = "1_year"
+                    elif "quarterly" in payment.plan_key:
+                        days = 90
+                        sub_type = "3_months"
                 
-                if card_token:
-                    payment.is_recurring = True   
-                    payment.recurring_cycle = 1  
-                    
-                    shopper_ref = (
-                        data.get("shopperReference") or
-                        data.get("shopper_reference") or
-                        f"user_{user.id}"
-                    )
-                    
-                    ccv_token = (
-                        data.get("sourceOfFunds", {})
-                            .get("cardInfo", {})
-                            .get("ccvToken")
-                    )
-                    
-                    # 2. حفظ التوكن لأول مرة فقط لو مش موجود
-                    if not user.card_token:
-                        user.card_token = card_token
-                        user.ccv_token = ccv_token 
-                        user.shopper_reference = shopper_ref
-                        logger.info("✅ Token saved for user %s: %s...", user.id, card_token[:8])
-                    
-                    # 3. تحديث بيانات وتواريخ الاشتراك (برة الـ if الداخلية عشان تتنفذ دايماً)
-                    user.subscription_start = datetime.utcnow()
-                    user.subscription_end = datetime.utcnow() + timedelta(minutes=2)
-                    user.next_charge_at = datetime.utcnow() + timedelta(minutes=2)
-                    user.last_charged_at = datetime.utcnow()
-                    user.subscription_type = "monthly"
-                    user.is_active = True
-                else:
-                    # الـ else دي بقت في مكانها الصح موازية لـ if card_token
-                    payment.is_recurring = False
-                    payment.recurring_cycle = 0
-                    logger.warning("⚠️ No card token received from Kashier | data keys: %s", list(data.keys()))
+
+                
+                # TESTING: Subscription ends in 2 minutes
+                user.end_at = datetime.utcnow() + timedelta(days=2)
+                user.is_active = True
             
             db.commit()
             logger.info("✅ Payment CONFIRMED for order %s | user %s", order_id, payment.user_id)
+            
+            # Send webhook to N8N
+            duration_type = "1_month"
+            if payment.plan_key:
+                if "yearly" in payment.plan_key:
+                    duration_type = "1_year"
+                elif "quarterly" in payment.plan_key:
+                    duration_type = "3_months"
+
+            payload = {
+                "user_id": user.id if user else payment.user_id,
+                "user_name": getattr(user, "full_name", "") if user else "",
+                "user_email": getattr(user, "email", "") if user else "",
+                "user_phone": getattr(user, "phone", "") if user else "",
+                "amount": float(payment.amount) if payment.amount else 0.0,
+                "currency": payment.currency,
+                "order_id": order_id,
+                "transaction_id": data.get("transactionId", ""),
+                "payment_status": "success",
+                "payment_method": "kashier",
+                "paid_at": payment.confirmed_at.isoformat() if payment.confirmed_at else datetime.utcnow().isoformat(),
+                "subscription_duration": duration_type
+            }
+            background_tasks.add_task(send_n8n_webhook, payload)
         else:
             logger.info("ℹ️ Payment already %s — skipping", payment.status)
     

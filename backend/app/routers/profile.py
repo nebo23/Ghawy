@@ -4,7 +4,7 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Channel, Message, MessageType, ChannelType, Post
+from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
 from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password
 from pydantic import BaseModel
@@ -19,6 +19,17 @@ from app.services.vonage_service import generate_otp, send_otp_sms
 from app.models import PhoneOTP
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
+
+
+# ─── Plan Labels (shared) ──────────────────────────────────
+PLAN_LABELS = {
+    "monthly_egp":   {"label": "شهري",       "amount": 600,  "currency": "EGP", "days": 30},
+    "quarterly_egp": {"label": "تلت شهور",   "amount": 1200, "currency": "EGP", "days": 90},
+    "yearly_egp":    {"label": "سنوي",        "amount": 3000, "currency": "EGP", "days": 365},
+    "monthly_usd":   {"label": "Monthly",     "amount": 15,   "currency": "USD", "days": 30},
+    "quarterly_usd": {"label": "Quarterly",   "amount": 35,   "currency": "USD", "days": 90},
+    "yearly_usd":    {"label": "Yearly",      "amount": 100,  "currency": "USD", "days": 365},
+}
 
 
 # ─── Heartbeat ──────────────────────────────────────────────
@@ -39,6 +50,49 @@ def offline(
     current_user.last_seen = None
     db.commit()
     return {"ok": True}
+
+
+# ─── Subscription Info ─────────────────────────────────────
+@router.get("/subscription-info")
+def get_subscription_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    بيرجع تفاصيل الاشتراك للمستخدم
+    """
+    # جيب آخر payment مدفوع للمستخدم
+    last_payment = db.query(Payment).filter(
+        Payment.user_id == current_user.id,
+        Payment.status == PaymentStatus.CONFIRMED
+    ).order_by(Payment.created_at.desc()).first()
+
+    plan_key = (last_payment.plan_key if last_payment and last_payment.plan_key else None) or "monthly_egp"
+    plan_info = PLAN_LABELS.get(plan_key, PLAN_LABELS["monthly_egp"])
+
+    # حساب الـ days remaining من end_at
+    days_remaining = None
+    is_active = current_user.is_active
+    subscription_end = current_user.end_at
+
+    # حساب subscription_start من end_at - plan duration
+    subscription_start = None
+    if subscription_end:
+        delta = subscription_end - datetime.utcnow()
+        days_remaining = max(0, delta.days)
+        subscription_start = subscription_end - timedelta(days=plan_info["days"])
+
+    return {
+        "is_active": is_active,
+        "plan_key": plan_key,
+        "plan_label": plan_info["label"],
+        "amount": plan_info["amount"],
+        "currency": plan_info["currency"],
+        "subscription_start": subscription_start.isoformat() if subscription_start else None,
+        "subscription_end": subscription_end.isoformat() if subscription_end else None,
+        "days_remaining": days_remaining,
+        "payment_method": last_payment.method.value if last_payment else None,
+    }
 
 
 class ChangePasswordRequest(BaseModel):

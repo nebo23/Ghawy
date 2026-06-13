@@ -2452,11 +2452,13 @@ footer a:hover {
     font-weight: 900;
     color: var(--off-white);
     margin-bottom: 6px;
+    text-align: center;
 }
 
 .pricing-plan-sub {
     font-size: 0.84rem;
     color: var(--muted-light);
+    text-align: center;
 }
 
 /* Price block */
@@ -7343,7 +7345,8 @@ html[dir="ltr"] .hero-sub {
     .courses-carousel-wrapper {
         display: block;
         position: relative;
-        padding: 0 42px; /* مساحة للأسهم عشان متغطيش على الكارت */
+        padding: 0 42px;
+        /* مساحة للأسهم عشان متغطيش على الكارت */
     }
 
     .carousel-arrow {

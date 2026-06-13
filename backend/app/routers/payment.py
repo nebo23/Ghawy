@@ -70,6 +70,8 @@ def kashier_success(
     # استخدم merchantOrderId الأول لأنه الـ ID بتاعنا
     lookup_id = merchantOrderId or orderId
     
+    redirect_page = "onboarding.html"
+    
     if lookup_id:
         payment = db.query(Payment).filter(
             Payment.method == PaymentMethod.KASHIER,
@@ -79,13 +81,18 @@ def kashier_success(
             )
         ).first()
         
-        if payment and payment.status == PaymentStatus.PENDING:
-            # الـ webhook المفروض يكون وصل قبل كده
-            # بس لو ما وصلش، نعمل confirm هنا كـ fallback
-            logger.info("⚠️ Payment still PENDING at success redirect — webhook may be delayed")
+        if payment:
+            if payment.status == PaymentStatus.PENDING:
+                # الـ webhook المفروض يكون وصل قبل كده
+                # بس لو ما وصلش، نعمل confirm هنا كـ fallback
+                logger.info("⚠️ Payment still PENDING at success redirect — webhook may be delayed")
+            
+            user = db.query(User).filter(User.id == payment.user_id).first()
+            if user and user.onboarding_completed:
+                redirect_page = "dashboard.html"
     
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
-    return RedirectResponse(url=f"{frontend_url}/onboarding.html")
+    return RedirectResponse(url=f"{frontend_url}/{redirect_page}")
 
 # ─── Kashier: لو فشل الدفع ───────────────────────────────────
 @router.get("/kashier/fail")

@@ -103,17 +103,7 @@ class User(Base):
             return datetime.utcnow() - self.last_seen <= timedelta(seconds=65)
         return False
 
-    # ── Recurring / Subscription ──────────────────
-    card_token = Column(String, nullable=True)
-    ccv_token = Column(String, nullable=True)
-    shopper_reference = Column(String, nullable=True)
-    subscription_type = Column(String, default="monthly")  # monthly / yearly
-    subscription_start = Column(DateTime, nullable=True)
-    subscription_end = Column(DateTime, nullable=True)
-    last_charged_at = Column(DateTime, nullable=True)
-    next_charge_at = Column(DateTime, nullable=True)
-    failed_charge_count = Column(Integer, server_default=text('0'), default=0)
-
+    end_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     # Relationships
@@ -155,9 +145,7 @@ class Payment(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     confirmed_at = Column(DateTime, nullable=True)
 
-    # ── Recurring ─────────────────────────────────
-    is_recurring = Column(Boolean, server_default=text('false'), default=False)
-    recurring_cycle = Column(Integer, server_default=text('0'), default=0)  # 0=first payment, 1,2,3...
+
 
 # ═══════════════════════════════════════════
 #  COMMUNITY — Categories, Posts, Comments, Likes
@@ -452,12 +440,13 @@ class Guest(Base):
     title = Column(String, nullable=False)        # "CEO of OpenAI"
     company = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
-    avatar_url = Column(String, nullable=True)    # photo URL
-    company_logo = Column(String, nullable=True)  # company logo URL
+    avatar_url = Column(String, nullable=True)         # new field
+    avatar_initials = Column(String(5), nullable=True) # e.g. "MZ"
+    avatar_color = Column(String(20), nullable=True)   # hex color
     category = Column(String, nullable=True)      # "AI", "Business", etc.
     is_featured = Column(Boolean, server_default=text('false'), default=False)
-    total_sessions = Column(Integer, server_default=text('0'), default=0)
-    total_attendees = Column(Integer, server_default=text('0'), default=0)
+    sessions_count = Column(Integer, server_default=text('0'), default=0)
+    attendees_count = Column(Integer, server_default=text('0'), default=0)
     rating = Column(Numeric(3,1), server_default=text('0.0'), default=0.0)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     
@@ -471,13 +460,25 @@ class GuestSession(Base):
     title = Column(String, nullable=False)        # "The Future of AI and Humanity"
     description = Column(Text, nullable=True)
     session_date = Column(DateTime, nullable=False)
-    duration_minutes = Column(Integer, server_default=text('60'), default=60)
-    video_url = Column(String, nullable=True)
-    attendees = Column(Integer, server_default=text('0'), default=0)
-    status = Column(String, server_default=text("'upcoming'"), default="upcoming")  # upcoming / past / live
+    platform = Column(String, nullable=True)      # "Zoom" / "YouTube" / etc.
+    session_url = Column(String, nullable=True)
+    status = Column(String, server_default=text("'upcoming'"), default="upcoming")  # upcoming / past / cancelled
+    attendees_count = Column(Integer, server_default=text('0'), default=0)
+    rating = Column(Numeric(3,1), server_default=text('0.0'), default=0.0)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     
     guest = relationship("Guest", back_populates="sessions")
+
+class SuggestedGuest(Base):
+    __tablename__ = "suggested_guests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    user = relationship("User")
 
 # ═══════════════════════════════════════════
 #  BUILD WITH ME (LIVE)
@@ -722,4 +723,79 @@ class Notification(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     user = relationship("User")
+
+
+# ══════════════════════════════════════════════════════════════
+#  DAILY REPORTS (Team Section)
+# ══════════════════════════════════════════════════════════════
+
+class TeamRole(str, enum.Enum):
+    COMMUNITY_MANAGER = "community_manager"
+    TECHNICAL_ENGINEER = "technical_engineer"
+    CUSTOMER_SUCCESS = "customer_success"
+
+
+class DailyReport(Base):
+    """
+    ريبورت يومي — كل عضو في الفريق يكتب ريبورت عن إنجازاته.
+    ممكن يكون في أكتر من ريبورت لنفس اليوم.
+
+    المكان: backend/app/models.py
+    """
+    __tablename__ = "daily_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # صاحب الريبورت
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # الدور المختار وقت الكتابة
+    team_role = Column(Enum(TeamRole), nullable=False)
+
+    # الأسئلة الأربعة
+    what_went_well = Column(Text, nullable=False)        # ايه اللي كان كويس النهارده؟
+    what_can_improve = Column(Text, nullable=False)      # ايه اللي ممكن يتحسن؟
+    ai_updates_count = Column(Integer, nullable=False, server_default=text('0'), default=0)   # عملت كام AI Update؟
+    messages_replied_count = Column(Integer, nullable=False, server_default=text('0'), default=0)  # عملت ريبلاي لكام ماسدج؟
+
+    # حقول جديدة ديناميكية حسب الـ role
+    hours_worked = Column(Numeric(5, 2), nullable=True)
+    productivity = Column(Integer, nullable=True)
+    community_posts_count = Column(Integer, nullable=True)
+    members_welcomed_count = Column(Integer, nullable=True)
+    wins_encouraged_count = Column(Integer, nullable=True)
+    avg_reply_speed = Column(String, nullable=True)
+    platform_engagement = Column(String, nullable=True)
+    projects_reviewed_count = Column(Integer, nullable=True)
+    projects_accepted_count = Column(Integer, nullable=True)
+    projects_rejected_count = Column(Integer, nullable=True)
+    workflows_resolved_count = Column(Integer, nullable=True)
+    avg_resolution_time = Column(String, nullable=True)
+
+    # التاريخ (تاريخ اليوم — مش datetime — لتسهيل الفلترة)
+    report_date = Column(Date, nullable=False, index=True)
+
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    # Relationship
+    author = relationship("User")
+
+
+class CommunityFeedback(Base):
+    """
+    Feedback from community members.
+    """
+    __tablename__ = "feedbacks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(Enum(TeamRole), nullable=False)
+    person_name = Column(String, nullable=False)
+    person_email = Column(String, nullable=False)
+    feedback_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    # Relationship
+    submitted_by_user = relationship("User")
+
 

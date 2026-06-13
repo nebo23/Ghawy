@@ -172,8 +172,7 @@ def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db))
         hashed_password=hash_password(data.password),
         phone=req.phone,
         is_active=True,
-        is_verified=True,
-        subscription_type="monthly"
+        is_verified=True
     )
     db.add(new_user)
     db.commit()

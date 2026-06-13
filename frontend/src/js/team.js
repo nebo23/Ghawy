@@ -32,8 +32,11 @@ function initTabs() {
     'analytics': 'Platform Analytics',
     'pending-requests': 'Pending Requests',
     'live-sessions': 'Live Sessions',
+    'guest-of-honors': 'Guest of Honors',
     'courses': 'Courses Management',
-    'projects': 'Projects Review'
+    'projects': 'Projects Review',
+    'reports': 'Daily Reports',
+    'feedbacks': 'Community Feedbacks'
   };
 
   tabs.forEach(tab => {
@@ -72,6 +75,9 @@ function initTabs() {
       }
       if (target === 'projects') {
         loadProjectsTab();
+      }
+      if (target === 'guest-of-honors') {
+        loadGohTab();
       }
     });
   });
@@ -193,35 +199,27 @@ function renderTable() {
   const tbody = document.getElementById('users-tbody');
 
   if (paginated.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
 
   tbody.innerHTML = paginated.map(user => {
-    // Subscription type cell
-    const subType = user.subscription_type || null;
-    const subCell = subType
-      ? `<span class="sub-badge ${subType}">${subType === 'monthly' ? '📅 Monthly' : '📆 Yearly'}</span>`
-      : `<span class="sub-badge none">—</span>`;
+    // End date cell
+    let endCell = '—';
+    if (user.end_at) {
+      const endDate = new Date(user.end_at);
+      const days = Math.floor((endDate - new Date()) / (1000 * 60 * 60 * 24));
+      const isOverdue = days < 0;
+      const isSoon = days <= 3 && days >= 0;
 
-    // Next charge cell
-    let chargeCell = '—';
-    if (user.next_charge_at) {
-      const nextDate = new Date(user.next_charge_at);
-      const days = user.days_until_charge;
-      const isOverdue = days !== null && days < 0;
-      const isSoon = days !== null && days <= 3 && days >= 0;
-
-      chargeCell = `
+      endCell = `
         <div class="charge-info">
-          <div class="charge-date">${nextDate.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          <div class="charge-date">${endDate.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
           <div class="charge-days ${isOverdue ? 'overdue' : isSoon ? 'soon' : ''}">
-            ${isOverdue ? '⚠️ Overdue' : isSoon ? `⚡ ${days}d left` : `${days}d`}
+            ${isOverdue ? '⚠️ Expired' : isSoon ? `⚡ ${days}d left` : `${days}d`}
           </div>
         </div>`;
-    } else if (user.has_card_token) {
-      chargeCell = '<span style="color:#888">Token saved</span>';
     }
 
     return `
@@ -244,8 +242,7 @@ function renderTable() {
         `<div style="font-size:11px;color:#3f8ff9">💳 Since ${formatDate(user.subscription_start)}</div>`
         : ''}
       </td>
-      <td>${subCell}</td>
-      <td>${chargeCell}</td>
+      <td>${endCell}</td>
       <td>
         <label class="t-switch">
           <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleActive(${user.id}, this)"/>
@@ -271,50 +268,6 @@ function renderTable() {
 
   renderPagination();
   setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
-}
-
-// ── Recurring Panel ──────────────────────────────────
-async function loadRecurringStatus() {
-  try {
-    const res = await fetch(API + '/admin/recurring-status', { headers });
-    if (!res.ok) return;
-    const data = await res.json();
-    document.getElementById('rec-total').textContent = data.total_subscribers;
-    document.getElementById('rec-due').textContent = data.due_now;
-    document.getElementById('rec-soon').textContent = data.upcoming_7_days;
-  } catch (e) { }
-}
-
-function toggleRecurringPanel() {
-  const body = document.getElementById('recurring-body');
-  const toggle = document.getElementById('recurring-toggle');
-  if (body.style.display === 'none') {
-    body.style.display = 'block';
-    toggle.textContent = '▲';
-    loadRecurringStatus();
-  } else {
-    body.style.display = 'none';
-    toggle.textContent = '▼';
-  }
-}
-
-async function triggerRecurring() {
-  if (!confirm('Run recurring charges for all due users now?')) return;
-  try {
-    const res = await fetch(API + '/admin/trigger-recurring', {
-      method: 'POST',
-      headers
-    });
-    const data = await res.json();
-    showToast(
-      `✅ Done: ${data.charged} charged, ${data.failed} failed, ${data.total_due} total due`,
-      data.failed > 0 ? 'error' : 'success'
-    );
-    await loadUsers();
-    await loadRecurringStatus();
-  } catch (e) {
-    showToast('❌ Failed to trigger recurring', 'error');
-  }
 }
 
 // ── Search & Filter ──────────────────────────────────
@@ -769,8 +722,7 @@ async function refreshAnalytics() {
   await Promise.all([
     loadKPIs(),
     loadMembersChart(),
-    loadRevenueChart(),
-    loadSubsChart()
+    loadRevenueChart()
   ]);
 }
 
@@ -2257,59 +2209,154 @@ async function deleteProjectSubmission(projectId) {
 
 // -- Lesson Modals --
 let selectedVideoFile = null;
+let lessonEntryCount = 0;
 
-function openAddLessonModal() {
-  document.getElementById('lesson-title').value = '';
-  document.getElementById('lesson-section').value = '';
-  document.getElementById('lesson-order').value = lessonsCache.length + 1;
-  document.getElementById('lesson-video-url').value = '';
+function buildLessonEntry(index, defaultOrder) {
+  return `
+  <div id="lesson-entry-${index}" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px;position:relative;">
+    ${index > 0 ? `<button type="button" onclick="removeLessonEntry(${index})"
+      style="position:absolute;top:10px;right:10px;background:none;border:none;color:#555;cursor:pointer;font-size:14px;"
+      title="Remove">✕</button>` : ''}
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="fg">
+        <label style="font-size:12px;color:#888;">Title *</label>
+        <input type="text" id="lesson-title-${index}" placeholder="Lesson title..." />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="fg" style="flex:1;">
+          <label style="font-size:12px;color:#888;">Order</label>
+          <input type="number" id="lesson-order-${index}" value="${defaultOrder}" style="width:100%;" />
+        </div>
+      </div>
+      <div class="fg" style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:12px;color:#888;">Bunny.net Video URL *</label>
+        <input type="url" id="lesson-video-url-${index}"
+          placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
+          style="padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-family:inherit;font-size:14px;" />
+      </div>
+    </div>
+  </div>`;
+}
+
+function addAnotherLessonEntry() {
+  const container = document.getElementById('lessons-entries');
+  const defaultOrder = lessonsCache.length + lessonEntryCount + 1;
+  container.insertAdjacentHTML('beforeend', buildLessonEntry(lessonEntryCount, defaultOrder));
+  lessonEntryCount++;
+}
+
+function removeLessonEntry(index) {
+  const el = document.getElementById(`lesson-entry-${index}`);
+  if (el) el.remove();
+}
+
+function handleSectionSelectChange(sel) {
+  const custom = document.getElementById('lesson-section-custom');
+  if (sel.value === '__new__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+  }
+}
+
+function openAddLessonModal(prefilledChapter) {
+  lessonEntryCount = 0;
+  const container = document.getElementById('lessons-entries');
+  container.innerHTML = '';
+
+  // Populate chapter select
+  const sel = document.getElementById('lesson-section-select');
+  const chapters = getUniqueChapters();
+  sel.innerHTML = chapters.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c) || '(No Chapter)'}</option>`).join('')
+    + `<option value="__new__">+ New Chapter...</option>`;
+
+  // Pre-select chapter if provided
+  if (prefilledChapter !== undefined && prefilledChapter !== null) {
+    sel.value = prefilledChapter || chapters[0] || '__new__';
+    if (!sel.value || sel.value === '__new__') {
+      sel.value = '__new__';
+      document.getElementById('lesson-section-custom').style.display = 'block';
+      if (prefilledChapter) document.getElementById('lesson-section-custom').value = prefilledChapter;
+    } else {
+      document.getElementById('lesson-section-custom').style.display = 'none';
+      document.getElementById('lesson-section-custom').value = '';
+    }
+  } else {
+    document.getElementById('lesson-section-custom').style.display = 'none';
+    document.getElementById('lesson-section-custom').value = '';
+  }
+
+  // Add first lesson entry
+  container.insertAdjacentHTML('beforeend', buildLessonEntry(lessonEntryCount, lessonsCache.length + 1));
+  lessonEntryCount++;
 
   document.getElementById('addLessonSubmitBtn').disabled = false;
+  document.getElementById('addLessonSubmitBtn').textContent = 'Create Lessons';
   document.getElementById('add-lesson-modal').style.display = 'flex';
 }
 
-// Dropzone logic removed
-
 async function submitAddLesson() {
-  const title = document.getElementById('lesson-title').value;
-  const section = document.getElementById('lesson-section').value;
-  const order = parseInt(document.getElementById('lesson-order').value) || 0;
-  let videoUrl = document.getElementById('lesson-video-url').value.trim();
+  // Resolve chapter
+  const sel = document.getElementById('lesson-section-select');
+  let sectionTitle = sel.value === '__new__'
+    ? (document.getElementById('lesson-section-custom').value.trim())
+    : sel.value;
 
-  if (!title) return showToast('Title is required', 'error');
-  if (!videoUrl) return showToast('Video URL is required', 'error');
+  // Collect all lesson entries
+  const entries = document.querySelectorAll('[id^="lesson-entry-"]');
+  const lessons = [];
+  for (const entry of entries) {
+    const idx = entry.id.split('-').pop();
+    const title = document.getElementById(`lesson-title-${idx}`)?.value?.trim();
+    let videoUrl = document.getElementById(`lesson-video-url-${idx}`)?.value?.trim() || '';
+    const order = parseInt(document.getElementById(`lesson-order-${idx}`)?.value) || 0;
 
-  const srcMatch = videoUrl.match(/src="([^"]+)"/);
-  if (srcMatch) videoUrl = srcMatch[1];
+    if (!title) return showToast('كل lesson لازم يكون ليه عنوان', 'error');
+    if (!videoUrl) return showToast(`Lesson "${title}": Video URL مطلوب`, 'error');
 
-  const bunnyPatterns = ['mediadelivery.net', 'b-cdn.net'];
-  if (!bunnyPatterns.some(p => videoUrl.includes(p))) {
-    return showToast('Link must be from Bunny.net', 'error');
+    const srcMatch = videoUrl.match(/src="([^"]+)"/);
+    if (srcMatch) videoUrl = srcMatch[1];
+
+    const bunnyPatterns = ['mediadelivery.net', 'b-cdn.net'];
+    if (!bunnyPatterns.some(p => videoUrl.includes(p))) {
+      return showToast(`Lesson "${title}": الـ URL لازم يكون من Bunny.net`, 'error');
+    }
+
+    lessons.push({ title, section_title: sectionTitle, order, bunny_video_url: videoUrl });
   }
+
+  if (lessons.length === 0) return showToast('أضف lesson واحد على الأقل', 'error');
 
   const btn = document.getElementById('addLessonSubmitBtn');
   btn.disabled = true;
-  btn.textContent = 'Creating...';
+  btn.textContent = `Creating ${lessons.length} lesson${lessons.length > 1 ? 's' : ''}...`;
 
+  let successCount = 0;
+  let failCount = 0;
   try {
-    const res = await fetch(API + `/courses/admin/${currentCourseId}/lessons`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        title, section_title: section, order, bunny_video_url: videoUrl
-      })
-    });
-
-    if (!res.ok) throw new Error('Failed to create lesson');
+    for (const lesson of lessons) {
+      const res = await fetch(API + `/courses/admin/${currentCourseId}/lessons`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(lesson)
+      });
+      if (res.ok) successCount++;
+      else failCount++;
+    }
 
     closeModal('add-lesson-modal');
-    showToast('Lesson created successfully!', 'success');
+    if (failCount === 0) {
+      showToast(`${successCount} lesson${successCount > 1 ? 's' : ''} created successfully!`, 'success');
+    } else {
+      showToast(`${successCount} succeeded, ${failCount} failed`, 'error');
+    }
     loadLessons();
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Create Lesson';
+    btn.textContent = 'Create Lessons';
   }
 }
 
@@ -2374,4 +2421,353 @@ async function confirmDeleteLesson() {
     showToast('Lesson deleted', 'info');
     loadLessons();
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  GUEST OF HONORS TAB
+// ══════════════════════════════════════════════════════════
+
+let allGohGuests = [];
+let allGohSessions = [];
+let allGohSuggestions = [];
+
+async function loadGohTab() {
+  await Promise.all([loadGohGuests(), loadGohSessions(), loadGohSuggestions()]);
+  populateGuestSelect();
+}
+
+async function loadGohGuests() {
+  try {
+    const res = await fetch(API + '/guests/', { headers });
+    if (!res.ok) throw new Error("Failed to load guests");
+    allGohGuests = await res.json();
+    renderGohGuests();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('goh-guests-body').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:40px;">Failed to load guests</td></tr>`;
+  }
+}
+
+async function loadGohSessions() {
+  try {
+    const res = await fetch(API + '/guests/sessions/', { headers });
+    if (!res.ok) throw new Error("Failed to load sessions");
+    allGohSessions = await res.json();
+    renderGohSessions();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('goh-sessions-body').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:40px;">Failed to load sessions</td></tr>`;
+  }
+}
+
+async function loadGohSuggestions() {
+  try {
+    const res = await fetch(API + '/guests/suggest', { headers });
+    if (!res.ok) throw new Error("Failed to load suggested guests");
+    allGohSuggestions = await res.json();
+    renderGohSuggestions();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('goh-suggestions-body').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:40px;">Failed to load suggested guests</td></tr>`;
+  }
+}
+
+function renderGohGuests() {
+  const tbody = document.getElementById('goh-guests-body');
+  if (!allGohGuests.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:40px;">No guests found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allGohGuests.map(g => {
+    let uiAvatar = '';
+    if (g.avatar_url) {
+      uiAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
+    } else {
+      let initials = g.avatar_initials || g.name.substring(0,2).toUpperCase();
+      let color = g.avatar_color || '#84cc16';
+      uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#','')}&color=fff&size=40&bold=true`;
+    }
+    return `
+    <tr>
+      <td><img src="${uiAvatar}" style="border-radius:50%; width:40px; height:40px; object-fit:cover;" /></td>
+      <td>${escapeHtml(g.name)} ${g.is_featured ? '<span style="color:#f59e0b;font-size:12px;">★</span>' : ''}</td>
+      <td style="color:#888;">${escapeHtml(g.title)}</td>
+      <td><span class="status-pill active">${escapeHtml(g.category) || 'None'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-action edit" onclick="openEditGuestModal(${g.id})" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+          <button class="btn-action delete" onclick="deleteGuest(${g.id})" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+        </div>
+      </td>
+    </tr>
+  `}).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderGohSessions() {
+  const tbody = document.getElementById('goh-sessions-body');
+  if (!allGohSessions.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:40px;">No sessions found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allGohSessions.map(s => {
+    const dateFormatted = new Date(s.session_date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const statusClass = s.status === 'upcoming' ? 'active' : 'inactive';
+    return `
+    <tr>
+      <td>${dateFormatted}</td>
+      <td>${escapeHtml(s.guest_name || 'Unknown')}</td>
+      <td style="color:#888;">${escapeHtml(s.title)}</td>
+      <td>${escapeHtml(s.platform) || 'Online'}</td>
+      <td><span class="status-pill ${statusClass}">${escapeHtml(s.status)}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-action edit" onclick="openEditGuestSessionModal(${s.id})" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+          <button class="btn-action delete" onclick="deleteGuestSession(${s.id})" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+        </div>
+      </td>
+    </tr>
+  `}).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function populateGuestSelect() {
+  const sel = document.getElementById('session-guest-id');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Select a Guest...</option>' + allGohGuests.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+}
+
+function renderGohSuggestions() {
+  const tbody = document.getElementById('goh-suggestions-body');
+  if (!allGohSuggestions || !allGohSuggestions.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:40px;">No community suggestions yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allGohSuggestions.map(s => {
+    const dateFormatted = new Date(s.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `
+    <tr>
+      <td>${dateFormatted}</td>
+      <td>${escapeHtml(s.user_name || 'Unknown')}</td>
+      <td style="color:#fff; font-weight:600;">${escapeHtml(s.name)}</td>
+      <td style="color:#888;">${escapeHtml(s.reason || '—')}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-action delete" onclick="deleteSuggestedGuest(${s.id})" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+        </div>
+      </td>
+    </tr>
+  `}).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function deleteSuggestedGuest(id) {
+  if(!confirm("Are you sure you want to delete this suggestion?")) return;
+  try {
+    const res = await fetch(API + '/guests/suggest/' + id, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed to delete suggestion');
+    showToast('🗑️ Suggestion deleted', 'success');
+    loadGohTab();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function openGuestModal() {
+  document.getElementById('guest-id').value = '';
+  document.getElementById('guest-name').value = '';
+  document.getElementById('guest-title').value = '';
+  document.getElementById('guest-company').value = '';
+  document.getElementById('guest-bio').value = '';
+  document.getElementById('guest-avatar-file').value = '';
+  document.getElementById('guest-category').value = '';
+  document.getElementById('guest-sessions-count').value = '0';
+  document.getElementById('guest-attendees-count').value = '0';
+  document.getElementById('guest-rating').value = '0.0';
+  document.getElementById('guest-featured').checked = false;
+  document.getElementById('add-guest-modal').style.display = 'flex';
+}
+
+async function deleteGuest(id) {
+  document.getElementById('delete-goh-id').value = id;
+  document.getElementById('delete-guest-modal').style.display = 'flex';
+}
+
+async function confirmDeleteGuest() {
+  const id = document.getElementById('delete-goh-id').value;
+  try {
+    const res = await fetch(API + '/guests/' + id, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed to delete guest');
+    closeModal('delete-guest-modal');
+    showToast('🗑️ Guest deleted successfully!', 'success');
+    loadGohTab();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function openEditGuestModal(id) {
+  const g = allGohGuests.find(x => x.id === id);
+  if(!g) return;
+  document.getElementById('guest-id').value = g.id;
+  document.getElementById('guest-name').value = g.name || '';
+  document.getElementById('guest-title').value = g.title || '';
+  document.getElementById('guest-company').value = g.company || '';
+  document.getElementById('guest-bio').value = g.bio || '';
+  // We can't set file input value programmatically for security reasons,
+  // but we store the existing URL in a data attribute to keep it if no new file is uploaded
+  document.getElementById('guest-avatar-file').value = '';
+  document.getElementById('guest-avatar-file').dataset.existingUrl = g.avatar_url || '';
+  document.getElementById('guest-category').value = g.category || '';
+  document.getElementById('guest-sessions-count').value = g.sessions_count || 0;
+  document.getElementById('guest-attendees-count').value = g.attendees_count || 0;
+  document.getElementById('guest-rating').value = g.rating || 0;
+  document.getElementById('guest-featured').checked = g.is_featured;
+  document.getElementById('add-guest-modal').style.display = 'flex';
+}
+
+async function submitGuest() {
+  const id = document.getElementById('guest-id').value;
+  let avatarUrl = id ? document.getElementById('guest-avatar-file').dataset.existingUrl || null : null;
+  const fileInput = document.getElementById('guest-avatar-file');
+  
+  if (fileInput.files && fileInput.files[0]) {
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    try {
+      const uploadRes = await fetch(API + '/guests/upload-avatar', {
+        method: 'POST',
+        headers: { 'Authorization': headers['Authorization'] },
+        body: formData
+      });
+      if(!uploadRes.ok) throw new Error('Avatar upload failed');
+      const uploadData = await uploadRes.json();
+      avatarUrl = uploadData.avatar_url;
+    } catch(e) {
+      showToast(e.message, 'error');
+      return;
+    }
+  }
+
+  const data = {
+    name: document.getElementById('guest-name').value,
+    title: document.getElementById('guest-title').value,
+    company: document.getElementById('guest-company').value,
+    bio: document.getElementById('guest-bio').value || null,
+    avatar_url: avatarUrl,
+    avatar_initials: null,
+    avatar_color: null,
+    category: document.getElementById('guest-category').value || null,
+    is_featured: document.getElementById('guest-featured').checked,
+    sessions_count: parseInt(document.getElementById('guest-sessions-count').value) || 0,
+    attendees_count: parseInt(document.getElementById('guest-attendees-count').value) || 0,
+    rating: parseFloat(document.getElementById('guest-rating').value) || 0.0
+  };
+  if(!data.name || !data.title) { showToast('Name and Title are required', 'error'); return; }
+  
+  try {
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? API + '/guests/' + id : API + '/guests/';
+    const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
+    if(!res.ok) throw new Error('Request failed');
+    showToast('Guest saved!', 'success');
+    closeModal('add-guest-modal');
+    loadGohTab();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function openGuestSessionModal() {
+  document.getElementById('session-goh-id').value = '';
+  document.getElementById('session-guest-id').value = '';
+  document.getElementById('session-goh-title').value = '';
+  document.getElementById('session-goh-description').value = '';
+  
+  // Format current date for datetime-local
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('session-goh-date').value = now.toISOString().slice(0, 16);
+  
+  document.getElementById('session-goh-platform').value = '';
+  document.getElementById('session-goh-url').value = '';
+  document.getElementById('session-goh-status').value = 'upcoming';
+  document.getElementById('session-goh-attendees').value = '0';
+  document.getElementById('session-goh-rating').value = '0';
+  document.getElementById('add-guest-session-modal').style.display = 'flex';
+}
+
+async function deleteSession(id) {
+  document.getElementById('delete-goh-session-id').value = id;
+  document.getElementById('delete-goh-session-modal').style.display = 'flex';
+}
+
+async function confirmDeleteGohSession() {
+  const id = document.getElementById('delete-goh-session-id').value;
+  try {
+    const res = await fetch(API + '/guests/sessions/' + id, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed to delete session');
+    closeModal('delete-goh-session-modal');
+    showToast('🗑️ Session deleted successfully!', 'success');
+    loadGohTab();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function openEditGuestSessionModal(id) {
+  const s = allGohSessions.find(x => x.id === id);
+  if(!s) return;
+  document.getElementById('session-goh-id').value = s.id;
+  document.getElementById('session-guest-id').value = s.guest_id;
+  document.getElementById('session-goh-title').value = s.title || '';
+  document.getElementById('session-goh-description').value = s.description || '';
+  
+  const d = new Date(s.session_date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  document.getElementById('session-goh-date').value = d.toISOString().slice(0, 16);
+  
+  document.getElementById('session-goh-platform').value = s.platform || '';
+  document.getElementById('session-goh-url').value = s.session_url || '';
+  document.getElementById('session-goh-status').value = s.status || 'upcoming';
+  document.getElementById('session-goh-attendees').value = s.attendees_count || 0;
+  document.getElementById('session-goh-rating').value = s.rating || 0;
+  document.getElementById('add-guest-session-modal').style.display = 'flex';
+}
+
+async function submitGuestSession() {
+  const id = document.getElementById('session-goh-id').value;
+  const guest_id = document.getElementById('session-guest-id').value;
+  if(!guest_id) { showToast('Please select a guest', 'error'); return; }
+  
+  const data = {
+    guest_id: parseInt(guest_id),
+    title: document.getElementById('session-goh-title').value,
+    session_date: new Date(document.getElementById('session-goh-date').value).toISOString(),
+    platform: document.getElementById('session-goh-platform').value,
+    session_url: document.getElementById('session-goh-url').value,
+    status: document.getElementById('session-goh-status').value,
+    attendees_count: parseInt(document.getElementById('session-goh-attendees').value) || 0,
+    rating: parseFloat(document.getElementById('session-goh-rating').value) || 0,
+    description: document.getElementById('session-goh-description').value || null
+  };
+  if(!data.title || !data.session_date) { showToast('Title and Date are required', 'error'); return; }
+  
+  try {
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? API + '/guests/sessions/' + id : API + '/guests/sessions/';
+    const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
+    if(!res.ok) throw new Error('Request failed');
+    showToast('Session saved!', 'success');
+    closeModal('add-guest-session-modal');
+    loadGohTab();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteGuestSession(id) {
+  if(!confirm('Are you sure you want to delete this session?')) return;
+  try {
+    const res = await fetch(API + '/guests/sessions/' + id, { method: 'DELETE', headers });
+    if(!res.ok) throw new Error('Delete failed');
+    showToast('Session deleted!', 'success');
+    loadGohTab();
+  } catch(e) { showToast(e.message, 'error'); }
 }

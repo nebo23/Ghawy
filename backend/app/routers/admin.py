@@ -15,7 +15,7 @@ import io
 from app.database import get_db
 from app.models import User, Payment, PaymentStatus, PaymentMethod
 from app.routers.users import get_current_user
-from app.services.recurring import run_recurring_charges
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -43,84 +43,6 @@ class AdminAddUser(BaseModel):
 class AdminResetPassword(BaseModel):
     new_password: str
 
-
-# ── Existing: trigger recurring charges ───────────────────────
-@router.post("/trigger-recurring")
-async def trigger_recurring(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Manually trigger recurring charges. Admin only."""
-    require_admin(current_user)
-    results = await run_recurring_charges(db)
-    return results
-
-
-@router.post("/test-recurring/{user_id}")
-async def test_recurring_for_user(
-    user_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Test recurring charge for a specific user. Admin only."""
-    require_admin(current_user)
-    
-    from app.services.recurring import charge_user
-    
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if not user.card_token:
-        raise HTTPException(status_code=400, detail="User has no card token — has not paid via Kashier yet")
-    
-    success = await charge_user(user, db)
-    return {
-        "user_id": user_id,
-        "email": user.email,
-        "success": success,
-        "card_token_exists": bool(user.card_token),
-        "card_token_preview": user.card_token[:8] + "..." if user.card_token else None,
-        "next_charge_at": str(user.next_charge_at),
-        "subscription_end": str(user.subscription_end),
-        "failed_charge_count": user.failed_charge_count,
-    }
-
-@router.get("/recurring-status")
-async def get_recurring_status(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Get overview of all recurring subscriptions. Admin only."""
-    require_admin(current_user)
-    
-    from datetime import datetime
-    now = datetime.utcnow()
-    
-    all_subscribers = db.query(User).filter(User.card_token.isnot(None), User.card_token != "").all()
-    due_now = [u for u in all_subscribers if u.next_charge_at and u.next_charge_at <= now]
-    upcoming = [u for u in all_subscribers if u.next_charge_at and u.next_charge_at > now]
-    
-    return {
-        "total_subscribers": len(all_subscribers),
-        "due_now": len(due_now),
-        "upcoming_7_days": len([u for u in upcoming if (u.next_charge_at - now).days <= 7]),
-        "subscribers": [
-            {
-                "user_id": u.id,
-                "email": u.email,
-                "full_name": u.full_name,
-                "subscription_type": u.subscription_type,
-                "last_charged_at": str(u.last_charged_at),
-                "next_charge_at": str(u.next_charge_at),
-                "subscription_end": str(u.subscription_end),
-                "is_active": u.is_active,
-                "failed_charge_count": u.failed_charge_count or 0,
-                "days_until_charge": (u.next_charge_at - now).days if u.next_charge_at and u.next_charge_at > now else ( -1 if u.next_charge_at and u.next_charge_at < now else None),
-            }
-            for u in all_subscribers
-        ]
-    }
 
 
 # ══════════════════════════════════════════════════════════════
@@ -175,14 +97,7 @@ def list_users(
             "last_seen": u.last_seen.isoformat() if u.last_seen else None,
             "badge": u.badge,
             "avatar_url": u.avatar_url,
-            "subscription_type": u.subscription_type,
-            "subscription_start": u.subscription_start.isoformat() if u.subscription_start else None,
-            "subscription_end": u.subscription_end.isoformat() if u.subscription_end else None,
-            "next_charge_at": u.next_charge_at.isoformat() if u.next_charge_at else None,
-            "last_charged_at": u.last_charged_at.isoformat() if u.last_charged_at else None,
-            "has_card_token": bool(u.card_token),
-            "failed_charge_count": u.failed_charge_count or 0,
-            "days_until_charge": (u.next_charge_at - now).days if u.next_charge_at and u.next_charge_at > now else ( -1 if u.next_charge_at and u.next_charge_at < now else None),
+            "end_at": u.end_at.isoformat() if u.end_at else None,
         })
 
     return result
@@ -669,33 +584,4 @@ def revenue_over_time(
 
     return [{"date": date, "amount": round(amt, 2)} for date, amt in sorted(amounts.items())]
 
-
-@router.get("/analytics/subscription-breakdown")
-def subscription_breakdown(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Breakdown of subscription types across all users."""
-    require_admin(current_user)
-
-    monthly = db.query(sql_func.count(User.id)).filter(
-        User.subscription_type == "monthly",
-        User.card_token.isnot(None),
-        User.card_token != ""
-    ).scalar()
-
-    yearly = db.query(sql_func.count(User.id)).filter(
-        User.subscription_type == "yearly",
-        User.card_token.isnot(None),
-        User.card_token != ""
-    ).scalar()
-
-    total = db.query(sql_func.count(User.id)).scalar()
-    none_count = total - monthly - yearly
-
-    return {
-        "monthly": monthly,
-        "yearly": yearly,
-        "none": none_count,
-    }
 

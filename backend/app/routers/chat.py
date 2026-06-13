@@ -155,11 +155,39 @@ async def post_message_simple(
 ):
     ch = db.query(Channel).filter(Channel.name == data.channel).first()
     if not ch:
-        # Auto-create channel
-        ch = Channel(name=data.channel, channel_type=ChannelType.GROUP)
-        db.add(ch)
-        db.commit()
-        db.refresh(ch)
+        if data.channel.startswith("dm_"):
+            parts = data.channel.split("_")
+            if len(parts) == 3:
+                try:
+                    u1 = int(parts[1])
+                    u2 = int(parts[2])
+                    ch = Channel(name=data.channel, channel_type=ChannelType.DM)
+                    db.add(ch)
+                    db.commit()
+                    db.refresh(ch)
+                    db.add(ChatMember(channel_id=ch.id, user_id=u1, role=MemberRole.MEMBER))
+                    if u1 != u2:
+                        db.add(ChatMember(channel_id=ch.id, user_id=u2, role=MemberRole.MEMBER))
+                    db.commit()
+                    manager.subscribe(u1, [ch.id])
+                    if u1 != u2:
+                        manager.subscribe(u2, [ch.id])
+                except ValueError:
+                    pass
+        
+        if not ch:
+            # Auto-create group channel
+            ch = Channel(name=data.channel, channel_type=ChannelType.GROUP)
+            db.add(ch)
+            db.commit()
+            db.refresh(ch)
+            
+            # Since it's a new group, auto-subscribe all currently connected users
+            # so they don't need to refresh.
+            for uid in manager.active_connections.keys():
+                manager.subscribe(uid, [ch.id])
+                # We optionally could also add them to ChatMember here, 
+                # but ws.py does it on reconnect. To be safe, just subscribe them in-memory.
 
     # Determine message type
     msg_type = MessageType.TEXT
@@ -397,6 +425,7 @@ def create_channel(
     )
     db.add(member)
     db.commit()
+    manager.subscribe(current_user.id, [channel.id])
 
     return ChannelOut(
         id=channel.id,
@@ -436,6 +465,7 @@ def join_channel(
     )
     db.add(member)
     db.commit()
+    manager.subscribe(current_user.id, [channel_id])
     return {"message": "Joined channel"}
 
 
@@ -462,6 +492,7 @@ def list_messages(
         )
         db.add(member)
         db.commit()
+        manager.subscribe(current_user.id, [channel_id])
         membership = member
 
     q = db.query(Message).filter(Message.channel_id == channel_id, Message.is_deleted == False)
@@ -641,6 +672,8 @@ def get_or_create_dm(
         db.add(ChatMember(channel_id=ch.id, user_id=current_user.id, role=MemberRole.MEMBER))
         db.add(ChatMember(channel_id=ch.id, user_id=data.target_user_id, role=MemberRole.MEMBER))
         db.commit()
+        manager.subscribe(current_user.id, [ch.id])
+        manager.subscribe(data.target_user_id, [ch.id])
 
     return {
         "channel_name": dm_name,
@@ -670,8 +703,11 @@ def list_dm_conversations(
         .all()
     )
 
-    if not dm_channels:
-        return []
+    ch_ids = [ch.id for ch in dm_channels] if dm_channels else []
+
+    # ── Fetch all Admins (to pin) ──
+    admins = db.query(User).filter(User.is_admin == True, User.is_active == True, User.id != current_user.id).all()
+    admin_ids = {a.id for a in admins}
 
     ch_ids = [ch.id for ch in dm_channels]
 
@@ -680,54 +716,62 @@ def list_dm_conversations(
         db.query(ChatMember)
         .filter(ChatMember.channel_id.in_(ch_ids), ChatMember.user_id != current_user.id)
         .all()
-    )
+    ) if ch_ids else []
+    
     ch_to_other_uid = {m.channel_id: m.user_id for m in other_members}
     other_user_ids = list(set(ch_to_other_uid.values()))
 
     # ── Batch: load all other users ──
-    other_users = {u.id: u for u in db.query(User).filter(User.id.in_(other_user_ids)).all()}
+    all_needed_user_ids = list(set(other_user_ids) | admin_ids)
+    other_users = {u.id: u for u in db.query(User).filter(User.id.in_(all_needed_user_ids)).all()}
 
     # ── Batch: get last message per channel using a subquery ──
-    from sqlalchemy import and_
-    last_msg_subq = (
-        db.query(Message.channel_id, func.max(Message.id).label("max_id"))
-        .filter(Message.channel_id.in_(ch_ids), Message.is_deleted == False)
-        .group_by(Message.channel_id)
-        .subquery()
-    )
-    last_msgs_raw = (
-        db.query(Message)
-        .join(last_msg_subq, and_(Message.id == last_msg_subq.c.max_id))
-        .all()
-    )
-    last_msgs = {m.channel_id: m for m in last_msgs_raw}
-
-    # ── Batch: get my read message IDs in these channels ──
-    my_read_ids = set(
-        mid for (mid,) in db.query(MessageRead.message_id)
-        .join(Message, Message.id == MessageRead.message_id)
-        .filter(MessageRead.user_id == current_user.id, Message.channel_id.in_(ch_ids))
-        .all()
-    )
-
-    # ── Batch: count unread per channel (messages from others I haven't read) ──
-    unread_msgs = (
-        db.query(Message.channel_id, Message.id)
-        .filter(
-            Message.channel_id.in_(ch_ids),
-            Message.sender_id != current_user.id,
-            Message.is_deleted == False,
+    if ch_ids:
+        from sqlalchemy import and_
+        last_msg_subq = (
+            db.query(Message.channel_id, func.max(Message.id).label("max_id"))
+            .filter(Message.channel_id.in_(ch_ids), Message.is_deleted == False)
+            .group_by(Message.channel_id)
+            .subquery()
         )
-        .all()
-    )
-    unread_counts = {}
-    for ch_id, msg_id in unread_msgs:
-        if msg_id not in my_read_ids:
-            unread_counts[ch_id] = unread_counts.get(ch_id, 0) + 1
+        last_msgs_raw = (
+            db.query(Message)
+            .join(last_msg_subq, and_(Message.id == last_msg_subq.c.max_id))
+            .all()
+        )
+        last_msgs = {m.channel_id: m for m in last_msgs_raw}
+
+        # ── Batch: get my read message IDs in these channels ──
+        my_read_ids = set(
+            mid for (mid,) in db.query(MessageRead.message_id)
+            .join(Message, Message.id == MessageRead.message_id)
+            .filter(MessageRead.user_id == current_user.id, Message.channel_id.in_(ch_ids))
+            .all()
+        )
+
+        # ── Batch: count unread per channel (messages from others I haven't read) ──
+        unread_msgs = (
+            db.query(Message.channel_id, Message.id)
+            .filter(
+                Message.channel_id.in_(ch_ids),
+                Message.sender_id != current_user.id,
+                Message.is_deleted == False,
+            )
+            .all()
+        )
+        unread_counts = {}
+        for ch_id, msg_id in unread_msgs:
+            if msg_id not in my_read_ids:
+                unread_counts[ch_id] = unread_counts.get(ch_id, 0) + 1
+    else:
+        last_msgs = {}
+        unread_counts = {}
 
     one_min_ago = datetime.utcnow() - timedelta(seconds=60)
 
     result = []
+    processed_user_ids = set()
+
     for ch in dm_channels:
         other_uid = ch_to_other_uid.get(ch.id)
         if not other_uid:
@@ -738,16 +782,21 @@ def list_dm_conversations(
 
         is_online = other_user.last_seen and other_user.last_seen >= one_min_ago
         last_msg = last_msgs.get(ch.id)
+        
+        is_pinned = other_uid in admin_ids
+        processed_user_ids.add(other_uid)
 
         result.append({
             "channel_name": ch.name,
             "channel_id": ch.id,
+            "is_pinned": is_pinned,
             "user": {
                 "id": other_user.id,
                 "full_name": other_user.full_name,
                 "avatar_url": other_user.avatar_url,
                 "badge": other_user.badge or "Member",
                 "is_online": is_online,
+                "is_admin": other_user.is_admin,
             },
             "last_message": last_msg.content if last_msg else None,
             "last_message_type": last_msg.message_type.value if last_msg and last_msg.message_type else "text",
@@ -755,7 +804,37 @@ def list_dm_conversations(
             "unread_count": unread_counts.get(ch.id, 0),
         })
 
-    result.sort(key=lambda x: x["last_message_at"] or "", reverse=True)
+    # Add admins who don't have a DM channel yet
+    for admin_id in admin_ids:
+        if admin_id not in processed_user_ids:
+            admin_user = other_users.get(admin_id)
+            if not admin_user:
+                continue
+            is_online = admin_user.last_seen and admin_user.last_seen >= one_min_ago
+            
+            # Deterministic channel name
+            ids = sorted([current_user.id, admin_id])
+            dm_name = f"dm_{ids[0]}_{ids[1]}"
+            
+            result.append({
+                "channel_name": dm_name,
+                "channel_id": None,
+                "is_pinned": True,
+                "user": {
+                    "id": admin_user.id,
+                    "full_name": admin_user.full_name,
+                    "avatar_url": admin_user.avatar_url,
+                    "badge": admin_user.badge or "Admin",
+                    "is_online": is_online,
+                    "is_admin": True,
+                },
+                "last_message": "Start chatting...",
+                "last_message_type": "text",
+                "last_message_at": None,
+                "unread_count": 0,
+            })
+
+    result.sort(key=lambda x: (x.get("is_pinned", False), x["last_message_at"] or ""), reverse=True)
     return result
 
 

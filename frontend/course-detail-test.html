@@ -231,7 +231,7 @@
 
         .expand-btn {
             font-size: .85rem;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.7);
             font-weight: 600;
             cursor: pointer;
         }
@@ -243,7 +243,7 @@
 
         .section-block {
             background: #0b0d12;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             margin-bottom: 16px;
             overflow: hidden;
@@ -259,7 +259,7 @@
         }
 
         .section-header:hover {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .section-header .sec-left {
@@ -283,7 +283,7 @@
 
         .section-header .sec-desc {
             font-size: .8rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255, 255, 255, 0.5);
             margin-top: 6px;
         }
 
@@ -317,7 +317,7 @@
         }
 
         .section-lessons {
-            border-top: 1px solid rgba(255,255,255,0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
             display: none;
         }
 
@@ -330,7 +330,7 @@
             align-items: center;
             gap: 16px;
             padding: 16px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             transition: background .15s;
             font-size: .85rem;
             cursor: pointer;
@@ -339,8 +339,9 @@
         .lesson-row:last-child {
             border-bottom: none;
         }
+
         .lesson-row:hover {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .progress-ring {
@@ -365,13 +366,13 @@
 
         .lesson-row .lesson-title {
             flex: 1;
-            color: rgba(255,255,255,0.85);
+            color: rgba(255, 255, 255, 0.85);
             font-size: .9rem;
         }
 
         .lesson-row .lesson-dur {
             font-size: .8rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .progress-ring .pct {
@@ -384,7 +385,7 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            border: 1.5px solid rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
             color: transparent;
             display: flex;
             align-items: center;
@@ -655,7 +656,7 @@
             flex: 1;
             min-width: 0;
             background: #0b0d12;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             padding: 10px 12px;
             display: flex;
@@ -666,8 +667,8 @@
         }
 
         .resource-item:hover {
-            background: rgba(255,255,255,0.02);
-            border-color: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .resource-item .res-icon {
@@ -689,7 +690,7 @@
         .resource-item .res-name {
             font-size: .68rem;
             font-weight: 700;
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
@@ -698,7 +699,7 @@
 
         .resource-item .res-type {
             font-size: .55rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255, 255, 255, 0.5);
             font-weight: 600;
             line-height: 1.2;
         }
@@ -1379,6 +1380,7 @@
             .course-progress-header {
                 padding: 18px;
             }
+
             .cd-grid {
                 grid-template-columns: 1fr
             }
@@ -1529,10 +1531,13 @@
 
             <!-- ═══ STREAK CARD ═══ -->
             <div class="sb-streak-card">
-                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire" style="width:32px; height:32px; object-fit:contain;" /></div>
+                <div class="sb-streak-fire"><img src="./imgs/fire.png" alt="Fire"
+                        style="width:32px; height:32px; object-fit:contain;" /></div>
                 <div class="sb-streak-info">
                     <div class="sb-streak-title"><span id="streakCount">0</span> Days Streak</div>
-                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire" style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" /></div>
+                    <div class="sb-streak-sub">Keep going! <img src="./imgs/fire.png" alt="Fire"
+                            style="width:14px; height:14px; object-fit:contain; vertical-align:text-bottom; display:inline-block;" />
+                    </div>
                 </div>
             </div>
         </aside>
@@ -1722,35 +1727,58 @@
                     <!-- Right Sidebar -->
                     <div class="cd-grid-side">
                         <!-- Premium Progress Card -->
-                        <div class="course-progress-header" id="courseProgressHeader" style="background: #09090b; border: 1px solid rgba(255,255,255,0.05); padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                            <div class="progress-eyebrow" style="margin-bottom: 20px; font-weight: 600; color: #fff; font-size: 1.05rem;">Your Progress</div>
+                        <div class="course-progress-header" id="courseProgressHeader"
+                            style="background: #09090b; border: 1px solid rgba(255,255,255,0.05); padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                            <div class="progress-eyebrow"
+                                style="margin-bottom: 20px; font-weight: 600; color: #fff; font-size: 1.05rem;">Your
+                                Progress</div>
                             <div style="display: flex; gap: 20px; align-items: stretch;">
-                                <div class="progress-ring-wrap" style="flex-shrink: 0; display: flex; align-items: center;">
-                                    <div class="progress-ring" aria-label="Course progress" style="width: 90px; height: 90px; position: relative;">
-                                        <svg width="90" height="90" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
+                                <div class="progress-ring-wrap"
+                                    style="flex-shrink: 0; display: flex; align-items: center;">
+                                    <div class="progress-ring" aria-label="Course progress"
+                                        style="width: 90px; height: 90px; position: relative;">
+                                        <svg width="90" height="90" viewBox="0 0 100 100"
+                                            style="transform: rotate(-90deg);">
                                             <defs>
                                                 <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                                     <stop offset="0%" stop-color="#3b82f6" />
                                                     <stop offset="100%" stop-color="#a3e635" />
                                                 </linearGradient>
                                             </defs>
-                                            <circle class="track" cx="50" cy="50" r="42" fill="none" stroke="#1f2937" stroke-width="8" />
-                                            <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42" fill="none" stroke="url(#ringGrad)" stroke-width="8"
-                                                stroke-dasharray="263.9" stroke-dashoffset="263.9" stroke-linecap="round" style="transition: stroke-dashoffset 0.8s ease;" />
+                                            <circle class="track" cx="50" cy="50" r="42" fill="none" stroke="#1f2937"
+                                                stroke-width="8" />
+                                            <circle class="fill" id="cdProgressFill" cx="50" cy="50" r="42" fill="none"
+                                                stroke="url(#ringGrad)" stroke-width="8" stroke-dasharray="263.9"
+                                                stroke-dashoffset="263.9" stroke-linecap="round"
+                                                style="transition: stroke-dashoffset 0.8s ease;" />
                                         </svg>
-                                        <div class="pct" id="cdProgressPct" style="font-size: 1.25rem; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-family: 'IBM Plex Mono', monospace;">0%</div>
+                                        <div class="pct" id="cdProgressPct"
+                                            style="font-size: 1.25rem; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-family: 'IBM Plex Mono', monospace;">
+                                            0%</div>
                                     </div>
                                 </div>
-                                <div class="progress-card-body" style="display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0;">
-                                    <div style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px; font-weight: 500;">Course Progress</div>
+                                <div class="progress-card-body"
+                                    style="display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0;">
+                                    <div
+                                        style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px; font-weight: 500;">
+                                        Course Progress</div>
                                     <div class="progress-card-headline" style="margin-bottom: 12px;">
-                                        <div class="pct-text" id="cdProgressText" style="font-size: 1.1rem; font-weight: 700; color: #fff;">0% Complete</div>
+                                        <div class="pct-text" id="cdProgressText"
+                                            style="font-size: 1.1rem; font-weight: 700; color: #fff;">0% Complete</div>
                                     </div>
-                                    <div class="progress-bar-full" style="height: 6px; background: #1f2937; border-radius: 9999px; margin-bottom: 10px; width: 100%; overflow: hidden;">
-                                        <div class="bar" id="cdProgressBar" style="width:0%; height: 100%; background: #a3e635; border-radius: 9999px; transition: width 0.8s ease;"></div>
+                                    <div class="progress-bar-full"
+                                        style="height: 6px; background: #1f2937; border-radius: 9999px; margin-bottom: 10px; width: 100%; overflow: hidden;">
+                                        <div class="bar" id="cdProgressBar"
+                                            style="width:0%; height: 100%; background: #a3e635; border-radius: 9999px; transition: width 0.8s ease;">
+                                        </div>
                                     </div>
-                                    <div class="lessons-text" id="cdProgressLessons" style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 16px;">Completed 0 of 0 lessons</div>
-                                    <button class="btn-progress-resume" id="resumeBtn" style="background: transparent; border: 1px solid #a3e635; color: #a3e635; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(163, 230, 53, 0.1)'" onmouseout="this.style.background='transparent'">
+                                    <div class="lessons-text" id="cdProgressLessons"
+                                        style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 16px;">Completed 0 of
+                                        0 lessons</div>
+                                    <button class="btn-progress-resume" id="resumeBtn"
+                                        style="background: transparent; border: 1px solid #a3e635; color: #a3e635; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: all 0.2s; cursor: pointer;"
+                                        onmouseover="this.style.background='rgba(163, 230, 53, 0.1)'"
+                                        onmouseout="this.style.background='transparent'">
                                         <i class="fa-solid fa-play" style="font-size: 0.8rem;"></i>
                                         <span id="resumeBtnLabel">Resume Lesson</span>
                                     </button>
@@ -1760,7 +1788,8 @@
 
                         <!-- Certificate section (hidden until 100%) -->
                         <div id="certificateSection" style="display:none; margin-bottom: 24px;">
-                            <button onclick="downloadCertificate()" class="btn-certificate" style="width: 100%;">🎓 Download Certificate</button>
+                            <button onclick="downloadCertificate()" class="btn-certificate" style="width: 100%;">🎓
+                                Download Certificate</button>
                         </div>
 
                         <!-- What You'll Learn -->
@@ -1926,9 +1955,9 @@
                 localStorage.setItem('user', JSON.stringify({ id: u.id, full_name: u.full_name, role: u.is_admin ? 'admin' : 'user' }));
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
                 // Update Name
-                s('sidebarName', u.full_name); 
-                s('topbarName', u.full_name); 
-                
+                s('sidebarName', u.full_name);
+                s('topbarName', u.full_name);
+
                 // Update Badge
                 const badgeLabel = getBadgeLabel(u.badge);
                 const badgeEl = document.getElementById('sidebarBadge');
@@ -1940,11 +1969,11 @@
                 const level = u.level || 1;
                 const xp = u.xp || 0;
                 const nextLevelXp = u.next_level_xp || (level * 100);
-                
+
                 s('sidebarLevelNum', level);
                 s('sidebarLevelTitle', badgeLabel);
                 s('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
-                
+
                 const xpBar = document.getElementById('sidebarXpBar');
                 if (xpBar) {
                     const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
@@ -1953,7 +1982,7 @@
 
                 // Update Streak
                 s('streakCount', u.streak_days || 0);
-                
+
                 // Update Avatars
                 ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
                     const el = document.getElementById(id);
@@ -2103,7 +2132,7 @@
 
         function handleVideoTimeUpdate(currentTime, duration) {
             if (!currentTime || !duration) return;
-            
+
             window.currentVideoTime = currentTime;
             window.currentVideoDuration = duration;
             updateSeekBar(currentTime, duration);
@@ -2283,8 +2312,8 @@
                 }
 
                 return progress;
-            } catch (e) { 
-                console.error('Progress load error:', e); 
+            } catch (e) {
+                console.error('Progress load error:', e);
                 return null;
             }
         }
@@ -2545,7 +2574,7 @@
                     </div>
                 </div>
                 <div class="sec-right">
-                    <span class="sec-count">${secLessons.filter(l=>l.completed).length} / ${secLessons.length}</span>
+                    <span class="sec-count">${secLessons.filter(l => l.completed).length} / ${secLessons.length}</span>
                     <span class="sec-expand"><i class="fa-solid fa-${isFirst ? 'minus' : 'plus'}"></i></span>
                 </div>
             </div>
@@ -2630,7 +2659,7 @@
                         player.on('ready', () => {
                             let actualDuration = 0;
                             player.getDuration((d) => { actualDuration = d; });
-                            
+
                             player.on('timeupdate', (data) => {
                                 let duration = data.duration || actualDuration;
                                 const currentTime = data.seconds;

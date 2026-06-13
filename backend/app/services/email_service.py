@@ -248,3 +248,126 @@ def send_live_session_notification(
         body_text=body_text,
         body_html=body_html,
     )
+
+
+# ═══════════════════════════════════════════════════════
+#  SUBSCRIPTION RENEWAL REMINDER
+# ═══════════════════════════════════════════════════════
+
+_RENEWAL_PLAN_LABELS = {
+    "monthly_egp":   {"label": "الشهري",       "amount": "600 جنيه",   "renew_label": "جدد اشتراكك الشهري"},
+    "quarterly_egp": {"label": "تلت شهور",     "amount": "1,200 جنيه", "renew_label": "جدد اشتراكك"},
+    "yearly_egp":    {"label": "السنوي",        "amount": "3,000 جنيه", "renew_label": "جدد اشتراكك السنوي"},
+    "monthly_usd":   {"label": "Monthly",       "amount": "$15",        "renew_label": "Renew Monthly Plan"},
+    "quarterly_usd": {"label": "Quarterly",     "amount": "$35",        "renew_label": "Renew Quarterly Plan"},
+    "yearly_usd":    {"label": "Yearly",        "amount": "$100",       "renew_label": "Renew Yearly Plan"},
+}
+
+
+def send_renewal_reminder_email(
+    to_email: str,
+    full_name: str,
+    days_left: int,
+    plan_key: str,
+    subscription_end,
+) -> None:
+    """بيبعت إيميل تذكير انتهاء الاشتراك"""
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5500")
+    plan = _RENEWAL_PLAN_LABELS.get(plan_key, _RENEWAL_PLAN_LABELS["monthly_egp"])
+    end_date_str = subscription_end.strftime("%d/%m/%Y") if subscription_end else "—"
+    renew_url = f"{frontend_url}/payment.html?plan={plan_key}"
+
+    is_arabic = plan_key.endswith("_egp")
+
+    if is_arabic:
+        subject = f"⏰ اشتراكك في Ghawy هينتهي خلال {days_left} يوم"
+        body_text = (
+            f"مرحباً {full_name},\n\n"
+            f"اشتراكك {plan['label']} هينتهي في {end_date_str} — متبقيلك {days_left} يوم بس.\n\n"
+            f"سعر التجديد: {plan['amount']}\n\n"
+            f"جدد من هنا: {renew_url}\n\n"
+            "لو محتاج مساعدة، تواصل معنا في أي وقت.\n"
+            "© 2026 Ghawy — AI Automation Atlas"
+        )
+        body_html = f"""
+        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0f; color: #fff; border-radius: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #3f8ff9, #1d6fd4); padding: 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900;">Ghawy</h1>
+                <p style="margin: 8px 0 0; opacity: .8;">منصة التعلم الذكي</p>
+            </div>
+            <div style="padding: 32px;">
+                <h2 style="color: #fff; margin-bottom: 16px;">مرحباً {full_name} 👋</h2>
+                <p style="color: #9ca3af; line-height: 1.8; margin-bottom: 24px;">
+                    اشتراكك <strong style="color: #fff;">{plan["label"]}</strong> هينتهي في
+                    <strong style="color: #f59e0b;">{end_date_str}</strong>
+                    — يعني متبقيلك <strong style="color: #ef4444;">{days_left} يوم</strong> بس.
+                </p>
+                <div style="background: #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
+                    <div style="font-size: .8rem; color: #6b7280; margin-bottom: 4px;">سعر التجديد</div>
+                    <div style="font-size: 1.5rem; font-weight: 900; color: #3f8ff9;">{plan["amount"]}</div>
+                </div>
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <a href="{renew_url}"
+                       style="display: inline-block; background: #3f8ff9; color: #fff; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 1rem; text-decoration: none;">
+                        🔄 {plan["renew_label"]}
+                    </a>
+                </div>
+                <p style="color: #6b7280; font-size: .82rem; text-align: center;">
+                    لو محتاج مساعدة، تواصل معنا في أي وقت.
+                </p>
+            </div>
+            <div style="background: #050507; padding: 16px; text-align: center;">
+                <p style="color: #374151; font-size: .75rem; margin: 0;">© 2026 Ghawy — AI Automation Atlas</p>
+            </div>
+        </div>
+        """
+    else:
+        subject = f"⏰ Your Ghawy subscription expires in {days_left} day{'s' if days_left > 1 else ''}"
+        body_text = (
+            f"Hi {full_name},\n\n"
+            f"Your {plan['label']} subscription expires on {end_date_str} — only {days_left} day{'s' if days_left > 1 else ''} left.\n\n"
+            f"Renewal Price: {plan['amount']}\n\n"
+            f"Renew here: {renew_url}\n\n"
+            "Need help? Reach out anytime.\n"
+            "© 2026 Ghawy — AI Automation Atlas"
+        )
+        body_html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0f; color: #fff; border-radius: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #3f8ff9, #1d6fd4); padding: 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900;">Ghawy</h1>
+                <p style="margin: 8px 0 0; opacity: .8;">AI Learning Platform</p>
+            </div>
+            <div style="padding: 32px;">
+                <h2 style="color: #fff; margin-bottom: 16px;">Hi {full_name} 👋</h2>
+                <p style="color: #9ca3af; line-height: 1.8; margin-bottom: 24px;">
+                    Your <strong style="color: #fff;">{plan["label"]}</strong> subscription expires on
+                    <strong style="color: #f59e0b;">{end_date_str}</strong>
+                    — only <strong style="color: #ef4444;">{days_left} day{'s' if days_left > 1 else ''}</strong> left.
+                </p>
+                <div style="background: #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
+                    <div style="font-size: .8rem; color: #6b7280; margin-bottom: 4px;">Renewal Price</div>
+                    <div style="font-size: 1.5rem; font-weight: 900; color: #3f8ff9;">{plan["amount"]}</div>
+                </div>
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <a href="{renew_url}"
+                       style="display: inline-block; background: #3f8ff9; color: #fff; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 1rem; text-decoration: none;">
+                        🔄 {plan["renew_label"]}
+                    </a>
+                </div>
+                <p style="color: #6b7280; font-size: .82rem; text-align: center;">
+                    Need help? Reach out anytime.
+                </p>
+            </div>
+            <div style="background: #050507; padding: 16px; text-align: center;">
+                <p style="color: #374151; font-size: .75rem; margin: 0;">© 2026 Ghawy — AI Automation Atlas</p>
+            </div>
+        </div>
+        """
+
+    _send_email(
+        to_email=to_email,
+        subject=subject,
+        body_text=body_text,
+        body_html=body_html,
+    )
+
