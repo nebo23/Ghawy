@@ -2484,7 +2484,7 @@ function renderGohGuests() {
       uiAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
     } else {
       let initials = g.avatar_initials || g.name.substring(0,2).toUpperCase();
-      let color = g.avatar_color || '#84cc16';
+      let color = g.avatar_color || '#c1ff11';
       uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#','')}&color=fff&size=40&bold=true`;
     }
     return `

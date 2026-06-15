@@ -37,7 +37,8 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
         data = body
     
     if received_hash and not verify_kashier_webhook(data, received_hash):
-        logger.warning("⚠️ Webhook signature mismatch — continuing anyway in test mode")
+        logger.error("🚨 Webhook signature mismatch. Possible spoofing attempt!")
+        raise HTTPException(status_code=400, detail="Invalid signature")
     
     status = data.get("status", "")
     order_id = data.get("merchantOOrderId") or data.get("merchantOrderId") or data.get("orderId", "")
@@ -73,8 +74,8 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
                 
 
                 
-                # TESTING: Subscription ends in 2 minutes
-                user.end_at = datetime.utcnow() + timedelta(days=2)
+                # Set subscription end date based on plan (30 / 90 / 365 days)
+                user.end_at = datetime.utcnow() + timedelta(days=days)
                 user.is_active = True
             
             db.commit()

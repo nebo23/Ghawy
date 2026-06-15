@@ -41,7 +41,7 @@ const RecorderModule = (function () {
             timerInterval = setInterval(updateTimer, 1000);
         } catch (err) {
             console.error('Mic access denied', err);
-            alert('Please allow microphone access');
+            showToast('Please allow microphone access', 'error');
         }
     }
 

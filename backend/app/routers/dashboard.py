@@ -16,7 +16,8 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
         "level": current_user.level,
         "xp": current_user.xp,
         "streak_days": current_user.streak_days,
-        "badge": current_user.badge
+        "badge": current_user.badge,
+        "is_admin": current_user.is_admin
     }
 
     # 2. Courses (For now, let's just return all published courses with the user's progress)

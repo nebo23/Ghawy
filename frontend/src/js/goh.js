@@ -165,7 +165,7 @@ function updateFeaturedHero(g) {
       if (g.avatar_url) {
         finalAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
       } else {
-        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#84cc16').replace('#','')}&color=fff&size=200&bold=true`;
+        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#c1ff11').replace('#','')}&color=fff&size=200&bold=true`;
       }
       document.getElementById('heroAvatar').src = finalAvatar;
       document.getElementById('heroTotalSessions').textContent = g.sessions_count || 0;
@@ -190,7 +190,7 @@ function updateFeaturedHero(g) {
       if (g.avatar_url) {
         finalAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
       } else {
-        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#84cc16').replace('#','')}&color=fff&size=200&bold=true`;
+        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=${(g.avatar_color || '#c1ff11').replace('#','')}&color=fff&size=200&bold=true`;
       }
       document.getElementById('heroMobileAvatar').src = finalAvatar;
       document.getElementById('heroMobileTotalSessions').textContent = g.sessions_count || 0;
@@ -221,7 +221,7 @@ function renderGuests(guests) {
       if (!initials) {
         initials = g.name.substring(0,2).toUpperCase();
       }
-      const color = g.avatar_color || '#84cc16';
+      const color = g.avatar_color || '#c1ff11';
       finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#','')}&color=fff&size=200&bold=true`;
     }
     
@@ -379,7 +379,7 @@ function closeSuggestModal() {
 async function submitSuggestion() {
   const name = document.getElementById('suggestName').value.trim();
   if(!name) {
-      alert("Please enter a guest name");
+      showToast("Please enter a guest name", 'error');
       return;
   }
   const reason = document.getElementById('suggestReason').value.trim();

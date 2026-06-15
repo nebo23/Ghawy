@@ -101,13 +101,13 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
   // Validate type
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowed.includes(file.type)) {
-    alert('Only JPG, PNG, WEBP files are allowed');
+    showToast('Only JPG, PNG, WEBP files are allowed', 'error');
     return;
   }
 
   // Validate size (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    alert('File size must be under 5MB');
+    showToast('File size must be under 5MB', 'error');
     return;
   }
 
@@ -148,7 +148,7 @@ async function submitStep1() {
         const data = await res.json();
         uploadedAvatarUrl = data.avatar_url;
       } else {
-        alert('Upload failed. Please try again.');
+        showToast('Upload failed. Please try again.', 'error');
         btn.disabled = false;
         btn.textContent = 'Continue →';
         return;
@@ -156,7 +156,7 @@ async function submitStep1() {
     }
     goToPhoneStep();
   } catch (e) {
-    alert('Error uploading. Please try again.');
+    showToast('Error uploading. Please try again.', 'error');
     btn.disabled = false;
     btn.textContent = 'Continue →';
   }
@@ -248,7 +248,7 @@ async function submitStep3() {
       btn.textContent = 'Start Exploring →';
     }
   } catch (e) {
-    alert('Connection error. Please try again.');
+    showToast('Connection error. Please try again.', 'error');
     btn.disabled = false;
     btn.textContent = 'Start Exploring →';
   }
@@ -315,7 +315,7 @@ async function sendPhoneOTP() {
     if (typeof showToast !== 'undefined') {
       showToast('Enter a valid Egyptian phone number', 'error');
     } else {
-      alert('Enter a valid Egyptian phone number');
+      showToast('Enter a valid Egyptian phone number', 'error');
     }
     return;
   }
@@ -345,7 +345,7 @@ async function sendPhoneOTP() {
     }
   } catch (err) {
     if (typeof showToast !== 'undefined') showToast('No connection to server', 'error');
-    else alert('No connection to server');
+    else showToast('No connection to server', 'error');
   } finally {
     setLoadingBtn('sendOtpBtn', false);
   }
@@ -357,7 +357,7 @@ async function verifyPhoneOTP() {
 
   if (code.length !== 6) {
     if (typeof showToast !== 'undefined') showToast('Enter the full 6-digit code', 'error');
-    else alert('Enter the full 6-digit code');
+    else showToast('Enter the full 6-digit code', 'error');
     return;
   }
 
@@ -381,7 +381,7 @@ async function verifyPhoneOTP() {
     }
   } catch (err) {
     if (typeof showToast !== 'undefined') showToast('No connection to server', 'error');
-    else alert('No connection to server');
+    else showToast('No connection to server', 'error');
   } finally {
     setLoadingBtn('verifyOtpBtn', false);
   }

@@ -1,0 +1,228 @@
+/* ══════════════════════════════════════
+   Help Center — Page Styles
+   Uses CSS variables from dashboard.css
+══════════════════════════════════════ */
+
+/* Header */
+.help-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-top: 8px;
+}
+
+.help-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.help-header p {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+}
+
+/* Grid — 3 cards: 2 on top row, 1 spanning full width on bottom */
+.help-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+/* Cards */
+.help-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.help-card:hover {
+    border-color: var(--gold-border);
+    transform: translateY(-2px);
+}
+
+/* Icon badge */
+.help-icon {
+    font-size: 1.4rem;
+    color: var(--gold);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--gold-subtle);
+    border-radius: 14px;
+    border: 1px solid var(--gold-border);
+}
+
+.help-card h3 {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.help-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+/* Action buttons */
+.help-action {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-accent {
+    background: var(--gold);
+    color: #000;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s, transform 0.1s;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.btn-accent:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.btn-outline:hover {
+    background: var(--bg-hover);
+    border-color: var(--gold-border);
+    color: var(--text-primary);
+}
+
+.btn-sm {
+    padding: 7px 14px;
+    font-size: 0.82rem;
+}
+
+/* Team Card — full row on second line */
+.team-card {
+    grid-column: 1 / -1;
+}
+
+/* Team members list */
+.team-members {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.member-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-hover);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+}
+
+.member-row:hover {
+    border-color: var(--gold-border);
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-avatar {
+    width: 38px;
+    height: 38px;
+    background: var(--gold-subtle);
+    color: var(--gold);
+    border: 1px solid var(--gold-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.member-info h4 {
+    margin: 0 0 2px 0;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.member-info span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Footer */
+.help-footer {
+    text-align: center;
+    margin-top: 36px;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.help-footer a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.help-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .help-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-card {
+        grid-column: auto;
+    }
+
+    .help-header h1 {
+        font-size: 1.6rem;
+    }
+}

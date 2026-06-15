@@ -309,7 +309,7 @@ if (confirmDeleteBtn) {
             await apiFetch('/auth/account', { method: 'DELETE' });
             localStorage.removeItem('token');
             window.location.href = 'index.html';
-        } catch (e) { console.error(e); alert('Error deleting account'); }
+        } catch (e) { console.error(e); showToast('Error deleting account', 'error'); }
     });
 }
 

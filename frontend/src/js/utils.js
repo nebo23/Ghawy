@@ -1,4 +1,7 @@
-const API = 'http://127.0.0.1:8000';
+// Auto-detect API base: use /api prefix in production (via Nginx), direct port in local dev
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://127.0.0.1:8000'
+  : '/api';
 
 function showAlert(msg, type) {
   const el = document.getElementById('alert');

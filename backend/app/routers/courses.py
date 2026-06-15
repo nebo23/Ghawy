@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.database import get_db
 from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
@@ -25,8 +25,17 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 # ═══════════════════════════════════════════════════════════════
 
 @router.get("", response_model=List[CourseOut])
-def list_courses(db: Session = Depends(get_db)):
-    return db.query(Course).filter(Course.is_published == True).all()
+def get_courses(
+    db: Session = Depends(get_db),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0)
+):
+    return db.query(Course)\
+        .options(joinedload(Course.lessons))\
+        .filter(Course.is_published == True)\
+        .limit(limit)\
+        .offset(offset)\
+        .all()
 
 @router.get("/{course_id}", response_model=CourseDetailOut)
 def get_course_detail(course_id: int, db: Session = Depends(get_db)):

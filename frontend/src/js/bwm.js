@@ -1,6 +1,6 @@
 (async () => {
-  const user = await requireActiveUser();
-  if (!user) return;
+    const user = await requireActiveUser();
+    if (!user) return;
 })();
 
 /**
@@ -30,19 +30,19 @@ async function initBWM() {
 
 // ═══ TOAST ═══
 function showToast(message, type = 'info') {
-  let container = document.getElementById('toastContainerBwm');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toastContainerBwm';
-    container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
-    document.body.appendChild(container);
-  }
-  const bg = type === 'error' ? 'rgba(239,68,68,.9)' : type === 'success' ? 'rgba(34,197,94,.9)' : 'rgba(63,143,249,.9)';
-  const toast = document.createElement('div');
-  toast.style.cssText = `padding:12px 20px;background:${bg};color:#fff;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideIn .3s;max-width:380px;`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3500);
+    let container = document.getElementById('toastContainerBwm');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainerBwm';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
+        document.body.appendChild(container);
+    }
+    const bg = type === 'error' ? 'rgba(239,68,68,.9)' : type === 'success' ? 'rgba(34,197,94,.9)' : 'rgba(63,143,249,.9)';
+    const toast = document.createElement('div');
+    toast.style.cssText = `padding:12px 20px;background:${bg};color:#fff;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideIn .3s;max-width:380px;`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
 // --- TABS ---
@@ -219,7 +219,7 @@ function setupCalendar() {
     const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon
 
     let html = '';
-    for(let i=0; i<7; i++) {
+    for (let i = 0; i < 7; i++) {
         const d = new Date(now);
         d.setDate(d.getDate() - dayOfWeek + i);
         const active = i === dayOfWeek ? 'active' : '';
@@ -282,7 +282,10 @@ function connectLiveSocket() {
     if (!token) return;
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//127.0.0.1:8000/api/live-sessions/ws/${token}`;
+    const apiHost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? '127.0.0.1:8000'
+        : window.location.host;
+    const wsUrl = `${wsProtocol}//${apiHost}/api/live-sessions/ws/${token}`;
 
     liveSocket = new WebSocket(wsUrl);
 

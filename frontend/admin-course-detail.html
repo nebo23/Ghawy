@@ -28,40 +28,121 @@
             } catch (e) { window.location.replace("/login.html"); }
         })();
     </script>
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=10" />
 </head>
 
 <body>
     <div class="dash-layout">
         <!-- SIDEBAR -->
         <aside class="dash-sidebar" id="dashSidebar">
-            <div class="sidebar-logo"><img src="./imgs/community-logo.png" alt="Ghawy" /><span>Ghawy</span></div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html?v=2" class="nav-item"><i data-lucide="layout-grid" class="nav-icon"></i>
-                    <span>الرئيسية</span></a>
-                <a href="courses.html?v=2" class="nav-item"><i data-lucide="presentation" class="nav-icon"></i>
-                    <span>الكورسات</span></a>
-                <a href="build-with-me.html" class="nav-item"><i data-lucide="play-circle" class="nav-icon"></i>
-                    <span>ابني معايا (لايف)</span></a>
-                <a href="guest-of-honors.html?v=2" class="nav-item"><i data-lucide="star" class="nav-icon"></i>
-                    <span>ضيوف الشرف</span></a>
-                                <a href="ai-updates.html?v=5" class="nav-item"><i data-lucide="sparkles" class="nav-icon"></i>
-                    <span>AI Updates</span></a>
-<a href="chat.html?v=5" class="nav-item"><i data-lucide="message-circle" class="nav-icon"></i> <span>شات
-                        المجتمع</span></a>
-                <a href="profile-settings.html" class="nav-item"><i data-lucide="settings" class="nav-icon"></i>
-                    <span>الإعدادات</span></a>
-                <a href="teamdashboard.html?v=2" class="nav-item" data-admin-only="true"><i data-lucide="users"
-                        class="nav-icon"></i> <span>Team Dashboard</span></a>
-            </nav>
-            <div class="sidebar-user" id="sidebarUser">
-                <div class="sidebar-user-avatar" id="sidebarAvatar"><i data-lucide="user"
-                        style="width:16px;height:16px;"></i></div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="sidebarName">—</div>
-                    <div class="sidebar-user-badge" id="sidebarBadge">عضو</div>
+        <!-- Logo -->
+        <div class="sidebar-logo">
+            <img src="./imgs/community-logo.png" alt="Ghawy" />
+            <span>Ghawy</span>
+        </div>
+
+        <!-- Nav Links -->
+                        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+                <span class="nav-icon-wrap nav-icon-white">
+                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Dashboard</span>
+            </a>
+            <a href="courses.html" class="nav-item active" id="nav-courses">
+                <span class="nav-icon-wrap nav-icon-blue">
+                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Courses</span>
+            </a>
+            <a href="chat.html" class="nav-item" id="nav-chat">
+                <span class="nav-icon-wrap nav-icon-blue">
+                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Community Chat</span>
+            </a>
+            <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                <span class="nav-icon-wrap nav-icon-gray">
+                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Direct Messages</span>
+                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+            </a>
+            <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                <span class="nav-icon-wrap nav-icon-green">
+                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>AI Updates</span>
+            </a>
+            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                <span class="nav-icon-wrap nav-icon-green">
+                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Build With Me</span>
+            </a>
+            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                <span class="nav-icon-wrap nav-icon-yellow">
+                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Guest of Honors</span>
+            </a>
+            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                <span class="nav-icon-wrap nav-icon-purple">
+                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Achievements</span>
+            </a>
+
+            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
+
+            <a href="profile-settings.html" class="nav-item" id="nav-settings">
+                <span class="nav-icon-wrap nav-icon-gray">
+                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Settings</span>
+            </a>
+            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
+                <span class="nav-icon-wrap nav-icon-gray">
+                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Team Dashboard</span>
+            </a>
+            <a href="help-center.html" class="nav-item" id="nav-help">
+                <span class="nav-icon-wrap nav-icon-gray">
+                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                </span>
+                <span>Help center</span>
+            </a>
+        </nav>
+
+        <!-- ─── User Profile Card ─── -->
+        <div class="sb-profile-card">
+            <div class="sb-profile-row">
+                <div class="sb-avatar" id="sidebarAvatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="sb-user-info">
+                    <div class="sb-name" id="sidebarName">—</div>
+                    <div class="sb-badge" id="sidebarBadge">Member</div>
                 </div>
             </div>
-        </aside>
+
+            <div class="sb-level-row">
+                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
+                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
+            </div>
+            <div class="sb-xp-track">
+                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
+            </div>
+            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
+
+            <div class="sb-streak-row">
+                <span class="sb-streak-fire">🔥</span>
+                <span><strong id="streakCount">0</strong> Days Streak</span>
+                <span class="sb-streak-sub">Keep going!</span>
+            </div>
+        </div>
+    </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="dash-main">
@@ -250,6 +331,7 @@
         <script src="src/js/utils.js"></script>
         <script src="src/js/admin-courses.js"></script>
         <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+<script src="src/js/dashboard-new.js?v=10"></script>
 </body>
 
 </html>

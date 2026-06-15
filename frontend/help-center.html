@@ -7,8 +7,8 @@
     <meta http-equiv="Expires" content="0" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard — Ghawy</title>
-    <meta name="description" content="Ghawy Dashboard — Master AI, Build Leverage, Create Freedom" />
+    <title>Help Center — Ghawy</title>
+    <meta name="description" content="Ghawy Help Center — تواصل مع فريق الدعم" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,6 +21,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="src/css/dashboard.css?v=10" />
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=10" />
+    <link rel="stylesheet" href="src/css/help-center.css" />
 
     <!-- Auth Guard (inline, runs before render) -->
     <script>
@@ -63,7 +64,7 @@
 
         <!-- Nav Links -->
                         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
+            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
                 <span class="nav-icon-wrap nav-icon-white">
                     <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
                 </span>
@@ -121,13 +122,13 @@
                 </span>
                 <span>Settings</span>
             </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true" style="display: none;">
+            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
                 <span class="nav-icon-wrap nav-icon-gray">
                     <i data-lucide="users" style="width: 18px; height: 18px;"></i>
                 </span>
                 <span>Team Dashboard</span>
             </a>
-            <a href="help-center.html" class="nav-item" id="nav-help">
+            <a href="help-center.html" class="nav-item active" id="nav-help">
                 <span class="nav-icon-wrap nav-icon-gray">
                     <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
                 </span>
@@ -239,151 +240,257 @@
             </div>
         </header>
 
-        <!-- CONTENT -->
-        <div class="dash-content">
+        <!-- CONTENT — dir="rtl" on the content div only -->
+        <div class="dash-content" dir="rtl">
 
-            <!-- ── Stats Row ── -->
-            <div class="stats-row" id="statsRow">
-                <!-- Populated by JS -->
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
+            <div class="help-header">
+                <h1>مركز المساعدة</h1>
+                <p>كيف يمكننا مساعدتك اليوم؟</p>
             </div>
 
-            <!-- ── Main Grid ── -->
-            <div class="dash-grid">
+            <div class="help-grid">
 
-                <!-- ── LEFT / MAIN ── -->
-                <div class="dash-grid-main">
-
-                    <!-- AI PATH Hero -->
-                    <div class="ai-hero" id="aiHero">
-                        <div class="ai-hero-content">
-                            <div class="ai-hero-badge"><i class="fa-solid fa-bolt"></i> AI PATH</div>
-                            <h2>Master AI. Build Leverage. Create Freedom.</h2>
-                            <p>Practical courses. Real projects. Real results.</p>
-                            <a href="#" id="continueLearnBtn" class="btn-continue">
-                                Continue Learning <i class="fa-solid fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        <div class="ai-hero-img">
-                            <img src="./imgs/ai-cube.png" alt="AI" id="aiHeroImg" onerror="this.style.display='none'" />
-                        </div>
+                <!-- Card 1: Email -->
+                <div class="help-card">
+                    <div class="help-icon"><i class="fa-regular fa-envelope"></i></div>
+                    <h3>راسلنا على الإيميل</h3>
+                    <p>بعت مشكلتك وهنرد عليك في أقرب وقت</p>
+                    <div class="help-action">
+                        <a href="mailto:support@ghawy.ai" class="btn-accent">
+                            فتح الإيميل&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                        <button class="btn-outline" id="copyEmailBtn" onclick="copyEmail()">نسخ الإيميل</button>
                     </div>
-
-                    <!-- Your Courses -->
-                    <div class="section-header">
-                        <h3 class="section-title">Your Courses</h3>
-                        <a href="courses.html" class="section-link">View All</a>
-                    </div>
-                    <div class="courses-grid" id="coursesGrid">
-                        <!-- Skeleton Loaders -->
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                    </div>
-
-                    <!-- Guest of Honors -->
-                    <div class="section-header" style="margin-top:8px">
-                        <h3 class="section-title">Guest of Honors</h3>
-                        <a href="guest-of-honors.html" class="section-link">View All</a>
-                    </div>
-                    <div class="goh-row" id="gohRow">
-                        <!-- Populated by JS -->
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                    </div>
-
-                    <!-- AI Updates -->
-                    <div class="section-header" style="margin-top:24px">
-                        <h3 class="section-title">New AI Updates</h3>
-                        <a href="ai-updates.html" class="section-link">View All</a>
-                    </div>
-                    <div class="ai-updates-grid" id="aiUpdatesGrid">
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                    </div>
-
                 </div>
 
-                <!-- ── RIGHT SIDE ── -->
-                <div class="dash-grid-side">
-
-                    <!-- Live Session Widget -->
-                    <div id="liveSessionWidget">
-                        <!-- Populated by JS -->
-                        <div class="side-card skeleton-card" style="height:160px;margin-bottom:16px"></div>
+                <!-- Card 2: WhatsApp -->
+                <div class="help-card">
+                    <div class="help-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    <h3>تواصل معنا على الواتساب</h3>
+                    <p>ابعت رسالة وهنرد عليك بسرعة</p>
+                    <div class="help-action">
+                        <a href="https://wa.me/201033903334" target="_blank" class="btn-accent">
+                            فتح واتساب&nbsp;<i class="fa-brands fa-whatsapp"></i>
+                        </a>
                     </div>
+                </div>
 
-                    <!-- Upcoming Session -->
-                    <div class="upcoming-card side-card" id="upcomingCard">
-                        <div class="upcoming-header">
-                            <span class="upcoming-label">Upcoming Session</span>
-                            <a href="build-with-me.html" class="section-link" style="font-size:.7rem">See All</a>
+                <!-- Card 3: Support Team -->
+                <div class="help-card team-card">
+                    <div class="help-icon"><i class="fa-regular fa-comments"></i></div>
+                    <h3>تكلم فريق الدعم مباشرة</h3>
+                    <p>تقدر تتواصل مع أي عضو من فريقنا داخل غاوي</p>
+                    <div class="team-members">
+                        <div class="member-row">
+                            <div class="member-info">
+                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                <div>
+                                    <h4>اسم العضو 1</h4>
+                                    <span>Customer Success</span>
+                                </div>
+                            </div>
+                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
                         </div>
-                        <div class="upcoming-timer" id="upcomingTimer">
-                            <span class="timer-icon">📅</span>
-                            <span id="timerDisplay">—</span>
+                        <div class="member-row">
+                            <div class="member-info">
+                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                <div>
+                                    <h4>اسم العضو 2</h4>
+                                    <span>Technical Support</span>
+                                </div>
+                            </div>
+                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
                         </div>
-                        <div class="upcoming-title" id="upcomingTitle">Loading...</div>
-                        <div class="upcoming-date" id="upcomingDate">—</div>
+                        <div class="member-row">
+                            <div class="member-info">
+                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                <div>
+                                    <h4>اسم العضو 3</h4>
+                                    <span>Community Manager</span>
+                                </div>
+                            </div>
+                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Community Chat Widget -->
-                    <div class="side-card chat-widget-card" id="chatWidget">
-                        <div class="chat-widget-header">
-                            <span class="chat-widget-title">Community Chat</span>
-                            <span class="online-pill">
-                                <span class="online-dot"></span>
-                                <span id="dashOnlineCount">0</span> Online
-                            </span>
-                        </div>
-                        <div class="chat-messages" id="chatMessages">
-                            <!-- Populated by WS / REST -->
-                        </div>
-                        <div class="chat-input-row">
-                            <input type="text" id="dashChatInput" class="chat-input" placeholder="Type a message..." />
-                            <button id="dashChatSendBtn" class="chat-send-btn" title="Send">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
+            </div><!-- /.help-grid -->
 
-                </div><!-- /.dash-grid-side -->
-            </div><!-- /.dash-grid -->
+            <div class="help-footer">
+                لا تنسى تقرأ <a href="terms.html">الشروط والأحكام</a> و <a href="privacy.html">سياسة الخصوصية</a> قبل التواصل معنا.
+            </div>
+
         </div><!-- /.dash-content -->
     </div><!-- /.dash-main -->
 </div><!-- /.dash-layout -->
 
+<!-- ══════════════════ SCRIPTS ══════════════════ -->
 <!-- Close dropdown on outside click -->
 <script>
     document.addEventListener('click', e => {
         const d = document.getElementById('userDropdown');
         const u = document.getElementById('topbarUser');
-        if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open');
+        if (d && !d.contains(e.target) && u && !u.contains(e.target)) d.classList.remove('open');
         const np = document.getElementById('notifPanel');
         const nw = document.getElementById('notifWrapper');
         if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
     });
+
+    function toggleNotifPanel() {
+        const panel = document.getElementById('notifPanel');
+        if (panel) panel.classList.toggle('open');
+    }
+
+    function logout() {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "login.html";
+    }
+
+    function copyEmail() {
+        navigator.clipboard.writeText('support@ghawy.ai').then(() => {
+            const btn = document.getElementById('copyEmailBtn');
+            btn.textContent = '✓ تم النسخ';
+            btn.style.borderColor = 'var(--gold)';
+            btn.style.color = 'var(--gold)';
+            setTimeout(() => {
+                btn.textContent = 'نسخ الإيميل';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }, 2000);
+        });
+    }
+
+    // ── Mobile Sidebar ──
+    (function initSidebar() {
+        const hamburger = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('dashSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (!hamburger || !sidebar) return;
+
+        hamburger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('visible');
+            hamburger.classList.toggle('active');
+        });
+
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('visible');
+                hamburger.classList.remove('active');
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('visible');
+                hamburger.classList.remove('active');
+            }
+        });
+    })();
 </script>
 
+<!-- utils.js — provides API, buildAvatarHtml, etc. -->
 <script src="src/js/utils.js"></script>
-<script src="src/js/dashboard-new.js?v=10"></script>
+
+<!-- Inline: load user profile for this page -->
+<script>
+(async function loadHelpCenterUser() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // ── Helpers (same as dashboard-new.js) ──
+    const AVATAR_COLORS = ['#4fc3f7', '#69f0ae', '#ce93d8', '#ffd54f', '#ff8a65', '#80cbc4', '#f48fb1'];
+    function avatarColor(id) { return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length]; }
+    function initials(name) { return (name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(); }
+
+    function buildAvatarHtml(name, avatarUrl, userId, size = 28) {
+        const bg = avatarColor(userId);
+        const init = initials(name);
+        if (avatarUrl) {
+            const full = avatarUrl.startsWith('http') ? avatarUrl : (window.API || '') + avatarUrl;
+            return `<img src="${full}" alt="" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;"
+                onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.35)}px;font-weight:800;\\'>${init}</div>'" />`;
+        }
+        return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.35)}px;font-weight:800;">${init}</div>`;
+    }
+
+    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val || '—'; }
+
+    // ── Step 1: Populate from localStorage immediately (fast) ──
+    try {
+        const uStr = localStorage.getItem('user');
+        if (uStr) {
+            const u = JSON.parse(uStr);
+            const name = u.full_name || '—';
+            setText('sidebarName', name);
+            setText('topbarName', name);
+            setText('topbarNameWelcome', name);
+            setText('dropdownName', name);
+
+            // Avatar from localStorage (may not have avatar_url yet)
+            const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+            ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = avHtml;
+            });
+        }
+    } catch (e) { console.error(e); }
+
+    // ── Step 2: Fetch fresh data from API for accurate avatar ──
+    try {
+        const apiBase = window.API || '';
+        const res = await fetch(apiBase + '/dashboard/summary?_t=' + Date.now(), {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const u = data.user;
+        if (!u) return;
+
+        const name = u.full_name || '—';
+        setText('sidebarName', name);
+        setText('topbarName', name);
+        setText('topbarNameWelcome', name);
+        setText('dropdownName', name);
+
+        // Badge
+        const badge = u.badge || 'Member';
+        setText('sidebarBadge', badge);
+
+        // Level + XP
+        const level = u.level || 1;
+        const xp = u.xp || 0;
+        const nextXp = u.next_level_xp || (level * 300);
+        setText('sidebarLevelNum', level);
+        setText('sidebarLevelTitle', badge);
+        const xpBar = document.getElementById('sidebarXpBar');
+        if (xpBar) xpBar.style.width = Math.min(100, Math.round((xp / nextXp) * 100)) + '%';
+        setText('sidebarXpText', `${xp} / ${nextXp} XP`);
+
+        // Streak
+        setText('streakCount', u.streak_days || 0);
+
+        // Avatar (full quality from API)
+        const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = avHtml;
+        });
+
+        // Show/hide Team Dashboard link
+        const teamNav = document.getElementById('nav-team');
+        if (teamNav) teamNav.style.display = u.is_admin ? '' : 'none';
+
+    } catch (e) {
+        console.error('Help center user load error:', e);
+    }
+})();
+</script>
+
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
 </html>

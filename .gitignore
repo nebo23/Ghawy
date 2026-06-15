@@ -1,10 +1,39 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
 # Python Cache
 __pycache__/
 *.pyc
+*.pyo
 **/__pycache__/
+*.egg-info/
+dist/
+build/
 
-# Environments
+# Environments & Virtual Environments
 backend/.venv/
 .venv/
+venv/
+env/
 
+# Secrets & Environment Files — NEVER COMMIT THESE
+.env
+.env.*
+!.env.*.example
+
+# Uploads (user-generated content — stays on server)
+backend/uploads/
+uploads/
+
+# Logs
+*.log
+logs/
+
+# SQLite (legacy — should never be in production)
+*.db
+*.sqlite3
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# Node (if any frontend tooling)
+node_modules/

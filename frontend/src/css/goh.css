@@ -55,7 +55,7 @@
 
 .accent { 
   color: #3f8ff9; 
-  background: linear-gradient(90deg, #3f8ff9, #84cc16);
+  background: linear-gradient(90deg, #3f8ff9, #c1ff11);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -256,7 +256,7 @@
 }
 
 .view-all {
-  color: #84cc16;
+  color: #c1ff11;
   font-size: 0.9rem;
   text-decoration: none;
   font-weight: 600;
@@ -449,7 +449,7 @@
   line-height: 1.2;
 }
 
-.session-date .month { display: block; font-size: 0.75rem; color: #84cc16; font-weight: 700; text-transform: uppercase; }
+.session-date .month { display: block; font-size: 0.75rem; color: #c1ff11; font-weight: 700; text-transform: uppercase; }
 .session-date .day { display: block; font-size: 1.2rem; font-weight: 800; color: #fff; }
 
 .session-title {
@@ -571,7 +571,7 @@
   top: 16px;
   left: 16px;
   background: rgba(132, 204, 22, 0.15);
-  color: #84cc16;
+  color: #c1ff11;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.75rem;
@@ -589,7 +589,7 @@
   margin: 24px auto 16px;
   display: block;
   border: 4px solid #1a1a1a;
-  box-shadow: 0 0 0 2px #84cc16;
+  box-shadow: 0 0 0 2px #c1ff11;
 }
 
 .featured-name {
@@ -700,7 +700,7 @@
 }
 
 .gain-list li:last-child { margin-bottom: 0; }
-.gain-list li i { color: #84cc16; width: 16px; height: 16px; }
+.gain-list li i { color: #c1ff11; width: 16px; height: 16px; }
 
 .impact-stats {
   display: flex;

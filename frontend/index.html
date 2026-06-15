@@ -1524,7 +1524,7 @@
             }
 
             #payment .pricing-card-featured .pricing-badge {
-                background: linear-gradient(135deg, #c1ff11, #84cc16);
+                background: linear-gradient(135deg, #c1ff11, #c1ff11);
                 box-shadow: 0 0 28px rgba(193, 255, 17, 0.24);
             }
 
@@ -1891,7 +1891,7 @@
 
                         throw new Error(result.detail || 'Payment unavailable');
                     } catch (error) {
-                        alert('تعذر بدء عملية الدفع حالياً. من فضلك جرّب مرة أخرى.');
+                        showToast('تعذر بدء عملية الدفع حالياً. من فضلك جرّب مرة أخرى.', 'error');
                     } finally {
                         if (trigger) {
                             trigger.disabled = false;

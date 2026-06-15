@@ -19,7 +19,7 @@ from app.database import DATABASE_URL
 config = context.config
 
 # 3. Overwrite sqlalchemy.url with environment variable
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

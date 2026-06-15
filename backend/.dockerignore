@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Virtual environments — never copy into image
+.venv/
+venv/
+env/
+
+# Secrets — NEVER bake into image
+.env
+.env.*
+!.env.production.example
+
+# Dev tools
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Alembic cache
+alembic/__pycache__/
+alembic/versions/__pycache__/
+
+# Logs
+*.log
+logs/
+
+# Test files
+tests/
+pytest.ini
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+
+# Scripts (not needed in production image)
+scripts/
+
+# Uploads — these live in a named volume, not the image
+uploads/
+
+# Docs
+*.md
+README*
