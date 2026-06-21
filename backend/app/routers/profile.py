@@ -152,7 +152,7 @@ def upload_avatar(
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    avatar_url = f"http://127.0.0.1:8000/uploads/avatars/{filename}"
+    avatar_url = f"/uploads/avatars/{filename}"
     current_user.avatar_url = avatar_url
     db.commit()
     db.refresh(current_user)
@@ -194,7 +194,7 @@ def complete_onboarding(
         current_user.selected_avatar = data.selected_avatar
         # Auto-set avatar_url from preset if no upload was provided
         if not data.avatar_url:
-            current_user.avatar_url = f"http://127.0.0.1:5500/imgs/avatars/{data.selected_avatar}"
+            current_user.avatar_url = f"https://ghawy.ai/imgs/avatars/{data.selected_avatar}"
 
     # Mark onboarding as completed
     current_user.onboarding_completed = True
@@ -245,10 +245,10 @@ def upload_avatar_onboarding(
         shutil.copyfileobj(file.file, buffer)
 
     avatar_url = f"/static/avatars/{filename}"
-    current_user.avatar_url = f"http://127.0.0.1:8000{avatar_url}"
+    current_user.avatar_url = avatar_url
     db.commit()
 
-    return {"avatar_url": f"http://127.0.0.1:8000{avatar_url}"}
+    return {"avatar_url": avatar_url}
 
 
 # ─── Get Public Profile ────────────────────────────────────

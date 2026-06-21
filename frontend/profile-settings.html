@@ -19,10 +19,22 @@
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
         @keyframes pulse-skeleton {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.15; }
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.15;
+            }
         }
-        #subscriptionSection .settings-section-title { display: flex; align-items: center; }
+
+        #subscriptionSection .settings-section-title {
+            display: flex;
+            align-items: center;
+        }
+
         @media (max-width: 600px) {
             #subActive div[style*='grid-template-columns'] {
                 grid-template-columns: 1fr !important;
@@ -60,114 +72,110 @@
 <body>
     <div class="dash-layout">
         <aside class="dash-sidebar" id="dashSidebar">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <img src="./imgs/community-logo.png" alt="Ghawy" />
-            <span>Ghawy</span>
-        </div>
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
+            </div>
 
-        <!-- Nav Links -->
-                        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
-                <span class="nav-icon-wrap nav-icon-white">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Dashboard</span>
-            </a>
-            <a href="courses.html" class="nav-item" id="nav-courses">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Courses</span>
-            </a>
-            <a href="chat.html" class="nav-item" id="nav-chat">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Community Chat</span>
-            </a>
-            <a href="direct-messages.html" class="nav-item" id="nav-dm">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Direct Messages</span>
-                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
-            </a>
-            <a href="ai-updates.html" class="nav-item" id="nav-ai">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>AI Updates</span>
-            </a>
-            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Build With Me</span>
-            </a>
-            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
-                <span class="nav-icon-wrap nav-icon-yellow">
-                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Guest of Honors</span>
-            </a>
-            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
-                <span class="nav-icon-wrap nav-icon-purple">
-                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Achievements</span>
-            </a>
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+                    <span class="nav-icon-wrap nav-icon-white">
+                        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.html" class="nav-item" id="nav-courses">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Courses</span>
+                </a>
+                <a href="chat.html" class="nav-item" id="nav-chat">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Community Chat</span>
+                </a>
+                <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Direct Messages</span>
+                    <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+                </a>
+                <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>AI Updates</span>
+                </a>
+                <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Build With Me</span>
+                </a>
+                <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                    <span class="nav-icon-wrap nav-icon-yellow">
+                        <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Guest of Honors</span>
+                </a>
+                <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                    <span class="nav-icon-wrap nav-icon-purple">
+                        <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Achievements</span>
+                </a>
 
-            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
-
-            <a href="profile-settings.html" class="nav-item active" id="nav-settings">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Settings</span>
-            </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Team Dashboard</span>
-            </a>
-            <a href="help-center.html" class="nav-item" id="nav-help">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Help center</span>
-            </a>
-        </nav>
-
-        <!-- ─── User Profile Card ─── -->
-        <div class="sb-profile-card">
-            <div class="sb-profile-row">
-                <div class="sb-avatar" id="sidebarAvatar">
-                    <i class="fa-solid fa-user"></i>
+                <div
+                    style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
                 </div>
-                <div class="sb-user-info">
-                    <div class="sb-name" id="sidebarName">—</div>
-                    <div class="sb-badge" id="sidebarBadge">Member</div>
+
+                <a href="profile-settings.html" class="nav-item active" id="nav-settings">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Team Dashboard</span>
+                </a>
+                <a href="help-center.html" class="nav-item" id="nav-help">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Help center</span>
+                </a>
+            </nav>
+
+            <!-- ─── User Profile Card ─── -->
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <a href="profile-settings.html" class="sb-avatar" id="sidebarAvatar" title="Settings"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="sb-user-info">
+                        <div class="sb-name" id="sidebarName">—</div>
+                        <div class="sb-badge" id="sidebarBadge">Member</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="sb-level-row">
-                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
-                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
-            </div>
-            <div class="sb-xp-track">
-                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
-            </div>
-            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
 
-            <div class="sb-streak-row">
-                <span class="sb-streak-fire">🔥</span>
-                <span><strong id="streakCount">0</strong> Days Streak</span>
-                <span class="sb-streak-sub">Keep going!</span>
+                <a href="profile.html#achievements" class="sb-streak-row" title="Achievements"
+                    style="text-decoration: none; cursor: pointer;">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong id="streakCount">0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </a>
             </div>
-        </div>
-    </aside>
+        </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="dash-main">
             <header class="dash-topbar">
@@ -192,43 +200,50 @@
                             </div>
                         </div>
                     </div>
-                                    <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar">
-                        <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
-                    </div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
-                </div>
-                <div class="user-dropdown whop-style" id="userDropdown">
-                    <div class="dropdown-profile-header">
-                        <div class="dropdown-avatar" id="dropdownAvatarDiv">
-                            <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                    <!-- User Dropdown -->
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar">
+                            <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
                         </div>
-                        <div class="dropdown-profile-info">
-                            <div class="dropdown-name" id="dropdownName">—</div>
-                            <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                    </div>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">—</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i
+                                    class="fa-solid fa-gear"></i></a>
                         </div>
-                        <a href="profile-settings.html" class="dropdown-settings-icon"><i class="fa-solid fa-gear"></i></a>
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
+                            <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        </div>
                     </div>
-                    <div class="dropdown-section">
-                        <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
-                        <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-section">
-                        <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
-                    </div>
-                </div>
                 </div>
             </header>
             <div class="dash-content">
                 <div class="settings-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 40px;">
-                    <div class="breadcrumb">
-                        <a href="dashboard.html?v=2"><i data-lucide="layout-grid" class="nav-icon"></i></a>
-                        <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
-                        <span>Settings</span>
+                    <div class="page-header">
+                        <div class="page-breadcrumb">
+                            <a href="dashboard.html" class="breadcrumb-home" title="Dashboard">
+                                <i data-lucide="layout-grid"></i>
+                            </a>
+                            <span class="separator">›</span>
+                            <span>Settings</span>
+                        </div>
+                        <h1 data-i18n="settings">Settings</h1>
                     </div>
-                    <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px" data-i18n="settings">Settings</h2>
 
                     <!-- ═══ SUBSCRIPTION INFO SECTION ═══ -->
                     <div class="settings-section" id="subscriptionSection">
@@ -239,28 +254,36 @@
 
                         <!-- Skeleton Loading -->
                         <div id="subSkeleton" style="display:flex;flex-direction:column;gap:12px;">
-                            <div style="height:100px;border-radius:12px;background:rgba(255,255,255,0.04);animation:pulse-skeleton 1.5s ease-in-out infinite;"></div>
+                            <div
+                                style="height:100px;border-radius:12px;background:rgba(255,255,255,0.04);animation:pulse-skeleton 1.5s ease-in-out infinite;">
+                            </div>
                         </div>
 
                         <!-- Subscription Card -->
                         <div id="subCard" style="display:none;">
 
                             <!-- Active Subscription -->
-                            <div id="subActive" style="display:none;background:#09090b;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:16px;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                            <div id="subActive"
+                                style="display:none;background:#09090b;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:16px;">
+                                <div
+                                    style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
                                     <div style="display:flex;align-items:center;gap:10px;">
-                                        <span id="subPlanLabel" style="font-size:.95rem;font-weight:700;color:#fff;"></span>
+                                        <span id="subPlanLabel"
+                                            style="font-size:.95rem;font-weight:700;color:#fff;"></span>
                                     </div>
                                     <span id="subAmount" style="font-size:1.1rem;font-weight:900;color:#3f8ff9;"></span>
                                 </div>
 
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
                                     <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;">
-                                        <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ البداية</div>
-                                        <div id="subStartDate" style="font-size:.85rem;font-weight:600;color:#fff;"></div>
+                                        <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ البداية
+                                        </div>
+                                        <div id="subStartDate" style="font-size:.85rem;font-weight:600;color:#fff;">
+                                        </div>
                                     </div>
                                     <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;">
-                                        <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ الانتهاء</div>
+                                        <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ الانتهاء
+                                        </div>
                                         <div id="subEndDate" style="font-size:.85rem;font-weight:600;color:#fff;"></div>
                                     </div>
                                 </div>
@@ -268,20 +291,25 @@
 
                                 <!-- Renew Button -->
                                 <a id="subRenewBtn" href="#" target="_blank"
-                                   style="display:flex;align-items:center;justify-content:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 20px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;transition:all .2s;"
-                                   onmouseover="this.style.background='#2d7ef0'" onmouseout="this.style.background='#3f8ff9'">
+                                    style="display:flex;align-items:center;justify-content:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 20px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;transition:all .2s;"
+                                    onmouseover="this.style.background='#2d7ef0'"
+                                    onmouseout="this.style.background='#3f8ff9'">
                                     <i class="fa-solid fa-rotate"></i>
                                     تجديد الاشتراك
                                 </a>
                             </div>
 
                             <!-- Inactive / Expired -->
-                            <div id="subInactive" style="display:none;background:#09090b;border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:20px;text-align:center;">
-                                <i class="fa-solid fa-circle-xmark" style="font-size:2rem;color:#ef4444;margin-bottom:12px;display:block;"></i>
-                                <div style="font-size:.95rem;font-weight:700;color:#fff;margin-bottom:8px;">الاشتراك منتهي</div>
-                                <div style="font-size:.82rem;color:#6b7280;margin-bottom:16px;">اشترك دلوقتي للوصول لكل المحتوى</div>
+                            <div id="subInactive"
+                                style="display:none;background:#09090b;border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:20px;text-align:center;">
+                                <i class="fa-solid fa-circle-xmark"
+                                    style="font-size:2rem;color:#ef4444;margin-bottom:12px;display:block;"></i>
+                                <div style="font-size:.95rem;font-weight:700;color:#fff;margin-bottom:8px;">الاشتراك
+                                    منتهي</div>
+                                <div style="font-size:.82rem;color:#6b7280;margin-bottom:16px;">اشترك دلوقتي للوصول لكل
+                                    المحتوى</div>
                                 <a id="subInactiveBtn" href="payment.html"
-                                   style="display:inline-flex;align-items:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 24px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;">
+                                    style="display:inline-flex;align-items:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 24px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;">
                                     <i class="fa-solid fa-crown"></i>
                                     اشترك الآن
                                 </a>
@@ -365,7 +393,8 @@
 
                     <!-- Notifications -->
                     <div class="settings-section">
-                        <h3><i data-lucide="bell" size="18"></i> <span data-i18n="notifications">Notifications</span></h3>
+                        <h3><i data-lucide="bell" size="18"></i> <span data-i18n="notifications">Notifications</span>
+                        </h3>
                         <div class="toggle-row"><span data-i18n="emailNotifications">Email Notifications</span>
                             <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
                         </div>
@@ -408,93 +437,96 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js"></script>
+    <script src="src/js/utils.js?v=9"></script>
     <script src="src/js/i18n.js"></script>
     <script src="src/js/profile.js?v=4"></script>
 
     <script>
-    // ═══ SUBSCRIPTION INFO ═══
-    const KASHIER_RENEWAL_URL = "http://127.0.0.1:5500/index.html#payment";
+        // ═══ SUBSCRIPTION INFO ═══
+        const KASHIER_RENEWAL_URL = "https://ghawy.ai/index.html#payment";
 
-    const PLAN_RENEWAL_URLS = {
-        "monthly_egp":   KASHIER_RENEWAL_URL,
-        "quarterly_egp": KASHIER_RENEWAL_URL,
-        "yearly_egp":    KASHIER_RENEWAL_URL,
-        "monthly_usd":   KASHIER_RENEWAL_URL,
-        "quarterly_usd": KASHIER_RENEWAL_URL,
-        "yearly_usd":    KASHIER_RENEWAL_URL,
-    };
+        const PLAN_RENEWAL_URLS = {
+            "monthly_egp": KASHIER_RENEWAL_URL,
+            "quarterly_egp": KASHIER_RENEWAL_URL,
+            "yearly_egp": KASHIER_RENEWAL_URL,
+            "monthly_usd": KASHIER_RENEWAL_URL,
+            "quarterly_usd": KASHIER_RENEWAL_URL,
+            "yearly_usd": KASHIER_RENEWAL_URL,
+        };
 
-    const PLAN_DURATIONS = {
-        "monthly_egp": 30, "quarterly_egp": 90, "yearly_egp": 365,
-        "monthly_usd": 30, "quarterly_usd": 90, "yearly_usd": 365,
-    };
+        const PLAN_DURATIONS = {
+            "monthly_egp": 30, "quarterly_egp": 90, "yearly_egp": 365,
+            "monthly_usd": 30, "quarterly_usd": 90, "yearly_usd": 365,
+        };
 
-    async function loadSubscriptionInfo() {
-        const skeleton = document.getElementById('subSkeleton');
-        const card = document.getElementById('subCard');
-        const activeDiv = document.getElementById('subActive');
-        const inactiveDiv = document.getElementById('subInactive');
+        async function loadSubscriptionInfo() {
+            const skeleton = document.getElementById('subSkeleton');
+            const card = document.getElementById('subCard');
+            const activeDiv = document.getElementById('subActive');
+            const inactiveDiv = document.getElementById('subInactive');
 
-        try {
-            const res = await apiFetch('/profile/subscription-info');
-            if (!res.ok) throw new Error('Failed');
-            const data = await res.json();
+            try {
+                const res = await apiFetch('/profile/subscription-info');
+                if (!res.ok) throw new Error('Failed');
+                const data = await res.json();
 
-            if (skeleton) skeleton.style.display = 'none';
-            if (card) card.style.display = 'block';
+                if (skeleton) skeleton.style.display = 'none';
+                if (card) card.style.display = 'block';
 
-            if (data.is_active && data.subscription_end) {
-                // Active subscription
-                if (activeDiv) activeDiv.style.display = 'block';
-                if (inactiveDiv) inactiveDiv.style.display = 'none';
+                if (data.is_active) {
+                    // Active subscription
+                    if (activeDiv) activeDiv.style.display = 'block';
+                    if (inactiveDiv) inactiveDiv.style.display = 'none';
 
-                // Plan label + amount
-                const planLabel = document.getElementById('subPlanLabel');
-                const amount = document.getElementById('subAmount');
-                if (planLabel) planLabel.textContent = data.plan_label;
-                if (amount) amount.textContent = `${data.amount.toLocaleString()} ${data.currency}`;
+                    // Plan label + amount
+                    const planLabel = document.getElementById('subPlanLabel');
+                    const amount = document.getElementById('subAmount');
+                    if (planLabel) planLabel.textContent = data.plan_label;
+                    if (amount) amount.textContent = `${data.amount.toLocaleString()} ${data.currency}`;
 
-                // Dates
-                const startDate = document.getElementById('subStartDate');
-                const endDate = document.getElementById('subEndDate');
-                const formatDate = (d) => {
-                    if (!d) return '—';
-                    return new Date(d).toLocaleDateString('ar-EG', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    });
-                };
-                if (startDate) startDate.textContent = formatDate(data.subscription_start);
-                if (endDate) endDate.textContent = formatDate(data.subscription_end);
+                    // Dates
+                    const startDate = document.getElementById('subStartDate');
+                    const endDate = document.getElementById('subEndDate');
+                    const formatDate = (d) => {
+                        if (!d) return '—';
+                        return new Date(d).toLocaleDateString('ar-EG', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        });
+                    };
+                    if (startDate) startDate.textContent = formatDate(data.subscription_start);
+                    if (endDate) {
+                        endDate.textContent = data.subscription_end ? formatDate(data.subscription_end) : 'وصول دائم (لا ينتهي)';
+                    }
 
-                // Renew button
-                const renewBtn = document.getElementById('subRenewBtn');
-                if (renewBtn) {
-                    const renewUrl = PLAN_RENEWAL_URLS[data.plan_key] || 'payment.html';
-                    renewBtn.href = renewUrl;
+                    // Renew button
+                    const renewBtn = document.getElementById('subRenewBtn');
+                    if (renewBtn) {
+                        const renewUrl = PLAN_RENEWAL_URLS[data.plan_key] || 'payment.html';
+                        renewBtn.href = renewUrl;
+                        renewBtn.style.display = data.subscription_end ? 'flex' : 'none';
+                    }
+
+                } else {
+                    // Inactive
+                    if (activeDiv) activeDiv.style.display = 'none';
+                    if (inactiveDiv) inactiveDiv.style.display = 'block';
                 }
 
-            } else {
-                // Inactive
-                if (activeDiv) activeDiv.style.display = 'none';
+            } catch (e) {
+                console.error('Subscription info error:', e);
+                if (skeleton) skeleton.style.display = 'none';
+                if (card) card.style.display = 'block';
                 if (inactiveDiv) inactiveDiv.style.display = 'block';
             }
-
-        } catch (e) {
-            console.error('Subscription info error:', e);
-            if (skeleton) skeleton.style.display = 'none';
-            if (card) card.style.display = 'block';
-            if (inactiveDiv) inactiveDiv.style.display = 'block';
         }
-    }
 
-    // استدعيها في الـ init
-    loadSubscriptionInfo();
+        // استدعيها في الـ init
+        loadSubscriptionInfo();
     </script>
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-<script src="src/js/dashboard-new.js?v=10"></script>
+    <script src="src/js/dashboard-new.js?v=13"></script>
 </body>
 
 </html>

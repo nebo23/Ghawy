@@ -2630,7 +2630,7 @@ footer a:hover {
 
     .pricing-cta {
         width: calc(100% - 40px);
-        margin: 0 20px 16px;
+        margin: 0 auto 16px;
         font-size: 1rem;
     }
 
@@ -5462,23 +5462,22 @@ footer a:hover {
 
 .hero-split {
     display: grid;
-    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-columns: 1fr 1fr;
+    /* متساوية */
     gap: 50px;
-    align-items: stretch;
+    align-items: center;
+    /* غير stretch لـ center */
     width: 100%;
     position: relative;
     z-index: 2;
 }
 
-/* -- LEFT: Text Column -- */
 .hero-left {
     display: flex;
     flex-direction: column;
-    /* 8px spacing scale: base gap 16px */
     gap: 16px;
     align-items: flex-start;
     text-align: left;
-    margin: auto 0;
 }
 
 /* Badge */
@@ -5861,7 +5860,6 @@ footer a:hover {
 
     .hero-left {
         gap: 16px !important;
-        margin: auto 0 !important;
     }
 }
 

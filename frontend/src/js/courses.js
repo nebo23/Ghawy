@@ -5,18 +5,18 @@
 
 // ═══ AUTH GUARD ═══
 const token = getToken();
-if (!token) window.location.href = 'login.html';
+if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 async function apiFetch(url, opts = {}) {
     opts.headers = { ...headers, ...opts.headers };
     const res = await fetch(API + url, opts);
-    if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+    if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
     return res;
 }
 
-function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
 
 // ═══ LOAD PROFILE ═══
 async function loadProfile() {
@@ -27,6 +27,7 @@ async function loadProfile() {
         const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt('sidebarName', u.full_name);
         setTxt('topbarName', u.full_name);
+        setTxt('dropdownName', u.full_name);
         
         // Update Badge
         const badgeLabel = getBadgeLabel(u.badge);
@@ -53,11 +54,15 @@ async function loadProfile() {
         // Update Streak
         setTxt('streakCount', u.streak_days || 0);
         
-        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                const fullUrl = window.getAvatarSrc(u);
-                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+                if (typeof buildAvatarHtml === 'function') {
+                    el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                } else {
+                    const fullUrl = window.getAvatarSrc(u);
+                    el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                }
             }
         });
     } catch (e) { console.error(e); }
@@ -97,13 +102,14 @@ async function loadCourses() {
                     ${thumb ? `<img src="${thumb}" alt="${c.title}" style="width:100%;height:100%;object-fit:cover;z-index:0;position:relative;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>` : ''}
                     <div style="position:absolute;inset:0;display:${thumb ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:3rem;z-index:1">${icon}</div>
                     <div class="course-thumb-overlay"></div>
-                    <div style="position:absolute;top:10px;left:10px;background:var(--gold);color:#000;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:800;z-index:2">AI</div>
+
                 </div>
                 <div class="course-body">
                     <h3>${c.title}</h3>
                     <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4">${desc}</p>
-                    <div class="course-meta">
-                        <span><i class="fa-solid fa-book"></i> ${c.total_lessons} Lessons</span>
+                    <div class="course-meta" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons} Lessons</span>
+                        ${c.course_time ? `<span><i class="fa-regular fa-clock" style="margin-right:6px; color:var(--gold);"></i>${c.course_time}</span>` : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
                         <div class="course-progress" style="flex:1"><div class="course-progress-bar" style="width:0%"></div></div>

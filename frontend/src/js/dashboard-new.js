@@ -10,21 +10,25 @@
 // 1. CONSTANTS & HELPERS
 // ═══════════════════════════════════════════════════════
 
-const token = localStorage.getItem('token');
-if (!token) window.location.href = 'login.html';
-
 const AUTH_HEADERS = {
-    'Authorization': `Bearer ${token}`,
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
     'Content-Type': 'application/json'
 };
 
 /** Fetch wrapper — auto-handles 401 */
 async function api(path, opts = {}) {
-    opts.headers = { ...AUTH_HEADERS, ...(opts.headers || {}) };
+    const currentToken = localStorage.getItem('token');
+    opts.headers = { 
+        'Authorization': `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+        ...(opts.headers || {}) 
+    };
     const res = await fetch(API + path, opts);
     if (res.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = 'login.html';
+        if (!window.location.pathname.endsWith('login.html')) {
+            localStorage.removeItem('user'); window.location.href = '/login';
+        }
         throw new Error('Unauthorized');
     }
     return res;
@@ -125,7 +129,7 @@ function renderUser(u) {
     const topNameWelcome = document.getElementById('topbarNameWelcome');
     const dropdownName = document.getElementById('dropdownName');
     if (topName) topName.textContent = u.full_name || '—';
-    if (topNameWelcome) topNameWelcome.textContent = u.full_name || '—';
+    if (topNameWelcome) topNameWelcome.innerHTML = (u.full_name || '—') + ' 👋';
     if (dropdownName) dropdownName.textContent = u.full_name || '—';
 
     // Sidebar
@@ -159,7 +163,14 @@ function renderUser(u) {
     const avatarHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
     ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.innerHTML = avatarHtml;
+        if (el) {
+            if (typeof buildAvatarHtml === 'function') {
+                el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+            } else {
+                const fullUrl = window.getAvatarSrc(u);
+                el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+            }
+        }
     });
 
     // Show/hide Team Dashboard
@@ -234,12 +245,6 @@ async function loadStatsCards() {
             iconClass: 'orange',
             value: streak,
             label: 'Days Streak'
-        },
-        {
-            icon: '<i class="fa-regular fa-star"></i>',
-            iconClass: 'yellow',
-            value: xp >= 1000 ? (xp / 1000).toFixed(1) + 'K' : xp,
-            label: 'XP Points Total'
         }
     ];
 
@@ -293,9 +298,9 @@ function renderCourses(courses) {
             </div>
             <div class="course-body">
                 <h3>${esc(c.title)}</h3>
-                <div class="course-meta-row">
-                    <span><i class="fa-solid fa-book"></i>${c.total_lessons || 0} Lessons</span>
-                    <span>${c.completed_lessons || 0}/${c.total_lessons || 0} done</span>
+                <div class="course-meta-row" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+                    <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons || 0} Lessons</span>
+                    ${c.course_time ? `<span><i class="fa-regular fa-clock" style="margin-right:6px; color:var(--gold);"></i>${c.course_time}</span>` : ''}
                 </div>
                 <div class="course-prog-wrap">
                     <div class="course-prog-bg">
@@ -537,8 +542,10 @@ function connectWebSocket() {
     if (ws && ws.readyState <= 1) return; // Already connected/connecting
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = API.replace(/^https?:\/\//, '');
-    const wsUrl = `${protocol}//${host}/ws/${token}`;
+    // If API is a relative path (e.g. '/api' in production), use window.location.host
+    // If API is absolute (e.g. 'http://127.0.0.1:8000' in local dev), strip protocol
+    const host = API.startsWith('/') ? window.location.host : API.replace(/^https?:\/\//, '');
+    const wsUrl = `${protocol}//${host}/ws/${localStorage.getItem('token')}`;
 
     try {
         ws = new WebSocket(wsUrl);
@@ -592,6 +599,12 @@ function handleWsMessage(payload) {
         // Only show general channel messages in the dashboard widget
         const generalId = window.__generalChannelId;
         if (generalId && msg.channel_id && msg.channel_id !== generalId) {
+            if (msg.sender_id && window.currentUserId && msg.sender_id !== window.currentUserId) {
+                if (typeof fetchGlobalNotifications === 'function') fetchGlobalNotifications();
+                if (typeof notifyToast === 'function') {
+                    notifyToast('New message from ' + (msg.sender_name || 'someone'), 'info');
+                }
+            }
             return; // Skip DM or other channel messages
         }
         appendChatMessage({
@@ -599,6 +612,8 @@ function handleWsMessage(payload) {
             author_name: msg.sender_name || msg.author_name,
             avatar_url: msg.sender_avatar || msg.avatar_url,
             sender_id: msg.sender_id,
+            sender_is_admin: msg.sender_is_admin,
+            author_badge: msg.author_badge,
             content: msg.content,
             created_at: msg.created_at || new Date().toISOString()
         });
@@ -607,6 +622,14 @@ function handleWsMessage(payload) {
     if (event === 'user_online' || event === 'user_offline') {
         // Could update online count — skip for now
         fetchOnlineCount();
+    }
+    
+    if (event === 'message_deleted') {
+        const msgId = payload.data?.message_id;
+        if (msgId) {
+            chatMessages = chatMessages.filter(m => m.id !== msgId);
+            renderChatMessages();
+        }
     }
 }
 
@@ -626,6 +649,40 @@ function appendChatMessage(msg) {
     renderChatMessages(chatMessages);
 }
 
+function notifyToast(msg, type = 'info') {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.style.cssText = 'background:var(--bg-card,#222);color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5);border-left:4px solid ' + (type === 'error' ? '#ff4d4d' : 'var(--gold,#c1ff11)') + ';animation: slideIn 0.3s ease forwards;pointer-events:auto;cursor:pointer;';
+    toast.innerHTML = msg;
+    toast.onclick = () => toast.remove();
+    container.appendChild(toast);
+    
+    // Add keyframes if not exists
+    if (!document.getElementById('toastStyles')) {
+        const style = document.createElement('style');
+        style.id = 'toastStyles';
+        style.innerHTML = `
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.style.animation = 'fadeOut 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
+}
+
 function renderChatMessages(messages) {
     const container = document.getElementById('chatMessages');
     if (!container) return;
@@ -637,15 +694,32 @@ function renderChatMessages(messages) {
 
     container.innerHTML = messages.map(m => {
         const avHtml = buildAvatarHtml(m.author_name, m.avatar_url, m.sender_id || 0, 28);
-        const text = formatChatText(m.content || '');
+        let text = formatChatText(m.content || '');
+        if (!text.startsWith('📷') && !text.startsWith('🎤') && !text.startsWith('↩️')) {
+            text = window.formatAdminMentions ? window.formatAdminMentions(esc(text)) : esc(text);
+        } else {
+            text = esc(text);
+        }
+        
+        let badgeHtml = '';
+        const isAdminSender = m.sender_is_admin == true || m.sender_is_admin === 1 || (m.author_badge && String(m.author_badge).toLowerCase().includes('admin'));
+        if (isAdminSender) {
+            badgeHtml = `<span style="display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:600; padding:2px 6px; border-radius:4px; background:rgba(193, 255, 17, 0.1); color:#c1ff11; margin-left:6px;">Admin <i class="fa-solid fa-circle-check" style="color: #c1ff11;"></i></span>`;
+        } else if (m.author_badge && (String(m.author_badge).toLowerCase().includes('pro') || String(m.author_badge).toLowerCase().includes('gold'))) {
+            badgeHtml = `<span style="display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:600; padding:2px 6px; border-radius:4px; background:rgba(255, 215, 0, 0.1); color:#ffd700; margin-left:6px;">${m.author_badge}</span>`;
+        } else {
+            badgeHtml = `<span style="display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:500; padding:2px 6px; border-radius:4px; background:rgba(255, 255, 255, 0.05); color:#a0a0a0; margin-left:6px;">Member</span>`;
+        }
+
         return `<div class="chat-msg">
             <div class="chat-msg-av" style="background:${avatarColor(m.sender_id || 0)}22">${avHtml}</div>
             <div class="chat-msg-body">
-                <div class="chat-msg-meta">
+                <div class="chat-msg-meta" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
                     <span class="chat-msg-name">${esc(m.author_name || 'User')}</span>
+                    ${badgeHtml}
                     <span class="chat-msg-time">${timeAgo(m.created_at)}</span>
                 </div>
-                <div class="chat-msg-text">${esc(text)}</div>
+                <div class="chat-msg-text">${text}</div>
             </div>
         </div>`;
     }).join('');
@@ -680,6 +754,8 @@ async function sendChatMessage() {
         author_name: currentUser?.full_name || 'Me',
         avatar_url: currentUser?.avatar_url || null,
         sender_id: currentUser?.id || 0,
+        sender_is_admin: currentUser?.is_admin || false,
+        author_badge: currentUser?.badge || 'Member',
         content: content,
         created_at: new Date().toISOString()
     };
@@ -840,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function logout() {
     if (ws) { try { ws.close(); } catch (e) { } }
     localStorage.removeItem('token');
-    window.location.href = 'login.html';
+    localStorage.removeItem('user'); window.location.href = '/login';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -899,6 +975,8 @@ async function loadGeneralMessages() {
                 author_name: m.author_name,
                 avatar_url: m.author_avatar_url,
                 sender_id: m.author_id,
+                sender_is_admin: m.sender_is_admin,
+                author_badge: m.author_badge,
                 content: m.content,
                 created_at: m.created_at
             }));
@@ -914,6 +992,8 @@ async function loadGeneralMessages() {
 // ═══════════════════════════════════════════════════════
 
 async function init() {
+    if (!localStorage.getItem('token')) return;
+
     // Fetch general channel ID first (critical for correct message routing)
     await fetchGeneralChannelId();
 

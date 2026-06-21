@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <!-- Cache Buster -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -13,7 +14,9 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/g-icon-logo.png" />
@@ -48,342 +51,404 @@
         })();
     </script>
 </head>
-<body>
-<div class="dash-layout">
 
-    <!-- ═══════════════════════════════════════════
+<body class="dashboard-page">
+    <div class="dash-layout">
+
+        <!-- ═══════════════════════════════════════════
          SIDEBAR
     ═══════════════════════════════════════════ -->
-    <aside class="dash-sidebar" id="dashSidebar">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <img src="./imgs/community-logo.png" alt="Ghawy" />
-            <span>Ghawy</span>
-        </div>
-
-        <!-- Nav Links -->
-                        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
-                <span class="nav-icon-wrap nav-icon-white">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Dashboard</span>
-            </a>
-            <a href="courses.html" class="nav-item" id="nav-courses">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Courses</span>
-            </a>
-            <a href="chat.html" class="nav-item" id="nav-chat">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Community Chat</span>
-            </a>
-            <a href="direct-messages.html" class="nav-item" id="nav-dm">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Direct Messages</span>
-                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
-            </a>
-            <a href="ai-updates.html" class="nav-item" id="nav-ai">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>AI Updates</span>
-            </a>
-            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Build With Me</span>
-            </a>
-            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
-                <span class="nav-icon-wrap nav-icon-yellow">
-                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Guest of Honors</span>
-            </a>
-            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
-                <span class="nav-icon-wrap nav-icon-purple">
-                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Achievements</span>
-            </a>
-
-            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
-
-            <a href="profile-settings.html" class="nav-item" id="nav-settings">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Settings</span>
-            </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true" style="display: none;">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Team Dashboard</span>
-            </a>
-            <a href="help-center.html" class="nav-item" id="nav-help">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Help center</span>
-            </a>
-        </nav>
-
-        <!-- ─── User Profile Card ─── -->
-        <div class="sb-profile-card">
-            <div class="sb-profile-row">
-                <div class="sb-avatar" id="sidebarAvatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div class="sb-user-info">
-                    <div class="sb-name" id="sidebarName">—</div>
-                    <div class="sb-badge" id="sidebarBadge">Member</div>
-                </div>
+        <aside class="dash-sidebar" id="dashSidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
 
-            <div class="sb-level-row">
-                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
-                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
-            </div>
-            <div class="sb-xp-track">
-                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
-            </div>
-            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
-
-            <div class="sb-streak-row">
-                <span class="sb-streak-fire">🔥</span>
-                <span><strong id="streakCount">0</strong> Days Streak</span>
-                <span class="sb-streak-sub">Keep going!</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Sidebar Overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- ═══════════════════════════════════════════
-         MAIN CONTENT
-    ═══════════════════════════════════════════ -->
-    <div class="dash-main">
-
-        <!-- TOPBAR -->
-        <header class="dash-topbar">
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                <span></span><span></span><span></span>
-            </button>
-
-            <!-- Welcome text (desktop) -->
-            <div class="topbar-welcome" id="topbarWelcome">
-                <span>Welcome back, <strong id="topbarNameWelcome">—</strong> 👋</span>
-                <small>Let's continue building, learning, and leveling up.</small>
-            </div>
-
-            <div class="topbar-actions">
-                <!-- Notifications -->
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications">
-                        <i class="fa-regular fa-bell"></i>
-                        <span class="notif-dot" id="notifDot" style="display:none"></span>
-                        <span class="notif-badge" id="notifBadge" style="display:none">0</span>
-                    </button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chat -->
-                <a href="chat.html" class="topbar-icon" title="Chat">
-                    <i class="fa-regular fa-message"></i>
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
+                    <span class="nav-icon-wrap nav-icon-white">
+                        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.html" class="nav-item" id="nav-courses">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Courses</span>
+                </a>
+                <a href="chat.html" class="nav-item" id="nav-chat">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Community Chat</span>
+                </a>
+                <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Direct Messages</span>
+                    <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+                </a>
+                <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>AI Updates</span>
+                </a>
+                <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Build With Me</span>
+                </a>
+                <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                    <span class="nav-icon-wrap nav-icon-yellow">
+                        <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Guest of Honors</span>
+                </a>
+                <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                    <span class="nav-icon-wrap nav-icon-purple">
+                        <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Achievements</span>
                 </a>
 
-                <!-- User Dropdown -->
-                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar">
-                        <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
-                    </div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                <div
+                    style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
                 </div>
-                <div class="user-dropdown whop-style" id="userDropdown">
-                    <div class="dropdown-profile-header">
-                        <div class="dropdown-avatar" id="dropdownAvatarDiv">
-                            <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
-                        </div>
-                        <div class="dropdown-profile-info">
-                            <div class="dropdown-name" id="dropdownName">—</div>
-                            <a href="profile.html" class="dropdown-view-profile">View profile</a>
-                        </div>
-                        <a href="profile-settings.html" class="dropdown-settings-icon"><i class="fa-solid fa-gear"></i></a>
-                    </div>
-                    <div class="dropdown-section">
-                        <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
-                        <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-section">
-                        <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+
+                <a href="profile-settings.html" class="nav-item" id="nav-settings">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true"
+                    style="display: none;">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Team Dashboard</span>
+                </a>
+                <a href="help-center.html" class="nav-item" id="nav-help">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Help center</span>
+                </a>
+            </nav>
+
+            <!-- ─── User Profile Card ─── -->
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <a href="profile-settings.html" class="sb-avatar" id="sidebarAvatar" title="Settings"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="sb-user-info">
+                        <div class="sb-name" id="sidebarName">—</div>
+                        <div class="sb-badge" id="sidebarBadge">Member</div>
                     </div>
                 </div>
+
+
+                <a href="profile.html#achievements" class="sb-streak-row" title="Achievements"
+                    style="text-decoration: none; cursor: pointer;">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong id="streakCount">0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </a>
             </div>
-        </header>
+        </aside>
 
-        <!-- CONTENT -->
-        <div class="dash-content">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-            <!-- ── Stats Row ── -->
-            <div class="stats-row" id="statsRow">
-                <!-- Populated by JS -->
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-                <div class="stat-card skeleton-card"><div class="sk-line sk-w60"></div><div class="sk-line sk-w40 sk-sm"></div></div>
-            </div>
+        <!-- ═══════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════ -->
+        <div class="dash-main">
 
-            <!-- ── Main Grid ── -->
-            <div class="dash-grid">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
 
-                <!-- ── LEFT / MAIN ── -->
-                <div class="dash-grid-main">
-
-                    <!-- AI PATH Hero -->
-                    <div class="ai-hero" id="aiHero">
-                        <div class="ai-hero-content">
-                            <div class="ai-hero-badge"><i class="fa-solid fa-bolt"></i> AI PATH</div>
-                            <h2>Master AI. Build Leverage. Create Freedom.</h2>
-                            <p>Practical courses. Real projects. Real results.</p>
-                            <a href="#" id="continueLearnBtn" class="btn-continue">
-                                Continue Learning <i class="fa-solid fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        <div class="ai-hero-img">
-                            <img src="./imgs/ai-cube.png" alt="AI" id="aiHeroImg" onerror="this.style.display='none'" />
-                        </div>
-                    </div>
-
-                    <!-- Your Courses -->
-                    <div class="section-header">
-                        <h3 class="section-title">Your Courses</h3>
-                        <a href="courses.html" class="section-link">View All</a>
-                    </div>
-                    <div class="courses-grid" id="coursesGrid">
-                        <!-- Skeleton Loaders -->
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                        <div class="course-card skeleton-card">
-                            <div class="sk-thumb"></div>
-                            <div class="sk-body"><div class="sk-line sk-w80"></div><div class="sk-line sk-w50 sk-sm"></div></div>
-                        </div>
-                    </div>
-
-                    <!-- Guest of Honors -->
-                    <div class="section-header" style="margin-top:8px">
-                        <h3 class="section-title">Guest of Honors</h3>
-                        <a href="guest-of-honors.html" class="section-link">View All</a>
-                    </div>
-                    <div class="goh-row" id="gohRow">
-                        <!-- Populated by JS -->
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                        <div class="goh-skeleton"></div>
-                    </div>
-
-                    <!-- AI Updates -->
-                    <div class="section-header" style="margin-top:24px">
-                        <h3 class="section-title">New AI Updates</h3>
-                        <a href="ai-updates.html" class="section-link">View All</a>
-                    </div>
-                    <div class="ai-updates-grid" id="aiUpdatesGrid">
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                        <div class="update-card skeleton-card"><div class="sk-line sk-w40 sk-sm"></div><div class="sk-line sk-w80"></div><div class="sk-line sk-w60 sk-sm"></div></div>
-                    </div>
-
+                <!-- Welcome text (desktop) -->
+                <div class="topbar-welcome" id="topbarWelcome">
+                    <span>
+                        <small class="welcome-label">Welcome back,</small>
+                        <strong id="topbarNameWelcome">— 👋</strong>
+                    </span>
+                    <small>Let's continue building, learning, and leveling up.</small>
                 </div>
 
-                <!-- ── RIGHT SIDE ── -->
-                <div class="dash-grid-side">
-
-                    <!-- Live Session Widget -->
-                    <div id="liveSessionWidget">
-                        <!-- Populated by JS -->
-                        <div class="side-card skeleton-card" style="height:160px;margin-bottom:16px"></div>
-                    </div>
-
-                    <!-- Upcoming Session -->
-                    <div class="upcoming-card side-card" id="upcomingCard">
-                        <div class="upcoming-header">
-                            <span class="upcoming-label">Upcoming Session</span>
-                            <a href="build-with-me.html" class="section-link" style="font-size:.7rem">See All</a>
-                        </div>
-                        <div class="upcoming-timer" id="upcomingTimer">
-                            <span class="timer-icon">📅</span>
-                            <span id="timerDisplay">—</span>
-                        </div>
-                        <div class="upcoming-title" id="upcomingTitle">Loading...</div>
-                        <div class="upcoming-date" id="upcomingDate">—</div>
-                    </div>
-
-                    <!-- Community Chat Widget -->
-                    <div class="side-card chat-widget-card" id="chatWidget">
-                        <div class="chat-widget-header">
-                            <span class="chat-widget-title">Community Chat</span>
-                            <span class="online-pill">
-                                <span class="online-dot"></span>
-                                <span id="dashOnlineCount">0</span> Online
-                            </span>
-                        </div>
-                        <div class="chat-messages" id="chatMessages">
-                            <!-- Populated by WS / REST -->
-                        </div>
-                        <div class="chat-input-row">
-                            <input type="text" id="dashChatInput" class="chat-input" placeholder="Type a message..." />
-                            <button id="dashChatSendBtn" class="chat-send-btn" title="Send">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
+                <div class="topbar-actions">
+                    <!-- Notifications -->
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications">
+                            <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                            <span class="notif-dot" id="notifDot" style="display:none"></span>
+                            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+                        </button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i
+                                        class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
+                            </div>
                         </div>
                     </div>
 
-                </div><!-- /.dash-grid-side -->
-            </div><!-- /.dash-grid -->
-        </div><!-- /.dash-content -->
-    </div><!-- /.dash-main -->
-</div><!-- /.dash-layout -->
+                    <!-- Chat -->
+                    <a href="chat.html" class="topbar-icon" title="Chat">
+                        <i class="fa-solid fa-message"></i>
+                    </a>
 
-<!-- Close dropdown on outside click -->
-<script>
-    document.addEventListener('click', e => {
-        const d = document.getElementById('userDropdown');
-        const u = document.getElementById('topbarUser');
-        if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open');
-        const np = document.getElementById('notifPanel');
-        const nw = document.getElementById('notifWrapper');
-        if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
-    });
-</script>
+                    <!-- User Dropdown -->
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar">
+                            <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
+                        </div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                    </div>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">—</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i
+                                    class="fa-solid fa-gear"></i></a>
+                        </div>
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
+                            <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
-<script src="src/js/utils.js"></script>
-<script src="src/js/dashboard-new.js?v=10"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+            <!-- CONTENT -->
+            <div class="dash-content">
+
+                <!-- ── Stats Row ── -->
+                <div class="stats-row" id="statsRow">
+                    <!-- Populated by JS -->
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                </div>
+
+                <!-- ── Main Grid ── -->
+                <div class="dash-grid">
+
+                    <!-- ── LEFT / MAIN ── -->
+                    <div class="dash-grid-main">
+
+                        <!-- AI PATH Hero -->
+                        <div class="ai-hero" id="aiHero">
+                            <div class="ai-hero-content">
+                                <div class="ai-hero-badge"><i class="fa-solid fa-rocket"></i> AI PATH</div>
+                                <h2>Master AI. Build Leverage. Create Freedom.</h2>
+                                <p>Practical courses. Real projects. Real results.</p>
+                                <a href="#" id="continueLearnBtn" class="btn-continue">
+                                    Continue Learning <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="ai-hero-img">
+                                <img src="./imgs/ai-cube.png?v=4" alt="AI" id="aiHeroImg"
+                                    onerror="this.style.display='none'" />
+                            </div>
+                        </div>
+
+                        <!-- Your Courses -->
+                        <div class="section-header">
+                            <h3 class="section-title">Your Courses</h3>
+                            <a href="courses.html" class="section-link">View All</a>
+                        </div>
+                        <div class="courses-grid" id="coursesGrid">
+                            <!-- Skeleton Loaders -->
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guest of Honors -->
+                        <div class="section-header" style="margin-top:8px">
+                            <h3 class="section-title">Guest of Honors</h3>
+                            <a href="guest-of-honors.html" class="section-link">View All</a>
+                        </div>
+                        <div class="goh-row" id="gohRow">
+                            <!-- Populated by JS -->
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                        </div>
+
+                        <!-- AI Updates -->
+                        <div class="section-header" style="margin-top:24px">
+                            <h3 class="section-title">New AI Updates</h3>
+                            <a href="ai-updates.html" class="section-link">View All</a>
+                        </div>
+                        <div class="ai-updates-grid" id="aiUpdatesGrid">
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── RIGHT SIDE ── -->
+                    <div class="dash-grid-side">
+
+                        <!-- Live Session Widget -->
+                        <div id="liveSessionWidget">
+                            <!-- Populated by JS -->
+                            <div class="side-card skeleton-card" style="height:160px;margin-bottom:16px"></div>
+                        </div>
+
+                        <!-- Upcoming Session -->
+                        <div class="upcoming-card side-card" id="upcomingCard">
+                            <div class="upcoming-header">
+                                <span class="upcoming-label">Upcoming Session</span>
+                                <a href="build-with-me.html" class="section-link" style="font-size:.7rem">See All</a>
+                            </div>
+                            <div class="upcoming-timer" id="upcomingTimer">
+                                <span class="timer-icon">📅</span>
+                                <span id="timerDisplay">—</span>
+                            </div>
+                            <div class="upcoming-title" id="upcomingTitle">Loading...</div>
+                            <div class="upcoming-date" id="upcomingDate">—</div>
+                        </div>
+
+                        <!-- Community Chat Widget -->
+                        <div class="side-card chat-widget-card" id="chatWidget">
+                            <div class="chat-widget-header">
+                                <span class="chat-widget-title">Community Chat</span>
+                                <span class="online-pill">
+                                    <span class="online-dot"></span>
+                                    <span id="dashOnlineCount">0</span> Online
+                                </span>
+                            </div>
+                            <div class="chat-messages" id="chatMessages">
+                                <!-- Populated by WS / REST -->
+                            </div>
+                            <div class="chat-input-row">
+                                <input type="text" id="dashChatInput" class="chat-input"
+                                    placeholder="Type a message..." />
+                                <button id="dashChatSendBtn" class="chat-send-btn" title="Send">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div><!-- /.dash-grid-side -->
+                </div><!-- /.dash-grid -->
+            </div><!-- /.dash-content -->
+        </div><!-- /.dash-main -->
+    </div><!-- /.dash-layout -->
+
+    <!-- Close dropdown on outside click -->
+    <script>
+        document.addEventListener('click', e => {
+            const d = document.getElementById('userDropdown');
+            const u = document.getElementById('topbarUser');
+            if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open');
+            const np = document.getElementById('notifPanel');
+            const nw = document.getElementById('notifWrapper');
+            if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
+        });
+    </script>
+
+    <script src="src/js/utils.js?v=9"></script>
+    <script src="src/js/dashboard-new.js?v=13"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+
+    <!-- ── Hamburger / Sidebar Toggle ── -->
+    <script>
+        (function () {
+            var btn = document.getElementById('hamburgerBtn');
+            var sidebar = document.getElementById('dashSidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+
+            if (btn && sidebar && overlay) {
+                btn.addEventListener('click', function () {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('active');
+                    btn.classList.toggle('active');
+                });
+                overlay.addEventListener('click', function () {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    btn.classList.remove('active');
+                });
+            }
+        })();
+    </script>
 </body>
+
 </html>

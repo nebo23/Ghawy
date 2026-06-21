@@ -18,7 +18,7 @@
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=11" />
-    <link rel="stylesheet" href="src/css/community.css" />
+    <link rel="stylesheet" href="src/css/community.css?v=3" />
     <style>
         .chat-layout {
             display: flex;
@@ -261,7 +261,7 @@
 
         .msg-txt {
             font-size: .9rem;
-            color: var(--text-secondary);
+            color: #ffffff;
             line-height: 1.6;
             white-space: pre-wrap;
             word-wrap: break-word
@@ -346,6 +346,28 @@
             display: flex;
             gap: 10px;
             align-items: flex-end
+        }
+
+        /* Voice preview bar */
+        .voice-preview-bar audio {
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-input, #1a1a1a);
+            border: 1px solid var(--border, #333);
+            border-radius: 20px;
+            color: var(--text-primary, #fff);
+            height: 36px;
+            outline: none;
+        }
+        .voice-preview-bar audio::-webkit-media-controls-panel {
+            background: var(--bg-input, #1e1e1e);
+            border-radius: 20px;
+        }
+        .voice-preview-bar audio::-webkit-media-controls-play-button,
+        .voice-preview-bar audio::-webkit-media-controls-current-time-display,
+        .voice-preview-bar audio::-webkit-media-controls-time-remaining-display {
+            color: var(--text-primary, #fff);
+            filter: invert(1);
         }
 
         .chat-input-bar textarea {
@@ -481,7 +503,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-muted);
+            color: #ffffff;
             transition: all .2s;
             font-size: .85rem;
         }
@@ -618,320 +640,326 @@
 <body>
     <div class="dash-layout">
         <aside class="dash-sidebar" id="dashSidebar">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <img src="./imgs/community-logo.png" alt="Ghawy" />
-            <span>Ghawy</span>
-        </div>
-
-        <!-- Nav Links -->
-                        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
-                <span class="nav-icon-wrap nav-icon-white">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Dashboard</span>
-            </a>
-            <a href="courses.html" class="nav-item" id="nav-courses">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Courses</span>
-            </a>
-            <a href="chat.html" class="nav-item active" id="nav-chat">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Community Chat</span>
-            </a>
-            <a href="direct-messages.html" class="nav-item" id="nav-dm">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Direct Messages</span>
-                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
-            </a>
-            <a href="ai-updates.html" class="nav-item" id="nav-ai">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>AI Updates</span>
-            </a>
-            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Build With Me</span>
-            </a>
-            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
-                <span class="nav-icon-wrap nav-icon-yellow">
-                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Guest of Honors</span>
-            </a>
-            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
-                <span class="nav-icon-wrap nav-icon-purple">
-                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Achievements</span>
-            </a>
-
-            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
-
-            <a href="profile-settings.html" class="nav-item" id="nav-settings">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Settings</span>
-            </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Team Dashboard</span>
-            </a>
-            <a href="help-center.html" class="nav-item" id="nav-help">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Help center</span>
-            </a>
-        </nav>
-
-        <!-- ─── User Profile Card ─── -->
-        <div class="sb-profile-card">
-            <div class="sb-profile-row">
-                <div class="sb-avatar" id="sidebarAvatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div class="sb-user-info">
-                    <div class="sb-name" id="sidebarName">—</div>
-                    <div class="sb-badge" id="sidebarBadge">Member</div>
-                </div>
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
 
-            <div class="sb-level-row">
-                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
-                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
-            </div>
-            <div class="sb-xp-track">
-                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
-            </div>
-            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+                    <span class="nav-icon-wrap nav-icon-white">
+                        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.html" class="nav-item" id="nav-courses">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Courses</span>
+                </a>
+                <a href="chat.html" class="nav-item active" id="nav-chat">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Community Chat</span>
+                </a>
+                <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Direct Messages</span>
+                    <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+                </a>
+                <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>AI Updates</span>
+                </a>
+                <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Build With Me</span>
+                </a>
+                <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                    <span class="nav-icon-wrap nav-icon-yellow">
+                        <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Guest of Honors</span>
+                </a>
+                <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                    <span class="nav-icon-wrap nav-icon-purple">
+                        <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Achievements</span>
+                </a>
 
-            <div class="sb-streak-row">
-                <span class="sb-streak-fire">🔥</span>
-                <span><strong id="streakCount">0</strong> Days Streak</span>
-                <span class="sb-streak-sub">Keep going!</span>
-            </div>
-        </div>
-    </aside>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <div class="dash-main">
-        <header class="dash-topbar">
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"
-                onclick="toggleSidebar()"><span></span><span></span><span></span></button>
-
-            <div class="topbar-actions">
-                <button class="topbar-icon" onclick="openMembersModal()" title="Community Members"><i
-                        class="fa-solid fa-users"></i></button>
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"><i data-lucide="bell"
-                            size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span
-                            class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
-                                    size="16"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-                                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar">
-                        <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
-                    </div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
-                </div>
-                <div class="user-dropdown whop-style" id="userDropdown">
-                    <div class="dropdown-profile-header">
-                        <div class="dropdown-avatar" id="dropdownAvatarDiv">
-                            <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
-                        </div>
-                        <div class="dropdown-profile-info">
-                            <div class="dropdown-name" id="dropdownName">—</div>
-                            <a href="profile.html" class="dropdown-view-profile">View profile</a>
-                        </div>
-                        <a href="profile-settings.html" class="dropdown-settings-icon"><i class="fa-solid fa-gear"></i></a>
-                    </div>
-                    <div class="dropdown-section">
-                        <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
-                        <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-section">
-                        <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <div class="chat-layout">
-            <!-- Left: Channels -->
-            <div class="chat-channels"
-                style="background:#0a0a0a; border-right:1px solid rgba(255,255,255,0.06); width:220px; padding:16px 0; gap:0;">
-                <!-- CHAT Section -->
                 <div
-                    style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase;">
-                    <span>CHAT</span>
-                    <div class="online-pill"
-                        style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:12px; font-size:0.75rem;">
-                        <span
-                            style="width:8px; height:8px; background:#1ae071; border-radius:50%; box-shadow:0 0 8px #1ae071; display:inline-block;"></span>
-                        <span id="onlineCount" style="color:#1ae071; font-weight:700;">0 online</span>
-                    </div>
+                    style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
                 </div>
-                <div class="ch-item active" data-channel="general" onclick="selectChannel('general')">
-                    <span style="font-size:1rem; margin-top:2px;"><i data-lucide="message-square"
-                            class="nav-icon"></i></span>
-                    <div class="ch-info" style="display:flex; flex-direction:column; gap:1px;">
-                        <div class="ch-name" style="font-size:0.85rem; font-weight:600; color:#f1f0ea;">General Chat
-                        </div>
-                        <div class="ch-preview" style="font-size:0.72rem; color:rgba(193,255,17,0.6);">Real-time
-                            chat</div>
+
+                <a href="profile-settings.html" class="nav-item" id="nav-settings">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Team Dashboard</span>
+                </a>
+                <a href="help-center.html" class="nav-item" id="nav-help">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Help center</span>
+                </a>
+            </nav>
+
+            <!-- ─── User Profile Card ─── -->
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <a href="profile-settings.html" class="sb-avatar" id="sidebarAvatar" title="Settings"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="sb-user-info">
+                        <div class="sb-name" id="sidebarName">—</div>
+                        <div class="sb-badge" id="sidebarBadge">Member</div>
                     </div>
                 </div>
 
 
-                <!-- POSTS Section -->
-                <div
-                    style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase; margin-top:8px;">
-                    <span>POSTS</span>
-                </div>
-                <div id="channelList" style="padding:0; display:flex; flex-direction:column; gap:0;">
-                    <div class="comm-sidebar-item" data-category="start_here" onclick="selectChannel('start_here')">
-                        <span class="comm-item-emoji"><i data-lucide="monitor" style="color: #3b82f6;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># start_here</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="announcements"
-                        onclick="selectChannel('announcements')">
-                        <span class="comm-item-emoji"><i data-lucide="clipboard-list"
-                                style="color: #0ea5e9;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># announcements</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="introduce-yourself"
-                        onclick="selectChannel('introduce-yourself')">
-                        <span class="comm-item-emoji"><i data-lucide="users" style="color: #a855f7;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># introduce-yourself</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="wins" onclick="selectChannel('wins')">
-                        <span class="comm-item-emoji"><i data-lucide="crown" style="color: #eab308;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># wins</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="workflows-help"
-                        onclick="selectChannel('workflows-help')">
-                        <span class="comm-item-emoji"><i data-lucide="message-square"
-                                style="color: #22c55e;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># workflows-help</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="share-your-build"
-                        onclick="selectChannel('share-your-build')">
-                        <span class="comm-item-emoji"><i data-lucide="rocket" style="color: #f43f5e;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># share-your-build</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="general-questions"
-                        onclick="selectChannel('general-questions')">
-                        <span class="comm-item-emoji"><i data-lucide="help-circle" style="color: #06b6d4;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># general-questions</span>
-                        </div>
-                    </div>
-                    <div class="comm-sidebar-item" data-category="hiring-opportunities"
-                        onclick="selectChannel('hiring-opportunities')">
-                        <span class="comm-item-emoji"><i data-lucide="briefcase" style="color: #f97316;"></i></span>
-                        <div class="comm-item-text">
-                            <span class="comm-item-name"># hiring-opportunities</span>
-                        </div>
-                    </div>
-                </div>
+                <a href="profile.html#achievements" class="sb-streak-row" title="Achievements"
+                    style="text-decoration: none; cursor: pointer;">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong id="streakCount">0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </a>
             </div>
-            <!-- Center: Feed -->
-            <div class="chat-feed">
-                <div class="chat-feed-header" id="chatFeedHeader">
-                    <span class="ch-hash-lg" id="channelHashIcon">#</span>
-                    <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
-                    <div style="flex:1; min-width:0;">
-                        <h3 id="currentChannelName" style="margin:0;">general</h3>
-                        <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="dash-main">
+            <header class="dash-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"
+                    onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+
+                <div class="topbar-actions">
+                    <button class="topbar-icon" onclick="openMembersModal()" title="Community Members"><i
+                            class="fa-solid fa-users"></i></button>
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"><i data-lucide="bell"
+                                size="18"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span
+                                class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i data-lucide="x"
+                                        size="16"></i></button>
+                            </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- User Dropdown -->
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar">
+                            <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
+                        </div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                    </div>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">—</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i
+                                    class="fa-solid fa-gear"></i></a>
+                        </div>
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
+                            <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        </div>
                     </div>
                 </div>
-                <div class="chat-feed-messages" id="chatMessages">
-                    <div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i>
-                        <p>No messages yet. Start the conversation!</p>
+            </header>
+            <div class="chat-layout">
+                <!-- Left: Channels -->
+                <div class="chat-channels"
+                    style="background:#0a0a0a; border-right:1px solid rgba(255,255,255,0.06); width:220px; padding:16px 0; gap:0;">
+                    <!-- CHAT Section -->
+                    <div
+                        style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase;">
+                        <span>CHAT</span>
+                        <div class="online-pill"
+                            style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:12px; font-size:0.75rem;">
+                            <span
+                                style="width:8px; height:8px; background:#1ae071; border-radius:50%; box-shadow:0 0 8px #1ae071; display:inline-block;"></span>
+                            <span id="onlineCount" style="color:#1ae071; font-weight:700;">0 online</span>
+                        </div>
+                    </div>
+                    <div class="ch-item active" data-channel="general" onclick="selectChannel('general')">
+                        <span style="font-size:1rem; margin-top:2px;"><i data-lucide="message-square"
+                                class="nav-icon"></i></span>
+                        <div class="ch-info" style="display:flex; flex-direction:column; gap:1px;">
+                            <div class="ch-name" style="font-size:0.85rem; font-weight:600; color:#f1f0ea;">General Chat
+                            </div>
+                            <div class="ch-preview" style="font-size:0.72rem; color:rgba(193,255,17,0.6);">Real-time
+                                chat</div>
+                        </div>
+                    </div>
+
+
+                    <!-- POSTS Section -->
+                    <div
+                        style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px 4px; font-size:0.7rem; font-weight:700; color:#5a5648; letter-spacing:1px; text-transform:uppercase; margin-top:8px;">
+                        <span>POSTS</span>
+                    </div>
+                    <div id="channelList" style="padding:0; display:flex; flex-direction:column; gap:0;">
+                        <div class="comm-sidebar-item" data-category="start_here" onclick="selectChannel('start_here')">
+                            <span class="comm-item-emoji"><i data-lucide="monitor" style="color: #3b82f6;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># start_here</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="announcements"
+                            onclick="selectChannel('announcements')">
+                            <span class="comm-item-emoji"><i data-lucide="clipboard-list"
+                                    style="color: #0ea5e9;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># announcements</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="introduce-yourself"
+                            onclick="selectChannel('introduce-yourself')">
+                            <span class="comm-item-emoji"><i data-lucide="users" style="color: #a855f7;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># introduce-yourself</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="wins" onclick="selectChannel('wins')">
+                            <span class="comm-item-emoji"><i data-lucide="crown" style="color: #eab308;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># wins</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="workflows-help"
+                            onclick="selectChannel('workflows-help')">
+                            <span class="comm-item-emoji"><i data-lucide="message-square"
+                                    style="color: #22c55e;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># workflows-help</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="share-your-build"
+                            onclick="selectChannel('share-your-build')">
+                            <span class="comm-item-emoji"><i data-lucide="rocket" style="color: #f43f5e;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># share-your-build</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="general-questions"
+                            onclick="selectChannel('general-questions')">
+                            <span class="comm-item-emoji"><i data-lucide="help-circle"
+                                    style="color: #06b6d4;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># general-questions</span>
+                            </div>
+                        </div>
+                        <div class="comm-sidebar-item" data-category="hiring-opportunities"
+                            onclick="selectChannel('hiring-opportunities')">
+                            <span class="comm-item-emoji"><i data-lucide="briefcase" style="color: #f97316;"></i></span>
+                            <div class="comm-item-text">
+                                <span class="comm-item-name"># hiring-opportunities</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="chat-preview-bar" id="chatPreviewBar">
-                    <img id="previewImg" src="" alt="" />
-                    <span class="preview-name" id="previewName"></span>
-                    <button class="preview-remove" id="previewRemove"><i data-lucide="x" size="16"></i></button>
-                </div>
-                <div class="chat-reply-bar" id="chatReplyBar"
-                    style="display:none; background:#1e1e1e; padding:8px 16px; border-bottom:1px solid #333; align-items:stretch;">
-                    <div style="width:3px; background:#4a8bf5; border-radius:2px; margin-right:12px;"></div>
-                    <div style="flex:1; overflow:hidden;">
-                        <div style="font-size:0.75rem; font-weight:700; color:#4a8bf5; margin-bottom:2px;"
-                            id="replyToName"></div>
-                        <div style="font-size:0.75rem; color:#b8b8b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-                            id="replyToText"></div>
+                <!-- Center: Feed -->
+                <div class="chat-feed">
+                    <div class="chat-feed-header" id="chatFeedHeader">
+                        <span class="ch-hash-lg" id="channelHashIcon">#</span>
+                        <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
+                        <div style="flex:1; min-width:0;">
+                            <h3 id="currentChannelName" style="margin:0;">general</h3>
+                            <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
+                        </div>
                     </div>
-                    <button onclick="cancelReply()"
-                        style="background:none; border:none; color:#888; cursor:pointer; font-size:1.2rem; padding:0 8px;">✕</button>
-                </div>
-                <div class="chat-input-bar" id="chatInputBar">
-                    <div class="chat-media-btns">
-                        <button class="chat-media-btn" id="attachBtn" title="Send image"><i
-                                class="fa-solid fa-image"></i></button>
-                        <button class="chat-media-btn" id="voiceBtn" title="Record voice"><i
-                                class="fa-solid fa-microphone"></i></button>
+                    <div class="chat-feed-messages" id="chatMessages">
+                        <div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
                     </div>
-                    <textarea id="chatInput" placeholder="Message #general" rows="1" style="resize:none;"></textarea>
-                    <button class="chat-send-btn" id="sendBtn"><i data-lucide="send" size="18"></i></button>
+                    <div class="chat-preview-bar" id="chatPreviewBar">
+                        <img id="previewImg" src="" alt="" />
+                        <span class="preview-name" id="previewName"></span>
+                        <button class="preview-remove" id="previewRemove"><i data-lucide="x" size="16"></i></button>
+                    </div>
+                    <div class="chat-reply-bar" id="chatReplyBar"
+                        style="display:none; background:#1e1e1e; padding:8px 16px; border-bottom:1px solid #333; align-items:stretch;">
+                        <div style="width:3px; background:#4a8bf5; border-radius:2px; margin-right:12px;"></div>
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="font-size:0.75rem; font-weight:700; color:#4a8bf5; margin-bottom:2px;"
+                                id="replyToName"></div>
+                            <div style="font-size:0.75rem; color:#b8b8b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                id="replyToText"></div>
+                        </div>
+                        <button onclick="cancelReply()"
+                            style="background:none; border:none; color:#888; cursor:pointer; font-size:1.2rem; padding:0 8px;">✕</button>
+                    </div>
+                    <!-- Voice Preview Bar (WhatsApp-style) -->
+                    <div class="chat-input-bar voice-preview-bar" id="voicePreviewBar" style="display:none; align-items:center; gap:10px; padding:10px 14px;">
+                        <button id="voiceCancelBtn" title="Cancel" style="background:none;border:none;color:#ff4d4d;font-size:1.1rem;cursor:pointer;flex-shrink:0;"><i class="fa-solid fa-trash"></i></button>
+                        <audio id="voicePreviewPlayer" controls style="flex:1; height:36px; border-radius:20px;"></audio>
+                        <button id="voiceSendBtn" title="Send" style="background:var(--gold,#c1ff11);border:none;color:#000;font-size:0.85rem;font-weight:700;border-radius:20px;padding:7px 18px;cursor:pointer;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                    </div>
+                    <div class="chat-input-bar" id="chatInputBar">
+                        <div class="chat-media-btns">
+                            <button class="chat-media-btn" id="attachBtn" title="Send image"><i
+                                    class="fa-solid fa-image"></i></button>
+                            <button class="chat-media-btn" id="voiceBtn" title="Record voice"><i
+                                    class="fa-solid fa-microphone"></i></button>
+                        </div>
+                        <textarea id="chatInput" placeholder="Message" rows="1" style="resize:none;" dir="auto"></textarea>
+                        <button class="chat-send-btn" id="sendBtn"><i data-lucide="send" size="18"></i></button>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none" />
                 </div>
-                <input type="file" id="fileInput" accept="image/*" style="display:none" />
-            </div>
-            <!-- Right Sidebar (shown only in posts mode) -->
-            <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
-                <div class="comm-rs-panel" id="rsActiveNow">
-                    <h4><i data-lucide="users" style="width:14px;height:14px;margin-right:4px;"></i> ACTIVE NOW</h4>
-                    <div class="comm-active-avatars" id="rsActiveAvatars"></div>
-                </div>
-                <div class="comm-rs-panel" id="rsTopTopics">
-                    <h4><i data-lucide="hash" style="width:14px;height:14px;margin-right:4px;"></i> TOP TOPICS</h4>
-                    <div id="rsTopTopicsList"></div>
-                </div>
-                <div class="comm-rs-panel" id="rsPinned">
-                    <h4><i data-lucide="pin" style="width:14px;height:14px;margin-right:4px;"></i> PINNED MESSAGES
-                    </h4>
-                    <div id="rsPinnedList"></div>
+                <!-- Right Sidebar (shown only in posts mode) -->
+                <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
+                    <div class="comm-rs-panel" id="rsActiveNow">
+                        <h4><i data-lucide="users" style="width:14px;height:14px;margin-right:4px;"></i> ACTIVE NOW</h4>
+                        <div class="comm-active-avatars" id="rsActiveAvatars"></div>
+                    </div>
+                    <div class="comm-rs-panel" id="rsTopTopics">
+                        <h4><i data-lucide="hash" style="width:14px;height:14px;margin-right:4px;"></i> TOP TOPICS</h4>
+                        <div id="rsTopTopicsList"></div>
+                    </div>
+                    <div class="comm-rs-panel" id="rsPinned">
+                        <h4><i data-lucide="pin" style="width:14px;height:14px;margin-right:4px;"></i> PINNED MESSAGES
+                        </h4>
+                        <div id="rsPinnedList"></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- New Post Modal -->
@@ -1147,7 +1175,7 @@
             <p>Are you sure you want to delete this message? This action cannot be undone.</p>
             <div class="custom-modal-actions">
                 <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-confirm-delete" id="confirmDeleteBtn">Delete Message</button>
+                <button class="btn-confirm-delete" id="confirmDeleteMessageBtn">Delete Message</button>
             </div>
         </div>
     </div>
@@ -1188,7 +1216,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js"></script>
+    <script src="src/js/utils.js?v=1781976771"></script>
 
     <style>
         /* Custom Modal */
@@ -1801,7 +1829,6 @@
             white-space: nowrap;
         }
 
-        .msg-actions:hover .msg-reaction-popover,
         .msg-reaction-popover.open {
             display: flex;
             animation: reactionBarIn 0.14s ease-out forwards;
@@ -1898,7 +1925,6 @@
                 transform: translateY(4px);
             }
 
-            .msg-actions:hover .msg-reaction-popover,
             .msg-reaction-popover.open {
                 animation: reactionBarInMobile 0.14s ease-out forwards;
             }
@@ -2430,8 +2456,9 @@
         function connectWS() {
             if (!token) return;
             const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // Extract host from API variable (e.g. http://127.0.0.1:8000 -> 127.0.0.1:8000)
-            const apiHost = API.replace(/^https?:\/\//, '');
+            // If API is a relative path (e.g. '/api' in production), use window.location.host
+            // If API is absolute (e.g. 'http://127.0.0.1:8000' in local dev), strip protocol
+            const apiHost = API.startsWith('/') ? window.location.host : API.replace(/^https?:\/\//, '');
             ws = new WebSocket(`${wsProtocol}//${apiHost}/ws/${token}`);
 
             ws.onopen = () => { console.log('WebSocket Connected'); };
@@ -2445,6 +2472,9 @@
                     } else if (msg.event === 'message_read') {
                         // Refresh to show updated read receipts
                         loadMessages();
+                    } else if (msg.event === 'new_notification') {
+                        loadNotifications();
+                        notifyToast(msg.data.title + ': ' + msg.data.body, 'info');
                     } else if (msg.event === 'reaction_updated' || msg.type === 'reaction_updated') {
                         if (msg.data) applyReactionUpdate(msg.data.message_id, msg.data.reactions_summary || []);
                     } else if (msg.event === 'reaction_error') {
@@ -2471,6 +2501,9 @@
                     } else if (msg.event === 'notification') {
                         commToast('New Notification: ' + msg.data.title);
                         loadNotifications();
+                    } else if (msg.event === 'message_deleted') {
+                        const el = document.getElementById(`msg-${msg.data.message_id}`);
+                        if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
                     }
                 } catch (err) { console.error('WS parse error', err); }
             };
@@ -2537,10 +2570,17 @@
                 currentUserAvatar = u.avatar_url || '';
                 currentUserIsAdmin = u.is_admin || false;
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-                s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('streakCount', u.streak_days || 0);
+                s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('dropdownName', u.full_name); s('streakCount', u.streak_days || 0);
                 ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
                     const el = document.getElementById(id);
-                    if (el && u.avatar_url) el.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+                    if (el) {
+                        if (typeof buildAvatarHtml === 'function') {
+                            el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                        } else {
+                            const fullUrl = window.getAvatarSrc(u);
+                            el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                        }
+                    }
                 });
             } catch (e) { }
         }
@@ -2679,10 +2719,10 @@
             // Highlight global sidebar
             document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
             if (name === 'messages' || isDm) {
-                const msgGlobalNav = document.querySelector('.sidebar-nav .nav-item[href*="direct-messages.html"]');
+                const msgGlobalNav = document.getElementById('nav-dm');
                 if (msgGlobalNav) msgGlobalNav.classList.add('active');
             } else {
-                const commGlobalNav = document.querySelector('.sidebar-nav .nav-item[href="chat.html?v=5"]');
+                const commGlobalNav = document.getElementById('nav-chat');
                 if (commGlobalNav) commGlobalNav.classList.add('active');
             }
 
@@ -2748,12 +2788,16 @@
         // ── Start Here ──
         async function loadStartHereContent() {
             const el = document.getElementById('chatMessages');
-            let videoUrl = '';
+            const FALLBACK_VIDEO = 'https://www.youtube.com/embed/nbFNRyUDuqc';
+            let videoUrl = FALLBACK_VIDEO;
             try {
                 const cfgRes = await apiFetch('/chat/start-here-config');
                 const cfgData = await cfgRes.json();
-                videoUrl = cfgData.video_url || '';
-            } catch (e) { }
+                videoUrl = cfgData.video_url || FALLBACK_VIDEO;
+                console.log('[StartHere] video_url from API:', videoUrl);
+            } catch (e) {
+                console.warn('[StartHere] Using fallback video URL');
+            }
 
             let videoCardHTML = '';
             if (videoUrl) {
@@ -2783,10 +2827,48 @@
             }
 
             let html = videoCardHTML + `
-            <div class="msg" style="background:rgba(193,255,17,0.04);border-radius:12px;padding:12px;margin:0 20px 8px;">
+            <div class="msg" style="background:rgba(193,255,17,0.04);border-radius:12px;padding:12px;margin:0 auto 8px;max-width:800px;">
                 <div class="msg-av" style="background:var(--gold-subtle);color:var(--gold);"></div>
                 <div class="msg-body-wrap"><div class="msg-top"><span class="msg-name" style="color:var(--gold);">Ghawy Bot</span><span class="msg-badge pro">System</span></div>
                 <div class="msg-txt">👋 Welcome! Here you will find everything you need to start your journey with Ghawy</div></div>
+            </div>` + `
+            <div class="sh-faq-container" dir="rtl">
+                <h3 style="color: #f1f0ea; font-size: 1.1rem; margin-bottom: 12px; font-family: 'Cairo', sans-serif;">أسئلة شائعة عن الذكاء الاصطناعي (AI)</h3>
+                
+                <details class="sh-faq-item">
+                    <summary class="sh-faq-summary">كيف يمكنني الاستفادة من الذكاء الاصطناعي في عملي؟</summary>
+                    <div class="sh-faq-content">
+                        يمكنك استخدام الذكاء الاصطناعي لأتمتة المهام الروتينية، تحليل البيانات بسرعة، تحسين تجربة العملاء، وتوليد أفكار أو محتوى جديد. العديد من الأدوات تتيح لك دمج الذكاء الاصطناعي في سير عملك بسهولة.
+                    </div>
+                </details>
+
+                <details class="sh-faq-item">
+                    <summary class="sh-faq-summary">هل سيستبدل الذكاء الاصطناعي وظيفتي؟</summary>
+                    <div class="sh-faq-content">
+                        الذكاء الاصطناعي هو أداة لتعزيز قدراتك وليس بالضرورة لاستبدالك. الأشخاص الذين يتعلمون كيفية استخدام الذكاء الاصطناعي سيكون لديهم ميزة تنافسية على أولئك الذين لا يستخدمونه.
+                    </div>
+                </details>
+
+                <details class="sh-faq-item">
+                    <summary class="sh-faq-summary">ما هي أفضل الأدوات للبدء في تعلم الذكاء الاصطناعي؟</summary>
+                    <div class="sh-faq-content">
+                        يمكنك البدء بأدوات مثل ChatGPT أو Claude لمعالجة النصوص، وأدوات مثل Midjourney أو DALL-E لتوليد الصور. من خلال غاوي، سنوفر لك مسارات تعليمية وتطبيقات عملية لتبدأ بقوة.
+                    </div>
+                </details>
+
+                <details class="sh-faq-item">
+                    <summary class="sh-faq-summary">كيف أحافظ على خصوصية بياناتي عند استخدام أدوات الذكاء الاصطناعي؟</summary>
+                    <div class="sh-faq-content">
+                        تجنب مشاركة أي معلومات حساسة أو بيانات شخصية خاصة بك أو بشركتك في النماذج العامة. اقرأ سياسة الخصوصية الخاصة بكل أداة لمعرفة كيف يتم استخدام بياناتك للتدريب.
+                    </div>
+                </details>
+
+                <details class="sh-faq-item">
+                    <summary class="sh-faq-summary">ما هو مستقبل الذكاء الاصطناعي؟</summary>
+                    <div class="sh-faq-content">
+                        مستقبل الذكاء الاصطناعي يتجه نحو التخصيص العالي، والمساعدين الشخصيين المتطورين، وتطبيقات في الطب والتعليم والهندسة. نحن في بداية عصر جديد من التكنولوجيا وسيكون التطور سريعاً جداً.
+                    </div>
+                </details>
             </div>`;
             el.innerHTML = html;
             el.scrollTop = el.scrollHeight;
@@ -2956,10 +3038,24 @@
 
         // ── Render Message ──
         function renderMsg(m) {
-            const initials = (m.author_name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-            const avatarHtml = m.author_avatar_url ? `<img src="${m.author_avatar_url}" alt=""/>` : initials;
-            const badgeCls = getBadgeClass(m.author_badge);
-            const isOwn = m.author_id === currentUserId;
+            const safeName = m.author_name || m.sender_name || '?';
+            const initials = safeName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            const avatarUrl = m.author_avatar_url || m.sender_avatar || m.avatar_url;
+            const avatarHtml = avatarUrl ? `<img src="${avatarUrl}" alt=""/>` : initials;
+            const authorBadge = m.author_badge || m.sender_badge;
+            const badgeCls = getBadgeClass(authorBadge);
+            const isOwn = (m.author_id || m.sender_id) === currentUserId;
+
+            let badgeHtml = '';
+            const isAdminSender = m.sender_is_admin == true || m.sender_is_admin === 1 || (m.author_badge && m.author_badge.toLowerCase().includes('admin'));
+            console.log('[DEBUG BADGE]', m.author_name, 'sender_is_admin:', m.sender_is_admin, typeof m.sender_is_admin, 'author_badge:', m.author_badge, 'isAdminSender:', isAdminSender);
+            if (isAdminSender) {
+                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:#c1ff11;">Admin <i class="fa-solid fa-circle-check" style="color: #c1ff11;"></i></span>`;
+            } else if (m.author_badge && (m.author_badge.toLowerCase().includes('pro') || m.author_badge.toLowerCase().includes('gold'))) {
+                badgeHtml = `<span class="msg-badge pro">${m.author_badge}</span>`;
+            } else {
+                badgeHtml = `<span class="msg-badge member">Member</span>`;
+            }
 
             // Parse Reply indicator if exists
             let actualContent = m.content || '';
@@ -2981,13 +3077,16 @@
             // Message content based on type
             let contentInnerHtml = '';
             const msgType = m.message_type || 'text';
+            
+            const safeContent = actualContent ? (window.formatAdminMentions ? window.formatAdminMentions(escHtml(actualContent)) : escHtml(actualContent)) : '';
+
             if (msgType === 'image' && m.file_url) {
                 contentInnerHtml = `<img class="msg-image" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
-                if (actualContent) contentInnerHtml += `<div class="msg-txt">${escHtml(actualContent)}</div>`;
+                if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${safeContent}</div>`;
             } else if (msgType === 'voice' && m.file_url) {
                 contentInnerHtml = `<div class="msg-voice"><i class="fa-solid fa-waveform-lines" style="color:var(--gold);font-size:.9rem;"></i><audio controls preload="metadata" src="${API}${m.file_url}"></audio></div>`;
             } else {
-                contentInnerHtml = `<div class="msg-txt">${escHtml(actualContent)}</div>`;
+                contentInnerHtml = `<div class="msg-txt" dir="auto">${safeContent}</div>`;
             }
             const contentHtml = `<div class="msg-content-bubble">${contentInnerHtml}</div>`;
             const reactionsHtml = renderMessageReactions(m.id, m.reactions_summary || []);
@@ -3001,7 +3100,7 @@
             }
 
             // Delete button (only for own messages)
-            const deleteBtn = isOwn ? `<button class="msg-action-btn" title="Delete" onclick="deleteMessage(${m.id})"><i data-lucide="trash-2" size="14"></i></button>` : '';
+            const deleteBtn = isOwn ? `<button class="msg-action-btn" title="Delete" onclick="deleteMessage(${m.id})"><i class="fa-solid fa-trash"></i></button>` : '';
 
             const onlineClass = m.is_online ? 'online' : '';
             const msgClass = isOwn ? 'msg msg-own' : 'msg msg-observe-target';
@@ -3026,7 +3125,7 @@
                     ${replyHtml}
                     <div class="msg-top">
                         <span class="msg-name msg-author-clickable" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})">${escHtml(m.author_name || 'Unknown')}</span>
-                        <span class="msg-badge ${badgeCls}">${escHtml(m.author_badge || 'Member')}</span>
+                        ${badgeHtml}
                         <span class="msg-ts">${formatTime(m.created_at)}</span>
                     </div>
                     <div class="msg-content-row">
@@ -3112,15 +3211,24 @@
             // slight delay to allow display:flex to apply before adding .open for transition
             setTimeout(() => modal.classList.add('open'), 10);
 
-            document.getElementById('confirmDeleteBtn').onclick = async function () {
+            document.getElementById('confirmDeleteMessageBtn').onclick = async function () {
                 if (!msgToDelete) return;
                 const id = msgToDelete;
                 closeDeleteModal();
                 try {
-                    await apiFetch(`/chat/messages/${id}`, { method: 'DELETE' });
+                    console.log('Deleting message:', id);
+                    const res = await apiFetch(`/chat/messages/${id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        notifyToast('Failed to delete message: ' + (errData.detail || 'Unknown error'), 'error');
+                        return;
+                    }
                     const el = document.getElementById(`msg-${id}`);
                     if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    console.error('Delete message error:', e); 
+                    notifyToast('Network error while deleting message', 'error');
+                }
             };
         }
 
@@ -3222,41 +3330,108 @@
             } catch (e) { console.error(e); notifyToast('Failed to upload image', 'error'); }
         }
 
-        // ── Voice Recording ──
+        // ── Voice Recording (WhatsApp-style preview) ──
+        let pendingVoiceBlob = null;
+        let recordingTimerInterval = null;
+
         document.getElementById('voiceBtn').addEventListener('click', toggleRecording);
+
+        document.getElementById('voiceCancelBtn').addEventListener('click', () => {
+            pendingVoiceBlob = null;
+            const player = document.getElementById('voicePreviewPlayer');
+            player.pause();
+            player.src = '';
+            document.getElementById('voicePreviewBar').style.display = 'none';
+            document.getElementById('chatInputBar').style.display = '';
+        });
+
+        document.getElementById('voiceSendBtn').addEventListener('click', async () => {
+            if (!pendingVoiceBlob) return;
+            const sendBtn = document.getElementById('voiceSendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                const file = new File([pendingVoiceBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadRes = await fetch(API + '/chat/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                await apiFetch('/chat/messages', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        channel: currentChannel, content: null,
+                        message_type: 'voice',
+                        file_url: uploadData.file_url,
+                        file_name: uploadData.file_name,
+                        file_size: uploadData.file_size
+                    })
+                });
+                // Reset preview
+                pendingVoiceBlob = null;
+                const player = document.getElementById('voicePreviewPlayer');
+                player.pause(); player.src = '';
+                document.getElementById('voicePreviewBar').style.display = 'none';
+                document.getElementById('chatInputBar').style.display = '';
+                setTimeout(loadMessages, 300);
+            } catch (e) {
+                console.error(e);
+                notifyToast('Failed to send voice message', 'error');
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
+            }
+        });
+
         async function toggleRecording() {
             const btn = document.getElementById('voiceBtn');
             if (isRecording) {
-                mediaRecorder.stop(); isRecording = false;
+                mediaRecorder.stop();
+                isRecording = false;
                 btn.classList.remove('recording');
                 btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                clearInterval(recordingTimerInterval);
                 return;
             }
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 audioChunks = [];
+
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-                mediaRecorder.onstop = async () => {
+                mediaRecorder.onstop = () => {
                     stream.getTracks().forEach(t => t.stop());
                     const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
-                    const formData = new FormData(); formData.append('file', file);
-                    try {
-                        const uploadRes = await fetch(API + '/chat/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-                        const uploadData = await uploadRes.json();
-                        await apiFetch('/chat/messages', {
-                            method: 'POST',
-                            body: JSON.stringify({ channel: currentChannel, content: null, message_type: 'voice', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
-                        });
-                        setTimeout(loadMessages, 300);
-                    } catch (e) { console.error(e); }
+                    pendingVoiceBlob = blob;
+                    const player = document.getElementById('voicePreviewPlayer');
+                    player.src = URL.createObjectURL(blob);
+                    document.getElementById('chatInputBar').style.display = 'none';
+                    document.getElementById('voicePreviewBar').style.display = 'flex';
+                    // Reset send button
+                    const sb = document.getElementById('voiceSendBtn');
+                    sb.disabled = false;
+                    sb.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
                 };
-                mediaRecorder.start(); isRecording = true;
+
+                mediaRecorder.start();
+                isRecording = true;
+                let secs = 0;
                 btn.classList.add('recording');
-                btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-            } catch (e) { notifyToast('Microphone access denied', 'error'); }
+                btn.innerHTML = '<i class="fa-solid fa-stop"></i> 00:00';
+                recordingTimerInterval = setInterval(() => {
+                    secs++;
+                    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+                    const s = String(secs % 60).padStart(2, '0');
+                    btn.innerHTML = `<i class="fa-solid fa-stop"></i> ${m}:${s}`;
+                }, 1000);
+
+            } catch (e) {
+                notifyToast('Microphone access denied', 'error');
+            }
         }
+
 
         // ── Lightbox ──
         function openLightbox(src) {
@@ -3449,6 +3624,8 @@
                 });
                 if (res.ok) {
                     allMembers = await res.json();
+                    // Sort: admins first, then everyone else
+                    allMembers.sort((a, b) => (b.is_admin ? 1 : 0) - (a.is_admin ? 1 : 0));
                     document.getElementById('membersCountText').textContent = allMembers.length;
                     renderMembersList(allMembers);
                 }
@@ -3478,11 +3655,11 @@
             }
             container.innerHTML = list.map(m => {
                 const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
-                // Simple logic for @handle from email or name
-                const handle = m.email ? '@' + m.email.split('@')[0] : '@' + m.full_name.replace(/\s+/g, '').toLowerCase();
-                // Randomly assign online status for demo if no real time available (or just check m.is_online if available)
                 const isOnline = m.is_online === true;
                 const dotClass = isOnline ? 'online' : 'offline';
+                // Always show "Admin" for admins regardless of stored badge value
+                const badge = m.is_admin ? 'Admin' : (m.badge || 'Member');
+                const badgeColor = m.is_admin ? '#c1ff11' : (badge.toLowerCase().includes('pro') ? '#ffd700' : '#888');
 
                 return `
                 <div class="member-item">
@@ -3493,7 +3670,7 @@
                         </div>
                         <div class="member-details">
                             <div class="m-name" onclick="openUserProfile(${m.id})" style="cursor:pointer;">${escHtml(m.full_name)}</div>
-                            <div class="m-handle">${escHtml(handle)}</div>
+                            <div class="m-handle" style="color:${badgeColor};font-size:0.75rem;font-weight:600;">${escHtml(badge)}</div>
                         </div>
                     </div>
                     <button class="btn-view-profile" onclick="openUserProfile(${m.id}); closeMembersModal();">View Profile</button>
@@ -3525,7 +3702,7 @@
 
         async function loadNotifications() {
             try {
-                const res = await apiFetch('/notifications');
+                const res = await apiFetch('/notifications/');
                 if (!res) return;
 
                 const notifList = document.getElementById('notifList');
@@ -4594,7 +4771,7 @@
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-<script src="src/js/dashboard-new.js?v=10"></script>
+    <script src="src/js/dashboard-new.js?v=13"></script>
 </body>
 
 </html>

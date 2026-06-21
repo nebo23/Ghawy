@@ -1,9 +1,9 @@
 /* Layout */
 .goh-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 32px;
-  padding: 0 24px;
+  grid-template-columns: 1fr 310px;
+  gap: 20px;
+  padding: 0;
   align-items: start;
 }
 
@@ -17,7 +17,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: 14px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

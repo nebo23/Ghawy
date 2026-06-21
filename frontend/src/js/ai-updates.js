@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         setTxt('sidebarName', u.full_name);
         setTxt('topbarName', u.full_name);
+        setTxt('dropdownName', u.full_name);
         
         // Update Badge
         const badgeLabel = getBadgeLabel(u.badge);
@@ -46,11 +47,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update Streak
         setTxt('streakCount', u.streak_days || 0);
         
-        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                const fullUrl = window.getAvatarSrc(u);
-                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+                if (typeof buildAvatarHtml === 'function') {
+                    el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                } else {
+                    const fullUrl = window.getAvatarSrc(u);
+                    el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                }
             }
         });
         

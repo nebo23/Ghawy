@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 
 const token = getToken();
-if (!token) window.location.href = 'login.html';
+if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 // Get course ID from URL
@@ -30,11 +30,11 @@ function showToast(message, type = 'info') {
 async function apiFetch(url, opts = {}) {
   opts.headers = { ...headers, ...opts.headers };
   const res = await fetch(API + url, opts);
-  if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+  if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
   return res;
 }
 
-function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
 
 // ═══ LOAD PROFILE ═══
 async function loadProfile() {
@@ -71,13 +71,17 @@ async function loadProfile() {
     // Update Streak
     setTxt('streakCount', u.streak_days || 0);
     
-    ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        const fullUrl = window.getAvatarSrc(u);
-        el.innerHTML = `<img src="${fullUrl}" alt="" />`;
-      }
-    });
+            ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (typeof buildAvatarHtml === 'function') {
+                    el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                } else {
+                    const fullUrl = window.getAvatarSrc(u);
+                    el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                }
+            }
+        });
   } catch (e) { console.error(e); }
 }
 

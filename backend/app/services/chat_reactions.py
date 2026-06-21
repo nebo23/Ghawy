@@ -44,11 +44,17 @@ def set_message_reaction(
     ).first()
 
     if action == "remove":
-        if existing and existing.emoji == emoji:
+        # Delete the reaction regardless of emoji — user can only have one reaction per message
+        if existing:
             db.delete(existing)
     elif action == "add":
         if existing:
-            existing.emoji = emoji
+            if existing.emoji == emoji:
+                # Same emoji clicked again → toggle off (remove)
+                db.delete(existing)
+            else:
+                # Different emoji → update to new one
+                existing.emoji = emoji
         else:
             db.add(ChatMessageReaction(message_id=message_id, user_id=user_id, emoji=emoji))
     else:

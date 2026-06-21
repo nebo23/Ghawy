@@ -15,21 +15,26 @@ backlog = 2048
 # UvicornWorker handles async FastAPI/WebSocket correctly
 worker_class = "uvicorn.workers.UvicornWorker"
 
-# 2 workers for KVM 2 (2 vCPU) — leaves headroom for Nginx & Postgres
-workers = 2
+# ⚠️  MUST be 1 — the WebSocket manager uses an in-memory Singleton.
+# With multiple workers each process has its own manager, so reactions
+# and broadcasts only reach users connected to that specific worker.
+# Async uvicorn handles thousands of concurrent connections in 1 worker.
+workers = 1
 
 # Each worker can handle many concurrent connections via async
 worker_connections = 1000
 
 # ── Timeouts ───────────────────────────────────────────────────
-timeout = 120          # Allow slow DB queries / file uploads up to 2 min
+# NOTE: With uvicorn async workers, timeout=0 means unlimited — worker will not be
+# killed for long-running requests/WebSocket connections. Nginx controls WS timeout.
+timeout = 0            # Must be 0 for WebSocket (long-lived) connections with UvicornWorker
 keepalive = 5          # Reuse connections for 5 seconds
 graceful_timeout = 30  # Grace period for in-flight requests on shutdown
 
 # ── Process Management ─────────────────────────────────────────
-max_requests = 1000          # Restart worker after N requests (prevents memory leaks)
-max_requests_jitter = 100    # Randomize restart to avoid thundering herd
-preload_app = True           # Load app before forking — shares memory between workers
+max_requests = 10000         # Restart worker after N requests (prevents memory leaks)
+max_requests_jitter = 1000   # Randomize restart to avoid thundering herd
+preload_app = False          # Must be False with WebSocket singleton manager
 
 # ── Logging ────────────────────────────────────────────────────
 accesslog = "-"   # stdout → Docker captures it

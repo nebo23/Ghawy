@@ -10,6 +10,7 @@ from app.database import SessionLocal
 from app.models import User, Message, ChatMember, Channel, MessageType
 from app.services.ws_manager import manager
 from app.services.chat_reactions import get_reaction_summary, set_message_reaction
+from app.services.mentions_service import process_admin_mentions
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -64,9 +65,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         for ch in all_group_channels:
             if ch.id not in channel_ids:
                 channel_ids.append(ch.id)
-                # Auto-create membership
-                new_member = ChatMember(channel_id=ch.id, user_id=user.id)
-                db.add(new_member)
+                # Auto-create membership only if not already a member
+                already_member = db.query(ChatMember).filter(
+                    ChatMember.channel_id == ch.id,
+                    ChatMember.user_id == user.id
+                ).first()
+                if not already_member:
+                    new_member = ChatMember(channel_id=ch.id, user_id=user.id)
+                    db.add(new_member)
         db.commit()
 
         manager.subscribe(user.id, channel_ids)
@@ -136,7 +142,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         logger.error(f"WS error: {e}")
     finally:
         if user:
-            manager.disconnect(user.id)
+            manager.disconnect(websocket, user.id)
             # Broadcast offline status
             memberships = db.query(ChatMember).filter(ChatMember.user_id == user.id).all()
             for m in memberships:
@@ -180,6 +186,17 @@ async def handle_send_message(user: User, data: dict, db: Session):
     db.add(msg)
     db.commit()
     db.refresh(msg)
+
+    # Process admin mentions
+    notified_ids = process_admin_mentions(db, user, content)
+    for aid in notified_ids:
+        await manager.send_personal(aid, {
+            "event": "new_notification",
+            "data": {
+                "title": "New Mention in Chat",
+                "body": f"{user.full_name} mentioned you in the community chat."
+            }
+        })
 
     # Broadcast to all channel members
     broadcast_data = {

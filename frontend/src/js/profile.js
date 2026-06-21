@@ -1,22 +1,22 @@
 (async () => {
-  const user = await requireActiveUser();
-  if (!user) return;
+    const user = await requireActiveUser();
+    if (!user) return;
 })();
 
 // ═══ AUTH GUARD ═══
 const token = getToken();
-if (!token) window.location.href = 'login.html';
+if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 async function apiFetch(url, opts = {}) {
     opts.headers = { ...headers, ...opts.headers };
     const res = await fetch(API + url, opts);
-    if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+    if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
     return res;
 }
 
-function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
 
 let currentUser = null;
 
@@ -34,6 +34,7 @@ async function loadProfile() {
             const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
             setTxt('sidebarName', me.full_name);
             setTxt('topbarName', me.full_name);
+            setTxt('dropdownName', me.full_name);
             const badgeLabel = getBadgeLabel(me.badge);
             const badgeEl = document.getElementById('sidebarBadge');
             if (badgeEl) badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
@@ -48,7 +49,14 @@ async function loadProfile() {
             setTxt('streakCount', me.streak_days || 0);
             ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.innerHTML = `<img src="${window.getAvatarSrc(me)}" alt="" />`;
+                if (el) {
+                    if (typeof buildAvatarHtml === 'function') {
+                        el.innerHTML = buildAvatarHtml(me.full_name, me.avatar_url, me.id, 40);
+                    } else {
+                        const fullUrl = window.getAvatarSrc(me);
+                        el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                    }
+                }
             });
         }
 
@@ -209,16 +217,16 @@ if (avatarUpload) {
     avatarUpload.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
+
         const status = document.getElementById('uploadStatus');
-        if(status) {
+        if (status) {
             status.style.color = 'var(--text-muted)';
             status.textContent = 'Uploading...';
         }
-        
+
         const formData = new FormData();
         formData.append('file', file);
-        
+
         try {
             // Note: Content-Type must be omitted to let the browser set it with the boundary for FormData
             const hdrs = { 'Authorization': `Bearer ${token}` };
@@ -227,33 +235,33 @@ if (avatarUpload) {
                 headers: hdrs,
                 body: formData
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
-                if(status) {
+                if (status) {
                     status.style.color = 'var(--gold)';
                     status.textContent = 'Uploaded successfully!';
                 }
-                
+
                 // Update preview
                 const previewBox = document.getElementById('avatarPreviewBox');
                 if (previewBox) {
                     previewBox.innerHTML = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
                 }
-                
+
                 // Refresh topbar and sidebar avatars
                 loadProfile();
-                
-                if(status) setTimeout(() => status.textContent = '', 3000);
+
+                if (status) setTimeout(() => status.textContent = '', 3000);
             } else {
-                if(status) {
+                if (status) {
                     status.style.color = 'var(--red-notif)';
                     status.textContent = 'Failed to upload image.';
                 }
             }
         } catch (err) {
             console.error(err);
-            if(status) {
+            if (status) {
                 status.style.color = 'var(--red-notif)';
                 status.textContent = 'Error during upload.';
             }

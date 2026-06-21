@@ -776,44 +776,34 @@
             </div>
           </div>
           <a href="chat.html?v=5" class="topbar-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
-          <div class="topbar-user" id="topbarUser"
-            onclick="document.getElementById('userDropdown').classList.toggle('open')">
-            <div class="topbar-user-avatar" id="topbarAvatar"><i data-lucide="user" style="width:16px;height:16px;"></i>
-            </div>
-            <span class="topbar-user-name" id="topbarName">—</span>
-            <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
-          </div>
-          <div class="user-dropdown whop-style" id="userDropdown">
-            <div class="dropdown-profile-header">
-              <div class="dropdown-avatar" id="dropdownAvatarDiv">
-                <img src="./imgs/nabil.jpg" id="dropdownAvatarImg" alt="User Avatar"
-                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22></path><circle cx=%2212%22 cy=%227%22 r=%224%22></circle></svg>';">
-              </div>
-              <div class="dropdown-profile-info">
-                <div class="dropdown-name" id="dropdownName">Nabil Ahmed</div>
-                <a href="profile.html" class="dropdown-view-profile">View profile</a>
-              </div>
-              <a href="profile-settings.html" class="dropdown-settings-icon"><i data-lucide="settings"></i></a>
-            </div>
-
-            <div class="dropdown-section">
-              <a href="profile.html#achievements"><i data-lucide="award"></i> Achievements</a>
-              <a href="javascript:void(0)"><i data-lucide="help-circle"></i> Help and support</a>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <div class="dropdown-section">
-              <button onclick="logout()"><i data-lucide="log-out"></i> Sign out</button>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <div class="theme-toggle-segmented">
-              <button class="theme-btn" data-theme="light"><i data-lucide="sun"></i></button>
-              <button class="theme-btn" data-theme="dark"><i data-lucide="moon"></i></button>
-            </div>
-          </div>
+                          <!-- User Dropdown -->
+                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                    <div class="topbar-user-avatar" id="topbarAvatar">
+                        <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
+                    </div>
+                    <span class="topbar-user-name" id="topbarName">—</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                </div>
+                <div class="user-dropdown whop-style" id="userDropdown">
+                    <div class="dropdown-profile-header">
+                        <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                            <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                        </div>
+                        <div class="dropdown-profile-info">
+                            <div class="dropdown-name" id="dropdownName">—</div>
+                            <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                        </div>
+                        <a href="profile-settings.html" class="dropdown-settings-icon"><i class="fa-solid fa-gear"></i></a>
+                    </div>
+                    <div class="dropdown-section">
+                        <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
+                        <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-section">
+                        <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                    </div>
+                </div>
         </div>
       </header>
 
@@ -1614,6 +1604,32 @@
     </div>
   </div>
 
+  <!-- Extend Subscription Modal -->
+  <div class="modal-overlay-team" id="extend-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>📅 Extend Subscription</h3><button class="modal-close-team" onclick="closeModal('extend-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;margin-bottom:16px;">Extend subscription for: <strong id="extend-user-name" style="color:#3f8ff9;"></strong></p>
+        <div class="fg">
+          <label>Duration (days)</label>
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <button onclick="document.getElementById('extend-days').value='30'" style="padding:6px 14px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:8px;cursor:pointer;font-size:13px;" onmouseover="this.style.borderColor='#3f8ff9'" onmouseout="this.style.borderColor='#333'">30 days</button>
+            <button onclick="document.getElementById('extend-days').value='60'" style="padding:6px 14px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:8px;cursor:pointer;font-size:13px;" onmouseover="this.style.borderColor='#3f8ff9'" onmouseout="this.style.borderColor='#333'">60 days</button>
+            <button onclick="document.getElementById('extend-days').value='90'" style="padding:6px 14px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:8px;cursor:pointer;font-size:13px;" onmouseover="this.style.borderColor='#3f8ff9'" onmouseout="this.style.borderColor='#333'">90 days</button>
+            <button onclick="document.getElementById('extend-days').value='365'" style="padding:6px 14px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:8px;cursor:pointer;font-size:13px;" onmouseover="this.style.borderColor='#3f8ff9'" onmouseout="this.style.borderColor='#333'">1 year</button>
+          </div>
+          <input type="number" id="extend-days" value="30" min="1" placeholder="Custom days..." style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;box-sizing:border-box;" />
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('extend-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitExtend()">✅ Extend</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Rejection Modal -->
   <div class="modal-overlay-team" id="reject-modal" style="display:none">
     <div class="modal-box-team small">
@@ -1747,7 +1763,8 @@
         </div>
         <div class="fg"><label>Thumbnail URL</label><input type="url" id="course-thumbnail" placeholder="https://..." />
         </div>
-        <div class="fg"><label>Total Lessons</label><input type="number" id="course-total-lessons" value="0" min="0" />
+        <div class="fg"><label>Total Lessons</label><input type="number" id="course-total-lessons" value="0" min="0" /></div>
+        <div class="fg"><label>Course Time</label><input type="text" id="course-time" placeholder="e.g. 4h 30m" /></div>
         </div>
       </div>
       <div class="modal-footer-team">
@@ -1771,6 +1788,7 @@
         </div>
         <div class="fg"><label>Thumbnail URL</label><input type="url" id="edit-course-thumbnail" /></div>
         <div class="fg"><label>Total Lessons</label><input type="number" id="edit-course-total-lessons" /></div>
+        <div class="fg"><label>Course Time</label><input type="text" id="edit-course-time" placeholder="e.g. 4h 30m" /></div>
       </div>
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('edit-course-modal')">Cancel</button>
@@ -1886,9 +1904,10 @@
 
   <!-- Close dropdowns on outside click -->
   <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
-  <script src="src/js/utils.js?v=2"></script>
+  <script src="src/js/utils.js?v=9"></script>
+    <script src="src/js/dashboard-new.js?v=13"></script>
   <script src="src/js/i18n.js?v=2"></script>
-  <script src="src/js/team.js?v=4"></script>
+  <script src="src/js/team.js?v=5"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
@@ -2085,7 +2104,7 @@
        ═══════════════════════════════════════════════════════ -->
   <script>
     (function () {
-      var RPT_API = (window.API_BASE || 'http://localhost:8000');
+      var RPT_API = (typeof API !== 'undefined' ? API : (window.API_BASE || 'http://localhost:8000'));
 
       function rptToken() { return localStorage.getItem('token') || ''; }
 
@@ -2354,9 +2373,10 @@
       // ─── Auto-load when tab becomes visible ───────────────
       var panel = document.getElementById('tab-reports');
       if (panel) {
-        var loaded = false;
+        var rptLoaded = false;
         new MutationObserver(function () {
-          if (panel.style.display !== 'none') {
+          if (panel.style.display !== 'none' && !rptLoaded) {
+            rptLoaded = true;
             loadReportsTab();
           }
         }).observe(panel, { attributes: true, attributeFilter: ['style'] });
@@ -2370,7 +2390,7 @@
        ═══════════════════════════════════════════════════════ -->
   <script>
     (function () {
-      var API_URL = (window.API_BASE || 'http://localhost:8000') + '/feedbacks/';
+      var API_URL = (typeof API !== 'undefined' ? API : (window.API_BASE || 'http://localhost:8000')) + '/feedbacks/';
 
       function fbToken() { return localStorage.getItem('token') || ''; }
 
@@ -2473,8 +2493,10 @@
       // ─── Auto-load when tab becomes visible ───────────────
       var panel = document.getElementById('tab-feedbacks');
       if (panel) {
+        var fbLoaded = false;
         new MutationObserver(function () {
-          if (panel.style.display !== 'none') {
+          if (panel.style.display !== 'none' && !fbLoaded) {
+            fbLoaded = true;
             loadFeedbacksTab();
           }
         }).observe(panel, { attributes: true, attributeFilter: ['style'] });

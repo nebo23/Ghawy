@@ -1,6 +1,6 @@
 // Verify the token
 if (!getToken()) {
-    window.location.href = 'login.html';
+    localStorage.removeItem('user'); window.location.href = '/login';
 } else {
     // Verify if account is already active (e.g. after manual payment) redirect to onboarding
     fetch(`${API}/profile/me`, {
@@ -11,6 +11,7 @@ if (!getToken()) {
     })
     .then(user => {
         if (user && user.is_active) {
+            localStorage.setItem('user', JSON.stringify(user));
             window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
         }
     })
@@ -19,7 +20,7 @@ if (!getToken()) {
 
 // ─── Plans Configuration ────────────────────────────────────
 const PLANS = {
-  monthly_egp: { amount: 500, currency: 'EGP', label: 'Monthly Subscription', period: 'Month', badge: null },
+  monthly_egp: { amount: 600, currency: 'EGP', label: 'Monthly Subscription', period: 'Month', badge: null },
   quarterly_egp: { amount: 1200, currency: 'EGP', label: 'Quarterly Subscription', period: '3 Months', badge: 'Save 300 EGP ' },
   yearly_egp: { amount: 3000, currency: 'EGP', label: 'Annual Subscription', period: 'Year', badge: 'Save 2000 EGP ' },
   monthly_usd: { amount: 15, currency: 'USD', label: 'Monthly Plan', period: 'Month', badge: null },

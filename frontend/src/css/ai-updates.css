@@ -794,3 +794,307 @@ textarea.form-control {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE STYLES — ai-updates.css
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Small Desktop 1024px ── */
+@media (max-width: 1024px) {
+  .ai-updates-layout {
+    grid-template-columns: 1fr 260px;
+    gap: 16px;
+    padding: 0 16px 32px;
+  }
+
+  .ai-updates-header h1 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+  }
+
+  .new-post-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ── Tablet 768px ── */
+@media (max-width: 768px) {
+  /* Already handled at 900px: layout becomes 1-column */
+  .ai-updates-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 12px 28px;
+  }
+
+  /* Move sidebar below feed on tablet */
+  .ai-updates-sidebar {
+    order: 2;
+  }
+  .ai-updates-main {
+    order: 1;
+  }
+
+  /* Header */
+  .ai-updates-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ai-updates-header h1 {
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
+  }
+
+  /* New post button: touch-friendly */
+  .new-post-btn {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  /* Post card */
+  .ai-post-card {
+    padding: 16px;
+  }
+
+  /* Post type tabs: horizontally scrollable */
+  .post-type-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .post-type-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Modal: 95vw */
+  .modal-content {
+    width: 95vw;
+    max-width: 95vw;
+    padding: 20px;
+  }
+
+  /* Form controls: touch-friendly */
+  .form-control {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  /* Submit button: touch-friendly */
+  .btn-submit {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  /* Reaction buttons: slightly larger touch targets */
+  .reaction-btn,
+  .comment-toggle-btn {
+    padding: 6px 10px;
+    min-height: 40px;
+  }
+
+  /* Active users card: compact */
+  .ai-active-users-card {
+    padding: 16px;
+  }
+}
+
+/* ── Mobile 480px ── */
+@media (max-width: 480px) {
+  .ai-updates-layout {
+    padding: 0 8px 20px;
+    gap: 12px;
+  }
+
+  /* Header: stack title and button */
+  .ai-updates-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .ai-updates-header h1 {
+    font-size: clamp(1.1rem, 6vw, 1.5rem);
+  }
+
+  /* New post button: full width on mobile */
+  .new-post-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Post card: tighten padding */
+  .ai-post-card {
+    padding: 14px 12px;
+    border-radius: 10px;
+  }
+
+  /* Post title */
+  .ai-post-title {
+    font-size: 1.05rem;
+  }
+
+  /* Post body */
+  .ai-post-body {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  /* Post actions: wrap on very small screens */
+  .ai-post-actions {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Admin actions: pushed inline */
+  .ai-post-admin-actions {
+    margin-right: 28px;
+    gap: 4px;
+  }
+
+  /* Comments */
+  .ai-comment-actions {
+    margin-left: 36px;
+  }
+  .ai-replies {
+    margin-left: 36px;
+  }
+
+  /* Comment input */
+  .ai-comment-input-wrapper {
+    gap: 8px;
+  }
+  .ai-comment-input {
+    font-size: 0.82rem;
+    padding: 8px 12px;
+  }
+
+  /* Modal: full-width, reduced padding */
+  .modal-content {
+    width: 95vw;
+    max-width: 95vw;
+    max-height: 90vh;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    margin-bottom: 16px;
+  }
+
+  .modal-title {
+    font-size: 1.05rem;
+  }
+
+  /* Form controls: 48px height for touch */
+  .form-control {
+    min-height: 48px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  textarea.form-control {
+    min-height: 80px;
+  }
+
+  /* Submit button: full width, 48px */
+  .btn-submit {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.95rem;
+    margin-top: 12px;
+  }
+
+  /* Poll */
+  .ai-poll-container {
+    padding: 12px;
+  }
+
+  .ai-poll-option {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Active users sidebar */
+  .ai-active-users-card {
+    padding: 14px 12px;
+  }
+
+  .ai-sidebar-header h3 {
+    font-size: 0.95rem;
+  }
+
+  /* Feed gap */
+  .ai-feed {
+    gap: 14px;
+  }
+}
+
+/* ── Small Mobile 360px ── */
+@media (max-width: 360px) {
+  .ai-updates-layout {
+    padding: 0 6px 16px;
+  }
+
+  /* Post card: minimal padding */
+  .ai-post-card {
+    padding: 12px 10px;
+  }
+
+  /* Post title */
+  .ai-post-title {
+    font-size: 0.95rem;
+  }
+
+  /* Post body */
+  .ai-post-body {
+    font-size: 0.82rem;
+  }
+
+  /* Author */
+  .ai-post-author {
+    font-size: 0.85rem;
+  }
+
+  /* Post avatar */
+  .ai-post-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Reaction buttons */
+  .reaction-btn,
+  .comment-toggle-btn {
+    font-size: 0.85rem;
+    padding: 5px 8px;
+  }
+
+  /* Header title */
+  .ai-updates-header h1 {
+    font-size: clamp(1rem, 7vw, 1.3rem);
+  }
+
+  /* Modal padding */
+  .modal-content {
+    padding: 14px;
+  }
+
+  /* Poll option font */
+  .poll-option-text {
+    font-size: 0.82rem;
+  }
+
+  /* Comment avatar */
+  .ai-comment-avatar {
+    width: 26px;
+    height: 26px;
+  }
+
+  .ai-comment-actions {
+    margin-left: 28px;
+  }
+
+  .ai-replies {
+    margin-left: 28px;
+  }
+}
+

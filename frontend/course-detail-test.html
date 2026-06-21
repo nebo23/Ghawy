@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/ghawi-logo.png" />
     <script src="https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js"></script>
-    <script src="src/js/utils.js"></script>
+    <script src="src/js/utils.js?v=9"></script>
     <link rel="stylesheet" href="src/css/dashboard.css" />
     <style>
         /* ═══ COURSE DETAIL — BLUE ACCENT OVERRIDES ═══ */
@@ -643,17 +643,29 @@
         /* ── Resources Grid ── */
         .resources-grid {
             display: flex;
+            flex-direction: column;
             gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
+            max-height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
         }
 
         .resources-grid::-webkit-scrollbar {
-            display: none;
+            width: 4px;
+            display: block;
+        }
+
+        .resources-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .resources-grid::-webkit-scrollbar-thumb {
+            background: #3f8ff9;
+            border-radius: 4px;
         }
 
         .resource-item {
-            flex: 1;
+            flex: 0 0 auto;
             min-width: 0;
             background: #0b0d12;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -799,33 +811,47 @@
         }
 
         .video-container:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            border-radius: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            aspect-ratio: unset !important;
+            border-radius: 0 !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .video-container:-webkit-full-screen {
-            width: 100vw;
-            height: 100vh;
-            border-radius: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            aspect-ratio: unset !important;
+            border-radius: 0 !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .video-container:fullscreen iframe {
-            width: 100%;
+            width: 100% !important;
             height: 100% !important;
-            margin-bottom: 0;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
         }
 
         .video-container:-webkit-full-screen iframe {
-            width: 100%;
+            width: 100% !important;
             height: 100% !important;
-            margin-bottom: 0;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
         }
 
         .video-watermark {
@@ -1474,114 +1500,110 @@
 <body>
     <div class="dash-layout">
         <aside class="dash-sidebar" id="dashSidebar">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <img src="./imgs/community-logo.png" alt="Ghawy" />
-            <span>Ghawy</span>
-        </div>
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
+            </div>
 
-        <!-- Nav Links -->
-                        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
-                <span class="nav-icon-wrap nav-icon-white">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Dashboard</span>
-            </a>
-            <a href="courses.html" class="nav-item active" id="nav-courses">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Courses</span>
-            </a>
-            <a href="chat.html" class="nav-item" id="nav-chat">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Community Chat</span>
-            </a>
-            <a href="direct-messages.html" class="nav-item" id="nav-dm">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Direct Messages</span>
-                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
-            </a>
-            <a href="ai-updates.html" class="nav-item" id="nav-ai">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>AI Updates</span>
-            </a>
-            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Build With Me</span>
-            </a>
-            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
-                <span class="nav-icon-wrap nav-icon-yellow">
-                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Guest of Honors</span>
-            </a>
-            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
-                <span class="nav-icon-wrap nav-icon-purple">
-                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Achievements</span>
-            </a>
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+                    <span class="nav-icon-wrap nav-icon-white">
+                        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.html" class="nav-item active" id="nav-courses">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Courses</span>
+                </a>
+                <a href="chat.html" class="nav-item" id="nav-chat">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Community Chat</span>
+                </a>
+                <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Direct Messages</span>
+                    <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+                </a>
+                <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>AI Updates</span>
+                </a>
+                <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Build With Me</span>
+                </a>
+                <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                    <span class="nav-icon-wrap nav-icon-yellow">
+                        <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Guest of Honors</span>
+                </a>
+                <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                    <span class="nav-icon-wrap nav-icon-purple">
+                        <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Achievements</span>
+                </a>
 
-            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
-
-            <a href="profile-settings.html" class="nav-item" id="nav-settings">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Settings</span>
-            </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Team Dashboard</span>
-            </a>
-            <a href="help-center.html" class="nav-item" id="nav-help">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Help center</span>
-            </a>
-        </nav>
-
-        <!-- ─── User Profile Card ─── -->
-        <div class="sb-profile-card">
-            <div class="sb-profile-row">
-                <div class="sb-avatar" id="sidebarAvatar">
-                    <i class="fa-solid fa-user"></i>
+                <div
+                    style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
                 </div>
-                <div class="sb-user-info">
-                    <div class="sb-name" id="sidebarName">—</div>
-                    <div class="sb-badge" id="sidebarBadge">Member</div>
+
+                <a href="profile-settings.html" class="nav-item" id="nav-settings">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Team Dashboard</span>
+                </a>
+                <a href="help-center.html" class="nav-item" id="nav-help">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Help center</span>
+                </a>
+            </nav>
+
+            <!-- ─── User Profile Card ─── -->
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <a href="profile-settings.html" class="sb-avatar" id="sidebarAvatar" title="Settings"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="sb-user-info">
+                        <div class="sb-name" id="sidebarName">—</div>
+                        <div class="sb-badge" id="sidebarBadge">Member</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="sb-level-row">
-                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
-                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
-            </div>
-            <div class="sb-xp-track">
-                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
-            </div>
-            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
 
-            <div class="sb-streak-row">
-                <span class="sb-streak-fire">🔥</span>
-                <span><strong id="streakCount">0</strong> Days Streak</span>
-                <span class="sb-streak-sub">Keep going!</span>
+                <a href="profile.html#achievements" class="sb-streak-row" title="Achievements"
+                    style="text-decoration: none; cursor: pointer;">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong id="streakCount">0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </a>
             </div>
-        </div>
-    </aside>
+        </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="dash-main">
             <header class="dash-topbar">
@@ -1659,7 +1681,8 @@
                                         <i class="fa-solid fa-expand" id="customFsIcon"></i>
                                     </button>
                                     <iframe id="bunnyVideoFrame" src="" style="border:none; width:100%; height:100%;"
-                                        allow="accelerometer; gyroscope; autoplay; encrypted-media"
+                                        allow="accelerometer; gyroscope; autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                        allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"
                                         loading="lazy"></iframe>
                                 </div>
                             </div>
@@ -2025,11 +2048,15 @@
                 s('streakCount', u.streak_days || 0);
 
                 // Update Avatars
-                ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
+                ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
-                        const fullUrl = window.getAvatarSrc(u);
-                        el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+                        if (typeof buildAvatarHtml === 'function') {
+                            el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                        } else {
+                            const fullUrl = window.getAvatarSrc(u);
+                            el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                        }
                     }
                 });
             } catch (e) { }
@@ -2494,29 +2521,58 @@
                 // Render Resources Tab
                 const resourcesTab = document.getElementById('tabResources');
                 if (resourcesTab) {
+                    let hasAnyResource = false;
+                    let htmlContent = '<div class="cd-side-card"><div class="side-card-title" style="margin-bottom:14px">Course Resources</div><div style="display:flex; flex-direction:column; gap:10px;">';
+                    let gridContent = '';
+
                     if (course.pdf_url) {
+                        hasAnyResource = true;
                         const pdfHref = course.pdf_url.startsWith('/') ? API + course.pdf_url : course.pdf_url;
-                        resourcesTab.innerHTML = `
-                    <div class="cd-side-card">
-                        <div class="side-card-title" style="margin-bottom:14px">Course Resources</div>
-                        <a href="${pdfHref}" target="_blank" class="btn-blue-full" style="text-decoration:none;">
-                            <i class="fa-solid fa-file-pdf"></i> Download Course PDF
-                        </a>
-                    </div>
-                `;
-                        const resGrid = document.getElementById('resourcesGrid');
-                        if (resGrid) {
-                            resGrid.innerHTML = `
+                        htmlContent += `
+                            <a href="${pdfHref}" target="_blank" class="btn-blue-full" style="text-decoration:none;">
+                                <i class="fa-solid fa-link"></i> Course Resource
+                            </a>`;
+                        gridContent += `
                             <a href="${pdfHref}" target="_blank" class="resource-item" style="text-decoration:none;">
-                                <div class="res-icon"><i class="fa-regular fa-file-pdf"></i></div>
+                                <div class="res-icon"><i class="fa-solid fa-link"></i></div>
                                 <div class="res-info">
-                                    <div class="res-name">Course PDF</div>
-                                    <div class="res-type">PDF</div>
+                                    <div class="res-name">Course Resource</div>
+                                    <div class="res-type">Link</div>
                                 </div>
                             </a>`;
-                        }
+                    }
+
+                    if (course.lessons && course.lessons.length > 0) {
+                        course.lessons.forEach((l, idx) => {
+                            if (l.pdf_url) {
+                                hasAnyResource = true;
+                                const pdfHref = l.pdf_url.startsWith('/') ? API + l.pdf_url : l.pdf_url;
+                                htmlContent += `
+                                    <a href="${pdfHref}" target="_blank" class="btn-blue-full" style="text-decoration:none; background:var(--bg-card); color:#fff; border:1px solid rgba(255,255,255,0.1);">
+                                        <i class="fa-solid fa-link" style="color:#3f8ff9;"></i> Lesson ${idx + 1}: ${escapeHtml(l.title)}
+                                    </a>`;
+                                gridContent += `
+                                    <a href="${pdfHref}" target="_blank" class="resource-item" style="text-decoration:none;">
+                                        <div class="res-icon"><i class="fa-solid fa-link" style="color:#3f8ff9;"></i></div>
+                                        <div class="res-info">
+                                            <div class="res-name" style="font-size:13px;">L${idx + 1}: ${escapeHtml(l.title)}</div>
+                                            <div class="res-type">Lesson Link</div>
+                                        </div>
+                                    </a>`;
+                            }
+                        });
+                    }
+
+                    htmlContent += '</div></div>';
+
+                    if (hasAnyResource) {
+                        resourcesTab.innerHTML = htmlContent;
+                        const resGrid = document.getElementById('resourcesGrid');
+                        if (resGrid) resGrid.innerHTML = gridContent;
                     } else {
                         resourcesTab.innerHTML = `<div class="cd-side-card"><p style="color:var(--text-muted)">No resources available for this course.</p></div>`;
+                        const resGrid = document.getElementById('resourcesGrid');
+                        if (resGrid) resGrid.innerHTML = '';
                     }
                 }
 
@@ -2626,6 +2682,7 @@
                     return `<div class="lesson-row" data-lesson-id="${l.id}" data-course-id="${courseId}" data-duration="${mins}">
                         <div class="lesson-icon" onclick="playLesson(${l.id})"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
                         <span class="lesson-title" onclick="playLesson(${l.id})">${secIdx + 1}.${lIdx + 1} ${escapeHtml(l.title)}</span>
+                        ${l.has_pdf || l.pdf_url ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444; font-size: 14px; margin-right: 8px;" title="PDF Available"></i>' : ''}
                         <span class="lesson-dur">${dur}</span>
                         <span class="complete-btn"><i class="fa-solid fa-check"></i></span>
                     </div>`;
@@ -3047,7 +3104,7 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-<script src="src/js/dashboard-new.js?v=10"></script>
+    <script src="src/js/dashboard-new.js?v=13"></script>
 </body>
 
 </html>

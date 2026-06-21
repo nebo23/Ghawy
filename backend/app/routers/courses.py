@@ -170,6 +170,7 @@ def create_course(data: CourseCreate, admin: User = Depends(get_current_admin_us
         thumbnail_url=data.thumbnail_url,
         pdf_url=data.pdf_url,
         total_lessons=data.total_lessons,
+        course_time=data.course_time,
         is_published=data.is_published
     )
     db.add(course)

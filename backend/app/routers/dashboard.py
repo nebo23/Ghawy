@@ -39,6 +39,7 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
             "title": course.title,
             "thumbnail_url": course.thumbnail_url,
             "total_lessons": course.total_lessons,
+            "course_time": course.course_time,
             "completed_lessons": completed_lessons,
             "percent": float(percent)
         })

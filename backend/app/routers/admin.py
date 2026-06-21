@@ -153,7 +153,7 @@ def toggle_active(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Toggle a user's is_active status."""
+    """Toggle a user's is_active status. When activating, sets end_at = now + 30 days if not already set."""
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -161,12 +161,54 @@ def toggle_active(
         raise HTTPException(status_code=404, detail="User not found")
 
     user.is_active = not user.is_active
+
+    # When activating, set end_at to 30 days from now if not already set or already expired
+    if user.is_active:
+        now = datetime.utcnow()
+        if not user.end_at or user.end_at <= now:
+            user.end_at = now + timedelta(days=30)
+    else:
+        # When deactivating, clear end_at
+        user.end_at = None
+
     db.commit()
 
     return {
         "user_id": user.id,
         "is_active": user.is_active,
+        "end_at": user.end_at.isoformat() if user.end_at else None,
         "message": f"User {'activated' if user.is_active else 'deactivated'} successfully",
+    }
+
+
+class SetSubscriptionRequest(BaseModel):
+    days: int = 30  # عدد الأيام من دلوقتي
+
+
+@router.patch("/users/{user_id}/set-subscription")
+def set_subscription(
+    user_id: int,
+    data: SetSubscriptionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Set subscription end_at to now + N days and activate the user."""
+    require_admin(current_user)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.utcnow()
+    user.is_active = True
+    user.end_at = now + timedelta(days=data.days)
+    db.commit()
+
+    return {
+        "user_id": user.id,
+        "is_active": True,
+        "end_at": user.end_at.isoformat(),
+        "message": f"Subscription set for {data.days} days (expires {user.end_at.strftime('%Y-%m-%d')})",
     }
 
 
@@ -209,6 +251,18 @@ def delete_user(
     # Prevent admin from deleting themselves
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account from admin panel")
+
+    # Clean up related records that lack ON DELETE CASCADE
+    from app.models import PhoneOTP, UserProgress, Certificate, Channel, LiveSession, ManualPaymentRequest
+
+    db.query(PhoneOTP).filter(PhoneOTP.user_id == user.id).delete(synchronize_session=False)
+    db.query(UserProgress).filter(UserProgress.user_id == user.id).delete(synchronize_session=False)
+    db.query(Certificate).filter(Certificate.user_id == user.id).delete(synchronize_session=False)
+
+    db.query(Channel).filter(Channel.created_by == user.id).update({"created_by": None}, synchronize_session=False)
+    db.query(LiveSession).filter(LiveSession.instructor_id == user.id).update({"instructor_id": None}, synchronize_session=False)
+    db.query(LiveSession).filter(LiveSession.created_by == user.id).update({"created_by": None}, synchronize_session=False)
+    db.query(ManualPaymentRequest).filter(ManualPaymentRequest.reviewed_by == user.id).update({"reviewed_by": None}, synchronize_session=False)
 
     db.delete(user)
     db.commit()

@@ -13,6 +13,7 @@ from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, Ch
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
 from app.services.chat_reactions import get_reaction_summaries
+from app.services.mentions_service import process_admin_mentions
 from pydantic import BaseModel
 
 import json
@@ -137,6 +138,7 @@ def get_messages_simple(
             "author_name": sender.full_name if sender else "Unknown",
             "author_avatar_url": sender.avatar_url if sender else None,
             "author_badge": sender.badge if sender else "Member",
+            "sender_is_admin": sender.is_admin if sender else False,
             "author_id": msg.sender_id,
             "read_count": len(read_by),
             "read_by": read_by,
@@ -211,6 +213,18 @@ async def post_message_simple(
     db.commit()
     db.refresh(msg)
 
+    from app.services.ws_manager import manager
+    
+    notified_ids = process_admin_mentions(db, current_user, data.content)
+    for aid in notified_ids:
+        await manager.send_personal(aid, {
+            "event": "new_notification",
+            "data": {
+                "title": "New Mention in Chat",
+                "body": f"{current_user.full_name} mentioned you in the community chat."
+            }
+        })
+
     result = {
         "id": msg.id,
         "content": msg.content,
@@ -223,6 +237,7 @@ async def post_message_simple(
         "author_name": current_user.full_name,
         "author_avatar_url": current_user.avatar_url,
         "author_badge": current_user.badge or "Member",
+        "sender_is_admin": current_user.is_admin,
         "author_id": current_user.id,
         "read_count": 0,
         "read_by": [],
@@ -239,6 +254,7 @@ async def post_message_simple(
             "sender_id": msg.sender_id,
             "sender_name": current_user.full_name,
             "sender_avatar": current_user.avatar_url,
+            "sender_is_admin": current_user.is_admin,
             "content": msg.content,
             "message_type": msg_type.value,
             "file_url": msg.file_url,
@@ -257,7 +273,7 @@ async def post_message_simple(
 
 # ─── DELETE /chat/messages/{message_id} — delete own message ─
 @router.delete("/messages/{message_id}")
-def delete_message(
+async def delete_message(
     message_id: int,
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
@@ -272,7 +288,17 @@ def delete_message(
     msg.is_deleted = True
     msg.content = None
     msg.file_url = None
+    channel_id = msg.channel_id
     db.commit()
+    
+    from app.services.ws_manager import manager
+    await manager.broadcast_to_channel(channel_id, {
+        "event": "message_deleted",
+        "data": {
+            "message_id": message_id,
+            "channel_id": channel_id
+        }
+    })
     
     return {"message": "Message deleted"}
 
@@ -334,6 +360,16 @@ def get_online_count(
     )
     # Current user is always counted as online
     return {"online_count": max(count or 0, 1)}
+
+
+# ─── GET /chat/admins ───────────────────────────────────────
+@router.get("/admins")
+def get_chat_admins(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_member),
+):
+    admins = db.query(User).filter(User.is_admin == True, User.is_active == True).all()
+    return [{"id": a.id, "full_name": a.full_name, "avatar_url": a.avatar_url} for a in admins]
 
 
 # ─── Channels ────────────────────────────────────────────────
@@ -522,6 +558,7 @@ def list_messages(
             sender_name=sender.full_name if sender else "Unknown",
             sender_avatar=sender.avatar_url if sender else None,
             sender_badge=sender.badge if sender else "Member",
+            sender_is_admin=sender.is_admin if sender else False,
             reactions_summary=reactions_map.get(msg.id, []),
         ))
 
@@ -553,6 +590,8 @@ def send_message(
     db.commit()
     db.refresh(msg)
 
+    process_admin_mentions(db, current_user, data.content)
+
     return MessageOut(
         id=msg.id,
         channel_id=msg.channel_id,
@@ -568,6 +607,7 @@ def send_message(
         sender_name=current_user.full_name,
         sender_avatar=current_user.avatar_url,
         sender_badge=current_user.badge or "Member",
+        sender_is_admin=current_user.is_admin,
         reactions_summary=[],
     )
 
@@ -860,6 +900,7 @@ def list_active_members(
             "avatar_url": u.avatar_url,
             "is_online": u.last_seen is not None and u.last_seen >= one_min_ago,
             "badge": u.badge or "Member",
+            "is_admin": u.is_admin,
         }
         for u in users
     ]

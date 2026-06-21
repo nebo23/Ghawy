@@ -29,7 +29,7 @@ oauth.register(
 
 @router.get("/auth/google/login")
 async def google_login(request: Request):
-    redirect_uri = "http://127.0.0.1:8000/auth/google/callback"
+    redirect_uri = "https://ghawy.ai/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/auth/google/callback")
@@ -102,7 +102,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         algorithm="HS256"
     )
     
-    frontend_url = "http://127.0.0.1:5500"
+    frontend_url = "https://ghawy.ai"
     if not user.is_active:
         return RedirectResponse(f"{frontend_url}/payment.html?token={access_token}")
         
@@ -203,4 +203,4 @@ def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db))
             "has_completed_onboarding": new_user.onboarding_completed,
             "avatar_url": new_user.avatar_url
         }
-    }
+    }

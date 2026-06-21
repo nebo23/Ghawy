@@ -1,17 +1,14 @@
 /* Build With Me Live Specific Styles */
 
 .dash-content.bwm-scroll {
-  padding: 0;
   overflow-y: auto;
 }
 
 .bwm-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 32px;
-  padding: 24px 32px;
-  max-width: 1500px;
-  margin: 0 auto;
+  grid-template-columns: 1fr 310px;
+  gap: 20px;
+  padding: 0;
   align-items: start;
 }
 
@@ -22,7 +19,7 @@
 /* Hero Section */
 .bwm-hero {
   position: relative;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 32px 0;
   margin-bottom: 24px;
 }
@@ -84,7 +81,7 @@
 .stat-box {
   background: #111;
   border: 1px solid #222;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -172,7 +169,7 @@
 .live-session-card {
   background: #151515;
   border: 1px solid #2a2a2a;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 24px;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -382,7 +379,7 @@
 .upcoming-card {
   background: #151515;
   border: 1px solid #222;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
   display: flex;
   gap: 24px;
@@ -489,7 +486,7 @@
 .bwm-widget {
   background: #111;
   border: 1px solid #222;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
   margin-bottom: 24px;
 }
@@ -702,7 +699,7 @@
 .bwm-cta-widget {
   background: linear-gradient(145deg, #111, #0a0a0a);
   border: 1px solid #222;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 24px;
   text-align: center;
   position: relative;

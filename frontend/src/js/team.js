@@ -5,7 +5,7 @@
 
 // ═══ AUTH GUARD ═══
 const token = localStorage.getItem('token');
-if (!token) window.location.href = 'login.html';
+if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 function authHeaders() { return headers; }
@@ -79,6 +79,12 @@ function initTabs() {
       if (target === 'guest-of-honors') {
         loadGohTab();
       }
+      if (target === 'reports') {
+        if (typeof loadReportsTab === 'function') loadReportsTab();
+      }
+      if (target === 'feedbacks') {
+        if (typeof loadFeedbacksTab === 'function') loadFeedbacksTab();
+      }
     });
   });
 }
@@ -95,40 +101,45 @@ async function loadTeamPage() {
       const u = await res.json();
       const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       setTxt('sidebarName', u.full_name);
-        setTxt('topbarName', u.full_name);
-        
-        // Update Badge
-        const badgeLabel = getBadgeLabel(u.badge);
-        const badgeEl = document.getElementById('sidebarBadge');
-        if (badgeEl) {
-            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
-        }
+      setTxt('topbarName', u.full_name);
+      setTxt('dropdownName', u.full_name);
 
-        // Update Level & XP
-        const level = u.level || 1;
-        const xp = u.xp || 0;
-        const nextLevelXp = u.next_level_xp || (level * 100);
-        
-        setTxt('sidebarLevelNum', level);
-        setTxt('sidebarLevelTitle', badgeLabel);
-        setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
-        
-        const xpBar = document.getElementById('sidebarXpBar');
-        if (xpBar) {
-            const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
-            xpBar.style.width = `${pct}%`;
-        }
+      // Update Badge
+      const badgeLabel = getBadgeLabel(u.badge);
+      const badgeEl = document.getElementById('sidebarBadge');
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+      }
 
-        // Update Streak
-        setTxt('streakCount', u.streak_days || 0);
-        
-        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                const fullUrl = window.getAvatarSrc(u);
-                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
-            }
-        });
+      // Update Level & XP
+      const level = u.level || 1;
+      const xp = u.xp || 0;
+      const nextLevelXp = u.next_level_xp || (level * 100);
+
+      setTxt('sidebarLevelNum', level);
+      setTxt('sidebarLevelTitle', badgeLabel);
+      setTxt('sidebarXpText', `${xp} / ${nextLevelXp} XP`);
+
+      const xpBar = document.getElementById('sidebarXpBar');
+      if (xpBar) {
+        const pct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
+        xpBar.style.width = `${pct}%`;
+      }
+
+      // Update Streak
+      setTxt('streakCount', u.streak_days || 0);
+
+      ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (typeof buildAvatarHtml === 'function') {
+            el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+          } else {
+            const fullUrl = window.getAvatarSrc(u);
+            el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+          }
+        }
+      });
     }
   } catch (e) { }
   await loadUsers();
@@ -259,6 +270,7 @@ function renderTable() {
           ${user.failed_charge_count > 0 ?
         `<span class="failed-badge" title="${user.failed_charge_count} failed charge(s)"><i data-lucide="alert-triangle" style="width:12px;height:12px;margin-right:2px;"></i>${user.failed_charge_count}</span>`
         : ''}
+          <button class="btn-action" style="color:#3f8ff9" onclick="openExtendModal(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Extend Subscription"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i></button>
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
           <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
         </div>
@@ -306,15 +318,52 @@ async function toggleActive(userId, checkbox) {
     const data = await res.json();
     if (res.ok) {
       const user = allUsers.find(u => u.id === userId);
-      if (user) user.is_active = data.is_active;
+      if (user) {
+        user.is_active = data.is_active;
+        user.end_at = data.end_at || null;
+      }
       updateStats();
-      showToast(data.is_active ? '✅ User activated' : '⏸️ User deactivated', 'success');
+      renderTable();
+      showToast(data.is_active ? '✅ User activated (30 days)' : '⏸️ User deactivated', 'success');
     } else {
       checkbox.checked = !checkbox.checked;
       showToast('❌ Failed to update', 'error');
     }
   } catch (e) {
     checkbox.checked = !checkbox.checked;
+    showToast('❌ Network error', 'error');
+  }
+}
+
+// ── Extend Subscription ──────────────────────────────
+function openExtendModal(userId, userName) {
+  selectedUserId = userId;
+  const nameEl = document.getElementById('extend-user-name');
+  if (nameEl) nameEl.textContent = userName;
+  document.getElementById('extend-days').value = '30';
+  document.getElementById('extend-modal').style.display = 'flex';
+}
+
+async function submitExtend() {
+  const days = parseInt(document.getElementById('extend-days').value);
+  if (!days || days < 1) { showToast('❌ Enter valid number of days', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/admin/users/${selectedUserId}/set-subscription`, {
+      method: 'PATCH', headers,
+      body: JSON.stringify({ days })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const user = allUsers.find(u => u.id === selectedUserId);
+      if (user) { user.is_active = true; user.end_at = data.end_at; }
+      closeModal('extend-modal');
+      updateStats();
+      renderTable();
+      showToast(`✅ Subscription extended for ${days} days`, 'success');
+    } else {
+      showToast(`❌ ${data.detail || 'Failed'}`, 'error');
+    }
+  } catch (e) {
     showToast('❌ Network error', 'error');
   }
 }
@@ -1132,7 +1181,11 @@ function closeLightbox(e) {
 })();
 
 // ═══ INIT ═══
-document.addEventListener('DOMContentLoaded', loadTeamPage);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadTeamPage);
+} else {
+  loadTeamPage();
+}
 
 // ═══════════════════════════════════════════════════════
 //  LIVE SESSIONS TAB
@@ -1474,6 +1527,7 @@ async function submitAddCourse() {
     description: document.getElementById('course-desc').value,
     thumbnail_url: document.getElementById('course-thumbnail').value,
     total_lessons: parseInt(document.getElementById('course-total-lessons').value) || 0,
+    course_time: document.getElementById('course-time').value || null,
     is_published: false
   };
   if (!data.title) return showToast('Title is required', 'error');
@@ -1499,6 +1553,7 @@ function openEditCourseModal(id) {
   document.getElementById('edit-course-desc').value = c.description || '';
   document.getElementById('edit-course-thumbnail').value = c.thumbnail_url || '';
   document.getElementById('edit-course-total-lessons').value = c.total_lessons || 0;
+  document.getElementById('edit-course-time').value = c.course_time || '';
   document.getElementById('edit-course-modal').style.display = 'flex';
 }
 
@@ -1508,7 +1563,8 @@ async function submitEditCourse() {
     title: document.getElementById('edit-course-title').value,
     description: document.getElementById('edit-course-desc').value,
     thumbnail_url: document.getElementById('edit-course-thumbnail').value,
-    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0
+    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0,
+    course_time: document.getElementById('edit-course-time').value || null
   };
   try {
     const res = await fetch(API + `/courses/admin/courses/${id}`, {
@@ -1668,6 +1724,7 @@ async function submitAddCourse() {
     description: document.getElementById('course-desc').value,
     thumbnail_url: document.getElementById('course-thumbnail').value,
     total_lessons: parseInt(document.getElementById('course-total-lessons').value) || 0,
+    course_time: document.getElementById('course-time').value || null,
     is_published: false
   };
   if (!data.title) return showToast('Title is required', 'error');
@@ -1693,6 +1750,7 @@ function openEditCourseModal(id) {
   document.getElementById('edit-course-desc').value = c.description || '';
   document.getElementById('edit-course-thumbnail').value = c.thumbnail_url || '';
   document.getElementById('edit-course-total-lessons').value = c.total_lessons || 0;
+  document.getElementById('edit-course-time').value = c.course_time || '';
   document.getElementById('edit-course-modal').style.display = 'flex';
 }
 
@@ -1702,7 +1760,8 @@ async function submitEditCourse() {
     title: document.getElementById('edit-course-title').value,
     description: document.getElementById('edit-course-desc').value,
     thumbnail_url: document.getElementById('edit-course-thumbnail').value,
-    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0
+    total_lessons: parseInt(document.getElementById('edit-course-total-lessons').value) || 0,
+    course_time: document.getElementById('edit-course-time').value || null
   };
   try {
     const res = await fetch(API + `/courses/admin/courses/${id}`, {
@@ -1736,31 +1795,20 @@ async function confirmDeleteCourse() {
 }
 
 // -- Course PDF Upload --
-function uploadCoursePdf(courseId) {
-  document.getElementById(`course-pdf-upload-${courseId}`).click();
-}
+async function uploadCoursePdf(courseId) {
+  const url = prompt('Enter the link for the course resource (PDF, Docs, etc.):');
+  if (url === null) return;
 
-async function handleCoursePdfSelected(event, courseId) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
-
-  showToast('Uploading PDF...', 'info');
+  showToast('Saving link...', 'info');
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch(API + `/courses/admin/courses/${courseId}/upload-pdf`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
+    const res = await fetch(API + `/courses/admin/courses/${courseId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ pdf_url: url.trim() || null })
     });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'Upload failed');
-    }
+    if (!res.ok) throw new Error('Failed to save link');
 
-    showToast('Course PDF uploaded successfully!', 'success');
+    showToast('Course resource link updated successfully!', 'success');
     loadCoursesTab();
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -1941,39 +1989,20 @@ function startLessonStatusPolling() {
   }, 4000);
 }
 
-// -- PDF Upload --
-function uploadPdf(lessonId) {
-  document.getElementById(`pdf-upload-${lessonId}`).click();
-}
+async function uploadPdf(lessonId) {
+  const url = prompt('Enter the link for the lesson resource (PDF, Docs, etc.):');
+  if (url === null) return;
 
-async function handlePdfSelected(event, lessonId) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
-
-  showToast('Preparing PDF upload...', 'info');
+  showToast('Saving link...', 'info');
   try {
-    const res = await fetch(API + `/courses/admin/lessons/${lessonId}/pdf`, { method: 'POST', headers });
-    if (!res.ok) throw new Error('Failed to get upload URL');
-    const data = await res.json();
-
-    showToast('Uploading to R2...', 'info');
-    const putRes = await fetch(data.upload_url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/pdf' },
-      body: file
-    });
-    if (!putRes.ok) throw new Error('Upload to R2 failed');
-
-    showToast('Saving PDF link...', 'info');
-    const patchRes = await fetch(API + `/courses/admin/lessons/${lessonId}`, {
+    const res = await fetch(API + `/courses/admin/lessons/${lessonId}`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ pdf_url: data.public_url })
+      body: JSON.stringify({ pdf_url: url.trim() || null })
     });
-    if (!patchRes.ok) throw new Error('Failed to save link');
+    if (!res.ok) throw new Error('Failed to save link');
 
-    showToast('PDF uploaded successfully!', 'success');
+    showToast('Resource link updated successfully!', 'success');
     loadLessons();
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -2483,9 +2512,9 @@ function renderGohGuests() {
     if (g.avatar_url) {
       uiAvatar = g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url;
     } else {
-      let initials = g.avatar_initials || g.name.substring(0,2).toUpperCase();
+      let initials = g.avatar_initials || g.name.substring(0, 2).toUpperCase();
       let color = g.avatar_color || '#c1ff11';
-      uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#','')}&color=fff&size=40&bold=true`;
+      uiAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color.replace('#', '')}&color=fff&size=40&bold=true`;
     }
     return `
     <tr>
@@ -2533,7 +2562,7 @@ function renderGohSessions() {
 
 function populateGuestSelect() {
   const sel = document.getElementById('session-guest-id');
-  if(!sel) return;
+  if (!sel) return;
   sel.innerHTML = '<option value="">Select a Guest...</option>' + allGohGuests.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
 }
 
@@ -2562,7 +2591,7 @@ function renderGohSuggestions() {
 }
 
 async function deleteSuggestedGuest(id) {
-  if(!confirm("Are you sure you want to delete this suggestion?")) return;
+  if (!confirm("Are you sure you want to delete this suggestion?")) return;
   try {
     const res = await fetch(API + '/guests/suggest/' + id, { method: 'DELETE', headers });
     if (!res.ok) throw new Error('Failed to delete suggestion');
@@ -2608,7 +2637,7 @@ async function confirmDeleteGuest() {
 
 function openEditGuestModal(id) {
   const g = allGohGuests.find(x => x.id === id);
-  if(!g) return;
+  if (!g) return;
   document.getElementById('guest-id').value = g.id;
   document.getElementById('guest-name').value = g.name || '';
   document.getElementById('guest-title').value = g.title || '';
@@ -2630,7 +2659,7 @@ async function submitGuest() {
   const id = document.getElementById('guest-id').value;
   let avatarUrl = id ? document.getElementById('guest-avatar-file').dataset.existingUrl || null : null;
   const fileInput = document.getElementById('guest-avatar-file');
-  
+
   if (fileInput.files && fileInput.files[0]) {
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
@@ -2640,10 +2669,10 @@ async function submitGuest() {
         headers: { 'Authorization': headers['Authorization'] },
         body: formData
       });
-      if(!uploadRes.ok) throw new Error('Avatar upload failed');
+      if (!uploadRes.ok) throw new Error('Avatar upload failed');
       const uploadData = await uploadRes.json();
       avatarUrl = uploadData.avatar_url;
-    } catch(e) {
+    } catch (e) {
       showToast(e.message, 'error');
       return;
     }
@@ -2663,17 +2692,17 @@ async function submitGuest() {
     attendees_count: parseInt(document.getElementById('guest-attendees-count').value) || 0,
     rating: parseFloat(document.getElementById('guest-rating').value) || 0.0
   };
-  if(!data.name || !data.title) { showToast('Name and Title are required', 'error'); return; }
-  
+  if (!data.name || !data.title) { showToast('Name and Title are required', 'error'); return; }
+
   try {
     const method = id ? 'PUT' : 'POST';
     const url = id ? API + '/guests/' + id : API + '/guests/';
     const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
-    if(!res.ok) throw new Error('Request failed');
+    if (!res.ok) throw new Error('Request failed');
     showToast('Guest saved!', 'success');
     closeModal('add-guest-modal');
     loadGohTab();
-  } catch(e) { showToast(e.message, 'error'); }
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 function openGuestSessionModal() {
@@ -2681,12 +2710,12 @@ function openGuestSessionModal() {
   document.getElementById('session-guest-id').value = '';
   document.getElementById('session-goh-title').value = '';
   document.getElementById('session-goh-description').value = '';
-  
+
   // Format current date for datetime-local
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   document.getElementById('session-goh-date').value = now.toISOString().slice(0, 16);
-  
+
   document.getElementById('session-goh-platform').value = '';
   document.getElementById('session-goh-url').value = '';
   document.getElementById('session-goh-status').value = 'upcoming';
@@ -2715,16 +2744,16 @@ async function confirmDeleteGohSession() {
 
 function openEditGuestSessionModal(id) {
   const s = allGohSessions.find(x => x.id === id);
-  if(!s) return;
+  if (!s) return;
   document.getElementById('session-goh-id').value = s.id;
   document.getElementById('session-guest-id').value = s.guest_id;
   document.getElementById('session-goh-title').value = s.title || '';
   document.getElementById('session-goh-description').value = s.description || '';
-  
+
   const d = new Date(s.session_date);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   document.getElementById('session-goh-date').value = d.toISOString().slice(0, 16);
-  
+
   document.getElementById('session-goh-platform').value = s.platform || '';
   document.getElementById('session-goh-url').value = s.session_url || '';
   document.getElementById('session-goh-status').value = s.status || 'upcoming';
@@ -2736,8 +2765,8 @@ function openEditGuestSessionModal(id) {
 async function submitGuestSession() {
   const id = document.getElementById('session-goh-id').value;
   const guest_id = document.getElementById('session-guest-id').value;
-  if(!guest_id) { showToast('Please select a guest', 'error'); return; }
-  
+  if (!guest_id) { showToast('Please select a guest', 'error'); return; }
+
   const data = {
     guest_id: parseInt(guest_id),
     title: document.getElementById('session-goh-title').value,
@@ -2749,25 +2778,25 @@ async function submitGuestSession() {
     rating: parseFloat(document.getElementById('session-goh-rating').value) || 0,
     description: document.getElementById('session-goh-description').value || null
   };
-  if(!data.title || !data.session_date) { showToast('Title and Date are required', 'error'); return; }
-  
+  if (!data.title || !data.session_date) { showToast('Title and Date are required', 'error'); return; }
+
   try {
     const method = id ? 'PUT' : 'POST';
     const url = id ? API + '/guests/sessions/' + id : API + '/guests/sessions/';
     const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
-    if(!res.ok) throw new Error('Request failed');
+    if (!res.ok) throw new Error('Request failed');
     showToast('Session saved!', 'success');
     closeModal('add-guest-session-modal');
     loadGohTab();
-  } catch(e) { showToast(e.message, 'error'); }
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function deleteGuestSession(id) {
-  if(!confirm('Are you sure you want to delete this session?')) return;
+  if (!confirm('Are you sure you want to delete this session?')) return;
   try {
     const res = await fetch(API + '/guests/sessions/' + id, { method: 'DELETE', headers });
-    if(!res.ok) throw new Error('Delete failed');
+    if (!res.ok) throw new Error('Delete failed');
     showToast('Session deleted!', 'success');
     loadGohTab();
-  } catch(e) { showToast(e.message, 'error'); }
+  } catch (e) { showToast(e.message, 'error'); }
 }

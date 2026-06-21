@@ -73,7 +73,7 @@ def send_admin_payment_notification(
     created_at: str,
 ) -> None:
     """Notify admin team about a new manual payment submission."""
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     admin_email = os.getenv("ADMIN_EMAIL", "admin@ghawy.com")
 
     body_text = (
@@ -158,7 +158,7 @@ def send_payment_rejection_email(
     rejection_reason: str,
 ) -> None:
     """Notify user that their payment request was rejected."""
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
 
     body_text = (
         f"Hi {full_name},\n\n"
@@ -208,7 +208,7 @@ def send_live_session_notification(
     description: str = "",
 ) -> None:
     """Notify a subscriber about an upcoming live session."""
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
 
     body_text = (
         f"Hi {full_name},\n\n"

@@ -27,13 +27,17 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: str
+    full_name: str = ""
     phone: Optional[str] = None
     country: Optional[str] = None
     governorate: Optional[str] = None
     is_active: bool
     is_verified: bool
+    is_admin: bool = False
     avatar_url: Optional[str] = None
+    selected_avatar: Optional[str] = None
     bio: Optional[str] = None
+    badge: str = "Member"
     created_at: datetime
     is_online: bool = False
 
@@ -264,6 +268,7 @@ class MessageOut(BaseModel):
     sender_name: Optional[str] = None
     sender_avatar: Optional[str] = None
     sender_badge: Optional[str] = None
+    sender_is_admin: bool = False
     channel_name: Optional[str] = None
     reactions_summary: Optional[list[dict]] = []
 
@@ -318,6 +323,7 @@ class CourseOut(BaseModel):
     thumbnail_url: Optional[str] = None
     pdf_url: Optional[str] = None
     total_lessons: int
+    course_time: Optional[str] = None
     is_published: bool
     created_at: datetime
 
@@ -373,6 +379,7 @@ class CourseCreate(BaseModel):
     thumbnail_url: Optional[str] = None
     pdf_url: Optional[str] = None
     total_lessons: int = 0
+    course_time: Optional[str] = None
     is_published: bool = False
 
 class CourseUpdate(BaseModel):
@@ -380,6 +387,7 @@ class CourseUpdate(BaseModel):
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
     pdf_url: Optional[str] = None
+    course_time: Optional[str] = None
     is_published: Optional[bool] = None
 
 

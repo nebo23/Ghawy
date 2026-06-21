@@ -38,7 +38,9 @@ window.getBadgeLabel = function (badge) {
 window.getAvatarSrc = function (user) {
   if (!user) return './imgs/default-avatar.png';
   if (user.avatar_url) {
-    return user.avatar_url.startsWith('http') ? user.avatar_url : (window.API || 'http://localhost:8000') + user.avatar_url;
+    if (user.avatar_url.startsWith('http')) return user.avatar_url;
+    if (user.avatar_url.startsWith('/')) return window.location.origin + user.avatar_url;
+    return (window.API || 'http://localhost:8000') + user.avatar_url;
   }
   if (user.selected_avatar) return user.selected_avatar;
   return './imgs/default-avatar.png';
@@ -66,7 +68,7 @@ function saveToken(token) {
 
 function logout() {
   localStorage.removeItem('token');
-  window.location.href = 'login.html';
+  localStorage.removeItem('user'); window.location.href = '/login';
 }
 
 // ─── Auth Guard ─────────────────────────────────────────────
@@ -79,7 +81,7 @@ async function enforceAuthGuard() {
 
   const token = getToken();
   if (!token) {
-    window.location.href = 'login.html';
+    localStorage.removeItem('user'); window.location.href = '/login';
     return;
   }
 
@@ -101,6 +103,7 @@ async function enforceAuthGuard() {
 
     if (res.ok) {
       const u = await res.json();
+      localStorage.setItem('user', JSON.stringify(u));
       if (!u.is_active) {
         window.location.href = 'index.html';
         return;
@@ -120,7 +123,7 @@ enforceAuthGuard();
 async function requireActiveUser() {
   const token = getToken();
   if (!token) {
-    window.location.href = 'login.html';
+    localStorage.removeItem('user'); window.location.href = '/login';
     return null;
   }
 
@@ -144,6 +147,7 @@ async function requireActiveUser() {
     if (!res.ok) return null;
 
     const user = await res.json();
+    localStorage.setItem('user', JSON.stringify(user));
 
     if (!user.is_active) {
       window.location.href = 'index.html';
@@ -251,8 +255,6 @@ if (getToken()) {
 
 // ─── Global Notifications ──────────────────────────────────────
 async function fetchGlobalNotifications() {
-  // chat.html has its own polling loop for loadDmList which handles this
-  if (window.location.pathname.endsWith('chat.html') || window.location.pathname.endsWith('direct-messages.html')) return;
 
   const token = getToken();
   if (!token) return;
@@ -260,11 +262,20 @@ async function fetchGlobalNotifications() {
     const res = await fetch(`${API}/chat/dm/list`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) return;
-    const dms = await res.json();
+    const dms = res.ok ? await res.json() : [];
 
-    let totalUnread = 0;
-    dms.forEach(dm => { totalUnread += dm.unread_count; });
+    let notifications = [];
+    try {
+        // MUST use trailing slash to avoid 307 Redirect stripping Auth header!
+        const notifRes = await fetch(`${API}/notifications/`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (notifRes.ok) notifications = await notifRes.json();
+    } catch(e) {}
+
+    let unreadDmsOnly = 0;
+    dms.forEach(dm => { unreadDmsOnly += dm.unread_count; });
+
+    let unreadNotifs = notifications.filter(n => !n.is_read).length;
+    let totalUnread = unreadDmsOnly + unreadNotifs;
 
     const notifBadge = document.getElementById('notifBadge');
     const notifDot = document.getElementById('notifDot');
@@ -282,28 +293,45 @@ async function fetchGlobalNotifications() {
 
     const dmBadge = document.getElementById('dmTotalBadge');
     if (dmBadge) {
-      if (totalUnread > 0) {
-        dmBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+      if (unreadDmsOnly > 0) {
+        dmBadge.textContent = unreadDmsOnly > 99 ? '99+' : unreadDmsOnly;
         dmBadge.style.display = '';
       } else {
         dmBadge.style.display = 'none';
       }
     }
 
-    renderGlobalNotifList(dms);
+    renderGlobalNotifList(dms, notifications);
   } catch (e) { console.error('Global notif error:', e); }
 }
 
-function renderGlobalNotifList(dms) {
+function renderGlobalNotifList(dms, notifs) {
   const el = document.getElementById('notifList');
   if (!el) return;
 
-  if (!dms || dms.length === 0) {
+  dms = dms || [];
+  notifs = notifs || [];
+
+  if (dms.length === 0 && notifs.length === 0) {
     el.innerHTML = `<div class="notif-empty">No notifications</div>`;
     return;
   }
 
   let html = '';
+  
+  notifs.forEach(n => {
+     html += `
+        <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${n.id}, '${n.link || '#'}')">
+            <div class="notif-item-av"><i class="fa-solid fa-bell" style="color:var(--gold)"></i></div>
+            <div class="notif-item-body">
+                <div class="notif-item-name">${n.title}</div>
+                <div class="notif-item-text">${n.body}</div>
+            </div>
+            ${!n.is_read ? `<div class="notif-item-count">1</div>` : ''}
+        </div>
+     `;
+  });
+
   const isDmChat = window.location.pathname.endsWith('direct-messages.html');
   dms.forEach(dm => {
     const u = dm.user;
@@ -332,6 +360,16 @@ function renderGlobalNotifList(dms) {
         `;
   });
   el.innerHTML = html;
+}
+
+window.markNotifRead = async function(id, link) {
+    try {
+        await fetch(`${API}/notifications/${id}/read`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+    } catch(e) {}
+    if(link && link !== '#') window.location.href = link;
 }
 
 function toggleNotifPanel() {
@@ -416,3 +454,149 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
         setTheme('system');
     }
 });
+
+// ─── Mentions Autocomplete ─────────────────────────────────────
+(function() {
+    let chatAdminsCache = null;
+    window.globalChatAdmins = [];
+
+    async function fetchChatAdmins() {
+        if (chatAdminsCache) return chatAdminsCache;
+        try {
+            const token = getToken();
+            if(!token) return [];
+            const res = await fetch(`${API}/chat/admins`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if(res.ok) {
+                chatAdminsCache = await res.json();
+                window.globalChatAdmins = chatAdminsCache;
+                return chatAdminsCache;
+            }
+        } catch(e) {}
+        return [];
+    }
+
+    // Prefetch on load
+    fetchChatAdmins();
+
+    window.formatAdminMentions = function(escapedText) {
+        if (!window.globalChatAdmins || window.globalChatAdmins.length === 0) return escapedText;
+        let newText = escapedText;
+        for (const admin of window.globalChatAdmins) {
+            const adminName = admin.full_name;
+            const regex = new RegExp(`@${adminName}(?![\\w\\u0600-\\u06FF])`, 'gi');
+            newText = newText.replace(regex, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
+        }
+        // Also highlight @all
+        newText = newText.replace(/@all(?![\\w\\u0600-\\u06FF])/gi, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
+        return newText;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+        .mentions-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: var(--bg-card, #1a1a1a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 250px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            display: none;
+        }
+        .mention-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .mention-item:hover {
+            background: var(--bg-hover, #2a2a2a);
+        }
+        .mention-item img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .mention-item span {
+            font-size: 0.85rem;
+            color: var(--text-color, #fff);
+        }
+        .chat-input-bar, .dash-chat-input-row { position: relative; }
+        `;
+        document.head.appendChild(style);
+
+        const attachMentions = (inputId) => {
+            const input = document.getElementById(inputId);
+            if(!input) return;
+            
+            let dropdown = document.createElement('div');
+            dropdown.className = 'mentions-dropdown';
+            input.parentNode.insertBefore(dropdown, input.nextSibling);
+
+            input.addEventListener('input', async () => {
+                const val = input.value;
+                const cursor = input.selectionStart;
+                const textBeforeCursor = val.substring(0, cursor);
+                const match = textBeforeCursor.match(/@([\w\u0600-\u06FF\s]*)$/);
+                
+                if (match) {
+                    const search = match[1].toLowerCase();
+                    const admins = await fetchChatAdmins();
+                    let filtered = admins.filter(a => a.full_name.toLowerCase().includes(search));
+                    
+                    try {
+                        const u = JSON.parse(localStorage.getItem('user'));
+                        if (u && u.is_admin && 'all'.includes(search)) {
+                            filtered.push({ full_name: 'all', avatar_url: '/imgs/g-icon-logo.png' });
+                        }
+                    } catch(e) {}
+                    
+                    if (filtered.length > 0) {
+                        dropdown.innerHTML = filtered.map(a => `
+                            <div class="mention-item" data-name="${a.full_name}">
+                                <img src="${window.getAvatarSrc(a)}" alt="">
+                                <span>${a.full_name}</span>
+                            </div>
+                        `).join('');
+                        dropdown.style.display = 'block';
+                        
+                        dropdown.querySelectorAll('.mention-item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                const name = item.getAttribute('data-name');
+                                const prefix = val.substring(0, match.index);
+                                const suffix = val.substring(cursor);
+                                input.value = prefix + '@' + name + ' ' + suffix;
+                                input.focus();
+                                dropdown.style.display = 'none';
+                            });
+                        });
+                    } else {
+                        dropdown.style.display = 'none';
+                    }
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        };
+
+        setTimeout(() => {
+            attachMentions('chatInput');
+            attachMentions('dashChatInput');
+        }, 1000);
+    });
+})();

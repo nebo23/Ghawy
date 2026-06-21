@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 # ═══════════════════════════════════════════════════════════════
 #  Ghawy — Production Docker Compose (Hostinger KVM 2)
@@ -16,6 +16,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5432:5432"   # localhost-only (SSH tunnel access)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -74,8 +76,10 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./frontend:/usr/share/nginx/html:ro
       - uploads_data:/app/uploads:ro
-      # Uncomment for SSL (after certbot setup):
-      # - /etc/letsencrypt:/etc/letsencrypt:ro
+      - static_data:/app/static:ro
+      # SSL certificates (real files, not symlinks)
+      - /opt/ghawy/ssl/fullchain.pem:/etc/letsencrypt/live/ghawy.ai/fullchain.pem:ro
+      - /opt/ghawy/ssl/privkey.pem:/etc/letsencrypt/live/ghawy.ai/privkey.pem:ro
     networks:
       - external
     depends_on:

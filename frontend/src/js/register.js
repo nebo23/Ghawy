@@ -277,7 +277,7 @@ async function submitRegister() {
           }
           setTimeout(() => { window.location.href = '/onboarding.html'; }, 1200);
         } else {
-          setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+          setTimeout(() => { localStorage.removeItem('user'); window.location.href = '/login'; }, 1200);
         }
       } else {
         showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');

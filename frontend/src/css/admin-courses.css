@@ -316,10 +316,278 @@
   color: #fff;
 }
 
-/* ── Responsive ───────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE STYLES — admin-courses.css
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Small Desktop 1024px ── */
+@media (max-width: 1024px) {
+  /* Course info cards: tighten minimum so they still fit in 2 columns */
+  .course-info-row {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  /* Modal: slightly less padding */
+  .admin-modal {
+    width: 440px;
+    padding: 24px;
+  }
+
+  /* File drop zone: reduce padding */
+  .file-drop-zone {
+    padding: 22px;
+  }
+}
+
+/* ── Tablet 768px ── */
 @media (max-width: 768px) {
+  /* Table: hide 3rd and 4th columns (non-essential) */
   .lessons-table th:nth-child(3),
-  .lessons-table td:nth-child(3) { display: none; }
-  .admin-modal { padding: 20px; }
-  .course-admin-header { flex-direction: column; align-items: flex-start; }
+  .lessons-table td:nth-child(3),
+  .lessons-table th:nth-child(4),
+  .lessons-table td:nth-child(4) {
+    display: none;
+  }
+
+  /* Table cells: tighten padding */
+  .lessons-table th,
+  .lessons-table td {
+    padding: 12px 12px;
+  }
+
+  /* Wrap table in horizontal-scroll container */
+  .lessons-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Section header: stack vertically */
+  .course-admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .course-admin-header h2 {
+    font-size: clamp(1.1rem, 4vw, 1.3rem);
+  }
+
+  /* Course info cards: 2 columns minimum */
+  .course-info-row {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+
+  /* Modal */
+  .admin-modal {
+    width: 95vw;
+    max-width: 95vw;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  /* Modal actions: allow wrapping on tablet */
+  .admin-modal-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Buttons: ensure touch-friendly minimum height */
+  .modal-btn {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+  .add-lesson-btn {
+    min-height: 44px;
+  }
+
+  /* Lesson action buttons: touch-friendly */
+  .lesson-action-btn {
+    min-height: 36px;
+    padding: 8px 10px;
+  }
+
+  /* File drop zone */
+  .file-drop-zone {
+    padding: 20px 16px;
+  }
+}
+
+/* ── Mobile 480px ── */
+@media (max-width: 480px) {
+  /* Table: hide 3rd and 4th columns; keep only name/status/action */
+  .lessons-table th:nth-child(3),
+  .lessons-table td:nth-child(3),
+  .lessons-table th:nth-child(4),
+  .lessons-table td:nth-child(4) {
+    display: none;
+  }
+
+  /* Table cells: compact on mobile */
+  .lessons-table th,
+  .lessons-table td {
+    padding: 10px 10px;
+    font-size: 13px;
+  }
+
+  /* Section header */
+  .course-admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .course-admin-header h2 {
+    font-size: clamp(1rem, 5vw, 1.2rem);
+  }
+
+  /* Add lesson button: full width on mobile */
+  .add-lesson-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  /* Course info cards: 2-column grid */
+  .course-info-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .course-info-card {
+    padding: 12px;
+  }
+  .course-info-card .info-value {
+    font-size: 16px;
+  }
+
+  /* Modal: full-width, reduced padding */
+  .admin-modal {
+    width: 95vw;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .admin-modal h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Modal inputs: full width, touch-friendly height */
+  .admin-modal input,
+  .admin-modal select,
+  .admin-modal textarea {
+    min-height: 48px;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  /* Modal actions: stack vertically, full width */
+  .admin-modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .modal-btn {
+    width: 100%;
+    min-height: 44px;
+    text-align: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  /* File drop zone: compact */
+  .file-drop-zone {
+    padding: 16px 12px;
+  }
+  .file-drop-zone .drop-icon {
+    font-size: 20px;
+  }
+  .file-drop-zone .drop-text {
+    font-size: 13px;
+  }
+
+  /* Lesson action buttons: minimum touch targets */
+  .lesson-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .lesson-action-btn {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* Skeleton rows */
+  .lesson-skeleton {
+    padding: 10px 10px;
+    gap: 10px;
+  }
+
+  /* Empty state */
+  .lessons-empty {
+    padding: 32px 16px;
+  }
+  .lessons-empty i {
+    font-size: 28px;
+  }
+}
+
+/* ── Small Mobile 360px ── */
+@media (max-width: 360px) {
+  /* Table cells: ultra-compact */
+  .lessons-table th,
+  .lessons-table td {
+    padding: 8px 8px;
+    font-size: 12px;
+  }
+
+  /* Course info cards: single column on very small screens */
+  .course-info-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .course-info-card {
+    padding: 10px 12px;
+  }
+  .course-info-card .info-value {
+    font-size: 15px;
+  }
+
+  /* Modal: minimal padding */
+  .admin-modal {
+    padding: 14px;
+  }
+  .admin-modal h3 {
+    font-size: 15px;
+  }
+
+  /* Video badge: slightly smaller on tiny screens */
+  .video-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  /* Add lesson button */
+  .add-lesson-btn {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  /* Action buttons: icon-only layout if needed */
+  .lesson-action-btn {
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+
+  /* Section header heading */
+  .course-admin-header h2 {
+    font-size: clamp(0.95rem, 5.5vw, 1.1rem);
+  }
+
+  /* Confirm modal body */
+  .confirm-modal-body {
+    font-size: 13px;
+  }
 }

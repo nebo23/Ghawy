@@ -4,13 +4,13 @@
 })();
 
 const token = localStorage.getItem('token');
-if (!token) window.location.href = 'login.html';
+if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 async function apiFetch(url, opts = {}) {
     opts.headers = { ...headers, ...opts.headers };
     const res = await fetch(API + url, opts);
-    if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+    if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
     if (!res.ok) throw new Error("API Error");
     return res.json();
 }
@@ -19,7 +19,7 @@ let allGuests = [];
 let allSessions = [];
 let currentTab = 'all';
 
-function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
 
 async function loadProfile() {
     try {
@@ -28,6 +28,7 @@ async function loadProfile() {
         const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt('sidebarName', u.full_name);
         setTxt('topbarName', u.full_name);
+        setTxt('dropdownName', u.full_name);
         
         // Update Badge
         const badgeLabel = u.badge || 'Member';
@@ -54,11 +55,15 @@ async function loadProfile() {
         // Update Streak
         setTxt('streakCount', u.streak_days || 0);
         
-        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
             const el = document.getElementById(id);
-            if (el && u.avatar_url) {
-                const fullUrl = u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url;
-                el.innerHTML = `<img src="${fullUrl}" alt="" />`;
+            if (el) {
+                if (typeof buildAvatarHtml === 'function') {
+                    el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                } else {
+                    const fullUrl = window.getAvatarSrc(u);
+                    el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                }
             }
         });
     } catch (e) { console.error("Profile error:", e); }

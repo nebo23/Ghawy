@@ -283,7 +283,7 @@ def approve_request(
         
     db.commit()
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     login_url = f"{frontend_url}/login.html"
 
     import urllib.parse
@@ -382,7 +382,7 @@ def resend_invite(
     if req.status != "approved":
         raise HTTPException(status_code=400, detail="Can only resend notification for approved requests")
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     login_url = f"{frontend_url}/login.html"
 
     try:

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <!-- Cache Buster -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -13,7 +14,9 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/g-icon-logo.png" />
@@ -49,448 +52,470 @@
         })();
     </script>
 </head>
-<body>
-<div class="dash-layout">
 
-    <!-- ═══════════════════════════════════════════
+<body>
+    <div class="dash-layout">
+
+        <!-- ═══════════════════════════════════════════
          SIDEBAR
     ═══════════════════════════════════════════ -->
-    <aside class="dash-sidebar" id="dashSidebar">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <img src="./imgs/community-logo.png" alt="Ghawy" />
-            <span>Ghawy</span>
-        </div>
-
-        <!-- Nav Links -->
-                        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item" id="nav-dashboard">
-                <span class="nav-icon-wrap nav-icon-white">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Dashboard</span>
-            </a>
-            <a href="courses.html" class="nav-item" id="nav-courses">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Courses</span>
-            </a>
-            <a href="chat.html" class="nav-item" id="nav-chat">
-                <span class="nav-icon-wrap nav-icon-blue">
-                    <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Community Chat</span>
-            </a>
-            <a href="direct-messages.html" class="nav-item" id="nav-dm">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Direct Messages</span>
-                <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
-            </a>
-            <a href="ai-updates.html" class="nav-item" id="nav-ai">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>AI Updates</span>
-            </a>
-            <a href="build-with-me.html" class="nav-item" id="nav-bwm">
-                <span class="nav-icon-wrap nav-icon-green">
-                    <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Build With Me</span>
-            </a>
-            <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
-                <span class="nav-icon-wrap nav-icon-yellow">
-                    <i data-lucide="star" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Guest of Honors</span>
-            </a>
-            <a href="profile.html#achievements" class="nav-item" id="nav-ach">
-                <span class="nav-icon-wrap nav-icon-purple">
-                    <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Achievements</span>
-            </a>
-
-            <div style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;"></div>
-
-            <a href="profile-settings.html" class="nav-item" id="nav-settings">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Settings</span>
-            </a>
-            <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Team Dashboard</span>
-            </a>
-            <a href="help-center.html" class="nav-item active" id="nav-help">
-                <span class="nav-icon-wrap nav-icon-gray">
-                    <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
-                </span>
-                <span>Help center</span>
-            </a>
-        </nav>
-
-        <!-- ─── User Profile Card ─── -->
-        <div class="sb-profile-card">
-            <div class="sb-profile-row">
-                <div class="sb-avatar" id="sidebarAvatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div class="sb-user-info">
-                    <div class="sb-name" id="sidebarName">—</div>
-                    <div class="sb-badge" id="sidebarBadge">Member</div>
-                </div>
+        <aside class="dash-sidebar" id="dashSidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="Ghawy" />
+                <span>Ghawy</span>
             </div>
 
-            <div class="sb-level-row">
-                <span class="sb-level-label">Level <strong id="sidebarLevelNum">1</strong></span>
-                <span class="sb-level-title" id="sidebarLevelTitle">Member</span>
-            </div>
-            <div class="sb-xp-track">
-                <div class="sb-xp-fill" id="sidebarXpBar" style="width:0%"></div>
-            </div>
-            <div class="sb-xp-text" id="sidebarXpText">0 / 300 XP</div>
-
-            <div class="sb-streak-row">
-                <span class="sb-streak-fire">🔥</span>
-                <span><strong id="streakCount">0</strong> Days Streak</span>
-                <span class="sb-streak-sub">Keep going!</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Sidebar Overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- ═══════════════════════════════════════════
-         MAIN CONTENT
-    ═══════════════════════════════════════════ -->
-    <div class="dash-main">
-
-        <!-- TOPBAR -->
-        <header class="dash-topbar">
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                <span></span><span></span><span></span>
-            </button>
-
-            <!-- Welcome text (desktop) -->
-            <div class="topbar-welcome" id="topbarWelcome">
-                <span>Welcome back, <strong id="topbarNameWelcome">—</strong> 👋</span>
-                <small>Let's continue building, learning, and leveling up.</small>
-            </div>
-
-            <div class="topbar-actions">
-                <!-- Notifications -->
-                <div class="notif-wrapper" id="notifWrapper">
-                    <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications">
-                        <i class="fa-regular fa-bell"></i>
-                        <span class="notif-dot" id="notifDot" style="display:none"></span>
-                        <span class="notif-badge" id="notifBadge" style="display:none">0</span>
-                    </button>
-                    <div class="notif-panel" id="notifPanel">
-                        <div class="notif-panel-header">
-                            <h4>Notifications</h4>
-                            <button class="notif-close-btn" onclick="toggleNotifPanel()"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                        <div class="notif-panel-list" id="notifList">
-                            <div class="notif-empty">No new notifications</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chat -->
-                <a href="chat.html" class="topbar-icon" title="Chat">
-                    <i class="fa-regular fa-message"></i>
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item" id="nav-dashboard">
+                    <span class="nav-icon-wrap nav-icon-white">
+                        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.html" class="nav-item" id="nav-courses">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Courses</span>
+                </a>
+                <a href="chat.html" class="nav-item" id="nav-chat">
+                    <span class="nav-icon-wrap nav-icon-blue">
+                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Community Chat</span>
+                </a>
+                <a href="direct-messages.html" class="nav-item" id="nav-dm">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Direct Messages</span>
+                    <span id="dmTotalBadge" class="dm-badge" style="display:none"></span>
+                </a>
+                <a href="ai-updates.html" class="nav-item" id="nav-ai">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>AI Updates</span>
+                </a>
+                <a href="build-with-me.html" class="nav-item" id="nav-bwm">
+                    <span class="nav-icon-wrap nav-icon-green">
+                        <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Build With Me</span>
+                </a>
+                <a href="guest-of-honors.html" class="nav-item" id="nav-goh">
+                    <span class="nav-icon-wrap nav-icon-yellow">
+                        <i data-lucide="star" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Guest of Honors</span>
+                </a>
+                <a href="profile.html#achievements" class="nav-item" id="nav-ach">
+                    <span class="nav-icon-wrap nav-icon-purple">
+                        <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Achievements</span>
                 </a>
 
-                <!-- User Dropdown -->
-                <div class="topbar-user" id="topbarUser" onclick="document.getElementById('userDropdown').classList.toggle('open')">
-                    <div class="topbar-user-avatar" id="topbarAvatar">
-                        <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
-                    </div>
-                    <span class="topbar-user-name" id="topbarName">—</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                <div
+                    style="margin-top: 24px; margin-bottom: 8px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 12px;">
                 </div>
-                <div class="user-dropdown whop-style" id="userDropdown">
-                    <div class="dropdown-profile-header">
-                        <div class="dropdown-avatar" id="dropdownAvatarDiv">
-                            <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
-                        </div>
-                        <div class="dropdown-profile-info">
-                            <div class="dropdown-name" id="dropdownName">—</div>
-                            <a href="profile.html" class="dropdown-view-profile">View profile</a>
-                        </div>
-                        <a href="profile-settings.html" class="dropdown-settings-icon"><i class="fa-solid fa-gear"></i></a>
-                    </div>
-                    <div class="dropdown-section">
-                        <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
-                        <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-section">
-                        <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+
+                <a href="profile-settings.html" class="nav-item" id="nav-settings">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Settings</span>
+                </a>
+                <a href="teamdashboard.html" target="_blank" class="nav-item" id="nav-team" data-admin-only="true">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Team Dashboard</span>
+                </a>
+                <a href="help-center.html" class="nav-item active" id="nav-help">
+                    <span class="nav-icon-wrap nav-icon-gray">
+                        <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <span>Help center</span>
+                </a>
+            </nav>
+
+            <!-- ─── User Profile Card ─── -->
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <a href="profile-settings.html" class="sb-avatar" id="sidebarAvatar" title="Settings"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="sb-user-info">
+                        <div class="sb-name" id="sidebarName">—</div>
+                        <div class="sb-badge" id="sidebarBadge">Member</div>
                     </div>
                 </div>
+
+
+                <a href="profile.html#achievements" class="sb-streak-row" title="Achievements"
+                    style="text-decoration: none; cursor: pointer;">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong id="streakCount">0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </a>
             </div>
-        </header>
+        </aside>
 
-        <!-- CONTENT — dir="rtl" on the content div only -->
-        <div class="dash-content" dir="rtl">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-            <div class="help-header">
-                <h1>مركز المساعدة</h1>
-                <p>كيف يمكننا مساعدتك اليوم؟</p>
-            </div>
+        <!-- ═══════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════ -->
+        <div class="dash-main">
 
-            <div class="help-grid">
+            <!-- TOPBAR -->
+            <header class="dash-topbar">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
 
-                <!-- Card 1: Email -->
-                <div class="help-card">
-                    <div class="help-icon"><i class="fa-regular fa-envelope"></i></div>
-                    <h3>راسلنا على الإيميل</h3>
-                    <p>بعت مشكلتك وهنرد عليك في أقرب وقت</p>
-                    <div class="help-action">
-                        <a href="mailto:support@ghawy.ai" class="btn-accent">
-                            فتح الإيميل&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <!-- Welcome text removed per request -->
+
+                <div class="topbar-actions">
+                    <!-- Notifications -->
+                    <div class="notif-wrapper" id="notifWrapper">
+                        <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"
+                            title="Notifications">
+                            <i data-lucide="bell" size="18"></i>
+                            <span class="notif-dot" id="notifDot" style="display:none"></span>
+                            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+                        </button>
+                        <div class="notif-panel" id="notifPanel">
+                            <div class="notif-panel-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-close-btn" onclick="toggleNotifPanel()"><i
+                                        class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="notif-panel-list" id="notifList">
+                                <div class="notif-empty">No new notifications</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat -->
+                    <a href="chat.html" class="topbar-icon" title="Chat">
+                        <i class="fa-solid fa-message"></i>
+                    </a>
+
+                    <!-- User Dropdown -->
+                    <div class="topbar-user" id="topbarUser"
+                        onclick="document.getElementById('userDropdown').classList.toggle('open')">
+                        <div class="topbar-user-avatar" id="topbarAvatar">
+                            <i class="fa-solid fa-user" style="width:16px;height:16px;font-size:12px;"></i>
+                        </div>
+                        <span class="topbar-user-name" id="topbarName">—</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:var(--text-muted)"></i>
+                    </div>
+                    <div class="user-dropdown whop-style" id="userDropdown">
+                        <div class="dropdown-profile-header">
+                            <div class="dropdown-avatar" id="dropdownAvatarDiv">
+                                <i class="fa-solid fa-user" style="font-size:1.2rem;color:var(--gold)"></i>
+                            </div>
+                            <div class="dropdown-profile-info">
+                                <div class="dropdown-name" id="dropdownName">—</div>
+                                <a href="profile.html" class="dropdown-view-profile">View profile</a>
+                            </div>
+                            <a href="profile-settings.html" class="dropdown-settings-icon"><i
+                                    class="fa-solid fa-gear"></i></a>
+                        </div>
+                        <div class="dropdown-section">
+                            <a href="profile.html#achievements"><i class="fa-solid fa-award"></i> Achievements</a>
+                            <a href="help-center.html"><i class="fa-solid fa-circle-question"></i> Help and support</a>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-section">
+                            <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT — dir="rtl" on the content div only -->
+            <div class="dash-content" dir="rtl">
+
+                <div class="page-header">
+                    <div class="page-breadcrumb">
+                        <a href="dashboard.html" class="breadcrumb-home" title="Dashboard">
+                            <i data-lucide="help-circle"></i>
                         </a>
-                        <button class="btn-outline" id="copyEmailBtn" onclick="copyEmail()">نسخ الإيميل</button>
+                        <span class="separator">›</span>
+                        <span>مركز المساعدة</span>
                     </div>
+                    <h1>مركز المساعدة</h1>
+                    <p>كيف يمكننا مساعدتك اليوم؟</p>
                 </div>
 
-                <!-- Card 2: WhatsApp -->
-                <div class="help-card">
-                    <div class="help-icon"><i class="fa-brands fa-whatsapp"></i></div>
-                    <h3>تواصل معنا على الواتساب</h3>
-                    <p>ابعت رسالة وهنرد عليك بسرعة</p>
-                    <div class="help-action">
-                        <a href="https://wa.me/201033903334" target="_blank" class="btn-accent">
-                            فتح واتساب&nbsp;<i class="fa-brands fa-whatsapp"></i>
-                        </a>
-                    </div>
-                </div>
+                <div class="help-grid">
 
-                <!-- Card 3: Support Team -->
-                <div class="help-card team-card">
-                    <div class="help-icon"><i class="fa-regular fa-comments"></i></div>
-                    <h3>تكلم فريق الدعم مباشرة</h3>
-                    <p>تقدر تتواصل مع أي عضو من فريقنا داخل غاوي</p>
-                    <div class="team-members">
-                        <div class="member-row">
-                            <div class="member-info">
-                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                <div>
-                                    <h4>اسم العضو 1</h4>
-                                    <span>Customer Success</span>
-                                </div>
-                            </div>
-                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
-                        </div>
-                        <div class="member-row">
-                            <div class="member-info">
-                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                <div>
-                                    <h4>اسم العضو 2</h4>
-                                    <span>Technical Support</span>
-                                </div>
-                            </div>
-                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
-                        </div>
-                        <div class="member-row">
-                            <div class="member-info">
-                                <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                <div>
-                                    <h4>اسم العضو 3</h4>
-                                    <span>Community Manager</span>
-                                </div>
-                            </div>
-                            <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
+                    <!-- Card 1: Email -->
+                    <div class="help-card">
+                        <div class="help-icon"><i class="fa-regular fa-envelope"></i></div>
+                        <h3>راسلنا على الإيميل</h3>
+                        <p>بعت مشكلتك وهنرد عليك في أقرب وقت</p>
+                        <div class="help-action">
+                            <a href="mailto:support@ghawy.ai" class="btn-accent">
+                                فتح الإيميل&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                            <button class="btn-outline" id="copyEmailBtn" onclick="copyEmail()">نسخ الإيميل</button>
                         </div>
                     </div>
+
+                    <!-- Card 2: WhatsApp -->
+                    <div class="help-card">
+                        <div class="help-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                        <h3>تواصل معنا على الواتساب</h3>
+                        <p>ابعت رسالة وهنرد عليك بسرعة</p>
+                        <div class="help-action">
+                            <a href="https://wa.me/201033903334" target="_blank" class="btn-accent">
+                                فتح واتساب&nbsp;<i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Support Team -->
+                    <div class="help-card team-card">
+                        <div class="help-icon"><i class="fa-regular fa-comments"></i></div>
+                        <h3>تكلم فريق الدعم مباشرة</h3>
+                        <p>تقدر تتواصل مع أي عضو من فريقنا داخل غاوي</p>
+                        <div class="team-members">
+                            <div class="member-row">
+                                <div class="member-info">
+                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                    <div>
+                                        <h4>اسم العضو 1</h4>
+                                        <span>Customer Success</span>
+                                    </div>
+                                </div>
+                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
+                            </div>
+                            <div class="member-row">
+                                <div class="member-info">
+                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                    <div>
+                                        <h4>اسم العضو 2</h4>
+                                        <span>Technical Support</span>
+                                    </div>
+                                </div>
+                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
+                            </div>
+                            <div class="member-row">
+                                <div class="member-info">
+                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                                    <div>
+                                        <h4>اسم العضو 3</h4>
+                                        <span>Community Manager</span>
+                                    </div>
+                                </div>
+                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /.help-grid -->
+
+                <div class="help-footer">
+                    لا تنسى تقرأ <a href="terms.html">الشروط والأحكام</a> و <a href="privacy.html">سياسة الخصوصية</a>
+                    قبل التواصل معنا.
                 </div>
 
-            </div><!-- /.help-grid -->
+            </div><!-- /.dash-content -->
+        </div><!-- /.dash-main -->
+    </div><!-- /.dash-layout -->
 
-            <div class="help-footer">
-                لا تنسى تقرأ <a href="terms.html">الشروط والأحكام</a> و <a href="privacy.html">سياسة الخصوصية</a> قبل التواصل معنا.
-            </div>
-
-        </div><!-- /.dash-content -->
-    </div><!-- /.dash-main -->
-</div><!-- /.dash-layout -->
-
-<!-- ══════════════════ SCRIPTS ══════════════════ -->
-<!-- Close dropdown on outside click -->
-<script>
-    document.addEventListener('click', e => {
-        const d = document.getElementById('userDropdown');
-        const u = document.getElementById('topbarUser');
-        if (d && !d.contains(e.target) && u && !u.contains(e.target)) d.classList.remove('open');
-        const np = document.getElementById('notifPanel');
-        const nw = document.getElementById('notifWrapper');
-        if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
-    });
-
-    function toggleNotifPanel() {
-        const panel = document.getElementById('notifPanel');
-        if (panel) panel.classList.toggle('open');
-    }
-
-    function logout() {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "login.html";
-    }
-
-    function copyEmail() {
-        navigator.clipboard.writeText('support@ghawy.ai').then(() => {
-            const btn = document.getElementById('copyEmailBtn');
-            btn.textContent = '✓ تم النسخ';
-            btn.style.borderColor = 'var(--gold)';
-            btn.style.color = 'var(--gold)';
-            setTimeout(() => {
-                btn.textContent = 'نسخ الإيميل';
-                btn.style.borderColor = '';
-                btn.style.color = '';
-            }, 2000);
-        });
-    }
-
-    // ── Mobile Sidebar ──
-    (function initSidebar() {
-        const hamburger = document.getElementById('hamburgerBtn');
-        const sidebar = document.getElementById('dashSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (!hamburger || !sidebar) return;
-
-        hamburger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('open');
-            if (overlay) overlay.classList.toggle('visible');
-            hamburger.classList.toggle('active');
+    <!-- ══════════════════ SCRIPTS ══════════════════ -->
+    <!-- Close dropdown on outside click -->
+    <script>
+        document.addEventListener('click', e => {
+            const d = document.getElementById('userDropdown');
+            const u = document.getElementById('topbarUser');
+            if (d && !d.contains(e.target) && u && !u.contains(e.target)) d.classList.remove('open');
+            const np = document.getElementById('notifPanel');
+            const nw = document.getElementById('notifWrapper');
+            if (np && nw && !nw.contains(e.target)) np.classList.remove('open');
         });
 
-        if (overlay) {
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('visible');
-                hamburger.classList.remove('active');
+        function toggleNotifPanel() {
+            const panel = document.getElementById('notifPanel');
+            if (panel) panel.classList.toggle('open');
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "login.html";
+        }
+
+        function copyEmail() {
+            navigator.clipboard.writeText('support@ghawy.ai').then(() => {
+                const btn = document.getElementById('copyEmailBtn');
+                btn.textContent = '✓ تم النسخ';
+                btn.style.borderColor = 'var(--gold)';
+                btn.style.color = 'var(--gold)';
+                setTimeout(() => {
+                    btn.textContent = 'نسخ الإيميل';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 2000);
             });
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                sidebar.classList.remove('open');
-                if (overlay) overlay.classList.remove('visible');
-                hamburger.classList.remove('active');
+        // ── Mobile Sidebar ──
+        (function initSidebar() {
+            const hamburger = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('dashSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (!hamburger || !sidebar) return;
+
+            hamburger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('open');
+                if (overlay) overlay.classList.toggle('visible');
+                hamburger.classList.toggle('active');
+            });
+
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('visible');
+                    hamburger.classList.remove('active');
+                });
             }
-        });
-    })();
-</script>
 
-<!-- utils.js — provides API, buildAvatarHtml, etc. -->
-<script src="src/js/utils.js"></script>
-
-<!-- Inline: load user profile for this page -->
-<script>
-(async function loadHelpCenterUser() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    // ── Helpers (same as dashboard-new.js) ──
-    const AVATAR_COLORS = ['#4fc3f7', '#69f0ae', '#ce93d8', '#ffd54f', '#ff8a65', '#80cbc4', '#f48fb1'];
-    function avatarColor(id) { return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length]; }
-    function initials(name) { return (name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(); }
-
-    function buildAvatarHtml(name, avatarUrl, userId, size = 28) {
-        const bg = avatarColor(userId);
-        const init = initials(name);
-        if (avatarUrl) {
-            const full = avatarUrl.startsWith('http') ? avatarUrl : (window.API || '') + avatarUrl;
-            return `<img src="${full}" alt="" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;"
-                onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.35)}px;font-weight:800;\\'>${init}</div>'" />`;
-        }
-        return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.35)}px;font-weight:800;">${init}</div>`;
-    }
-
-    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val || '—'; }
-
-    // ── Step 1: Populate from localStorage immediately (fast) ──
-    try {
-        const uStr = localStorage.getItem('user');
-        if (uStr) {
-            const u = JSON.parse(uStr);
-            const name = u.full_name || '—';
-            setText('sidebarName', name);
-            setText('topbarName', name);
-            setText('topbarNameWelcome', name);
-            setText('dropdownName', name);
-
-            // Avatar from localStorage (may not have avatar_url yet)
-            const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
-            ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = avHtml;
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    sidebar.classList.remove('open');
+                    if (overlay) overlay.classList.remove('visible');
+                    hamburger.classList.remove('active');
+                }
             });
-        }
-    } catch (e) { console.error(e); }
+        })();
+    </script>
 
-    // ── Step 2: Fetch fresh data from API for accurate avatar ──
-    try {
-        const apiBase = window.API || '';
-        const res = await fetch(apiBase + '/dashboard/summary?_t=' + Date.now(), {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const u = data.user;
-        if (!u) return;
+    <!-- utils.js — provides API, buildAvatarHtml, etc. -->
+    <script src="src/js/utils.js?v=9"></script>
 
-        const name = u.full_name || '—';
-        setText('sidebarName', name);
-        setText('topbarName', name);
-        setText('topbarNameWelcome', name);
-        setText('dropdownName', name);
+    <!-- Inline: load user profile for this page -->
+    <script>
+        (async function loadHelpCenterUser() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
 
-        // Badge
-        const badge = u.badge || 'Member';
-        setText('sidebarBadge', badge);
+            // ── Helpers (same as dashboard-new.js) ──
+            const AVATAR_COLORS = ['#4fc3f7', '#69f0ae', '#ce93d8', '#ffd54f', '#ff8a65', '#80cbc4', '#f48fb1'];
+            function avatarColor(id) { return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length]; }
+            function initials(name) { return (name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(); }
 
-        // Level + XP
-        const level = u.level || 1;
-        const xp = u.xp || 0;
-        const nextXp = u.next_level_xp || (level * 300);
-        setText('sidebarLevelNum', level);
-        setText('sidebarLevelTitle', badge);
-        const xpBar = document.getElementById('sidebarXpBar');
-        if (xpBar) xpBar.style.width = Math.min(100, Math.round((xp / nextXp) * 100)) + '%';
-        setText('sidebarXpText', `${xp} / ${nextXp} XP`);
+            function buildAvatarHtml(name, avatarUrl, userId, size = 28) {
+                const bg = avatarColor(userId);
+                const init = initials(name);
+                if (avatarUrl) {
+                    const full = avatarUrl.startsWith('http') ? avatarUrl : (window.API || '') + avatarUrl;
+                    return `<img src="${full}" alt="" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;"
+                onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.35)}px;font-weight:800;\\'>${init}</div>'" />`;
+                }
+                return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.35)}px;font-weight:800;">${init}</div>`;
+            }
 
-        // Streak
-        setText('streakCount', u.streak_days || 0);
+            function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val || '—'; }
 
-        // Avatar (full quality from API)
-        const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
-        ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = avHtml;
-        });
+            // ── Step 1: Populate from localStorage immediately (fast) ──
+            try {
+                const uStr = localStorage.getItem('user');
+                if (uStr) {
+                    const u = JSON.parse(uStr);
+                    const name = u.full_name || '—';
+                    setText('sidebarName', name);
+                    setText('topbarName', name);
+                    setText('dropdownName', name);
+                    setText('topbarNameWelcome', name);
+                    setText('dropdownName', name);
 
-        // Show/hide Team Dashboard link
-        const teamNav = document.getElementById('nav-team');
-        if (teamNav) teamNav.style.display = u.is_admin ? '' : 'none';
+                    // Avatar from localStorage (may not have avatar_url yet)
+                    const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                    ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            if (typeof buildAvatarHtml === 'function') {
+                                el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                            } else {
+                                const fullUrl = window.getAvatarSrc(u);
+                                el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                            }
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
 
-    } catch (e) {
-        console.error('Help center user load error:', e);
-    }
-})();
-</script>
+            // ── Step 2: Fetch fresh data from API for accurate avatar ──
+            try {
+                const apiBase = window.API || '';
+                const res = await fetch(apiBase + '/dashboard/summary?_t=' + Date.now(), {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const u = data.user;
+                if (!u) return;
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+                const name = u.full_name || '—';
+                setText('sidebarName', name);
+                setText('topbarName', name);
+                setText('dropdownName', name);
+                setText('topbarNameWelcome', name);
+                setText('dropdownName', name);
+
+                // Badge
+                const badge = u.badge || 'Member';
+                setText('sidebarBadge', badge);
+
+                // Level + XP
+                const level = u.level || 1;
+                const xp = u.xp || 0;
+                const nextXp = u.next_level_xp || (level * 300);
+                setText('sidebarLevelNum', level);
+                setText('sidebarLevelTitle', badge);
+                const xpBar = document.getElementById('sidebarXpBar');
+                if (xpBar) xpBar.style.width = Math.min(100, Math.round((xp / nextXp) * 100)) + '%';
+                setText('sidebarXpText', `${xp} / ${nextXp} XP`);
+
+                // Streak
+                setText('streakCount', u.streak_days || 0);
+
+                // Avatar (full quality from API)
+                const avHtml = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (typeof buildAvatarHtml === 'function') {
+                            el.innerHTML = buildAvatarHtml(u.full_name, u.avatar_url, u.id, 40);
+                        } else {
+                            const fullUrl = window.getAvatarSrc(u);
+                            el.innerHTML = `<img src="${fullUrl}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+                        }
+                    }
+                });
+
+                // Show/hide Team Dashboard link
+                const teamNav = document.getElementById('nav-team');
+                if (teamNav) teamNav.style.display = u.is_admin ? '' : 'none';
+
+            } catch (e) {
+                console.error('Help center user load error:', e);
+            }
+        })();
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 </body>
+
 </html>

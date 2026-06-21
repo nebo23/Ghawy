@@ -7,7 +7,7 @@ let selectedFile = null;
 
 const token = localStorage.getItem('token');
 if (!token) {
-    window.location.href = 'login.html';
+    localStorage.removeItem('user'); window.location.href = '/login';
 } else {
     // If user is already active, redirect them away from the payment screen
     fetch(`${API}/profile/me?_t=`, {

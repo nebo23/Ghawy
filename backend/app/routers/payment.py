@@ -91,11 +91,11 @@ def kashier_success(
             if user and user.onboarding_completed:
                 redirect_page = "dashboard.html"
     
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     return RedirectResponse(url=f"{frontend_url}/{redirect_page}")
 
 # ─── Kashier: لو فشل الدفع ───────────────────────────────────
 @router.get("/kashier/fail")
 def kashier_fail():
-    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     return RedirectResponse(url=f"{frontend_url}/payment.html?error=failed")
