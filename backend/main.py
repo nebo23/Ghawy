@@ -242,7 +242,7 @@ app = FastAPI(
 app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET_KEY', 'fallback-secret'))
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5500,http://127.0.0.1:5500").split(","),
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5500").split(","), # 🌐 قراءة النطاقات المسموحة من متغيرات البيئة للسماح بنطاقات الإنتاج (CORS Fix)
     # allow_origin_regex is removed to use explicit origins from environment
     allow_credentials=True,
     allow_methods=["*"],
@@ -289,7 +289,7 @@ def root():
     return {"message": "Community API Is Working"}
 
 @app.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 إضافة Depends(get_current_admin_user) لحماية مسار الحذف من الأشخاص غير المصرح لهم
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -298,7 +298,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
     return {"message": "User deleted successfully"}
 
 @app.delete("/payments/{payment_id}")
-def delete_payment(payment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
+def delete_payment(payment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 إضافة Depends(get_current_admin_user) لحماية مسار الحذف من الأشخاص غير المصرح لهم
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")

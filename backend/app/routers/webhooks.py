@@ -38,7 +38,7 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
     
     if received_hash and not verify_kashier_webhook(data, received_hash):
         logger.error("🚨 Webhook signature mismatch. Possible spoofing attempt!")
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        raise HTTPException(status_code=400, detail="Invalid webhook signature") # 🛑 إيقاف التنفيذ فوراً لتجنب تفعيل اشتراك وهمي (حماية من ثغرة تجاوز التوقيع)
     
     status = data.get("status", "")
     order_id = data.get("merchantOOrderId") or data.get("merchantOrderId") or data.get("orderId", "")

@@ -16,7 +16,9 @@ env/
 # Secrets & Environment Files — NEVER COMMIT THESE
 .env
 .env.*
-!.env.*.example
+backend/.env
+backend/.env.production
+!.env.example
 
 # Uploads (user-generated content — stays on server)
 backend/uploads/
