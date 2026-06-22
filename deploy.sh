@@ -12,7 +12,7 @@ set -euo pipefail
 # ── Config ─────────────────────────────────────────────────────
 APP_DIR="/opt/ghawy"
 COMPOSE_FILE="docker-compose.prod.yml"
-GIT_BRANCH="main"
+GIT_BRANCH="master"
 
 echo ""
 echo "╔══════════════════════════════════════╗"
