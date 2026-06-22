@@ -1,0 +1,9 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    command: sh -c "ping -c 1 backend"
+    networks:
+      - external
+networks:
+  external:
+    name: ghawy_external
