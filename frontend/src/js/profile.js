@@ -311,8 +311,25 @@ if (deleteBtn) {
 }
 
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+
+if (deleteConfirmInput && confirmDeleteBtn) {
+    deleteConfirmInput.addEventListener('input', (e) => {
+        if (e.target.value === 'delete my account') {
+            confirmDeleteBtn.disabled = false;
+            confirmDeleteBtn.style.opacity = '1';
+            confirmDeleteBtn.style.cursor = 'pointer';
+        } else {
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.style.opacity = '0.5';
+            confirmDeleteBtn.style.cursor = 'not-allowed';
+        }
+    });
+}
+
 if (confirmDeleteBtn) {
     confirmDeleteBtn.addEventListener('click', async () => {
+        if (confirmDeleteBtn.disabled) return;
         try {
             await apiFetch('/auth/account', { method: 'DELETE' });
             localStorage.removeItem('token');

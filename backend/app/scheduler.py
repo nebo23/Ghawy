@@ -30,13 +30,22 @@ async def daily_subscription_check_job():
         ).all()
         
         count = 0
+        deactivated_ids = []
         for user in expired_users:
             user.is_active = False
+            deactivated_ids.append(user.id)
             count += 1
             logger.info("🚫 Deactivated user_id=%s due to expired subscription", user.id)
             
         db.commit()
         logger.info("⏰ Scheduler done: deactivated %s users", count)
+
+        # Force-disconnect deactivated users from WebSocket in real-time
+        if deactivated_ids:
+            from app.services.ws_manager import manager as ws_manager
+            for uid in deactivated_ids:
+                await ws_manager.disconnect_user(uid)
+                logger.info("⚡ Force-disconnected WS for user_id=%s", uid)
     except Exception as e:
         logger.error("💥 Scheduler error: %s", e)
     finally:

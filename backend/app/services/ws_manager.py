@@ -44,6 +44,25 @@ class ConnectionManager:
                         del self.channel_subscriptions[channel_id]
         logger.info(f"WS disconnected: user {user_id}  (total users online: {len(self.active_connections)})")
 
+    async def disconnect_user(self, user_id: int):
+        """Forcefully disconnect all WebSockets for a specific user."""
+        if user_id in self.active_connections:
+            websockets = list(self.active_connections[user_id])
+            for ws in websockets:
+                try:
+                    await ws.close(code=4003, reason="Account deactivated")
+                except Exception:
+                    pass
+            # The disconnect() method will be called by the finally block in websocket_endpoint
+            # But we can also proactively clean up:
+            self.active_connections[user_id].clear()
+            del self.active_connections[user_id]
+            for channel_id in list(self.channel_subscriptions.keys()):
+                self.channel_subscriptions[channel_id].discard(user_id)
+                if not self.channel_subscriptions[channel_id]:
+                    del self.channel_subscriptions[channel_id]
+            logger.info(f"WS forcefully disconnected: user {user_id} (total users online: {len(self.active_connections)})")
+
     def subscribe(self, user_id: int, channel_ids: list):
         """Subscribe a user to a list of channels."""
         for ch_id in channel_ids:

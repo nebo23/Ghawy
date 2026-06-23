@@ -57,6 +57,7 @@
   color: #3f8ff9; 
   background: linear-gradient(90deg, #3f8ff9, #c1ff11);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

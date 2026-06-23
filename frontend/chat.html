@@ -359,10 +359,12 @@
             height: 36px;
             outline: none;
         }
+
         .voice-preview-bar audio::-webkit-media-controls-panel {
             background: var(--bg-input, #1e1e1e);
             border-radius: 20px;
         }
+
         .voice-preview-bar audio::-webkit-media-controls-play-button,
         .voice-preview-bar audio::-webkit-media-controls-current-time-display,
         .voice-preview-bar audio::-webkit-media-controls-time-remaining-display {
@@ -925,10 +927,16 @@
                             style="background:none; border:none; color:#888; cursor:pointer; font-size:1.2rem; padding:0 8px;">✕</button>
                     </div>
                     <!-- Voice Preview Bar (WhatsApp-style) -->
-                    <div class="chat-input-bar voice-preview-bar" id="voicePreviewBar" style="display:none; align-items:center; gap:10px; padding:10px 14px;">
-                        <button id="voiceCancelBtn" title="Cancel" style="background:none;border:none;color:#ff4d4d;font-size:1.1rem;cursor:pointer;flex-shrink:0;"><i class="fa-solid fa-trash"></i></button>
-                        <audio id="voicePreviewPlayer" controls style="flex:1; height:36px; border-radius:20px;"></audio>
-                        <button id="voiceSendBtn" title="Send" style="background:var(--gold,#c1ff11);border:none;color:#000;font-size:0.85rem;font-weight:700;border-radius:20px;padding:7px 18px;cursor:pointer;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                    <div class="chat-input-bar voice-preview-bar" id="voicePreviewBar"
+                        style="display:none; align-items:center; gap:10px; padding:10px 14px;">
+                        <button id="voiceCancelBtn" title="Cancel"
+                            style="background:none;border:none;color:#ff4d4d;font-size:1.1rem;cursor:pointer;flex-shrink:0;"><i
+                                class="fa-solid fa-trash"></i></button>
+                        <audio id="voicePreviewPlayer" controls
+                            style="flex:1; height:36px; border-radius:20px;"></audio>
+                        <button id="voiceSendBtn" title="Send"
+                            style="background:var(--gold,#c1ff11);border:none;color:#000;font-size:0.85rem;font-weight:700;border-radius:20px;padding:7px 18px;cursor:pointer;flex-shrink:0;"><i
+                                class="fa-solid fa-paper-plane"></i> Send</button>
                     </div>
                     <div class="chat-input-bar" id="chatInputBar">
                         <div class="chat-media-btns">
@@ -937,7 +945,8 @@
                             <button class="chat-media-btn" id="voiceBtn" title="Record voice"><i
                                     class="fa-solid fa-microphone"></i></button>
                         </div>
-                        <textarea id="chatInput" placeholder="Message" rows="1" style="resize:none;" dir="auto"></textarea>
+                        <textarea id="chatInput" placeholder="Message" rows="1" style="resize:none;"
+                            dir="auto"></textarea>
                         <button class="chat-send-btn" id="sendBtn"><i data-lucide="send" size="18"></i></button>
                     </div>
                     <input type="file" id="fileInput" accept="image/*" style="display:none" />
@@ -2788,90 +2797,31 @@
         // ── Start Here ──
         async function loadStartHereContent() {
             const el = document.getElementById('chatMessages');
-            const FALLBACK_VIDEO = 'https://www.youtube.com/embed/nbFNRyUDuqc';
-            let videoUrl = FALLBACK_VIDEO;
-            try {
-                const cfgRes = await apiFetch('/chat/start-here-config');
-                const cfgData = await cfgRes.json();
-                videoUrl = cfgData.video_url || FALLBACK_VIDEO;
-                console.log('[StartHere] video_url from API:', videoUrl);
-            } catch (e) {
-                console.warn('[StartHere] Using fallback video URL');
-            }
+            const videoUrl = 'https://atlas-vsl-cdn.b-cdn.net/vsl.mp4';
 
-            let videoCardHTML = '';
-            if (videoUrl) {
-                videoCardHTML = `
-                <div class="start-here-video-card">
-                  <div class="shv-header">
-                    <span class="shv-icon">▶</span>
-                    <div>
-                      <h3 class="shv-title">How to Use the Platform</h3>
-                      <p class="shv-subtitle">Watch this video first to know how to use Ghawy and benefit from it</p>
-                    </div>
-                  </div>
-                  <div class="shv-iframe-wrap">
-                    <iframe
-                      src="${videoUrl}"
-                      width="100%" height="400" frameborder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen></iframe>
-                  </div>
-                </div>`;
-            } else {
-                videoCardHTML = `
-                <div class="start-here-video-card start-here-no-video">
-                  <span>🎬</span>
-                  <p>The introductory video will be available soon</p>
-                </div>`;
-            }
-
-            let html = videoCardHTML + `
-            <div class="msg" style="background:rgba(193,255,17,0.04);border-radius:12px;padding:12px;margin:0 auto 8px;max-width:800px;">
-                <div class="msg-av" style="background:var(--gold-subtle);color:var(--gold);"></div>
-                <div class="msg-body-wrap"><div class="msg-top"><span class="msg-name" style="color:var(--gold);">Ghawy Bot</span><span class="msg-badge pro">System</span></div>
-                <div class="msg-txt">👋 Welcome! Here you will find everything you need to start your journey with Ghawy</div></div>
-            </div>` + `
-            <div class="sh-faq-container" dir="rtl">
-                <h3 style="color: #f1f0ea; font-size: 1.1rem; margin-bottom: 12px; font-family: 'Cairo', sans-serif;">أسئلة شائعة عن الذكاء الاصطناعي (AI)</h3>
-                
-                <details class="sh-faq-item">
-                    <summary class="sh-faq-summary">كيف يمكنني الاستفادة من الذكاء الاصطناعي في عملي؟</summary>
-                    <div class="sh-faq-content">
-                        يمكنك استخدام الذكاء الاصطناعي لأتمتة المهام الروتينية، تحليل البيانات بسرعة، تحسين تجربة العملاء، وتوليد أفكار أو محتوى جديد. العديد من الأدوات تتيح لك دمج الذكاء الاصطناعي في سير عملك بسهولة.
-                    </div>
-                </details>
-
-                <details class="sh-faq-item">
-                    <summary class="sh-faq-summary">هل سيستبدل الذكاء الاصطناعي وظيفتي؟</summary>
-                    <div class="sh-faq-content">
-                        الذكاء الاصطناعي هو أداة لتعزيز قدراتك وليس بالضرورة لاستبدالك. الأشخاص الذين يتعلمون كيفية استخدام الذكاء الاصطناعي سيكون لديهم ميزة تنافسية على أولئك الذين لا يستخدمونه.
-                    </div>
-                </details>
-
-                <details class="sh-faq-item">
-                    <summary class="sh-faq-summary">ما هي أفضل الأدوات للبدء في تعلم الذكاء الاصطناعي؟</summary>
-                    <div class="sh-faq-content">
-                        يمكنك البدء بأدوات مثل ChatGPT أو Claude لمعالجة النصوص، وأدوات مثل Midjourney أو DALL-E لتوليد الصور. من خلال غاوي، سنوفر لك مسارات تعليمية وتطبيقات عملية لتبدأ بقوة.
-                    </div>
-                </details>
-
-                <details class="sh-faq-item">
-                    <summary class="sh-faq-summary">كيف أحافظ على خصوصية بياناتي عند استخدام أدوات الذكاء الاصطناعي؟</summary>
-                    <div class="sh-faq-content">
-                        تجنب مشاركة أي معلومات حساسة أو بيانات شخصية خاصة بك أو بشركتك في النماذج العامة. اقرأ سياسة الخصوصية الخاصة بكل أداة لمعرفة كيف يتم استخدام بياناتك للتدريب.
-                    </div>
-                </details>
-
-                <details class="sh-faq-item">
-                    <summary class="sh-faq-summary">ما هو مستقبل الذكاء الاصطناعي؟</summary>
-                    <div class="sh-faq-content">
-                        مستقبل الذكاء الاصطناعي يتجه نحو التخصيص العالي، والمساعدين الشخصيين المتطورين، وتطبيقات في الطب والتعليم والهندسة. نحن في بداية عصر جديد من التكنولوجيا وسيكون التطور سريعاً جداً.
-                    </div>
-                </details>
+            let videoCardHTML = `
+            <div class="start-here-video-card" style="max-width:1100px;margin:-16px auto 16px auto;border-radius:12px;background:none;border:none;box-shadow:none;">
+              <div class="shv-header" style="margin-bottom:8px;padding:0;">
+                <span class="shv-icon" style="margin-top:0;">▶</span>
+                <div>
+                  <h3 class="shv-title" style="margin:0;">How to Use the Platform</h3>
+                </div>
+              </div>
+              <video
+                controls="controls"
+                preload="metadata"
+                controlslist="nodownload"
+                style="width:100%;height:auto;border-radius:12px;display:block;box-shadow:0 0 30px rgba(212,175,55,0.06);background:#000;"
+              >
+                <source src="${videoUrl}" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             </div>`;
+
+            let html = videoCardHTML;
+
             el.innerHTML = html;
-            el.scrollTop = el.scrollHeight;
+            el.scrollTop = 0;
         }
 
         // ── Format Time ──
@@ -3077,7 +3027,7 @@
             // Message content based on type
             let contentInnerHtml = '';
             const msgType = m.message_type || 'text';
-            
+
             const safeContent = actualContent ? (window.formatAdminMentions ? window.formatAdminMentions(escHtml(actualContent)) : escHtml(actualContent)) : '';
 
             if (msgType === 'image' && m.file_url) {
@@ -3099,8 +3049,9 @@
                 readTooltipHtml = `<div class="read-tooltip">${readNames.map(n => `<span class="read-name">👁 ${escHtml(n)}</span>`).join('')}</div>`;
             }
 
-            // Delete button (only for own messages)
-            const deleteBtn = isOwn ? `<button class="msg-action-btn" title="Delete" onclick="deleteMessage(${m.id})"><i class="fa-solid fa-trash"></i></button>` : '';
+            // Delete button (for own messages or if current user is admin)
+            const canDelete = isOwn || currentUserIsAdmin;
+            const deleteBtn = canDelete ? `<button class="msg-action-btn" title="Delete" onclick="deleteMessage(${m.id})"><i class="fa-solid fa-trash"></i></button>` : '';
 
             const onlineClass = m.is_online ? 'online' : '';
             const msgClass = isOwn ? 'msg msg-own' : 'msg msg-observe-target';
@@ -3225,8 +3176,8 @@
                     }
                     const el = document.getElementById(`msg-${id}`);
                     if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
-                } catch (e) { 
-                    console.error('Delete message error:', e); 
+                } catch (e) {
+                    console.error('Delete message error:', e);
                     notifyToast('Network error while deleting message', 'error');
                 }
             };
@@ -3966,8 +3917,8 @@
 
                 // Build sort tabs + post cards
                 let html = `<div class="comm-sort-tabs">
-                    <button class="comm-sort-tab ${postSort === 'latest' ? 'active' : ''}" onclick="changePostSort('latest')">🕐 Latest</button>
-                    <button class="comm-sort-tab ${postSort === 'top' ? 'active' : ''}" onclick="changePostSort('top')">🔥 Top</button>
+                    <button class="comm-sort-tab ${postSort === 'latest' ? 'active' : ''}" onclick="changePostSort('latest')"><i data-lucide="clock" style="width:16px;height:16px;margin-right:4px;vertical-align:-3px;"></i> Latest</button>
+                    <button class="comm-sort-tab ${postSort === 'top' ? 'active' : ''}" onclick="changePostSort('top')"><i data-lucide="flame" style="width:16px;height:16px;margin-right:4px;vertical-align:-3px;"></i> Top</button>
                 </div>
                 <div id="postsFeedList" style="padding:16px 24px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1;">`;
 
@@ -4027,7 +3978,16 @@
             const a = p.author || {};
             const isOwn = a.id === currentUserId;
             const canManage = isOwn || currentUserIsAdmin;
-            const badgeCls = getBadgeClass(a.badge);
+
+            const isAdminAuthor = a.is_admin == true || a.is_admin === 1 || (a.badge && a.badge.toLowerCase().includes('admin'));
+            let badgeHtml = '';
+            if (isAdminAuthor) {
+                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:#c1ff11;">Admin <i class="fa-solid fa-circle-check" style="color: #c1ff11;"></i></span>`;
+            } else if (a.badge && (a.badge.toLowerCase().includes('pro') || a.badge.toLowerCase().includes('gold'))) {
+                badgeHtml = `<span class="msg-badge pro" style="font-size:0.6rem;">${escHtml(a.badge)}</span>`;
+            } else {
+                badgeHtml = `<span class="msg-badge member" style="font-size:0.6rem;">Member</span>`;
+            }
 
             // Tags
             let tagsHtml = '';
@@ -4073,7 +4033,7 @@
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${pinnedBadge}
                             <span style="font-weight:700;font-size:0.88rem;color:#f1f0ea;">${escHtml(a.full_name || 'User')}</span>
-                            <span class="msg-badge ${badgeCls}" style="font-size:0.6rem;">${escHtml(a.badge || 'Member')}</span>
+                            ${badgeHtml}
                             <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
                         </div>
                         <h4 style="font-size:1rem;font-weight:700;color:#f1f0ea;margin:6px 0 4px;">${escHtml(p.title || '')}</h4>

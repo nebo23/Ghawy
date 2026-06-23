@@ -20,7 +20,7 @@
 --bg-primary:#000;--bg-secondary:#0a0a0a;--bg-card:#111;--bg-hover:#1a1a1a;--bg-input:#0d0d0d;--gold:#c1ff11;--gold-light:#d4ff4a;--gold-dark:#8fbf00;--gold-glow:rgba(193,255,17,.25);--gold-border:rgba(193,255,17,.2);--gold-subtle:rgba(193,255,17,.07);--text-primary:#f1f0ea;--text-secondary:#b8b8b8;--text-muted:#5a5648;--green-live:#22c55e;--red-notif:#ef4444;--border:rgba(255,255,255,.06);--border-light:#222;--sidebar-w:220px;--topbar-h:56px;--radius:12px;--radius-sm:8px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%}
-body{font-family:'Cairo',sans-serif;background:var(--bg-primary);color:var(--text-primary);height:100vh;overflow:hidden;direction:ltr}
+body{font-family:'Cairo',sans-serif;background:var(--bg-primary);color:var(--text-primary);height:100vh;overflow:hidden;}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 img{max-width:100%;display:block}
@@ -373,7 +373,7 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .nav-item {
-  flex-direction: row-reverse;
+  
   text-align: right;
 }
 
@@ -388,11 +388,11 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .card-header {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .breadcrumb {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .breadcrumb i.fa-chevron-right {
@@ -400,7 +400,7 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .topbar-actions {
-  flex-direction: row-reverse;
+  
   margin-left: 0;
   margin-right: auto;
 }
@@ -416,11 +416,11 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .sidebar-user {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .sidebar-streak {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .course-progress-text {
@@ -436,7 +436,7 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .lesson-row {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .lesson-row .lesson-dur {
@@ -445,15 +445,15 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .section-header {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .section-header .sec-left {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .section-header .sec-right {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .settings-section h3 {
@@ -465,19 +465,19 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .toggle-row {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .profile-header {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .profile-stats {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .hero-actions {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .btn-gold i.fa-arrow-right {
@@ -491,7 +491,7 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .ch-item {
-  flex-direction: row-reverse;
+  
   border-left: 3px solid transparent;
   border-right: none;
 }
@@ -502,19 +502,19 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .chat-input-bar {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .msg {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .msg-top {
-  flex-direction: row-reverse;
+  
 }
 
 [dir="rtl"] .msg-read {
-  flex-direction: row-reverse;
+  
   text-align: left;
 }
 

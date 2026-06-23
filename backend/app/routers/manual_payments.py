@@ -276,11 +276,15 @@ def approve_request(
     req.reviewed_by = current_user.id
     req.reviewed_at = now
     
-    # Activate the user
+    # Activate the user with a 30-day subscription from approval date
     user = db.query(User).filter(User.email == req.email).first()
     if user:
         user.is_active = True
-        
+        user.is_verified = True
+        user.subscription_source = "manual_payment"
+        # Always extend from now (approval time), not from previous end_at
+        user.end_at = now + timedelta(days=30)
+
     db.commit()
 
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")

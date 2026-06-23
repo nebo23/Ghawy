@@ -16,8 +16,7 @@ def send_otp_sms(phone: str, code: str) -> bool:
         international_phone = phone[1:]
     else:
         international_phone = phone
-
-    message = f"كود التحقق الخاص بك في Ghawy هو: {code}\nصالح لمدة 10 دقائق."
+    message = f"Your Ghawy verification code is: {code}\nValid for 10 minutes."
 
     api_key = os.getenv("VONAGE_API_KEY")
     api_secret = os.getenv("VONAGE_API_SECRET")
@@ -37,7 +36,7 @@ def send_otp_sms(phone: str, code: str) -> bool:
             "to": international_phone,
             "from": from_name,
             "text": message,
-            "type": "unicode"
+            "type": "text"
         }
         print(f"========== OTP CODE FOR {phone} IS: {code} ==========")
         res = requests.post(url, data=payload, timeout=10)

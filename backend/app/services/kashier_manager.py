@@ -144,8 +144,8 @@ def verify_kashier_webhook(data: dict, received_hash: str) -> bool:
     """
     Kashier بيحدد الـ signatureKeys في الـ data نفسه
     """
-    # signing_key = KASHIER_SECRET_KEY
-    signing_key = KASHIER_API_KEY
+    signing_key = KASHIER_SECRET_KEY
+    # signing_key = KASHIER_API_KEY
     if not signing_key or not received_hash:
         return False
     
@@ -169,7 +169,7 @@ def verify_kashier_webhook(data: dict, received_hash: str) -> bool:
         merchant_id = data.get("merchantId", KASHIER_MERCHANT_ID)
         message = f"/?payment={merchant_id}.{order_id}.{amount}.{currency}"
 
-        signing_key = KASHIER_API_KEY
+        signing_key = KASHIER_SECRET_KEY
     
     import hmac as _hmac
     expected = _hmac.new(

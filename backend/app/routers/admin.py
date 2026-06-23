@@ -148,12 +148,13 @@ def add_user(
 
 
 @router.patch("/users/{user_id}/toggle-active")
-def toggle_active(
+async def toggle_active(
     user_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Toggle a user's is_active status. When activating, sets end_at = now + 30 days if not already set."""
+    from app.services.ws_manager import manager as ws_manager
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -168,10 +169,14 @@ def toggle_active(
         if not user.end_at or user.end_at <= now:
             user.end_at = now + timedelta(days=30)
     else:
-        # When deactivating, clear end_at
+        # When deactivating, clear end_at and disconnect from WS
         user.end_at = None
 
     db.commit()
+
+    # Force-disconnect user from WebSocket if deactivated
+    if not user.is_active:
+        await ws_manager.disconnect_user(user_id)
 
     return {
         "user_id": user.id,
@@ -236,12 +241,13 @@ def toggle_admin(
 
 
 @router.delete("/users/{user_id}")
-def delete_user(
+async def delete_user(
     user_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete a user and all related data (cascade via model relationships)."""
+    from app.services.ws_manager import manager as ws_manager
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -251,6 +257,9 @@ def delete_user(
     # Prevent admin from deleting themselves
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account from admin panel")
+
+    # Force-disconnect user from WebSocket BEFORE deleting from DB
+    await ws_manager.disconnect_user(user_id)
 
     # Clean up related records that lack ON DELETE CASCADE
     from app.models import PhoneOTP, UserProgress, Certificate, Channel, LiveSession, ManualPaymentRequest
@@ -264,10 +273,11 @@ def delete_user(
     db.query(LiveSession).filter(LiveSession.created_by == user.id).update({"created_by": None}, synchronize_session=False)
     db.query(ManualPaymentRequest).filter(ManualPaymentRequest.reviewed_by == user.id).update({"reviewed_by": None}, synchronize_session=False)
 
+    saved_name = user.full_name
     db.delete(user)
     db.commit()
 
-    return {"message": f"User '{user.full_name}' deleted successfully"}
+    return {"message": f"User '{saved_name}' deleted successfully"}
 
 
 @router.post("/users/{user_id}/reset-password")

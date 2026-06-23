@@ -3,6 +3,7 @@ WebSocket Router — Real-time chat messaging
 """
 import json
 import logging
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
@@ -95,9 +96,24 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 "data": {"user_id": user.id, "user_name": user.full_name}
             }, exclude_user=user.id)
 
-        # Listen for messages
+        # Listen for messages — with periodic re-validation every 30s
+        last_check = asyncio.get_event_loop().time()
+        CHECK_INTERVAL = 30  # seconds
+
         while True:
-            raw = await websocket.receive_text()
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), timeout=CHECK_INTERVAL)
+            except asyncio.TimeoutError:
+                # Periodic check: re-validate user still exists and is active
+                db.expire_all()  # refresh DB session
+                fresh_user = db.query(User).filter(User.id == user.id).first()
+                if not fresh_user or not fresh_user.is_active:
+                    reason = "User deleted" if not fresh_user else "Account deactivated"
+                    logger.info(f"WS kicking user {user.id}: {reason}")
+                    await websocket.close(code=4003, reason=reason)
+                    return
+                continue
+
             try:
                 data = json.loads(raw)
             except json.JSONDecodeError:

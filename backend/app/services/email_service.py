@@ -61,6 +61,32 @@ def send_verification_email(to_email: str, code: str) -> None:
     )
 
 
+def send_legacy_otp_email(to_email: str, code: str) -> None:
+    """Send OTP for legacy members promo verification."""
+    body_text = (
+        f"مرحباً بك في Ghawy،\n\n"
+        f"كود التحقق الخاص بك هو: {code}\n\n"
+        f"هذا الكود صالح لمدة 10 دقائق.\n"
+        f"إذا لم تطلب هذا الكود، يرجى تجاهل هذه الرسالة."
+    )
+    body_html = f"""
+    <div dir="rtl" style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a; text-align: center;">
+        <h2 style="color: #fff; margin: 0 0 20px;">كود التحقق الخاص بك</h2>
+        <p style="color: #ccc; font-size: 16px; margin: 0 0 20px;">استخدم الكود التالي للحصول على الشهر المجاني:</p>
+        <div style="background: rgba(63, 143, 249, 0.1); border: 1px solid rgba(63, 143, 249, 0.3); border-radius: 8px; padding: 24px; margin: 20px 0;">
+            <p style="color: #3f8ff9; font-size: 36px; letter-spacing: 8px; font-weight: 700; margin: 0;">{code}</p>
+        </div>
+        <p style="color: #888; font-size: 13px; margin-top: 24px;">هذا الكود صالح لمدة 10 دقائق.</p>
+    </div>
+    """
+    _send_email(
+        to_email=to_email,
+        subject="كود التحقق — Ghawy Legacy",
+        body_text=body_text,
+        body_html=body_html,
+    )
+
+
 # ═══════════════════════════════════════════════════════
 #  MANUAL PAYMENT EMAILS
 # ═══════════════════════════════════════════════════════

@@ -15,7 +15,7 @@ const AUTH_HEADERS = {
     'Content-Type': 'application/json'
 };
 
-/** Fetch wrapper — auto-handles 401 */
+/** Fetch wrapper — auto-handles 401 and 402 */
 async function api(path, opts = {}) {
     const currentToken = localStorage.getItem('token');
     opts.headers = { 
@@ -30,6 +30,15 @@ async function api(path, opts = {}) {
             localStorage.removeItem('user'); window.location.href = '/login';
         }
         throw new Error('Unauthorized');
+    }
+    if (res.status === 402) {
+        // Subscription expired — clear session and redirect to login
+        if (!window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('login')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        throw new Error('PaymentRequired');
     }
     return res;
 }
@@ -568,7 +577,15 @@ function connectWebSocket() {
             console.warn('[WS] Error', e);
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
+            // code 4003 = Account deactivated (server-forced disconnect)
+            if (event.code === 4003) {
+                console.warn('[WS] Account deactivated — redirecting to login');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+                return; // Don't reconnect
+            }
             console.log('[WS] Disconnected — reconnecting in 3s');
             scheduleWsReconnect();
         };

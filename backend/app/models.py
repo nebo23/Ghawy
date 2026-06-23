@@ -95,6 +95,8 @@ class User(Base):
     onboarding_completed = Column(Boolean, server_default=text('false'), default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
+    is_legacy_redeemed = Column(Boolean, server_default=text('false'), default=False)
+    subscription_source = Column(String(64), nullable=True)
 
     @property
     def is_online(self) -> bool:
@@ -126,6 +128,17 @@ class PhoneOTP(Base):
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# ═══════════════════════════════════════════
+#  LEGACY
+# ═══════════════════════════════════════════
+
+class LegacyEmail(Base):
+    __tablename__ = "legacy_emails"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
 # ═══════════════════════════════════════════
 #  PAYMENT

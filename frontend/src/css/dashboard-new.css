@@ -81,7 +81,7 @@ body {
 }
 
 .dash-main {
-    margin-left: var(--sidebar-w) !important;
+    margin-left: var(--sidebar-w);
 }
 
 /* Logo */

@@ -17,8 +17,8 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css" />
-    <link rel="stylesheet" href="src/css/goh.css" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=2" />
+    <link rel="stylesheet" href="src/css/goh.css?v=2" />
 
     <script>
         (function () {
@@ -219,11 +219,11 @@
             </header>
 
             <!-- CONTENT -->
-            <div class="dash-content" style="padding:0; overflow-y:auto;">
+            <div class="dash-content">
                 <div class="goh-layout">
                     <div class="goh-main-col">
                         <!-- PREMIUM HERO -->
-                        <div class="page-header">
+                        <div class="page-header" style="padding: 24px 0 20px 0;">
                             <div class="page-breadcrumb">
                                 <a href="dashboard.html" class="breadcrumb-home" title="Dashboard">
                                     <i data-lucide="star"></i>
@@ -232,9 +232,11 @@
                                 <span>Guest of Honors</span>
                             </div>
                             <h1>Learn From The Best. Get Inspired. <span class="accent">Level Up.</span></h1>
-                            <p>Exclusive talks, workshops, and live sessions with top founders, marketers, engineers, creators, and industry leaders.</p>
+                            <p>Exclusive talks, workshops, and live sessions with top founders, marketers, engineers, creators,
+                                and industry leaders.</p>
                         </div>
-                        <div class="goh-hero-content" style="background:transparent; border:none; box-shadow:none; padding-top:0; min-height:auto;">
+                        <div class="goh-hero-content"
+                            style="background:transparent; border:none; box-shadow:none; padding-top:0; min-height:auto; margin-bottom: 24px;">
                             <div class="goh-hero-left">
                                 <div class="goh-hero-actions">
                                     <button class="btn-primary"
@@ -252,8 +254,8 @@
                                     <div class="featured-label"><i data-lucide="award"
                                             style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;margin-right:4px;"></i>
                                         Featured Guest</div>
-                                    <img class="featured-avatar" id="heroMobileAvatar" src="" alt="Guest"
-                                        onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
+                                    <img class="featured-avatar" id="heroMobileAvatar" src="./imgs/community-logo.png"
+                                        alt="Guest" />
                                     <h3 class="featured-name" id="heroMobileName">...</h3>
                                     <p class="featured-title" id="heroMobileTitle">...</p>
                                     <p class="featured-company" id="heroMobileCompany">...</p>
@@ -366,17 +368,11 @@
                     </div>
 
                     <!-- PREMIUM STICKY SIDEBAR -->
-                    <div class="goh-sidebar-col">
+                    <div class="goh-sidebar-col" style="padding-top: 24px;">
                         <!-- Featured Guest Card -->
                         <div class="featured-guest-card glass-card" id="featuredHeroCard" style="display:none;">
-                            <div class="featured-label"><i data-lucide="award"
-                                    style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;margin-right:4px;"></i>
-                                Featured Guest</div>
-                            <img class="featured-avatar" id="heroAvatar" src="" alt="Guest"
-                                onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
-                            <h3 class="featured-name" id="heroName">... <i data-lucide="badge-check"
-                                    style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i>
-                            </h3>
+                            <img class="featured-avatar" id="heroAvatar" src="./imgs/community-logo.png" alt="Guest" />
+                            <h3 class="featured-name" id="heroName">...</h3>
                             <p class="featured-title" id="heroTitle">...</p>
                             <p class="featured-company" id="heroCompany"><i data-lucide="building-2"
                                     style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
@@ -439,7 +435,8 @@
                             <div class="suggest-icon"><i data-lucide="mic"></i></div>
                             <h4>Know someone inspiring?</h4>
                             <p>Help us find the next great guest.</p>
-                            <button class="btn-suggest" onclick="openSuggestModal()"><i data-lucide="plus"
+                            <button class="btn-suggest" id="suggestGuestBtn"
+                                onclick="window.openSuggestModal && window.openSuggestModal()"><i data-lucide="plus"
                                     style="width:14px;height:14px;margin-right:4px;vertical-align:text-bottom;"></i>
                                 Suggest Guest</button>
                         </div>
@@ -450,38 +447,92 @@
     </div>
 
     <!-- Suggest Guest Modal -->
-    <div class="modal-overlay" id="suggestModal">
-        <div class="modal-content glass-card" style="max-width: 400px;">
-            <div class="modal-header">
-                <h3>Suggest a Guest</h3>
-                <button class="modal-close" onclick="closeSuggestModal()"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body" style="padding-top: 15px;">
-                <div class="form-group">
-                    <label style="color:#aaa; font-size:13px;">Guest Name</label>
-                    <input type="text" id="suggestName" placeholder="e.g. Sam Altman" class="form-input">
+    <div id="suggestModal" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(6px);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    ">
+        <div style="
+            background: #111115;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            width: 90%;
+            max-width: 420px;
+            padding: 28px;
+            position: relative;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+        ">
+            <!-- Header -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div
+                        style="width:36px; height:36px; border-radius:50%; background:rgba(63,143,249,0.12); display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="mic" style="width:16px; height:16px; color:#3f8ff9;"></i>
+                    </div>
+                    <h3 style="font-size:1.1rem; font-weight:800; color:#fff; margin:0;">Suggest a Guest</h3>
                 </div>
-                <div class="form-group" style="margin-top: 15px;">
-                    <label style="color:#aaa; font-size:13px;">Why should we invite them?</label>
-                    <textarea id="suggestReason" rows="3" placeholder="Brief reason..." class="form-input"
-                        style="resize: vertical;"></textarea>
+                <button onclick="closeSuggestModal()"
+                    style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#888; transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    <i data-lucide="x" style="width:16px; height:16px;"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <label
+                        style="display:block; font-size:0.8rem; font-weight:700; color:#a1a1aa; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Guest
+                        Name</label>
+                    <input type="text" id="suggestName" placeholder="e.g. Nabil Ahmed" style="
+                        width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                        border-radius:10px; padding:12px 14px; color:#fff; font-family:inherit; font-size:0.9rem;
+                        outline:none; transition:border-color 0.2s; box-sizing:border-box;
+                    " onfocus="this.style.borderColor='rgba(63,143,249,0.5)'"
+                        onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                </div>
+                <div>
+                    <label
+                        style="display:block; font-size:0.8rem; font-weight:700; color:#a1a1aa; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Why
+                        should we invite them?</label>
+                    <textarea id="suggestReason" rows="4" placeholder="Brief reason..." style="
+                        width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                        border-radius:10px; padding:12px 14px; color:#fff; font-family:inherit; font-size:0.9rem;
+                        outline:none; resize:vertical; transition:border-color 0.2s; box-sizing:border-box;
+                    " onfocus="this.style.borderColor='rgba(63,143,249,0.5)'"
+                        onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
                 </div>
             </div>
-            <div class="modal-footer" style="margin-top: 20px; text-align: right;">
-                <button type="button" class="btn-cancel" onclick="closeSuggestModal()"
-                    style="margin-right:10px;">Cancel</button>
-                <button type="button" class="btn-primary" onclick="submitSuggestion()">Submit Suggestion</button>
+            <!-- Footer -->
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="button" onclick="closeSuggestModal()" style="
+                    flex:1; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px; color:#a1a1aa; font-family:inherit; font-size:0.9rem; font-weight:600;
+                    cursor:pointer; transition:all 0.2s;
+                " onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.05)'">Cancel</button>
+                <button type="button" onclick="submitSuggestion()" style="
+                    flex:2; padding:12px; background:#3f8ff9; border:none;
+                    border-radius:10px; color:#000; font-family:inherit; font-size:0.9rem; font-weight:800;
+                    cursor:pointer; transition:all 0.2s;
+                " onmouseover="this.style.background='#5fa4fc'" onmouseout="this.style.background='#3f8ff9'">Submit
+                    Suggestion</button>
             </div>
         </div>
     </div>
 
     <script src="src/js/utils.js?v=9"></script>
-    <script src="src/js/i18n.js"></script>
-    <script src="src/js/goh.js"></script>
+    <script src="src/js/i18n.js?v=2"></script>
+    <script src="src/js/goh.js?v=2"></script>
     <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
 
 
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer onload="lucide.createIcons()"></script>
     <script src="src/js/dashboard-new.js?v=13"></script>
 </body>
 

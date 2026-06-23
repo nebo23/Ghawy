@@ -1,18 +1,21 @@
-(async () => {
-  const user = await requireActiveUser();
-  if (!user) return;
-})();
-
 const token = localStorage.getItem('token');
 if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
 const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 async function apiFetch(url, opts = {}) {
     opts.headers = { ...headers, ...opts.headers };
-    const res = await fetch(API + url, opts);
-    if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
-    if (!res.ok) throw new Error("API Error");
-    return res.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    try {
+        const res = await fetch(API + url, { ...opts, signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }
+        if (!res.ok) throw new Error("API Error");
+        return res.json();
+    } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+    }
 }
 
 let allGuests = [];
@@ -159,7 +162,7 @@ function updateFeaturedHero(g) {
   const sidebarHero = document.getElementById('featuredHeroCard');
   if (sidebarHero) {
       sidebarHero.style.display = 'block';
-      document.getElementById('heroName').innerHTML = `${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i>`;
+      document.getElementById('heroName').innerHTML = `${g.name}`;
       document.getElementById('heroTitle').textContent = g.title;
       document.getElementById('heroBio').textContent = g.bio || '';
       if(document.getElementById('heroCompany')) {
@@ -184,7 +187,7 @@ function updateFeaturedHero(g) {
   const mobileHero = document.getElementById('heroMobileCard');
   if (mobileHero) {
       mobileHero.style.display = 'block';
-      document.getElementById('heroMobileName').innerHTML = `${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;display:inline-block;vertical-align:middle;"></i>`;
+      document.getElementById('heroMobileName').innerHTML = `${g.name}`;
       document.getElementById('heroMobileTitle').textContent = g.title;
       document.getElementById('heroMobileBio').textContent = g.bio ? g.bio.substring(0,100) + '...' : '';
       if(document.getElementById('heroMobileCompany')) {
@@ -236,7 +239,7 @@ function renderGuests(guests) {
         <img class="guest-avatar" src="${finalAvatar}" style="object-fit:cover;"
              onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
       </div>
-      <h3 class="guest-name">${g.name} <i data-lucide="badge-check" style="width:16px;height:16px;color:#3f8ff9;"></i></h3>
+      <h3 class="guest-name">${g.name}</h3>
       <p class="guest-title">${g.title}</p>
       <div class="guest-company"><i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>${g.company || 'Industry Leader'}</span></div>
       
@@ -274,21 +277,19 @@ function renderSessions(sessions, containerId) {
     const time = date.toLocaleString('en', {hour:'2-digit', minute:'2-digit'});
     
     // Status Logic
-    let statusClass = s.status || 'upcoming';
-    let statusLabel = statusClass;
-    if (statusClass === 'upcoming') statusLabel = 'Upcoming';
-    else if (statusClass === 'live') statusLabel = 'Live Soon';
-    else if (statusClass === 'past') statusLabel = 'Completed';
+    let statusClass = s.status === 'live' ? 'live' : (s.status === 'completed' ? 'completed' : 'upcoming');
+    let statusLabel = s.status === 'live' ? 'Live Now' : (s.status === 'completed' ? 'Recorded' : 'Upcoming');
     
     let guestAvatar = s.guest_avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.guest_name)}&background=84cc16&color=fff`;
     if (guestAvatar.startsWith('/')) guestAvatar = API + guestAvatar;
 
-    let coverImage = s.cover_url || `https://images.unsplash.com/photo-1540317580384-e5d43867caa6?auto=format&fit=crop&w=600&q=80`;
-    if (coverImage.startsWith('/')) coverImage = API + coverImage;
+    let coverImage = s.cover_url || `./imgs/community-logo.png`;
     
     return `
       <div class="session-card glass-card">
-        <img class="session-cover" src="${coverImage}" alt="Session Cover" onerror="this.src='https://images.unsplash.com/photo-1540317580384-e5d43867caa6?auto=format&fit=crop&w=600&q=80'" />
+        <div class="session-cover-wrap">
+        <img class="session-cover" src="${coverImage}" alt="Session Cover" onerror="this.onerror=null; this.src='./imgs/community-logo.png'" />
+        </div>
         <div class="session-content">
             <div class="session-header-row">
                 <span class="session-status ${statusClass}">${statusLabel}</span>
@@ -374,12 +375,20 @@ function viewGuest(id) {
 function openSuggestModal() {
   document.getElementById('suggestName').value = '';
   document.getElementById('suggestReason').value = '';
-  document.getElementById('suggestModal').classList.add('open');
+  const modal = document.getElementById('suggestModal');
+  modal.style.display = 'flex';
+  if (window.lucide) window.lucide.createIcons();
+  // Close when clicking outside
+  modal.onclick = function(e) {
+    if (e.target === modal) closeSuggestModal();
+  };
 }
+window.openSuggestModal = openSuggestModal;
 
 function closeSuggestModal() {
-  document.getElementById('suggestModal').classList.remove('open');
+  document.getElementById('suggestModal').style.display = 'none';
 }
+window.closeSuggestModal = closeSuggestModal;
 
 async function submitSuggestion() {
   const name = document.getElementById('suggestName').value.trim();
@@ -402,6 +411,7 @@ async function submitSuggestion() {
     showToast("Error suggesting guest.", "error");
   }
 }
+window.submitSuggestion = submitSuggestion;
 
 // Ensure showToast is defined or fallback
 function showToast(msg, type='info') {
@@ -412,7 +422,11 @@ function showToast(msg, type='info') {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadPage);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPage();
+    const btn = document.getElementById('suggestGuestBtn');
+    if (btn) btn.addEventListener('click', openSuggestModal);
+});
 
 // ═══ HAMBURGER ═══
 (function initSidebar() {

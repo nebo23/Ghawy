@@ -274,7 +274,7 @@
                                     <span id="subAmount" style="font-size:1.1rem;font-weight:900;color:#3f8ff9;"></span>
                                 </div>
 
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
                                     <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;">
                                         <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ البداية
                                         </div>
@@ -285,6 +285,11 @@
                                         <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">تاريخ الانتهاء
                                         </div>
                                         <div id="subEndDate" style="font-size:.85rem;font-weight:600;color:#fff;"></div>
+                                    </div>
+                                    <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;">
+                                        <div style="font-size:.7rem;color:#6b7280;margin-bottom:4px;">الأيام المتبقية
+                                        </div>
+                                        <div id="subRemainingDays" style="font-size:.85rem;font-weight:600;color:#fff;"></div>
                                     </div>
                                 </div>
 
@@ -429,10 +434,12 @@
             <h3>⚠️ Delete Account</h3>
             <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.6">Are you sure you want to delete your
                 account? This action cannot be undone and all your data will be permanently removed.</p>
-            <div class="modal-actions">
+            <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.6;margin-top:10px;">Please type <strong>delete my account</strong> to confirm.</p>
+            <input type="text" id="deleteConfirmInput" placeholder="delete my account" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#fff;" />
+            <div class="modal-actions" style="margin-top:20px;">
                 <button class="btn-outline"
-                    onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
-                <button class="btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+                    onclick="document.getElementById('deleteModal').classList.remove('open'); document.getElementById('deleteConfirmInput').value=''; document.getElementById('confirmDeleteBtn').disabled=true; document.getElementById('confirmDeleteBtn').style.opacity='0.5'; document.getElementById('confirmDeleteBtn').style.cursor='not-allowed';">Cancel</button>
+                <button class="btn-danger" id="confirmDeleteBtn" disabled style="opacity:0.5;cursor:not-allowed;">Yes, Delete</button>
             </div>
         </div>
     </div>
@@ -496,6 +503,29 @@
                     if (startDate) startDate.textContent = formatDate(data.subscription_start);
                     if (endDate) {
                         endDate.textContent = data.subscription_end ? formatDate(data.subscription_end) : 'وصول دائم (لا ينتهي)';
+                    }
+
+                    const remainingDaysEl = document.getElementById('subRemainingDays');
+                    if (remainingDaysEl) {
+                        if (data.subscription_end) {
+                            const endD = new Date(data.subscription_end);
+                            const nowD = new Date();
+                            const diffTime = endD.getTime() - nowD.getTime();
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays > 0) {
+                                remainingDaysEl.textContent = `${diffDays} يوم`;
+                                if (diffDays <= 3) {
+                                    remainingDaysEl.style.color = '#ef4444';
+                                } else {
+                                    remainingDaysEl.style.color = '#10b981';
+                                }
+                            } else {
+                                remainingDaysEl.textContent = 'منتهي';
+                                remainingDaysEl.style.color = '#ef4444';
+                            }
+                        } else {
+                            remainingDaysEl.textContent = '∞';
+                        }
                     }
 
                     // Renew button

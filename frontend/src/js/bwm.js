@@ -125,14 +125,24 @@ function renderSessions(sessions, tab, container) {
         const day = scheduled ? scheduled.getDate() : '—';
         const month = scheduled ? scheduled.toLocaleString('en-US', { month: 'short' }).toUpperCase() : '';
         const time = scheduled ? scheduled.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD';
+        
+        const isPast = scheduled && scheduled < new Date();
+        let registerBtn = '';
+        let joinBtn = '';
 
-        const registerBtn = s.is_registered
-            ? `<button class="btn-reminder active" onclick="unregisterSession(${s.id}, this)" style="background:rgba(34,197,94,.15);color:#22c55e;border-color:#22c55e33;">✅ Registered</button>`
-            : `<button class="btn-reminder" onclick="registerSession(${s.id}, this)"><i class="fa-regular fa-hand"></i> RSVP</button>`;
+        if (!isPast) {
+            registerBtn = s.is_registered
+                ? `<button class="btn-reminder active" style="background:rgba(34,197,94,.15);color:#22c55e;border-color:#22c55e33;cursor:default;">✅ Registered</button>`
+                : `<button class="btn-reminder" onclick="registerSession(${s.id}, this)"><i class="fa-regular fa-hand"></i> RSVP</button>`;
 
-        const joinBtn = s.is_registered && (s.youtube_url || s.zoom_url)
-            ? `<a href="${s.zoom_url || s.youtube_url}" target="_blank" class="btn-primary" style="margin-top:8px;font-size:13px;padding:8px 16px;display:inline-block;text-decoration:none;">🚀 Join Now</a>`
-            : '';
+            joinBtn = s.is_registered && (s.youtube_url || s.zoom_url)
+                ? `<a href="${s.zoom_url || s.youtube_url}" target="_blank" class="btn-primary" style="margin-top:8px;font-size:13px;padding:8px 16px;display:inline-block;text-decoration:none;">🚀 Join Now</a>`
+                : '';
+        } else {
+            registerBtn = s.is_registered
+                ? `<span style="display:inline-block;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid #22c55e33;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">✅ Registered</span>`
+                : ``;
+        }
 
         html += `
             <div class="upcoming-card">
@@ -179,7 +189,8 @@ async function registerSession(sessionId, btn) {
         btn.innerHTML = '✅ Registered';
         btn.style.background = 'rgba(34,197,94,.15)';
         btn.style.color = '#22c55e';
-        btn.onclick = () => unregisterSession(sessionId, btn);
+        btn.style.cursor = 'default';
+        btn.onclick = null;
         showToast('Registered successfully! ✅', 'success');
 
         // Update local cache
@@ -215,14 +226,27 @@ function setupCalendar() {
     const daysContainer = document.getElementById('calendarDays');
     if (!daysContainer) return;
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    
     const now = new Date();
-    const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon
+    const upcoming = allSessions.filter(s => s.scheduled_at && new Date(s.scheduled_at) >= now).sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+    
+    let targetDate = now;
+    if (upcoming.length > 0) {
+        targetDate = new Date(upcoming[0].scheduled_at);
+    }
+
+    const monthLabel = document.querySelector('.cal-month');
+    if (monthLabel) {
+        monthLabel.textContent = targetDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    const dayOfWeek = (targetDate.getDay() + 6) % 7; // 0=Mon
 
     let html = '';
     for (let i = 0; i < 7; i++) {
-        const d = new Date(now);
+        const d = new Date(targetDate);
         d.setDate(d.getDate() - dayOfWeek + i);
-        const active = i === dayOfWeek ? 'active' : '';
+        const active = (d.getDate() === targetDate.getDate() && d.getMonth() === targetDate.getMonth() && d.getFullYear() === targetDate.getFullYear()) ? 'active' : '';
         html += `<div class="cal-day ${active}"><span class="name">${days[i]}</span><span class="num">${d.getDate()}</span></div>`;
     }
     daysContainer.innerHTML = html;
@@ -231,13 +255,13 @@ function setupCalendar() {
     const scheduleContainer = document.getElementById('scheduleList');
     if (!scheduleContainer) return;
 
-    const upcoming = allSessions.filter(s => s.scheduled_at && new Date(s.scheduled_at) >= now).slice(0, 3);
-    if (!upcoming.length) {
+    const upcomingToDisplay = upcoming.slice(0, 3);
+    if (!upcomingToDisplay.length) {
         scheduleContainer.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">No upcoming sessions</div>';
         return;
     }
 
-    scheduleContainer.innerHTML = upcoming.map(s => {
+    scheduleContainer.innerHTML = upcomingToDisplay.map(s => {
         const dt = new Date(s.scheduled_at);
         const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return `
@@ -301,7 +325,15 @@ function connectLiveSocket() {
         } catch (e) { console.error("WS error", e); }
     };
 
-    liveSocket.onclose = () => {
+    liveSocket.onclose = (event) => {
+        // code 4003 = Account deactivated (server-forced disconnect)
+        if (event.code === 4003) {
+            console.warn('[WS] Account deactivated — redirecting to login');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+            return; // Don't reconnect
+        }
         console.log("Disconnected from Live WS. Reconnecting in 5s...");
         setTimeout(connectLiveSocket, 5000);
     };

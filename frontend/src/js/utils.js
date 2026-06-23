@@ -74,30 +74,57 @@ function logout() {
 // ─── Auth Guard ─────────────────────────────────────────────
 async function enforceAuthGuard() {
   const currentPath = window.location.pathname;
-  const communityPages = ['dashboard.html', 'chat.html', 'direct-messages.html', 'courses.html', 'course-detail.html', 'build-with-me.html', 'guest-of-honors.html', 'teamdashboard.html', 'profile.html', 'profile-settings.html', 'ai-updates.html'];
-  const isCommunityPage = communityPages.some(p => currentPath.endsWith(p));
+
+  // Match both /dashboard and /dashboard.html style paths
+  const communityPaths = [
+    'dashboard', 'chat', 'direct-messages', 'courses', 'course-detail',
+    'build-with-me', 'guest-of-honors', 'teamdashboard', 'profile',
+    'profile-settings', 'ai-updates', 'help-center', 'achievements'
+  ];
+  const isCommunityPage = communityPaths.some(p =>
+    currentPath === '/' + p ||
+    currentPath.startsWith('/' + p + '?') ||
+    currentPath.endsWith('/' + p + '.html')
+  );
 
   if (!isCommunityPage) return;
 
+  // Hide body immediately to prevent flash of content before auth check
+  document.documentElement.style.visibility = 'hidden';
+
   const token = getToken();
   if (!token) {
-    localStorage.removeItem('user'); window.location.href = '/login';
+    localStorage.removeItem('user');
+    window.location.href = '/login';
     return;
   }
 
   try {
-    const res = await fetch(`${API}/profile/me?_t=`, {
+    const res = await fetch(`${API}/profile/me?_t=${Date.now()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (res.status === 401) {
-      logout();
+      // Token invalid or user deleted — logout
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return;
+    }
+
+    if (res.status === 402) {
+      // Subscription expired — clear session and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
       return;
     }
 
     if (res.status === 403) {
-      // User exists but not active — redirect to landing
-      window.location.href = 'index.html';
+      // User exists but not active — redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
       return;
     }
 
@@ -105,16 +132,28 @@ async function enforceAuthGuard() {
       const u = await res.json();
       localStorage.setItem('user', JSON.stringify(u));
       if (!u.is_active) {
-        window.location.href = 'index.html';
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
         return;
       }
       // If active but onboarding not yet completed — redirect there
-      if (!u.onboarding_completed && !currentPath.endsWith('onboarding.html')) {
-        window.location.href = 'onboarding.html';
+      if (!u.onboarding_completed && !currentPath.endsWith('onboarding.html') && currentPath !== '/onboarding') {
+        window.location.href = '/onboarding';
         return;
       }
+      // Auth passed — show page
+      document.documentElement.style.visibility = '';
+    } else {
+      // Any other error — redirect to login for safety
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
-  } catch (e) { }
+  } catch (e) {
+    // Network error — show page (don't block on connectivity issues)
+    document.documentElement.style.visibility = '';
+  }
 }
 
 enforceAuthGuard();
@@ -137,7 +176,13 @@ async function requireActiveUser() {
       return null;
     }
 
-
+    if (res.status === 402) {
+      // Subscription expired — clear session and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return null;
+    }
 
     if (res.status === 403) {
       window.location.href = 'index.html';
@@ -150,7 +195,7 @@ async function requireActiveUser() {
     localStorage.setItem('user', JSON.stringify(user));
 
     if (!user.is_active) {
-      window.location.href = 'index.html';
+      window.location.href = '/login';
       return null;
     }
 

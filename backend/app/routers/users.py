@@ -255,15 +255,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="المستخدم مش موجود")
+        # User deleted from DB — token is no longer valid → treat as 401
+        raise credentials_exception
         
     return user
 
 def get_current_active_member(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="حسابك غير مفعل"
+            status_code=402,  # Payment Required — subscription expired/inactive
+            detail="حسابك غير مفعل — يرجى تجديد الاشتراك"
         )
     return current_user
 
