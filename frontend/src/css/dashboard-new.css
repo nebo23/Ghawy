@@ -59,16 +59,34 @@ body {
 
 /* ══════════════════════════════════════════
    SIDEBAR OVERRIDES
+   Force LTR layout regardless of i18n dir
 ══════════════════════════════════════════ */
 .dash-sidebar {
     background: #0a0a0a !important;
     border-right: 1px solid var(--border-subtle) !important;
+    border-left: none !important;
     width: var(--sidebar-w) !important;
     display: flex;
     flex-direction: column;
     gap: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    /* Always anchor sidebar to the LEFT regardless of dir attribute */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    z-index: 90;
+}
+
+/* Override RTL rule that moves sidebar to the right */
+[dir="rtl"] .dash-sidebar,
+[dir="rtl"] .dash-sidebar:not(.open) {
+    left: 0 !important;
+    right: auto !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    border-left: none !important;
 }
 
 .dash-sidebar::-webkit-scrollbar {
@@ -81,7 +99,14 @@ body {
 }
 
 .dash-main {
-    margin-left: var(--sidebar-w);
+    margin-left: var(--sidebar-w) !important;
+    margin-right: 0 !important;
+}
+
+/* Override RTL rule that swaps margins */
+[dir="rtl"] .dash-main {
+    margin-left: var(--sidebar-w) !important;
+    margin-right: 0 !important;
 }
 
 /* Logo */
@@ -404,7 +429,15 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-left: auto;
+    /* Always push to the RIGHT — override any RTL margin swap */
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+/* Override RTL rule that moves actions to the left */
+[dir="rtl"] .topbar-actions {
+    margin-left: auto !important;
+    margin-right: 0 !important;
 }
 
 .topbar-actions .notif-wrapper {
@@ -1843,10 +1876,11 @@ body {
         transition: transform 0.3s ease !important;
     }
 
+    /* Keep sidebar on the LEFT even in RTL (dashboard is always LTR layout) */
     [dir="rtl"] .dash-sidebar {
-        left: auto !important;
-        right: 0 !important;
-        transform: translateX(100%) !important;
+        left: 0 !important;
+        right: auto !important;
+        transform: translateX(-100%) !important;
     }
 
     /* 3. Revealed when JS adds .open */

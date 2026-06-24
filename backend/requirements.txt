@@ -31,8 +31,7 @@ apscheduler==3.10.4
 # Cloud Storage
 boto3==1.35.86
 
-# SMS
-vonage==3.15.0
+# WhatsApp (Meta Cloud API - via httpx)
 
 # Session middleware
 itsdangerous==2.2.0

@@ -17,7 +17,7 @@ from pathlib import Path
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Use WARNING in production to avoid leaking sensitive data in logs
-_log_level = logging.WARNING if ENVIRONMENT == "production" else logging.DEBUG
+_log_level = logging.INFO
 logging.basicConfig(level=_log_level, format="%(levelname)s: %(name)s: %(message)s")
 
 BACKEND_DIR = Path(__file__).resolve().parent
@@ -320,7 +320,7 @@ def complete_onboarding_patch(
 def get_payment_info():
     """Public endpoint to get payment details for manual flow."""
     return {
-        "instapay_number": os.getenv("INSTAPAY_NUMBER", "01019381981"),
+        "instapay_number": os.getenv("INSTAPAY_NUMBER", "xxxx"),
         "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "500"),
         "currency": "EGP"
     }

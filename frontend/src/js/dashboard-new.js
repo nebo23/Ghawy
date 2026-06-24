@@ -296,7 +296,7 @@ function renderCourses(courses) {
         else if (pct > 0) { status = 'in-progress'; statusLabel = 'In Progress'; }
 
         const badgeHtml = pct === 0
-            ? `<div class="course-free-badge">FREE</div>`
+            ? ``
             : `<div class="course-pct-badge">${pct}%</div>`;
 
         return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'" role="button" tabindex="0">

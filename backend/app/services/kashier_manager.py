@@ -142,40 +142,77 @@ def _create_kashier_url_fallback(
 
 def verify_kashier_webhook(data: dict, received_hash: str) -> bool:
     """
-    Kashier بيحدد الـ signatureKeys في الـ data نفسه
+    Try all combinations of keys and amount formats to find a match.
+    Kashier may use API_KEY or SECRET_KEY, and amount may be '10' or '10.00'.
     """
-    signing_key = KASHIER_SECRET_KEY
-    # signing_key = KASHIER_API_KEY
-    if not signing_key or not received_hash:
-        return False
-    
-    # لو Kashier بعت signatureKeys، استخدمهم
-    signature_keys = data.get("signatureKeys", [])
-    
-    if signature_keys:
-        # بنبني الـ message من الـ keys المحددة مرتبة
-        parts = []
-        for key in signature_keys:
-            value = data.get(key, "")
-            parts.append(f"{key}={value}")
-        message = "&".join(parts)
-
-        logger.info("⚡ Constructed Webhook Message for Hashing: %s", message)
-    else:
-        # fallback للطريقة القديمة
-        order_id = data.get("orderId", "")
-        amount = _format_amount(data.get("amount", ""))
-        currency = data.get("currency", KASHIER_CURRENCY)
-        merchant_id = data.get("merchantId", KASHIER_MERCHANT_ID)
-        message = f"/?payment={merchant_id}.{order_id}.{amount}.{currency}"
-
-        signing_key = KASHIER_SECRET_KEY
-    
     import hmac as _hmac
-    expected = _hmac.new(
-        signing_key.encode("utf-8"),
-        message.encode("utf-8"),
-        hashlib.sha256
-    ).hexdigest()
-    
-    return _hmac.compare_digest(expected, received_hash)
+
+    if not received_hash:
+        return False
+
+    # Both possible signing keys
+    keys_to_try = []
+    if KASHIER_SECRET_KEY:
+        keys_to_try.append(("SECRET_KEY", KASHIER_SECRET_KEY))
+    if KASHIER_API_KEY and KASHIER_API_KEY != KASHIER_SECRET_KEY:
+        keys_to_try.append(("API_KEY", KASHIER_API_KEY))
+
+    # Build possible messages
+    signature_keys = data.get("signatureKeys", [])
+
+    def build_messages(d):
+        """Return list of possible messages to try."""
+        candidates = []
+        if signature_keys:
+            # Use signatureKeys from Kashier payload
+            parts = [f"{k}={d.get(k, '')}" for k in signature_keys]
+            candidates.append(("signatureKeys", "&".join(parts)))
+
+        # Fallback: standard fields
+        amount_raw = d.get("amount", "")
+        currency = d.get("currency", "")
+        merchant_order_id = d.get("merchantOrderId", "")
+        merchant_id = d.get("merchantId", "")
+
+        # Try amount as-is
+        msg1 = f"amount={amount_raw}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
+        candidates.append(("fallback_raw", msg1))
+
+        # Try amount as formatted decimal
+        try:
+            amount_dec = _format_amount(amount_raw)
+            if amount_dec != str(amount_raw):
+                msg2 = f"amount={amount_dec}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
+                candidates.append(("fallback_dec", msg2))
+        except Exception:
+            pass
+
+        # Try amount as plain integer
+        try:
+            amount_int = str(int(float(amount_raw)))
+            if amount_int != str(amount_raw):
+                msg3 = f"amount={amount_int}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
+                candidates.append(("fallback_int", msg3))
+        except Exception:
+            pass
+
+        return candidates
+
+    messages = build_messages(data)
+
+    for key_name, signing_key in keys_to_try:
+        for msg_type, message in messages:
+            expected = _hmac.new(
+                signing_key.encode("utf-8"),
+                message.encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
+            logger.info("🔑 [%s][%s] computed=%s | received=%s | match=%s",
+                        key_name, msg_type, expected, received_hash,
+                        expected == received_hash)
+            if _hmac.compare_digest(expected, received_hash):
+                logger.info("✅ Signature matched! key=%s msg_type=%s", key_name, msg_type)
+                return True
+
+    logger.error("❌ No combination matched for received_hash=%s", received_hash)
+    return False

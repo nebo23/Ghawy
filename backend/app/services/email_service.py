@@ -281,7 +281,7 @@ def send_live_session_notification(
 # ═══════════════════════════════════════════════════════
 
 _RENEWAL_PLAN_LABELS = {
-    "monthly_egp":   {"label": "الشهري",       "amount": "600 جنيه",   "renew_label": "جدد اشتراكك الشهري"},
+    "monthly_egp":   {"label": "الشهري",       "amount": "10 جنيه",   "renew_label": "جدد اشتراكك الشهري"},
     "quarterly_egp": {"label": "تلت شهور",     "amount": "1,200 جنيه", "renew_label": "جدد اشتراكك"},
     "yearly_egp":    {"label": "السنوي",        "amount": "3,000 جنيه", "renew_label": "جدد اشتراكك السنوي"},
     "monthly_usd":   {"label": "Monthly",       "amount": "$15",        "renew_label": "Renew Monthly Plan"},

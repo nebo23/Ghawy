@@ -15,7 +15,7 @@ import os
 import uuid
 import shutil
 from datetime import datetime, timedelta
-from app.services.vonage_service import generate_otp, send_otp_sms
+from app.services.otp_manager import send_otp, verify_otp
 from app.models import PhoneOTP
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 
 # ─── Plan Labels (shared) ──────────────────────────────────
 PLAN_LABELS = {
-    "monthly_egp":   {"label": "شهري",       "amount": 600,  "currency": "EGP", "days": 30},
+    "monthly_egp":   {"label": "شهري",       "amount": 10,   "currency": "EGP", "days": 30},
     "quarterly_egp": {"label": "تلت شهور",   "amount": 1200, "currency": "EGP", "days": 90},
     "yearly_egp":    {"label": "سنوي",        "amount": 3000, "currency": "EGP", "days": 365},
     "monthly_usd":   {"label": "Monthly",     "amount": 15,   "currency": "USD", "days": 30},
@@ -360,21 +360,7 @@ async def send_phone_otp(
     if existing:
         raise HTTPException(status_code=400, detail="This number is registered to another account")
 
-    # احذف أي OTP قديم لنفس المستخدم
-    db.query(PhoneOTP).filter(PhoneOTP.user_id == current_user.id).delete()
-
-    # ابعت OTP جديد
-    code = generate_otp()
-    otp = PhoneOTP(
-        user_id=current_user.id,
-        phone=phone,
-        code=code,
-        expires_at=datetime.utcnow() + timedelta(minutes=10)
-    )
-    db.add(otp)
-    db.commit()
-
-    success = send_otp_sms(phone, code)
+    success = await send_otp(phone, db=db, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to send code, try again")
 
@@ -390,24 +376,13 @@ async def verify_phone_otp(
     """
     يتحقق من الكود ويحفظ الرقم في الـ DB
     """
-    otp = db.query(PhoneOTP).filter(
-        PhoneOTP.user_id == current_user.id,
-        PhoneOTP.phone == req.phone,
-        PhoneOTP.is_used == False
-    ).first()
+    success = await verify_otp(req.phone, req.code, db=db)
 
-    if not otp:
-        raise HTTPException(status_code=400, detail="Invalid code")
-
-    if datetime.utcnow() > otp.expires_at:
-        raise HTTPException(status_code=400, detail="Code expired, request a new one")
-
-    if otp.code != req.code:
-        raise HTTPException(status_code=400, detail="Invalid code")
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid code or expired")
 
     # Save number
     current_user.phone = req.phone
-    otp.is_used = True
     db.commit()
 
     return {"message": "Phone verified successfully ✅"}

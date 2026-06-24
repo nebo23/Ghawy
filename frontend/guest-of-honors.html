@@ -17,8 +17,8 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=2" />
-    <link rel="stylesheet" href="src/css/goh.css?v=2" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
+    <link rel="stylesheet" href="src/css/goh.css?v=3" />
 
     <script>
         (function () {
@@ -44,7 +44,7 @@
             } catch (e) { }
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=10" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
 </head>
 
 <body>
@@ -239,12 +239,6 @@
                             style="background:transparent; border:none; box-shadow:none; padding-top:0; min-height:auto; margin-bottom: 24px;">
                             <div class="goh-hero-left">
                                 <div class="goh-hero-actions">
-                                    <button class="btn-primary"
-                                        onclick="document.querySelector('.btn-watch')?.click()">Watch Latest
-                                        Session</button>
-                                    <button class="btn-secondary"
-                                        onclick="document.getElementById('featured-guests').scrollIntoView({behavior:'smooth'})">Explore
-                                        Guests</button>
                                 </div>
                             </div>
                             <div class="goh-hero-right">
@@ -292,13 +286,7 @@
                                     <div class="stat-label">Sessions This Month</div>
                                 </div>
                             </div>
-                            <div class="stat-card glass-card">
-                                <div class="stat-icon-wrap"><i data-lucide="play-circle" class="stat-lucide"></i></div>
-                                <div>
-                                    <div class="stat-number" id="stat-hours">0</div>
-                                    <div class="stat-label">Hours Watched</div>
-                                </div>
-                            </div>
+
                             <div class="stat-card glass-card">
                                 <div class="stat-icon-wrap"><i data-lucide="star" class="stat-lucide"
                                         style="color:#facc15;"></i></div>
