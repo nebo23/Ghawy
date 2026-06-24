@@ -1,2 +1,0 @@
-(5, 'AI Foundations', None)
-(6, 'AAA Core', None)
