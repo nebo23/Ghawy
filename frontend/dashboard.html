@@ -45,6 +45,11 @@
                     var u = JSON.parse(uStr);
                     if (u && (u.is_active === false || u.subscription_type === 'none')) {
                         window.location.replace("/payment.html?reason=access_required");
+                        return;
+                    }
+                    if (u && u.onboarding_completed === false) {
+                        window.location.replace("/onboarding");
+                        return;
                     }
                 }
             } catch (e) { }
@@ -425,7 +430,7 @@
     </script>
 
     <script src="src/js/utils.js?v=9"></script>
-    <script src="src/js/dashboard-new.js?v=13"></script>
+    <script src="src/js/dashboard-new.js?v=14"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
     <!-- ── Hamburger / Sidebar Toggle ── -->

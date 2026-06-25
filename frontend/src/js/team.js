@@ -1458,7 +1458,10 @@ function renderCourses() {
   }
   tbody.innerHTML = coursesCache.map(c => {
     const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
-    const pdfHref = c.pdf_url ? (c.pdf_url.startsWith('/') ? API + c.pdf_url : c.pdf_url) : '';
+    let resources = [];
+    try { resources = c.pdf_url ? JSON.parse(c.pdf_url) : []; } catch(e) {
+      if (c.pdf_url) resources = [{ name: 'Resource', url: c.pdf_url }];
+    }
     return `
     <tr>
       <td>
@@ -1476,9 +1479,8 @@ function renderCourses() {
       <td>${c.total_lessons || 0} lessons</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
-          ${pdfHref ? '<a href="' + pdfHref + '" target="_blank" style="color:#ef4444;text-decoration:none;"><i class="fa-solid fa-file-pdf"></i> View</a>' : '<span style="color:#555;">No PDF</span>'}
-          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadCoursePdf(${c.id})">${c.pdf_url ? 'Replace' : 'Upload'}</button>
-          <input type="file" id="course-pdf-upload-${c.id}" accept="application/pdf" style="display:none" onchange="handleCoursePdfSelected(event, ${c.id})">
+          <span style="color:${resources.length ? '#22c55e' : '#555'};font-size:12px;">${resources.length} resource${resources.length !== 1 ? 's' : ''}</span>
+          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="openResourcesModal(${c.id})"><i class="fa-solid fa-link"></i> Manage</button>
         </div>
       </td>
       <td>
@@ -1488,7 +1490,7 @@ function renderCourses() {
         </label>
       </td>
       <td>
-        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')\" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
       </td>
@@ -1655,7 +1657,10 @@ function renderCourses() {
   }
   tbody.innerHTML = coursesCache.map(c => {
     const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
-    const pdfHref = c.pdf_url ? (c.pdf_url.startsWith('/') ? API + c.pdf_url : c.pdf_url) : '';
+    let resources = [];
+    try { resources = c.pdf_url ? JSON.parse(c.pdf_url) : []; } catch(e) {
+      if (c.pdf_url) resources = [{ name: 'Resource', url: c.pdf_url }];
+    }
     return `
     <tr>
       <td>
@@ -1673,9 +1678,8 @@ function renderCourses() {
       <td>${c.total_lessons || 0} lessons</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
-          ${pdfHref ? '<a href="' + pdfHref + '" target="_blank" style="color:#ef4444;text-decoration:none;"><i class="fa-solid fa-file-pdf"></i> View</a>' : '<span style="color:#555;">No PDF</span>'}
-          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="uploadCoursePdf(${c.id})">${c.pdf_url ? 'Replace' : 'Upload'}</button>
-          <input type="file" id="course-pdf-upload-${c.id}" accept="application/pdf" style="display:none" onchange="handleCoursePdfSelected(event, ${c.id})">
+          <span style="color:${resources.length ? '#22c55e' : '#555'};font-size:12px;">${resources.length} resource${resources.length !== 1 ? 's' : ''}</span>
+          <button class="btn-action" style="font-size:12px;padding:4px 8px;" onclick="openResourcesModal(${c.id})"><i class="fa-solid fa-link"></i> Manage</button>
         </div>
       </td>
       <td>
@@ -1685,7 +1689,7 @@ function renderCourses() {
         </label>
       </td>
       <td>
-        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')\" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
       </td>
@@ -1794,24 +1798,108 @@ async function confirmDeleteCourse() {
   } catch (e) { showToast(e.message, 'error'); }
 }
 
-// -- Course PDF Upload --
-async function uploadCoursePdf(courseId) {
-  const url = prompt('Enter the link for the course resource (PDF, Docs, etc.):');
-  if (url === null) return;
+// -- Course Resources Modal (Multiple Links) --
+let _resourcesModalCourseId = null;
+let _resourcesList = [];
 
-  showToast('Saving link...', 'info');
+function openResourcesModal(courseId) {
+  _resourcesModalCourseId = courseId;
+  const course = coursesCache.find(c => c.id === courseId);
+  if (!course) return;
+  try { _resourcesList = course.pdf_url ? JSON.parse(course.pdf_url) : []; } catch(e) {
+    _resourcesList = course.pdf_url ? [{ name: 'Resource', url: course.pdf_url }] : [];
+  }
+  renderResourcesModalList();
+  document.getElementById('resources-modal').style.display = 'flex';
+}
+
+function renderResourcesModalList() {
+  const list = document.getElementById('resources-modal-list');
+  if (_resourcesList.length === 0) {
+    list.innerHTML = '<p style="color:#555;text-align:center;padding:12px 0;">No resources yet. Add one below.</p>';
+    return;
+  }
+  list.innerHTML = _resourcesList.map((r, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#111;border:1px solid #222;border-radius:6px;margin-bottom:6px;">
+      <i class="fa-solid fa-link" style="color:#3f8ff9;font-size:13px;flex-shrink:0;"></i>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.name)}</div>
+        <div style="font-size:11px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.url)}</div>
+      </div>
+      <a href="${escapeHtml(r.url)}" target="_blank" style="color:#3f8ff9;font-size:12px;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+      <button onclick="removeResourceItem(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px 6px;"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  `).join('');
+}
+
+function removeResourceItem(idx) {
+  _resourcesList.splice(idx, 1);
+  renderResourcesModalList();
+}
+
+function addResourceItem() {
+  const nameEl = document.getElementById('res-name-input');
+  const urlEl = document.getElementById('res-url-input');
+  const name = nameEl.value.trim();
+  const url = urlEl.value.trim();
+  if (!name || !url) return showToast('Enter both a name and URL', 'error');
+  _resourcesList.push({ name, url });
+  nameEl.value = '';
+  urlEl.value = '';
+  renderResourcesModalList();
+}
+
+async function saveResourcesList() {
   try {
-    const res = await fetch(API + `/courses/admin/courses/${courseId}`, {
+    const res = await fetch(API + `/courses/admin/courses/${_resourcesModalCourseId}`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ pdf_url: url.trim() || null })
+      body: JSON.stringify({ pdf_url: _resourcesList.length ? JSON.stringify(_resourcesList) : null })
     });
-    if (!res.ok) throw new Error('Failed to save link');
-
-    showToast('Course resource link updated successfully!', 'success');
+    if (!res.ok) throw new Error('Failed to save');
+    showToast('Resources saved!', 'success');
+    document.getElementById('resources-modal').style.display = 'none';
     loadCoursesTab();
+  } catch (e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function uploadResourceFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') return showToast('Must be a PDF file', 'error');
+
+  showToast('Uploading PDF...', 'info');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(API + `/courses/admin/courses/${_resourcesModalCourseId}/upload-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Upload failed');
+    }
+
+    const data = await res.json();
+    showToast('Course PDF uploaded successfully!', 'success');
+    
+    // Update local list from returned data
+    try {
+      _resourcesList = data.pdf_url ? JSON.parse(data.pdf_url) : [];
+    } catch(e) {
+      _resourcesList = [];
+    }
+    
+    renderResourcesModalList();
+    loadCoursesTab(); // to update table view in background
+    
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
+  } finally {
+    event.target.value = ''; // clear input
   }
 }
 
@@ -2258,10 +2346,11 @@ function buildLessonEntry(index, defaultOrder) {
         </div>
       </div>
       <div class="fg" style="display:flex;flex-direction:column;gap:6px;">
-        <label style="font-size:12px;color:#888;">Bunny.net Video URL *</label>
-        <input type="url" id="lesson-video-url-${index}"
-          placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
+        <label style="font-size:12px;color:#888;">VdoCipher Video ID *</label>
+        <input type="text" id="lesson-video-url-${index}"
+          placeholder="e.g. abc123def456..."
           style="padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-family:inherit;font-size:14px;" />
+        <small style="font-size:11px;color:#555;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
       </div>
     </div>
   </div>`;
@@ -2342,17 +2431,9 @@ async function submitAddLesson() {
     const order = parseInt(document.getElementById(`lesson-order-${idx}`)?.value) || 0;
 
     if (!title) return showToast('كل lesson لازم يكون ليه عنوان', 'error');
-    if (!videoUrl) return showToast(`Lesson "${title}": Video URL مطلوب`, 'error');
+    if (!videoUrl) return showToast(`Lesson "${title}": Video ID مطلوب`, 'error');
 
-    const srcMatch = videoUrl.match(/src="([^"]+)"/);
-    if (srcMatch) videoUrl = srcMatch[1];
-
-    const bunnyPatterns = ['mediadelivery.net', 'b-cdn.net'];
-    if (!bunnyPatterns.some(p => videoUrl.includes(p))) {
-      return showToast(`Lesson "${title}": الـ URL لازم يكون من Bunny.net`, 'error');
-    }
-
-    lessons.push({ title, section_title: sectionTitle, order, bunny_video_url: videoUrl });
+    lessons.push({ title, section_title: sectionTitle, order, vdo_video_id: videoUrl });
   }
 
   if (lessons.length === 0) return showToast('أضف lesson واحد على الأقل', 'error');
@@ -2396,9 +2477,147 @@ function openEditLessonModal(id) {
   document.getElementById('edit-lesson-title').value = l.title;
   document.getElementById('edit-lesson-section').value = l.section_title || '';
   document.getElementById('edit-lesson-status').value = l.video_status || 'pending';
-  document.getElementById('edit-lesson-video-url').value = l.bunny_video_url || '';
+  document.getElementById('edit-lesson-video-url').value = l.vdo_video_id || l.bunny_video_url || '';
   document.getElementById('edit-lesson-order').value = l.order || 0;
+
+  // Render existing PDFs
+  renderLessonPdfs(l.pdf_url);
+
+  // Reset upload input
+  const inp = document.getElementById('lesson-pdf-upload-input');
+  if (inp) inp.value = '';
+  const prog = document.getElementById('lesson-pdf-upload-progress');
+  if (prog) prog.style.display = 'none';
+
   document.getElementById('edit-lesson-modal').style.display = 'flex';
+}
+
+function renderLessonPdfs(pdfUrl) {
+  const container = document.getElementById('lesson-pdfs-list');
+  if (!container) return;
+
+  let pdfs = [];
+  try {
+    const parsed = pdfUrl ? JSON.parse(pdfUrl) : [];
+    if (Array.isArray(parsed)) {
+      pdfs = parsed;
+    } else if (typeof pdfUrl === 'string' && pdfUrl.startsWith('/')) {
+      pdfs = [{ name: 'Resource', url: pdfUrl }];
+    }
+  } catch (e) {
+    if (pdfUrl) pdfs = [{ name: 'Resource', url: pdfUrl }];
+  }
+
+  if (pdfs.length === 0) {
+    container.innerHTML = '<p style="font-size:12px;color:#555;margin:0;">No PDFs added yet.</p>';
+    return;
+  }
+
+  container.innerHTML = pdfs.map((p, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:#111;border:1px solid #222;border-radius:8px;padding:8px 12px;" id="lesson-pdf-row-${i}">
+      <i class="fa-solid fa-file-pdf" style="color:#ef4444;font-size:14px;flex-shrink:0;"></i>
+      <a href="${API + p.url}" target="_blank"
+        style="flex:1;font-size:12px;color:#3f8ff9;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+        title="${p.name}">${p.name}</a>
+      <button onclick="deleteLessonPdf('${encodeURIComponent(p.url)}')"
+        style="background:none;border:1px solid #3a1a1a;color:#ef4444;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+        title="Delete PDF">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function uploadLessonPdf() {
+  const lessonId = document.getElementById('edit-lesson-id').value;
+  const input = document.getElementById('lesson-pdf-upload-input');
+  const btn = document.getElementById('lesson-pdf-upload-btn');
+  const progressDiv = document.getElementById('lesson-pdf-upload-progress');
+  const bar = document.getElementById('lesson-pdf-upload-bar');
+  const status = document.getElementById('lesson-pdf-upload-status');
+
+  if (!input.files || !input.files[0]) {
+    showToast('Please select a PDF file first', 'error');
+    return;
+  }
+
+  const file = input.files[0];
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showToast('Only PDF files are allowed', 'error');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  progressDiv.style.display = 'block';
+  bar.style.width = '0%';
+  status.textContent = 'Uploading...';
+
+  try {
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', API + `/courses/admin/lessons/${lessonId}/pdfs`);
+      xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('token')}`);
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          bar.style.width = pct + '%';
+          status.textContent = `Uploading... ${pct}%`;
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data = JSON.parse(xhr.responseText);
+          // Update the lesson in cache
+          const l = lessonsCache.find(x => x.id == lessonId);
+          if (l) l.pdf_url = JSON.stringify(data.all_pdfs);
+          renderLessonPdfs(JSON.stringify(data.all_pdfs));
+          input.value = '';
+          status.textContent = '✅ Uploaded!';
+          bar.style.width = '100%';
+          showToast('PDF uploaded successfully', 'success');
+          resolve();
+        } else {
+          reject(new Error('Upload failed'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
+    });
+  } catch (e) {
+    showToast(e.message || 'Upload failed', 'error');
+    status.textContent = '❌ Failed';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Upload';
+    setTimeout(() => { progressDiv.style.display = 'none'; }, 2000);
+  }
+}
+
+async function deleteLessonPdf(encodedUrl) {
+  const lessonId = document.getElementById('edit-lesson-id').value;
+  const pdfUrl = decodeURIComponent(encodedUrl);
+
+  if (!confirm('Delete this PDF?')) return;
+
+  try {
+    const res = await fetch(API + `/courses/admin/lessons/${lessonId}/pdfs?pdf_url=${encodeURIComponent(pdfUrl)}`, {
+      method: 'DELETE',
+      headers
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    const data = await res.json();
+    // Update cache
+    const l = lessonsCache.find(x => x.id == lessonId);
+    if (l) l.pdf_url = data.all_pdfs.length > 0 ? JSON.stringify(data.all_pdfs) : null;
+    renderLessonPdfs(l ? l.pdf_url : null);
+    showToast('PDF deleted', 'info');
+  } catch (e) {
+    showToast(e.message || 'Delete failed', 'error');
+  }
 }
 
 async function submitEditLesson() {
@@ -2408,28 +2627,35 @@ async function submitEditLesson() {
   if (srcMatch) videoUrl = srcMatch[1];
 
   let status = document.getElementById('edit-lesson-status').value;
-  // Auto update status based on URL if not explicitly changed or if it makes sense
-  if (videoUrl && status === 'pending' && !lessonsCache.find(x => x.id == id)?.bunny_video_url) {
+  // Auto update status based on video ID
+  if (videoUrl) {
     status = 'ready';
   } else if (!videoUrl) {
     status = 'pending';
   }
 
+  const body = {
+    title: document.getElementById('edit-lesson-title').value,
+    section_title: document.getElementById('edit-lesson-section').value,
+    video_status: status,
+    order: parseInt(document.getElementById('edit-lesson-order').value) || 0
+  };
+
+  // Only include vdo_video_id if user entered something
+  if (videoUrl) body.vdo_video_id = videoUrl;
+
   try {
     const res = await fetch(API + `/courses/admin/lessons/${id}`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({
-        title: document.getElementById('edit-lesson-title').value,
-        section_title: document.getElementById('edit-lesson-section').value,
-        video_status: status,
-        bunny_video_url: videoUrl,
-        order: parseInt(document.getElementById('edit-lesson-order').value) || 0
-      })
+      body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error('Update failed');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Update failed');
+    }
     closeModal('edit-lesson-modal');
-    showToast('Lesson updated', 'success');
+    showToast('Lesson updated ✅', 'success');
     loadLessons();
   } catch (e) { showToast(e.message, 'error'); }
 }

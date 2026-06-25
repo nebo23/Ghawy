@@ -371,8 +371,10 @@ class Lesson(Base):
     section_order = Column(Integer, server_default=text('0'), default=0)
     order = Column(Integer, server_default=text('0'), default=0)
     duration_minutes = Column(Integer, server_default=text('0'), default=0)
-    # Bunny.net
+    # Bunny.net (legacy)
     bunny_video_url = Column(String, nullable=True)
+    # VdoCipher
+    vdo_video_id = Column(String, nullable=True)
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
     is_free_preview = Column(Boolean, server_default=text('false'), default=False)
     # PDF attachment

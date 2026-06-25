@@ -2003,7 +2003,7 @@ a {
 
 @keyframes scrollLeft {
     from {
-        transform: translateX(calc(50% + 8px));
+        transform: translateX(calc(25% + 4px));
     }
 
     to {
@@ -2017,7 +2017,7 @@ a {
     }
 
     to {
-        transform: translateX(calc(50% + 8px));
+        transform: translateX(calc(25% + 4px));
     }
 }
 
@@ -2031,10 +2031,6 @@ a {
 
 .row-left-slow .reviews-track {
     animation: scrollLeft 50s linear infinite;
-}
-
-.reviews-marquee-wrapper:hover .reviews-track {
-    animation-play-state: paused;
 }
 
 .text-review-card {

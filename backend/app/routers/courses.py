@@ -12,6 +12,7 @@ from app.schemas import (
 import logging
 import uuid
 import os
+import json
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -226,7 +227,19 @@ async def upload_course_pdf(
         f.write(content)
     
     # Update course record
-    course.pdf_url = f"/uploads/course-pdfs/{safe_name}"
+    new_url = f"/uploads/course-pdfs/{safe_name}"
+    
+    import json
+    current_resources = []
+    if course.pdf_url:
+        try:
+            current_resources = json.loads(course.pdf_url)
+        except:
+            current_resources = [{"name": "Resource", "url": course.pdf_url}]
+            
+    current_resources.append({"name": file.filename, "url": new_url})
+    course.pdf_url = json.dumps(current_resources)
+    
     db.commit()
     db.refresh(course)
     
@@ -303,7 +316,8 @@ def admin_create_lesson(
         order=data.order,
         duration_minutes=duration_minutes,
         bunny_video_url=data.bunny_video_url,
-        video_status="ready" if data.bunny_video_url else "pending",
+        vdo_video_id=data.vdo_video_id,
+        video_status="ready" if (data.bunny_video_url or data.vdo_video_id) else "pending",
     )
     db.add(lesson)
 
@@ -342,14 +356,22 @@ def admin_update_lesson(
         if new_duration > 0 or update_data.get("duration_minutes", 0) == 0:
             update_data["duration_minutes"] = new_duration
 
+    # Auto-set video_status to ready if a video is being added
+    if "vdo_video_id" in update_data and update_data["vdo_video_id"]:
+        if "video_status" not in update_data:
+            update_data["video_status"] = "ready"
+    elif "bunny_video_url" in update_data and update_data["bunny_video_url"]:
+        if "video_status" not in update_data:
+            update_data["video_status"] = "ready"
+
     for field, value in update_data.items():
         setattr(lesson, field, value)
     db.commit()
     db.refresh(lesson)
     return lesson
 
-# ─── Admin: Upload PDF (direct file upload) ────────────────
-@router.post("/admin/lessons/{lesson_id}/pdf")
+# ─── Admin: Upload PDF — supports multiple PDFs per lesson ────
+@router.post("/admin/lessons/{lesson_id}/pdfs")
 async def admin_upload_pdf(
     lesson_id: int,
     file: UploadFile = File(...),
@@ -359,7 +381,7 @@ async def admin_upload_pdf(
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    
+
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -368,17 +390,66 @@ async def admin_upload_pdf(
     pdf_dir.mkdir(exist_ok=True)
     safe_name = f"lesson_{lesson_id}_{uuid.uuid4().hex[:8]}.pdf"
     file_path = pdf_dir / safe_name
-    
+
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)
-    
-    # Update lesson record
-    lesson.pdf_url = f"/uploads/lesson-pdfs/{safe_name}"
+
+    new_url = f"/uploads/lesson-pdfs/{safe_name}"
+    original_name = file.filename
+
+    # Parse existing pdf_url as list
+    try:
+        existing = json.loads(lesson.pdf_url) if lesson.pdf_url else []
+        if not isinstance(existing, list):
+            # Migrate legacy single string
+            existing = [{"name": "Resource", "url": lesson.pdf_url}]
+    except Exception:
+        existing = []
+
+    existing.append({"name": original_name, "url": new_url})
+    lesson.pdf_url = json.dumps(existing)
     db.commit()
     db.refresh(lesson)
-    
-    return {"pdf_url": lesson.pdf_url, "message": "PDF uploaded successfully"}
+
+    return {"pdf_url": new_url, "name": original_name, "all_pdfs": existing, "message": "PDF uploaded successfully"}
+
+
+# ─── Admin: Delete a single PDF from lesson ───────────────────
+@router.delete("/admin/lessons/{lesson_id}/pdfs")
+def admin_delete_lesson_pdf(
+    lesson_id: int,
+    pdf_url: str,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+
+    try:
+        existing = json.loads(lesson.pdf_url) if lesson.pdf_url else []
+        if not isinstance(existing, list):
+            existing = [{"name": "Resource", "url": lesson.pdf_url}]
+    except Exception:
+        existing = []
+
+    # Remove the entry
+    existing = [p for p in existing if p.get("url") != pdf_url]
+    lesson.pdf_url = json.dumps(existing) if existing else None
+    db.commit()
+
+    # Delete file from disk
+    try:
+        # pdf_url is like /uploads/lesson-pdfs/lesson_1_abc.pdf
+        relative = pdf_url.lstrip("/")
+        file_path = UPLOADS_DIR.parent / relative
+        if file_path.exists():
+            file_path.unlink()
+    except Exception:
+        pass
+
+    return {"message": "PDF deleted", "all_pdfs": existing}
 
 # ─── Admin: Delete lesson + CF video ─────────────────────────
 @router.delete("/admin/lessons/{lesson_id}", status_code=204)
@@ -428,6 +499,14 @@ async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: 
         if new_duration > 0 or update_data.get("duration_minutes", 0) == 0:
             update_data["duration_minutes"] = new_duration
 
+    # Auto-set video_status to ready if a video is being added
+    if "vdo_video_id" in update_data and update_data["vdo_video_id"]:
+        if "video_status" not in update_data:
+            update_data["video_status"] = "ready"
+    elif "bunny_video_url" in update_data and update_data["bunny_video_url"]:
+        if "video_status" not in update_data:
+            update_data["video_status"] = "ready"
+
     for field, value in update_data.items():
         setattr(lesson, field, value)
     db.commit()
@@ -472,12 +551,48 @@ async def get_lessons(course_id: int, current_user: User = Depends(get_current_u
             "order": lesson.order,
             "is_free_preview": lesson.is_free_preview,
             "has_pdf": lesson.pdf_url is not None,
-            "has_video": lesson.bunny_video_url is not None,
+            "has_video": (lesson.bunny_video_url is not None or lesson.vdo_video_id is not None),
             "bunny_video_url": lesson.bunny_video_url if can_watch else None,
+            "vdo_video_id": lesson.vdo_video_id if can_watch else None,
             "pdf_url": lesson.pdf_url if can_watch else None,
             "is_completed": lesson.id in completed_ids,
         })
     return result
+
+# ─── VdoCipher OTP ────────────────────────────────────────────
+@router.get("/{course_id}/lessons/{lesson_id}/vdo-otp")
+async def get_vdo_otp(
+    course_id: int,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a VdoCipher OTP for secure video playback. Only accessible to active members."""
+    lesson = db.query(Lesson).filter(
+        Lesson.id == lesson_id,
+        Lesson.course_id == course_id
+    ).first()
+    if not lesson:
+        raise HTTPException(404, "Lesson not found")
+
+    # Check access: must be active member or free preview
+    if not (current_user.is_active or lesson.is_free_preview):
+        raise HTTPException(403, "Subscription required to watch this lesson")
+
+    if not lesson.vdo_video_id:
+        raise HTTPException(404, "No VdoCipher video associated with this lesson")
+
+    from app.services.vdocipher import generate_otp
+    try:
+        otp_data = generate_otp(
+            video_id=lesson.vdo_video_id,
+            user_id=current_user.id,
+            user_name=current_user.full_name,
+        )
+    except ValueError as e:
+        raise HTTPException(500, str(e))
+
+    return otp_data
 
 from pydantic import BaseModel
 class ReviewCreate(BaseModel):

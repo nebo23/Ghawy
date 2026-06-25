@@ -39,7 +39,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png" />
+    <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/main.css?v=2">
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -65,15 +65,37 @@
         /* removed flex-direction overrides */
 
         /* ─── HERO SECTION (Text + Video side by side) ─── */
-        [dir="rtl"] .hero-left {
-            text-align: right;
+        @media (min-width: 1024px) {
+            [dir="rtl"] .hero-left {
+                text-align: right;
+                align-items: flex-start !important;
+                /* In RTL, flex-start is the right side */
+            }
+
+            [dir="rtl"] .hero-left h1,
+            [dir="rtl"] .hero-left h2,
+            [dir="rtl"] .hero-left p,
+            [dir="rtl"] .hero-left .hero-sub {
+                text-align: right !important;
+            }
+
+            [dir="rtl"] .hero-heading-split {
+                align-items: flex-start !important;
+                /* Align spans to the right in RTL */
+            }
         }
 
         [dir="rtl"] .hero-left h1,
         [dir="rtl"] .hero-left h2,
         [dir="rtl"] .hero-left p,
         [dir="rtl"] .hero-left .hero-sub {
-            text-align: right !important;
+            direction: rtl;
+            unicode-bidi: isolate;
+        }
+
+        [dir="rtl"] .hero-heading-split span {
+            direction: rtl;
+            unicode-bidi: plaintext;
         }
 
         /* removed hero-cta-row override */
@@ -105,7 +127,6 @@
         }
 
         [dir="rtl"] .pricing-features li {
-            flex-direction: row-reverse;
             text-align: right;
         }
 
@@ -150,14 +171,6 @@
         }
 
         /* ─── BUTTONS with icons ─── */
-        [dir="rtl"] .btn-cta i,
-        [dir="rtl"] .btn-cta-ghost i,
-        [dir="rtl"] .btn-cta svg,
-        [dir="rtl"] .btn-cta-ghost svg {
-            margin-right: 0;
-            margin-left: 8px;
-        }
-
         [dir="rtl"] .btn-cta,
         [dir="rtl"] .btn-cta-ghost {
             flex-direction: row-reverse;
@@ -168,11 +181,13 @@
             text-align: left;
         }
 
-        [dir="ltr"] .hero-left h1,
-        [dir="ltr"] .hero-left h2,
-        [dir="ltr"] .hero-left p,
-        [dir="ltr"] .hero-left .hero-sub {
-            text-align: left !important;
+        @media (min-width: 1024px) {
+            [dir="ltr"] .hero-left h1,
+            [dir="ltr"] .hero-left h2,
+            [dir="ltr"] .hero-left p,
+            [dir="ltr"] .hero-left .hero-sub {
+                text-align: left !important;
+            }
         }
 
         /* removed hero-cta-row and main-nav overrides */
@@ -196,6 +211,16 @@
         [dir="ltr"] .footer-col,
         [dir="ltr"] .footer-col p {
             text-align: left;
+        }
+
+        /* ─── Center Titles on Mobile for LTR ─── */
+        @media (max-width: 1023px) {
+            [dir="ltr"] .pr-title-area,
+            [dir="ltr"] .pr-subtitle,
+            [dir="ltr"] .courses-title-area,
+            [dir="ltr"] .section-title {
+                text-align: center !important;
+            }
         }
     </style>
 
@@ -554,7 +579,7 @@
                     <h1 class="hero-heading-split">
                         <span class="line-white" data-ar="احترف الـ AI." data-en="Master AI.">احترف الـ AI.</span>
                         <span class="line-white" data-ar="ابني نفوذ." data-en="Build Leverage.">ابني نفوذ.</span>
-                        <span class="line-green" data-ar="اصنع حريتك." data-en="Create Freedom.">اصنع حريتك.</span>
+                        <span class="line-green" data-ar="اصنع حريتك." data-en="Create Freedom." style="white-space: nowrap;">اصنع حريتك.</span>
                     </h1>
 
                     <!-- Sub-headline -->
@@ -599,11 +624,11 @@
                     <div class="hero-cta-row">
                         <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
                             <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span>
-                            &nbsp;<i class="fa-solid fa-arrow-right"></i>
+                            <i class="fa-solid fa-arrow-right"></i>
                         </a>
                         <button class="btn-cta-ghost" id="watchIntroBtn">
                             <i class="fa-regular fa-circle-play"></i>
-                            &nbsp;<span data-ar="شاهد المقدمة" data-en="Watch Intro">شاهد المقدمة</span>
+                            <span data-ar="شاهد المقدمة" data-en="Watch Intro">شاهد المقدمة</span>
                         </button>
                     </div>
                     <!-- INSTAPAY OPTION -->
@@ -1286,12 +1311,198 @@
                         <p class="review-achievement">أحسن كورس شافه</p>
                         <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
                     </div>
+                
+<!-- dup 2 -->
+
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
+                        </div>
+                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
+                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
+                        </div>
+                        <p class="review-achievement">أسس وكالة stirx.ai</p>
+                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
+                            كورس واحد</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
+                        </div>
+                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
+                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
+                        </div>
+                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
+                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
+                            على قيمة موجودة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
+                        </div>
+                        <p class="review-achievement">أحسن كورس شافه</p>
+                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
+                    </div>
+                    <!-- dup -->
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
+                        </div>
+                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
+                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
+                        </div>
+                        <p class="review-achievement">أسس وكالة stirx.ai</p>
+                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
+                            كورس واحد</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
+                        </div>
+                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
+                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
+                        </div>
+                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
+                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
+                            على قيمة موجودة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
+                        </div>
+                        <p class="review-achievement">أحسن كورس شافه</p>
+                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Row 2 scrolls RIGHT -->
             <div class="reviews-row row-right">
                 <div class="reviews-track">
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
+                        </div>
+                        <p class="review-achievement">كارير شيفت ناجح</p>
+                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
+                        </div>
+                        <p class="review-achievement">الشرح بسيط وعملي</p>
+                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
+                            ومبسطة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
+                        </div>
+                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
+                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
+                        </div>
+                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
+                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
+                            والتيوتوريال</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
+                        </div>
+                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
+                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
+                            مجتمع ومتابعة شخصية</p>
+                    </div>
+                    <!-- dup -->
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
+                        </div>
+                        <p class="review-achievement">كارير شيفت ناجح</p>
+                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
+                        </div>
+                        <p class="review-achievement">الشرح بسيط وعملي</p>
+                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
+                            ومبسطة</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
+                        </div>
+                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
+                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
+                        </p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
+                        </div>
+                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
+                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
+                            والتيوتوريال</p>
+                    </div>
+                    <div class="text-review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <div class="reviewer-header">
+                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
+                        </div>
+                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
+                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
+                            مجتمع ومتابعة شخصية</p>
+                    </div>
+                
+<!-- dup 2 -->
+
                     <div class="text-review-card">
                         <div class="review-stars">★★★★★</div>
                         <div class="reviewer-header">
@@ -1611,7 +1822,7 @@
             }
         </style>
 
-        <!-- <div class="container">
+        <div class="container">
             <div class="centered">
                 <span class="section-eyebrow">ابدأ دلوقتي</span>
                 <h2 class="section-title">Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
@@ -1741,7 +1952,7 @@
                 </div>
             </div>
 
-        </div> -->
+        </div>
 
         <script>
             (function () {

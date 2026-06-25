@@ -308,6 +308,7 @@ class LessonOut(BaseModel):
     order: int
     duration_minutes: int
     bunny_video_url: Optional[str] = None
+    vdo_video_id: Optional[str] = None
     video_status: str = "pending"
     is_free_preview: bool = False
     pdf_url: Optional[str] = None
@@ -350,6 +351,7 @@ class LessonCreate(BaseModel):
     title: str
     description: Optional[str] = None
     bunny_video_url: Optional[str] = None
+    vdo_video_id: Optional[str] = None
     pdf_url: Optional[str] = None
     order: Optional[int] = 0
     duration_minutes: Optional[int] = None
@@ -361,12 +363,14 @@ class AdminLessonCreate(BaseModel):
     order: int = 0
     duration_minutes: int = 0
     bunny_video_url: Optional[str] = None
+    vdo_video_id: Optional[str] = None
 
 class LessonUpdate(BaseModel):
     title: Optional[str] = None
     section_title: Optional[str] = None
     description: Optional[str] = None
     bunny_video_url: Optional[str] = None
+    vdo_video_id: Optional[str] = None
     video_status: Optional[str] = None
     pdf_url: Optional[str] = None
     order: Optional[int] = None

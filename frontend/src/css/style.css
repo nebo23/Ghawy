@@ -39,7 +39,8 @@ body {
   justify-content: center;
   padding: 20px;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 body::before {

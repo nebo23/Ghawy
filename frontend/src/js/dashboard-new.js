@@ -284,7 +284,7 @@ function renderCourses(courses) {
         return;
     }
 
-    grid.innerHTML = courses.slice(0, 3).map(c => {
+    grid.innerHTML = courses.slice(0, 4).map(c => {
         const pct = Math.round(c.percent || 0);
         const thumb = c.thumbnail_url
             ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url)

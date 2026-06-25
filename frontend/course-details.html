@@ -218,7 +218,6 @@
     </footer>
 
     <script src="src/js/utils.js?v=9"></script>
-    <script src="src/js/dashboard-new.js?v=13"></script>
     <script src="src/js/main.js"></script>
     <script>
         // ═══════════════════════════════════════
@@ -435,7 +434,7 @@
             if (token) {
                 if (out) out.style.display = 'none';
                 if (inn) inn.style.display = 'flex';
-                
+
                 try {
                     const res = await fetch(`${API}/profile/me`, {
                         headers: { 'Authorization': `Bearer ${token}` }

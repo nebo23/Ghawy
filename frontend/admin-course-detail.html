@@ -265,8 +265,9 @@
                 <div style="flex:1"><label>Duration (min)</label><input type="number" id="lessonDuration" value="0"
                         min="0" /></div>
             </div>
-            <label>Bunny.net Video URL *</label>
-            <input type="url" id="lessonVideoUrl" placeholder="https://iframe.mediadelivery.net/play/..." />
+            <label>VdoCipher Video ID *</label>
+            <input type="text" id="lessonVideoUrl" placeholder="e.g. abc123def456..." />
+            <small style="color:#aaa;font-size:11px;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
 
             <div class="admin-modal-actions">
                 <button class="modal-btn secondary" onclick="closeAddLessonModal()">Cancel</button>
@@ -289,8 +290,9 @@
                 <div style="flex:1"><label>Order</label><input type="number" id="editLessonOrder" min="0" /></div>
                 <div style="flex:1"><label>Duration (min)</label><input type="number" id="editLessonDuration" min="0" />
                 </div>
-                <label>Bunny.net Video URL</label>
-                <input type="url" id="editLessonVideoUrl" placeholder="https://iframe.mediadelivery.net/play/..." />
+                <label>VdoCipher Video ID</label>
+                <input type="text" id="editLessonVideoUrl" placeholder="e.g. abc123def456..." />
+                <small style="color:#aaa;font-size:11px;">الـ Video ID من لوحة تحكم VdoCipher</small>
                 <div class="admin-modal-actions">
                     <button class="modal-btn secondary" onclick="closeEditLessonModal()">Cancel</button>
                     <button class="modal-btn primary" onclick="submitEditLesson()">Save Changes</button>

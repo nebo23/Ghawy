@@ -79,7 +79,7 @@ def get_top_students_for_course(course_id: int, current_user_id: int, db: Sessio
     ).filter(
         UserProgress.course_id == course_id
     ).group_by(
-        User.id
+        User.id, User.full_name, User.avatar_url
     ).order_by(
         func.count(UserProgress.id).desc()
     ).limit(limit).all()

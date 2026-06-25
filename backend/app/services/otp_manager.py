@@ -41,21 +41,21 @@ def _generate_otp(length: int = 6) -> str:
     return "".join(random.choices(string.digits, k=length))
 
 
-def _send_whatsapp_otp(phone_e164: str, otp_code: str) -> bool:
+def _send_whatsapp_otp(phone_e164: str, otp_code: str) -> tuple:
     """
-    يبعت رسالة WhatsApp عبر Meta Cloud API بإستخدام Authentication Template.
+    يبعت رسالة WhatsApp عبر Meta Cloud API بإستخدام الـ Template المعتمد.
 
-    الـ Template لازم يكون معتمد من Meta ونوعه AUTHENTICATION.
-    Template Body مثال: "{{1}} هو كود التحقق الخاص بك. لا تشاركه مع أحد."
+    Template: phoneotp (MARKETING/CUSTOM)
+    Body: "استخدم {{1}} لإكمال خطوتك"
     """
     access_token = os.getenv("WA_ACCESS_TOKEN")
     phone_number_id = os.getenv("WA_PHONE_NUMBER_ID")
-    template_name = os.getenv("WA_TEMPLATE_NAME", "otp_verification")
+    template_name = os.getenv("WA_TEMPLATE_NAME", "phoneotp")
     template_lang = os.getenv("WA_TEMPLATE_LANG", "ar")
 
     if not access_token or not phone_number_id:
         logger.error("❌ WA_ACCESS_TOKEN أو WA_PHONE_NUMBER_ID مش موجودين في .env")
-        return False
+        return False, False
 
     url = f"{WA_BASE_URL}/{WA_API_VERSION}/{phone_number_id}/messages"
     headers = {
@@ -63,6 +63,8 @@ def _send_whatsapp_otp(phone_e164: str, otp_code: str) -> bool:
         "Content-Type": "application/json",
     }
 
+    # الـ template `phoneotp` عنده BODY فقط بـ {{1}} — POSITIONAL format
+    # لازم نبعت parameter_name مع كل parameter عشان يتماشى مع الـ POSITIONAL format
     payload = {
         "messaging_product": "whatsapp",
         "to": phone_e164.lstrip("+"),  # Meta بتاخد الرقم بدون +
@@ -74,18 +76,9 @@ def _send_whatsapp_otp(phone_e164: str, otp_code: str) -> bool:
                 {
                     "type": "body",
                     "parameters": [
-                        {"type": "text", "text": otp_code}
+                        {"type": "text", "text": otp_code, "parameter_name": "otp"}
                     ],
-                },
-                # لو الـ Template عنده "Copy Code" button
-                {
-                    "type": "button",
-                    "sub_type": "url",
-                    "index": "0",
-                    "parameters": [
-                        {"type": "text", "text": otp_code}
-                    ],
-                },
+                }
             ],
         },
     }

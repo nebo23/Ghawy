@@ -77,7 +77,7 @@ async function enforceAuthGuard() {
 
   // Match both /dashboard and /dashboard.html style paths
   const communityPaths = [
-    'dashboard', 'chat', 'direct-messages', 'courses', 'course-detail',
+    'dashboard', 'chat', 'direct-messages',
     'build-with-me', 'guest-of-honors', 'teamdashboard', 'profile',
     'profile-settings', 'ai-updates', 'help-center', 'achievements'
   ];

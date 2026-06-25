@@ -187,7 +187,7 @@ async function submitAddLesson() {
   const title = document.getElementById('lessonTitle').value.trim();
   const videoUrl = document.getElementById('lessonVideoUrl').value.trim();
   if (!title) return showToast('Title is required', 'error');
-  if (!videoUrl) return showToast('Please enter a Bunny.net video URL', 'error');
+  if (!videoUrl) return showToast('Please enter a VdoCipher Video ID', 'error');
 
   const btn = document.getElementById('addLessonSubmit');
   btn.disabled = true;
@@ -201,7 +201,7 @@ async function submitAddLesson() {
         section_title: document.getElementById('lessonSection').value.trim() || null,
         order: parseInt(document.getElementById('lessonOrder').value) || 0,
         duration_minutes: parseInt(document.getElementById('lessonDuration').value) || 0,
-        bunny_video_url: videoUrl
+        vdo_video_id: videoUrl
       }),
     });
 
@@ -273,8 +273,8 @@ async function submitEditLesson() {
       duration_minutes: parseInt(document.getElementById('editLessonDuration').value) || 0,
     };
     
-    const newUrl = document.getElementById('editLessonVideoUrl').value.trim();
-    if (newUrl) bodyData.bunny_video_url = newUrl;
+    const newVideoId = document.getElementById('editLessonVideoUrl').value.trim();
+    if (newVideoId) bodyData.vdo_video_id = newVideoId;
 
     const res = await apiFetch(`/courses/admin/lessons/${id}`, {
       method: 'PATCH',
