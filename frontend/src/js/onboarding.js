@@ -228,8 +228,20 @@ async function submitStep3() {
     });
 
     if (res.ok) {
+      // Onboarding is now completed on the backend. Immediately sync the
+      // cached user state so the dashboard's synchronous auth guard (which
+      // reads localStorage['user']) doesn't see a stale onboarding_completed
+      // = false and bounce the user straight back to onboarding (the loop).
+      try {
+        const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        cachedUser.onboarding_completed = true;
+        localStorage.setItem('user', JSON.stringify(cachedUser));
+      } catch (err) {
+        localStorage.setItem('user', JSON.stringify({ onboarding_completed: true }));
+      }
+
       localStorage.setItem('just_onboarded', 'true');
-      
+
       // Update has_completed_onboarding just in case
       try {
         await fetch(`${API}/users/me/complete-onboarding`, {
@@ -239,8 +251,10 @@ async function submitStep3() {
       } catch (err) {
         console.error("Failed to patch onboarding status", err);
       }
-      
-      window.location.href = 'dashboard.html';
+
+      // Use replace() so onboarding is not kept in history — prevents the
+      // back button from looping back to onboarding after completion.
+      window.location.replace('dashboard.html');
     } else {
       const err = await res.json();
       alert(err.detail || 'Something went wrong');
