@@ -77,9 +77,10 @@ function renderUser(u) {
         
         // Update Badge
         const badgeLabel = getBadgeLabel(u.badge);
+        const roleLabel = getRoleLabel(u);
         const badgeEl = document.getElementById('sidebarBadge');
         if (badgeEl) {
-            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+            badgeEl.innerHTML = `<span>${roleLabel}</span>`;
         }
 
         // Update Level & XP

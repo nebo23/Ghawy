@@ -15,6 +15,7 @@ let filteredUsers = [];
 let currentPage = 1;
 const LIMIT = 20;
 let selectedUserId = null;
+let currentUserIsAdmin = false;
 
 // ═══ TAB SWITCHING ═══
 let paymentsLoaded = false;
@@ -106,9 +107,10 @@ async function loadTeamPage() {
 
       // Update Badge
       const badgeLabel = getBadgeLabel(u.badge);
+      currentUserIsAdmin = !!u.is_admin;
       const badgeEl = document.getElementById('sidebarBadge');
       if (badgeEl) {
-        badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+        badgeEl.innerHTML = `<span>${getRoleLabel(u)}</span>`;
       }
 
       // Update Level & XP
@@ -240,7 +242,7 @@ function renderTable() {
           <img src="${user.avatar_url || '/static/avatars/default.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
           <div>
             <div class="member-name">${escapeHtml(user.full_name)}</div>
-            <div class="member-badge">${getBadgeLabel(user.badge)}</div>
+            <div class="member-badge">${escapeHtml(getRoleLabel(user))}</div>
           </div>
         </div>
       </td>
@@ -2170,6 +2172,10 @@ function renderProjectsTable() {
             <a class="project-action-btn open" href="${projectFileHref(project)}" target="_blank">
               <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Open</span>
             </a>
+            ${currentUserIsAdmin ? `
+            <button class="project-action-btn open" onclick="downloadProjectFile(${project.id}, this)" title="Download file">
+              <i class="fa-solid fa-download"></i><span>Download</span>
+            </button>` : ''}
             <button class="project-action-btn delete" onclick="deleteProjectSubmission(${project.id})" title="Delete">
               <i class="fa-solid fa-trash"></i><span>Delete</span>
             </button>
@@ -2179,6 +2185,38 @@ function renderProjectsTable() {
   }).join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function downloadProjectFile(projectId, btnEl) {
+  const project = projectsCache.find(item => item.id === projectId);
+  const fileName = (project && project.file_name) ? project.file_name : `project_${projectId}`;
+  let restore = null;
+  if (btnEl) {
+    restore = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>...</span>';
+  }
+  try {
+    const res = await fetch(`${API}/admin/projects/${projectId}/download`, { headers });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+    showToast('⬇ File downloaded', 'success');
+  } catch (e) {
+    showToast('❌ Download failed', 'error');
+  } finally {
+    if (btnEl && restore !== null) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = restore;
+    }
+  }
 }
 
 async function getProjectForReview(projectId) {

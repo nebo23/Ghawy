@@ -13,7 +13,7 @@ import csv
 import io
 
 from app.database import get_db
-from app.models import User, Payment, PaymentStatus, PaymentMethod
+from app.models import User, Payment, PaymentStatus, PaymentMethod, AdminMemberNote
 from app.routers.users import get_current_user
 
 
@@ -42,6 +42,10 @@ class AdminAddUser(BaseModel):
 
 class AdminResetPassword(BaseModel):
     new_password: str
+
+
+class AdminMemberNoteIn(BaseModel):
+    note: str = ""
 
 
 
@@ -96,6 +100,7 @@ def list_users(
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_seen": u.last_seen.isoformat() if u.last_seen else None,
             "badge": u.badge,
+            "custom_title": u.custom_title or "",
             "avatar_url": u.avatar_url,
             "end_at": u.end_at.isoformat() if u.end_at else None,
         })
@@ -298,6 +303,56 @@ def reset_password(
     db.commit()
 
     return {"message": f"Password reset successfully for {user.full_name}"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  ADMIN MEMBER NOTES (private, admin-only)
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/notes/{user_id}")
+def get_member_note(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the private admin note for a member (admin only)."""
+    require_admin(current_user)
+
+    member = db.query(User).filter(User.id == user_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    record = db.query(AdminMemberNote).filter(AdminMemberNote.member_id == user_id).first()
+    return {"user_id": user_id, "note": record.note if record else ""}
+
+
+@router.post("/notes/{user_id}")
+def save_member_note(
+    user_id: int,
+    data: AdminMemberNoteIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create or update the private admin note for a member (admin only)."""
+    require_admin(current_user)
+
+    member = db.query(User).filter(User.id == user_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note_text = (data.note or "").strip()
+
+    record = db.query(AdminMemberNote).filter(AdminMemberNote.member_id == user_id).first()
+    if record:
+        record.note = note_text
+        record.updated_by = current_user.id
+    else:
+        record = AdminMemberNote(member_id=user_id, note=note_text, updated_by=current_user.id)
+        db.add(record)
+
+    db.commit()
+    db.refresh(record)
+    return {"user_id": user_id, "note": record.note, "message": "Note saved"}
 
 
 # ══════════════════════════════════════════════════════════════

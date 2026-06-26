@@ -1270,6 +1270,15 @@
             </div>
             <!-- Joined Date -->
             <p id="ppJoined" class="pp-joined"></p>
+            <!-- Admin Notes (visible to admins only, when viewing another member) -->
+            <div id="ppAdminNotes" style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
+                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:#c1ff11; margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
+                <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..." style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:#c1ff11; color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
+                    <span id="ppNoteStatus" style="font-size:0.78rem;"></span>
+                </div>
+            </div>
             <!-- Loading State -->
             <div id="ppLoading" class="pp-loading">
                 <div class="pp-spinner"></div>
@@ -2694,7 +2703,7 @@
                 currentUserAvatar = u.avatar_url || '';
                 currentUserIsAdmin = u.is_admin || false;
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-                s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('dropdownName', u.full_name); s('streakCount', u.streak_days || 0);
+                s('sidebarName', u.full_name); s('sidebarBadge', (typeof getRoleLabel === 'function' ? getRoleLabel(u) : (u.badge || 'Member'))); s('topbarName', u.full_name); s('dropdownName', u.full_name); s('streakCount', u.streak_days || 0);
                 ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
@@ -3541,6 +3550,8 @@
             // Reset state
             showProfileLoading(true);
             document.getElementById('ppError').style.display = 'none';
+            const _notesBox = document.getElementById('ppAdminNotes');
+            if (_notesBox) _notesBox.style.display = 'none';
 
             try {
                 const res = await apiFetch(`/profile/${userId}/public`);
@@ -3624,6 +3635,56 @@
 
             // Joined
             document.getElementById('ppJoined').innerHTML = `📅 ${p.joined_at}`;
+
+            // Admin Notes — only for admins viewing another member's profile
+            const notesBox = document.getElementById('ppAdminNotes');
+            const noteText = document.getElementById('ppAdminNoteText');
+            const noteStatus = document.getElementById('ppNoteStatus');
+            if (noteStatus) noteStatus.textContent = '';
+            if (currentUserIsAdmin && p.id !== currentUserId) {
+                if (notesBox) notesBox.style.display = 'block';
+                loadAdminNote(p.id);
+            } else {
+                if (notesBox) notesBox.style.display = 'none';
+                if (noteText) noteText.value = '';
+            }
+        }
+
+        // ── Admin Notes (private, admins only) ──
+        async function loadAdminNote(userId) {
+            const ta = document.getElementById('ppAdminNoteText');
+            if (ta) { ta.value = ''; ta.disabled = true; }
+            try {
+                const res = await apiFetch(`/admin/notes/${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (ta) ta.value = data.note || '';
+                }
+            } catch (e) { /* ignore */ }
+            if (ta) ta.disabled = false;
+        }
+
+        async function saveAdminNote() {
+            if (!currentProfileUserId) return;
+            const ta = document.getElementById('ppAdminNoteText');
+            const btn = document.getElementById('ppSaveNoteBtn');
+            const status = document.getElementById('ppNoteStatus');
+            if (btn) btn.disabled = true;
+            try {
+                const res = await apiFetch(`/admin/notes/${currentProfileUserId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ note: ta ? ta.value : '' })
+                });
+                if (res.ok) {
+                    if (status) { status.textContent = '✓ Note saved'; status.style.color = '#c1ff11'; }
+                } else {
+                    if (status) { status.textContent = 'Failed to save'; status.style.color = '#ff6b6b'; }
+                }
+            } catch (e) {
+                if (status) { status.textContent = 'Failed to save'; status.style.color = '#ff6b6b'; }
+            }
+            if (btn) btn.disabled = false;
+            setTimeout(() => { if (status) status.textContent = ''; }, 3000);
         }
 
         function showProfileLoading(show) {

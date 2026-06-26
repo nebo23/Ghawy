@@ -50,7 +50,7 @@ async function loadProfile() {
     const badgeLabel = getBadgeLabel(u.badge);
     const badgeEl = document.getElementById('sidebarBadge');
     if (badgeEl) {
-        badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+        badgeEl.innerHTML = `<span>${getRoleLabel(u)}</span>`;
     }
 
     // Update Level & XP

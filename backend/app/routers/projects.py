@@ -4,6 +4,7 @@ from pathlib import Path
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
@@ -226,6 +227,33 @@ def admin_project_detail(
     if not submission:
         raise HTTPException(status_code=404, detail="Project submission not found")
     return _serialize_admin_submission(submission)
+
+
+@router.get("/admin/projects/{project_id}/download")
+def download_project_file(
+    project_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Stream a member's submitted project file to the admin as a download (admin only)."""
+    submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Project submission not found")
+
+    file_path = _uploaded_project_path(submission.file_url)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Project file not found on server")
+
+    download_name = submission.file_name or file_path.name
+    media_type = "application/octet-stream"
+    if isinstance(submission.json_payload, dict):
+        media_type = submission.json_payload.get("content_type") or media_type
+
+    return FileResponse(
+        path=str(file_path),
+        filename=download_name,
+        media_type=media_type,
+    )
 
 
 @router.post("/admin/projects/{project_id}/approve", response_model=AdminProjectSubmissionOut)

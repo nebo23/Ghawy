@@ -22,6 +22,7 @@ from pathlib import Path as FilePath
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
+
 BACKEND_DIR = FilePath(__file__).resolve().parent.parent.parent
 START_HERE_CONFIG = BACKEND_DIR / "static" / "config" / "start_here.json"
 
@@ -901,6 +902,7 @@ def list_active_members(
             "is_online": u.last_seen is not None and u.last_seen >= one_min_ago,
             "badge": u.badge or "Member",
             "is_admin": u.is_admin,
+            "custom_title": u.custom_title or "",
         }
         for u in users
     ]

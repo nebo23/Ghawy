@@ -97,6 +97,7 @@ class User(Base):
     last_seen = Column(DateTime, nullable=True)
     is_legacy_redeemed = Column(Boolean, server_default=text('false'), default=False)
     subscription_source = Column(String(64), nullable=True)
+    custom_title = Column(String(120), nullable=True)
 
     @property
     def is_online(self) -> bool:
@@ -795,6 +796,28 @@ class DailyReport(Base):
 
     # Relationship
     author = relationship("User")
+
+
+class AdminMemberNote(Base):
+    """
+    Private admin note attached to a community member.
+    One shared note per member, editable only by admins (never visible to members).
+
+    المكان: backend/app/models.py
+    """
+    __tablename__ = "admin_member_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # العضو اللي الملاحظة بتخصه (واحدة لكل عضو)
+    member_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    note = Column(Text, nullable=False, default="")
+    # آخر أدمن عدّل الملاحظة
+    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow, onupdate=func.now())
+
+    member = relationship("User", foreign_keys=[member_id])
+    editor = relationship("User", foreign_keys=[updated_by])
 
 
 class CommunityFeedback(Base):

@@ -2565,7 +2565,7 @@
                 currentUserAvatar = u.avatar_url || '';
                 currentUserIsAdmin = u.is_admin || false;
                 const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-                s('sidebarName', u.full_name); s('sidebarBadge', u.badge || 'Member'); s('topbarName', u.full_name); s('dropdownName', u.full_name); s('streakCount', u.streak_days || 0);
+                s('sidebarName', u.full_name); s('sidebarBadge', (typeof getRoleLabel === 'function' ? getRoleLabel(u) : (u.badge || 'Member'))); s('topbarName', u.full_name); s('dropdownName', u.full_name); s('streakCount', u.streak_days || 0);
                 ['sidebarAvatar', 'topbarAvatar', 'dropdownAvatarDiv'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {

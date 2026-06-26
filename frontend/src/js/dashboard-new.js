@@ -146,7 +146,9 @@ function renderUser(u) {
     if (sbName) sbName.textContent = u.full_name || '—';
 
     const sbBadge = document.getElementById('sidebarBadge');
-    if (sbBadge) sbBadge.textContent = getBadgeLabel(u.badge) || 'Member';
+    if (sbBadge) sbBadge.textContent = (typeof getRoleLabel === 'function')
+        ? getRoleLabel(u)
+        : ((u.custom_title || '').trim() || (u.is_admin ? 'Admin' : (getBadgeLabel(u.badge) || 'Member')));
 
     // Level + XP
     const level = u.level || 1;

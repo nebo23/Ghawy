@@ -297,6 +297,8 @@ def get_public_profile(
         "joined_at": joined_at,
         "post_count": post_count,
         "is_online": is_online,
+        "is_admin": user.is_admin,
+        "custom_title": user.custom_title or "",
     }
 
 

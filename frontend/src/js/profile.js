@@ -37,7 +37,7 @@ async function loadProfile() {
             setTxt('dropdownName', me.full_name);
             const badgeLabel = getBadgeLabel(me.badge);
             const badgeEl = document.getElementById('sidebarBadge');
-            if (badgeEl) badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+            if (badgeEl) badgeEl.innerHTML = `<span>${getRoleLabel(me)}</span>`;
             setTxt('sidebarLevelNum', me.level || 1);
             setTxt('sidebarLevelTitle', badgeLabel);
             setTxt('sidebarXpText', `${me.xp || 0} / ${me.next_level_xp || (me.level || 1) * 100} XP`);
@@ -110,6 +110,13 @@ async function loadProfile() {
         setTxt('statStreak', u.streak_days || 0);
         setTxt('statCourses', 0);
 
+        const memberSinceEl = document.querySelector('.member-since');
+        if (memberSinceEl && u.created_at) {
+            const d = new Date(u.created_at);
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            memberSinceEl.textContent = `Member since ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+        }
+
         // Quick Stats & Badges
         setTxt('qsXP', u.xp || 0);
         setTxt('qsLongestStreak', (u.streak_days || 0) + ' Days');
@@ -131,7 +138,7 @@ async function loadProfile() {
         if (profileXpBar) profileXpBar.style.width = Math.min((xpCurrent / xpTarget) * 100, 100) + '%';
 
         const profileBadgeEl = document.getElementById('profileBadge');
-        if (profileBadgeEl) profileBadgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getBadgeLabel(u.badge)}`;
+        if (profileBadgeEl) profileBadgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getRoleLabel(u)}`;
 
         const avatarLg = document.getElementById('profileAvatarLg');
         if (avatarLg && u.avatar_url) avatarLg.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;

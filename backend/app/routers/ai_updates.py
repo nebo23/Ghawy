@@ -54,6 +54,7 @@ def build_author_dict(user: User) -> dict:
         "selected_avatar": getattr(user, 'selected_avatar', None),
         "badge": user.badge or "Member",
         "is_admin": user.is_admin,
+        "custom_title": getattr(user, 'custom_title', '') or "",
     }
 
 

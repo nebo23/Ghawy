@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const badgeLabel = getBadgeLabel(u.badge);
         const badgeEl = document.getElementById('sidebarBadge');
         if (badgeEl) {
-            badgeEl.innerHTML = `<span>${badgeLabel}</span>`;
+            badgeEl.innerHTML = `<span>${getRoleLabel(u)}</span>`;
         }
 
         // Update Level & XP
@@ -733,7 +733,7 @@ async function loadActiveUsers() {
                 </div>
                 <div class="ai-active-user-info">
                     <div class="ai-active-user-name">${escapeHtml(m.full_name)}</div>
-                    <div class="ai-active-user-badge ${getBadgeClass(m.badge)}">${escapeHtml(getBadgeLabel(m.badge))}</div>
+                    <div class="ai-active-user-badge ${getBadgeClass(m.badge)}">${escapeHtml(getRoleLabel(m))}</div>
                 </div>
             </div>
         `).join('');
@@ -813,10 +813,11 @@ function renderProfilePanel(p) {
 
     // Badge
     const badgeEl = document.getElementById('ppBadge');
-    badgeEl.textContent = getBadgeLabel(p.badge);
+    const resolvedPpBadge = getRoleLabel(p);
+    badgeEl.textContent = resolvedPpBadge;
     badgeEl.className = 'pp-badge ' + (
-        getBadgeLabel(p.badge) === 'Admin' ? 'admin' :
-        getBadgeLabel(p.badge) === 'Pro Member' ? 'pro' : 'member'
+        resolvedPpBadge === 'Admin' ? 'admin' :
+        resolvedPpBadge === 'Pro Member' ? 'pro' : 'member'
     );
 
     // Bio

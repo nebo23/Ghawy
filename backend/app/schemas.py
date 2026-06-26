@@ -74,6 +74,7 @@ class UserMemberOut(BaseModel):
     social_media_url: Optional[str] = None
     show_social_media: bool = True
     created_at: datetime
+    custom_title: Optional[str] = None
 
     class Config:
         from_attributes = True

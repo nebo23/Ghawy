@@ -35,6 +35,16 @@ window.getBadgeLabel = function (badge) {
   return 'Member'; // safe fallback
 };
 
+// Resolve the role label shown on profile/member cards & badges.
+// Priority: custom_title (if set) > admin > existing badge label (default "Member").
+window.getRoleLabel = function (user) {
+  if (!user) return 'Member';
+  const ct = (user.custom_title || '').trim();
+  if (ct) return ct;
+  if (user.is_admin) return 'Admin';
+  return window.getBadgeLabel ? window.getBadgeLabel(user.badge) : (user.badge || 'Member');
+};
+
 window.getAvatarSrc = function (user) {
   if (!user) return './imgs/default-avatar.png';
   if (user.avatar_url) {
