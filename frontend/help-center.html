@@ -516,6 +516,44 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
+
+    <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
+    <script>
+        (function () {
+            function wire() {
+                var btn = document.getElementById('hamburgerBtn');
+                var sidebar = document.getElementById('dashSidebar');
+                var overlay = document.getElementById('sidebarOverlay');
+                if (!btn || !sidebar) return;
+                // Several scripts (utils.js, dashboard-new.js) and/or an inline
+                // onclick all bind a toggle to this button; an even number of
+                // toggles cancels out so the menu never opens. Run after `load`,
+                // clone the node to drop ALL stale listeners, strip any inline
+                // onclick, then bind exactly one deterministic handler.
+                var b = btn.cloneNode(true);
+                b.removeAttribute('onclick');
+                btn.parentNode.replaceChild(b, btn);
+                function setOpen(open) {
+                    sidebar.classList.toggle('open', open);
+                    if (overlay) {
+                        overlay.classList.toggle('active', open);
+                        overlay.classList.toggle('visible', open);
+                    }
+                    b.classList.toggle('active', open);
+                }
+                b.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    setOpen(!sidebar.classList.contains('open'));
+                });
+                if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
+                sidebar.querySelectorAll('a').forEach(function (a) {
+                    a.addEventListener('click', function () { setOpen(false); });
+                });
+            }
+            if (document.readyState === 'complete') wire();
+            else window.addEventListener('load', wire);
+        })();
+    </script>
 </body>
 
 </html>

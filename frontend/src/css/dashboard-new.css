@@ -2045,3 +2045,41 @@ body {
         display: block !important;
     }
 }
+/* ══════════════════════════════════════════
+   NOTIFICATION PANEL — MOBILE/TABLET (≤1024px)
+   Pin the panel to the viewport so it can never overflow the
+   right edge. Appended last so it wins over the base .notif-panel
+   rule above. Desktop (≥1025px) is untouched.
+══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .notif-panel {
+        position: fixed;
+        top: calc(var(--topbar-h, 64px) + 4px);
+        right: 8px;
+        left: auto;
+        width: calc(100vw - 16px);
+        max-width: 340px;
+        max-height: 70vh;
+        overflow: hidden;
+    }
+
+    .notif-panel-list {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Keep long notification text inside the panel */
+    .notif-item-text,
+    .notif-item-name {
+        overflow-wrap: break-word;
+        word-break: break-word;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .notif-panel {
+        width: calc(100vw - 16px);
+        max-width: none;
+    }
+}
