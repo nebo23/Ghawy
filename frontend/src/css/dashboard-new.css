@@ -2079,7 +2079,41 @@ body {
 
 @media (max-width: 640px) {
     .notif-panel {
-        width: calc(100vw - 16px);
-        max-width: none;
+        width: calc(100vw - 32px);
+        max-width: 300px;
+        max-height: 60vh;
+    }
+
+    .notif-item {
+        padding: 10px 12px;
+    }
+
+    .notif-item-av {
+        width: 36px;
+        height: 36px;
+    }
+
+    .notif-item-name {
+        font-size: 13px;
+    }
+
+    .notif-item-text {
+        font-size: 12px;
+    }
+}
+
+/* ══════════════════════════════════════════
+   RTL + MOBILE/TABLET — REMOVE PHANTOM SIDEBAR GAP
+   The base `[dir="rtl"] .dash-main` keeps `margin-left: var(--sidebar-w)`
+   and has higher specificity than the plain `.dash-main` mobile reset, so
+   in Arabic (RTL) a sidebar-width blank black strip stays on the LEFT of
+   every page on mobile/tablet. Reset it here with matching specificity.
+   Scoped to :not(.dashboard-page); desktop (≥1025px) is untouched.
+══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    [dir="rtl"] body:not(.dashboard-page) .dash-main,
+    body:not(.dashboard-page) .dash-main {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 }

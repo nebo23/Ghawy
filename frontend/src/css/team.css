@@ -939,4 +939,10 @@
   .team-stats {
     grid-template-columns: 1fr !important;
   }
+
+  /* Modals carry an inline fixed width (540–560px) that overflows phones */
+  .modal-box-team {
+    width: calc(100vw - 32px) !important;
+    max-width: 100% !important;
+  }
 }
