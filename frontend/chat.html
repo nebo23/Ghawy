@@ -482,7 +482,7 @@
             margin-bottom: 4px;
         }
 
-        .msg-read:hover .read-tooltip {
+        .read-tooltip.visible {
             display: block;
         }
 
@@ -605,10 +605,111 @@
             background: var(--bg-primary) !important;
         }
 
-        /* Mobile overrides moved to dashboard.css — only keep non-conflicting rules here */
-        @media(max-width:768px) {
+        /* Channels drawer toggle + backdrop: hidden on desktop, shown ≤1024px */
+        .chat-channels-toggle {
+            display: none;
+        }
+
+        .chat-channels-backdrop {
+            display: none;
+        }
+
+        /* ══════════════════════════════════════════
+           COMMUNITY CHAT — RESPONSIVE (tablet & mobile)
+           Desktop (≥1025px) is untouched: every rule
+           below is scoped behind a max-width query.
+        ══════════════════════════════════════════ */
+        @media (max-width: 1024px) {
+
+            /* Left channel column → off-canvas drawer.
+               JS toggles its inline `display`, so we slide it
+               with transform (never touched by JS) instead. */
+            .chat-channels {
+                position: fixed !important;
+                top: var(--topbar-h);
+                left: 0;
+                bottom: 0;
+                width: 264px !important;
+                max-width: 84vw;
+                z-index: 70;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                box-shadow: 2px 0 28px rgba(0, 0, 0, .55);
+            }
+
+            [dir="rtl"] .chat-channels {
+                left: 0;
+                right: auto;
+            }
+
+            .chat-channels.mobile-open {
+                transform: translateX(0);
+            }
+
+            .chat-channels-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, .55);
+                z-index: 65;
+            }
+
+            .chat-channels-backdrop.show {
+                display: block;
+            }
+
+            /* Hamburger that opens the channel drawer (lives in feed header) */
+            .chat-channels-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+                margin-right: 4px;
+                background: rgba(255, 255, 255, .04);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                color: var(--text-primary);
+                font-size: 1rem;
+                cursor: pointer;
+            }
+
+            /* Feed fills the width; drop the decorative "active now" rail */
+            .chat-feed {
+                min-width: 0;
+            }
+
+            .comm-right-sidebar {
+                display: none !important;
+            }
+
+            .chat-feed-header {
+                padding: 10px 14px;
+            }
+
+            .chat-feed-messages {
+                padding: 14px 14px;
+            }
+
+            .chat-input-bar {
+                padding: 10px 12px;
+            }
+
             .chat-preview-bar {
                 padding: 8px 14px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .chat-feed-messages {
+                padding: 12px 10px;
+            }
+
+            /* Long links / unbroken words must never push the viewport wide */
+            .msg-body-wrap,
+            .msg-text {
+                overflow-wrap: anywhere;
+                word-break: break-word;
             }
         }
     </style>
@@ -803,6 +904,8 @@
                 </div>
             </header>
             <div class="chat-layout">
+                <!-- Backdrop for the mobile channel drawer -->
+                <div class="chat-channels-backdrop" id="chatChannelsBackdrop" onclick="toggleChatChannels()"></div>
                 <!-- Left: Channels -->
                 <div class="chat-channels"
                     style="background:#0a0a0a; border-right:1px solid rgba(255,255,255,0.06); width:220px; padding:16px 0; gap:0;">
@@ -897,6 +1000,8 @@
                 <!-- Center: Feed -->
                 <div class="chat-feed">
                     <div class="chat-feed-header" id="chatFeedHeader">
+                        <button class="chat-channels-toggle" type="button" aria-label="Open channels"
+                            onclick="toggleChatChannels()"><i class="fa-solid fa-bars"></i></button>
                         <span class="ch-hash-lg" id="channelHashIcon">#</span>
                         <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
                         <div style="flex:1; min-width:0;">
@@ -2544,6 +2649,16 @@
             if (btn) btn.classList.remove('active');
         }
 
+        // ── Channel drawer toggle (mobile/tablet only) — global for onclick ──
+        function toggleChatChannels(forceClose) {
+            const el = document.querySelector('.chat-channels');
+            const bd = document.getElementById('chatChannelsBackdrop');
+            if (!el) return;
+            const open = forceClose === true ? false : el.classList.toggle('mobile-open');
+            if (forceClose === true) el.classList.remove('mobile-open');
+            if (bd) bd.classList.toggle('show', open);
+        }
+
         // ── Sidebar helpers (overlay close, escape, nav links) ──
         (function initSidebarHelpers() {
             const ov = document.getElementById('sidebarOverlay');
@@ -2607,6 +2722,8 @@
         let activeDmUserName = '';
 
         function selectChannel(name) {
+            // Close the mobile channel drawer once a channel is picked
+            if (typeof toggleChatChannels === 'function') toggleChatChannels(true);
             // ── First-time introduce-yourself welcome modal ──
             if (name === 'introduce-yourself') {
                 const _uid = currentUserId || (token ? token.slice(0, 16) : 'guest');
@@ -3084,7 +3201,7 @@
                         ${actionsHtml}
                     </div>
                     <div class="msg-reactions-wrap" id="msg-reactions-${m.id}">${reactionsHtml}</div>
-                    <div class="msg-read"><i class="fa-solid fa-eye"></i> Read by ${readCount}${readTooltipHtml}</div>
+                    <div class="msg-read" onclick="var t=this.querySelector('.read-tooltip');if(t)t.classList.toggle('visible')"><i class="fa-solid fa-eye"></i> Read by ${readCount}${readTooltipHtml}</div>
                 </div>
             </div>`;
         }
@@ -3470,10 +3587,11 @@
 
             // Badge
             const badgeEl = document.getElementById('ppBadge');
-            badgeEl.textContent = p.badge;
+            const resolvedPpBadge = p.custom_title || (p.is_admin ? 'Admin' : p.badge) || 'Member';
+            badgeEl.textContent = resolvedPpBadge;
             badgeEl.className = 'pp-badge ' + (
-                p.badge === 'Admin' ? 'admin' :
-                    p.badge === 'Pro Member' ? 'pro' : 'member'
+                resolvedPpBadge === 'Admin' ? 'admin' :
+                    resolvedPpBadge === 'Pro Member' ? 'pro' : 'member'
             );
 
             // Bio
@@ -3608,8 +3726,8 @@
                 const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
                 const isOnline = m.is_online === true;
                 const dotClass = isOnline ? 'online' : 'offline';
-                // Always show "Admin" for admins regardless of stored badge value
-                const badge = m.is_admin ? 'Admin' : (m.badge || 'Member');
+                // Always show "Admin" for admins regardless of stored badge value; honour display_role overrides
+                const badge = m.custom_title || (m.is_admin ? 'Admin' : (m.badge || 'Member'));
                 const badgeColor = m.is_admin ? '#c1ff11' : (badge.toLowerCase().includes('pro') ? '#ffd700' : '#888');
 
                 return `
