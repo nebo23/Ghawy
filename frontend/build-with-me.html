@@ -369,6 +369,40 @@
         if (ov) ov.addEventListener('click', () => { sb.classList.remove('open'); ov.classList.remove('visible'); });
     </script>
 
+    <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
+    <script>
+        (function () {
+            function wire() {
+                var btn = document.getElementById('hamburgerBtn');
+                var sidebar = document.getElementById('dashSidebar');
+                var overlay = document.getElementById('sidebarOverlay');
+                if (!btn || !sidebar) return;
+                // Other scripts (utils.js, dashboard-new.js, the inline block
+                // above) each bind a toggle to this button; an even number of
+                // toggles cancels out so the menu never opens. Run after `load`,
+                // clone the node to drop ALL stale listeners, then bind exactly
+                // one deterministic handler.
+                var b = btn.cloneNode(true);
+                btn.parentNode.replaceChild(b, btn);
+                function setOpen(open) {
+                    sidebar.classList.toggle('open', open);
+                    if (overlay) {
+                        overlay.classList.toggle('active', open);
+                        overlay.classList.toggle('visible', open);
+                    }
+                    b.classList.toggle('active', open);
+                }
+                b.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    setOpen(!sidebar.classList.contains('open'));
+                });
+                if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
+            }
+            if (document.readyState === 'complete') wire();
+            else window.addEventListener('load', wire);
+        })();
+    </script>
+
 
 </body>
 
