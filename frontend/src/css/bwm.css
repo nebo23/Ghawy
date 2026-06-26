@@ -780,3 +780,19 @@
   .date-block .day { font-size: 1.2rem; margin:0; }
   .date-block .month { font-size: 1.2rem; }
 }
+
+/* ── Tablet/mobile spacing tweaks. Desktop (≥1025px) untouched. ── */
+@media (max-width: 1024px) {
+  .bwm-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .bwm-layout {
+    padding: 14px;
+  }
+  .live-session-card {
+    padding: 16px;
+    gap: 16px;
+  }
+}

@@ -847,3 +847,14 @@
     gap: 12px;
   }
 }
+
+/* ── Mobile safety net (≤640px): prevent the sessions grid from
+   overflowing on narrow phones. Desktop/tablet untouched. ── */
+@media (max-width: 640px) {
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+  .goh-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}

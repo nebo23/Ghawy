@@ -1991,3 +1991,57 @@ body {
     /* gap is 8px, so -2px makes the effective gap 6px */
     line-height: 1.5;
 }
+
+/* ══════════════════════════════════════════
+   TABLET HAMBURGER / SIDEBAR DRAWER (769–1024px)
+   Extends the existing ≤768px drawer up to tablet so the
+   hamburger appears at ≤1024px on every community page.
+   Scoped to body:not(.dashboard-page) so the dashboard
+   page is left exactly as-is. Desktop (≥1025px) untouched.
+══════════════════════════════════════════ */
+@media (min-width: 769px) and (max-width: 1024px) {
+    body:not(.dashboard-page) .hamburger-btn {
+        display: flex !important;
+    }
+
+    body:not(.dashboard-page) .dash-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 260px !important;
+        height: 100dvh !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+    }
+
+    [dir="rtl"] body:not(.dashboard-page) .dash-sidebar,
+    body:not(.dashboard-page)[dir="rtl"] .dash-sidebar {
+        left: 0 !important;
+        right: auto !important;
+        transform: translateX(-100%) !important;
+    }
+
+    body:not(.dashboard-page) .dash-sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    body:not(.dashboard-page) .dash-main {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    body:not(.dashboard-page) .sidebar-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(0, 0, 0, 0.65) !important;
+        z-index: 999 !important;
+        cursor: pointer;
+    }
+
+    body:not(.dashboard-page) .sidebar-overlay.active,
+    body:not(.dashboard-page) .sidebar-overlay.visible {
+        display: block !important;
+    }
+}

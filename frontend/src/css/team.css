@@ -929,3 +929,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Mobile (≤640px): collapse KPI/stat grids to one column.
+   Desktop/tablet untouched (data tables keep their own
+   horizontal scroll via .payments-table-wrap). ── */
+@media (max-width: 640px) {
+  .payments-stats,
+  .analytics-kpis,
+  .team-stats {
+    grid-template-columns: 1fr !important;
+  }
+}

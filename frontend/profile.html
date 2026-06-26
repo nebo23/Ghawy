@@ -441,6 +441,28 @@
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
     <script src="src/js/dashboard-new.js?v=13"></script>
+
+    <!-- ── Hamburger / Sidebar Toggle ── -->
+    <script>
+        (function () {
+            var btn = document.getElementById('hamburgerBtn');
+            var sidebar = document.getElementById('dashSidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+
+            if (btn && sidebar && overlay) {
+                btn.addEventListener('click', function () {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('active');
+                    btn.classList.toggle('active');
+                });
+                overlay.addEventListener('click', function () {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    btn.classList.remove('active');
+                });
+            }
+        })();
+    </script>
 </body>
 
 </html>
