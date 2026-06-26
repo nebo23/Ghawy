@@ -2,8 +2,63 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
 from app.models import Lesson, UserProgress, User, Certificate
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+
+
+def calculate_video_streak(user_id: int, db: Session) -> int:
+    """
+    Auto-calculate the user's "days streak" from video watching.
+
+    Each UserProgress row records that the user watched/completed a lesson
+    video (its `completed_at` timestamp is the video-watch event we use).
+    Calendar days are evaluated in server UTC (consistent for all users).
+
+    Rules:
+      - One distinct UTC day with >= 1 watched video counts as 1 day.
+      - Walk backwards from today: if today has a watch, start from today;
+        if today has none but yesterday does, the streak is still alive and
+        we start from yesterday.
+      - Stop at the first day with no watch event (any gap resets it).
+      - If the most recent watch was 2+ days ago, the streak is 0.
+    """
+    rows = (
+        db.query(func.date(UserProgress.completed_at))
+        .filter(
+            UserProgress.user_id == user_id,
+            UserProgress.completed_at.isnot(None),
+        )
+        .distinct()
+        .all()
+    )
+
+    watched_days = set()
+    for (day,) in rows:
+        if day is None:
+            continue
+        if isinstance(day, str):
+            watched_days.add(datetime.strptime(day, "%Y-%m-%d").date())
+        elif isinstance(day, datetime):
+            watched_days.add(day.date())
+        else:
+            watched_days.add(day)
+
+    if not watched_days:
+        return 0
+
+    today = datetime.utcnow().date()
+    if today in watched_days:
+        cursor = today
+    elif (today - timedelta(days=1)) in watched_days:
+        cursor = today - timedelta(days=1)
+    else:
+        return 0
+
+    streak = 0
+    while cursor in watched_days:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
 
 def issue_certificate(user_id: int, course_id: int, db: Session):
     cert = db.query(Certificate).filter_by(user_id=user_id, course_id=course_id).first()

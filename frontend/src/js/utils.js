@@ -535,15 +535,26 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
 
     window.formatAdminMentions = function(escapedText) {
         if (!window.globalChatAdmins || window.globalChatAdmins.length === 0) return escapedText;
-        let newText = escapedText;
-        for (const admin of window.globalChatAdmins) {
-            const adminName = admin.full_name;
-            const regex = new RegExp(`@${adminName}(?![\\w\\u0600-\\u06FF])`, 'gi');
-            newText = newText.replace(regex, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
+        try {
+            let newText = escapedText;
+            for (const admin of window.globalChatAdmins) {
+                const adminName = admin.full_name;
+                if (!adminName) continue;
+                // Escape regex metacharacters so admin names containing characters like
+                // [ ] ( ) * + ? . don't produce an invalid RegExp (which would throw and
+                // abort message rendering for the whole chat).
+                const safeName = adminName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`@${safeName}(?![\\w\\u0600-\\u06FF])`, 'gi');
+                newText = newText.replace(regex, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
+            }
+            // Also highlight @all
+            newText = newText.replace(/@all(?![\\w\\u0600-\\u06FF])/gi, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
+            return newText;
+        } catch (e) {
+            // Never let mention-highlighting break message rendering.
+            console.warn('formatAdminMentions failed:', e);
+            return escapedText;
         }
-        // Also highlight @all
-        newText = newText.replace(/@all(?![\\w\\u0600-\\u06FF])/gi, `<span style="color:var(--gold, #c1ff11);font-weight:600;">$&</span>`);
-        return newText;
     };
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -216,21 +216,12 @@ async function loadStatsCards() {
     const courses = dashData?.courses || [];
     const inProgressCount = courses.filter(c => c.percent > 0 && c.percent < 100).length;
     const achievUnlocked = user.achievements_count || 0;
-    const streak = user.streak_days || 0;
+    // Auto-calculated streak from video watching (backend prefers days_streak).
+    const streak = (user.days_streak ?? user.streak_days) || 0;
     const xp = user.xp || 0;
 
-    // Learning time: try /users/stats/learning-time, else show from summary
-    let learningTime = '—';
-    try {
-        const ltRes = await api('/users/stats/learning-time');
-        if (ltRes.ok) {
-            const lt = await ltRes.json();
-            const mins = lt.total_minutes || lt.minutes || 0;
-            const h = Math.floor(mins / 60);
-            const m = mins % 60;
-            learningTime = h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
-        }
-    } catch (e) { learningTime = '0h 0m'; }
+    // Total number of fully completed courses (all time), from the dashboard summary.
+    const coursesCompleted = user.courses_completed || 0;
 
     const stats = [
         {
@@ -240,10 +231,10 @@ async function loadStatsCards() {
             label: 'Courses In Progress'
         },
         {
-            icon: '<i class="fa-regular fa-calendar-days"></i>',
+            icon: '<i class="fa-solid fa-graduation-cap"></i>',
             iconClass: 'green',
-            value: learningTime,
-            label: 'Learning Time This Week'
+            value: coursesCompleted,
+            label: 'Courses Completed'
         },
         {
             icon: '<i class="fa-solid fa-trophy"></i>',

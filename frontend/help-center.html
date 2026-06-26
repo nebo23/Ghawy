@@ -287,38 +287,7 @@
                         <div class="help-icon"><i class="fa-regular fa-comments"></i></div>
                         <h3>تكلم فريق الدعم مباشرة</h3>
                         <p>تقدر تتواصل مع أي عضو من فريقنا داخل غاوي</p>
-                        <div class="team-members">
-                            <div class="member-row">
-                                <div class="member-info">
-                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                    <div>
-                                        <h4>اسم العضو 1</h4>
-                                        <span>Customer Success</span>
-                                    </div>
-                                </div>
-                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
-                            </div>
-                            <div class="member-row">
-                                <div class="member-info">
-                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                    <div>
-                                        <h4>اسم العضو 2</h4>
-                                        <span>Technical Support</span>
-                                    </div>
-                                </div>
-                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
-                            </div>
-                            <div class="member-row">
-                                <div class="member-info">
-                                    <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
-                                    <div>
-                                        <h4>اسم العضو 3</h4>
-                                        <span>Community Manager</span>
-                                    </div>
-                                </div>
-                                <a href="direct-messages.html" class="btn-outline btn-sm">إرسال رسالة</a>
-                            </div>
-                        </div>
+                        <div class="team-members" id="supportTeamList"></div>
                     </div>
 
                 </div><!-- /.help-grid -->
@@ -402,7 +371,7 @@
     </script>
 
     <!-- utils.js — provides API, buildAvatarHtml, etc. -->
-    <script src="src/js/utils.js?v=9"></script>
+    <script src="src/js/utils.js?v=10"></script>
 
     <!-- Inline: load user profile for this page -->
     <script>
@@ -511,6 +480,80 @@
 
             } catch (e) {
                 console.error('Help center user load error:', e);
+            }
+        })();
+    </script>
+
+    <!-- Inline: Support Team — real members fetched from the DB -->
+    <script>
+        (async function loadSupportTeam() {
+            const listEl = document.getElementById('supportTeamList');
+            if (!listEl) return;
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            // utils.js declares `const API` (a global lexical binding, NOT a
+            // property of window) — so reference it directly, with fallbacks.
+            const apiBase = (typeof API !== 'undefined' && API) ? API : (window.API || '');
+
+            function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+            // Real avatar inside the existing .member-avatar circle; falls back
+            // to the default user icon already used in this section.
+            function avatarMarkup(name, avatarUrl) {
+                if (avatarUrl) {
+                    const full = avatarUrl.startsWith('http') ? avatarUrl : apiBase + avatarUrl;
+                    return `<img src="${esc(full)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<i class=\\'fa-solid fa-user\\'></i>'" />`;
+                }
+                return '<i class="fa-solid fa-user"></i>';
+            }
+
+            try {
+                const res = await fetch(apiBase + '/help-center/team', {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) return;
+                const team = await res.json();
+                if (!Array.isArray(team) || team.length === 0) return;
+
+                listEl.innerHTML = team.map(m => `
+                    <div class="member-row">
+                        <div class="member-info">
+                            <div class="member-avatar">${avatarMarkup(m.full_name, m.avatar_url)}</div>
+                            <div>
+                                <h4>${esc(m.full_name)}</h4>
+                                <span>${esc(m.title)}</span>
+                            </div>
+                        </div>
+                        <a href="direct-messages.html" class="btn-outline btn-sm" data-user-id="${m.id}">إرسال رسالة</a>
+                    </div>
+                `).join('');
+
+                // Clicking "إرسال رسالة" opens (or creates) a DM with that member
+                // using the existing /chat/dm endpoint, then navigates to the
+                // Direct Messages page on that conversation's channel.
+                listEl.querySelectorAll('a[data-user-id]').forEach(link => {
+                    link.addEventListener('click', async function (e) {
+                        e.preventDefault();
+                        const targetId = parseInt(this.getAttribute('data-user-id'), 10);
+                        if (!targetId) return;
+                        try {
+                            const dmRes = await fetch(apiBase + '/chat/dm', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ target_user_id: targetId })
+                            });
+                            if (!dmRes.ok) throw new Error('Failed to open DM');
+                            const dm = await dmRes.json();
+                            window.location.href = 'direct-messages.html?channel=' + encodeURIComponent(dm.channel_name);
+                        } catch (err) {
+                            console.error('Open DM error:', err);
+                            // Fallback: still go to the Direct Messages page
+                            window.location.href = 'direct-messages.html';
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error('Support team load error:', e);
             }
         })();
     </script>

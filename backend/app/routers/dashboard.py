@@ -1,21 +1,58 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Course, UserCourseProgress, Post, Message, AiUpdatePost
+from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Post, Message, AiUpdatePost
 from app.routers.users import get_current_user, get_current_active_member
+from app.services.progress_service import calculate_video_streak
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+
+def count_completed_courses(user_id: int, db: Session) -> int:
+    """
+    Count courses the user has FULLY completed.
+
+    A course is "fully completed" only when the user has a completed
+    UserProgress row for EVERY lesson in that course (i.e. completed
+    lessons >= total lessons, total > 0). Uses the existing completion
+    tracking only — it does not change how completion is recorded.
+    """
+    total_by_course = dict(
+        db.query(Lesson.course_id, func.count(Lesson.id))
+        .group_by(Lesson.course_id)
+        .all()
+    )
+    completed_by_course = dict(
+        db.query(UserProgress.course_id, func.count(UserProgress.id))
+        .filter(UserProgress.user_id == user_id)
+        .group_by(UserProgress.course_id)
+        .all()
+    )
+
+    completed = 0
+    for course_id, total in total_by_course.items():
+        if total and completed_by_course.get(course_id, 0) >= total:
+            completed += 1
+    return completed
 
 @router.get("/summary")
 def get_dashboard_summary(current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
     # 1. User stats
+    # Auto-calculated streak from video watching (server UTC calendar days).
+    # Exposed as both `streak_days` (so the profile card / achievements that
+    # already read this field show it) and `days_streak` (dashboard stat card).
+    video_streak = calculate_video_streak(current_user.id, db)
     user_data = {
         "full_name": current_user.full_name,
         "email": current_user.email,
         "avatar_url": current_user.avatar_url,
         "level": current_user.level,
         "xp": current_user.xp,
-        "streak_days": current_user.streak_days,
+        "streak_days": video_streak,
+        "days_streak": video_streak,
+        # Total number of fully completed courses (all time).
+        "courses_completed": count_completed_courses(current_user.id, db),
         "badge": current_user.badge,
         "is_admin": current_user.is_admin
     }

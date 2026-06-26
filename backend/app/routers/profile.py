@@ -103,7 +103,15 @@ class ChangePasswordRequest(BaseModel):
 
 # ─── Get My Profile ─────────────────────────────────────────
 @router.get("/me", response_model=UserMemberOut)
-def get_my_profile(current_user: User = Depends(get_current_active_member)):
+def get_my_profile(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    # Surface the auto-calculated video-watching streak so the profile card
+    # and achievements section show it. Computed fresh, not persisted (no
+    # commit), so it never overwrites anything in the DB.
+    from app.services.progress_service import calculate_video_streak
+    current_user.streak_days = calculate_video_streak(current_user.id, db)
     return current_user
 
 
