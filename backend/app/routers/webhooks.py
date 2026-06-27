@@ -76,6 +76,7 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
             # The payment is still validated against DB (status + orderId).
             # TODO: Fix KASHIER_SECRET_KEY in .env.production to re-enable blocking.
             logger.warning("⚠️ Webhook signature mismatch — processing anyway (key misconfigured). hash=%s", received_hash)
+            raise HTTPException(status_code=401, detail="Invalid signature")
 
     
     status = data.get("status", "")
