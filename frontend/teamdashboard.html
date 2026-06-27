@@ -245,6 +245,8 @@
       color: #aaa
     }
 
+    .role-badge.owner { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+
     .action-btns {
       display: flex;
       gap: 6px
@@ -907,7 +909,7 @@
               <div class="team-toolbar">
                 <div class="search-wrap">
                   <span class="search-icon">🔍</span>
-                  <input type="text" id="search-input" placeholder="Search by name or email..."
+                  <input type="text" id="search-input" placeholder="Search name, email or phone..."
                     oninput="handleSearch(this.value)" />
                 </div>
                 <select id="status-filter" onchange="handleFilter(this.value)">
@@ -929,6 +931,7 @@
                       <th>Email</th>
                       <th>Phone</th>
                       <th>Country</th>
+                      <th>Governorate</th>
                       <th>Joined</th>
                       <th>End Date</th>
                       <th>Status</th>
@@ -1868,11 +1871,36 @@
             <option value="ready">Ready</option>
           </select>
         </div>
-        <div class="fg">
-          <label>VdoCipher Video ID</label>
-          <input type="text" id="edit-lesson-video-url" placeholder="e.g. abc123def456..."
-            style="padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:6px; color:#fff;" />
-          <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
+        <div class="fg" style="display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:13px;font-weight:600;color:#aaa;">Video Provider</label>
+          <div style="display:flex;gap:16px;margin-bottom:4px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#ccc;">
+              <input type="radio" name="edit-video-provider" value="vdo" id="edit-provider-vdo" checked
+                onchange="toggleEditVideoProvider()"
+                style="accent-color:#3f8ff9;" />
+              VdoCipher
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#ccc;">
+              <input type="radio" name="edit-video-provider" value="bunny" id="edit-provider-bunny"
+                onchange="toggleEditVideoProvider()"
+                style="accent-color:#3f8ff9;" />
+              Bunny.net
+            </label>
+          </div>
+
+          <!-- VdoCipher -->
+          <div id="edit-vdo-section">
+            <input type="text" id="edit-lesson-video-url" placeholder="e.g. abc123def456..."
+              style="width:100%;padding:10px;background:var(--bg-input,#111);border:1px solid var(--border,#333);border-radius:6px;color:#fff;box-sizing:border-box;" />
+            <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
+          </div>
+
+          <!-- Bunny -->
+          <div id="edit-bunny-section" style="display:none;">
+            <input type="text" id="edit-lesson-bunny-url" placeholder="https://iframe.mediadelivery.net/embed/..."
+              style="width:100%;padding:10px;background:var(--bg-input,#111);border:1px solid var(--border,#333);border-radius:6px;color:#fff;box-sizing:border-box;" />
+            <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ iframe embed URL من Bunny Stream</small>
+          </div>
         </div>
         <div style="display:flex;gap:12px;">
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="edit-lesson-order" /></div>

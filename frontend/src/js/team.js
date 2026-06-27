@@ -16,6 +16,7 @@ let currentPage = 1;
 const LIMIT = 20;
 let selectedUserId = null;
 let currentUserIsAdmin = false;
+let currentUserIsOwner = false;
 
 // ═══ TAB SWITCHING ═══
 let paymentsLoaded = false;
@@ -88,6 +89,19 @@ function initTabs() {
       }
     });
   });
+
+  // 🔒 Hide owner-only tabs from non-owner admins
+  // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
+  function applyTabVisibility() {
+    const ownerOnlyTabs = ['payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
+    ownerOnlyTabs.forEach(tabId => {
+      const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
+      if (btn) {
+        btn.style.display = currentUserIsOwner ? '' : 'none';
+      }
+    });
+  }
+  window.applyTabVisibility = applyTabVisibility;
 }
 
 // ── Load ────────────────────────────────────────────
@@ -108,6 +122,8 @@ async function loadTeamPage() {
       // Update Badge
       const badgeLabel = getBadgeLabel(u.badge);
       currentUserIsAdmin = !!u.is_admin;
+      currentUserIsOwner = !!u.is_owner;
+      if (typeof applyTabVisibility === 'function') applyTabVisibility();
       const badgeEl = document.getElementById('sidebarBadge');
       if (badgeEl) {
         badgeEl.innerHTML = `<span>${getRoleLabel(u)}</span>`;
@@ -212,7 +228,7 @@ function renderTable() {
   const tbody = document.getElementById('users-tbody');
 
   if (paginated.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -249,6 +265,7 @@ function renderTable() {
       <td class="text-secondary">${escapeHtml(user.email)}</td>
       <td class="text-secondary">${user.phone || '—'}</td>
       <td class="text-secondary">${user.country || '—'}</td>
+      <td class="text-secondary">${escapeHtml(user.governorate || '—')}</td>
       <td>
         <div style="font-size:13px">${formatDate(user.created_at)}</div>
         ${user.subscription_start ?
@@ -263,9 +280,30 @@ function renderTable() {
         </label>
       </td>
       <td>
-        <span class="role-badge ${user.is_admin ? 'admin' : 'member'}" onclick="toggleAdmin(${user.id})" style="cursor:pointer; display:inline-flex; align-items:center;" title="Click to toggle role">
-          ${user.is_admin ? '<i data-lucide="shield-check" style="width:14px;height:14px;margin-right:4px;"></i> Admin' : '<i data-lucide="user" style="width:14px;height:14px;margin-right:4px;"></i> Member'}
-        </span>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span class="role-badge ${user.is_owner ? 'owner' : user.is_admin ? 'admin' : 'member'}"
+            style="cursor:default;display:inline-flex;align-items:center;gap:4px;">
+            ${user.is_owner
+              ? '<i data-lucide="crown" style="width:14px;height:14px;margin-right:4px;"></i> Owner'
+              : user.is_admin
+                ? '<i data-lucide="shield-check" style="width:14px;height:14px;margin-right:4px;"></i> Admin'
+                : '<i data-lucide="user" style="width:14px;height:14px;margin-right:4px;"></i> Member'}
+          </span>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${currentUserIsOwner ? `
+              <button onclick="toggleAdmin(${user.id})"
+                style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid #444;background:transparent;color:#888;cursor:pointer;white-space:nowrap;"
+                title="${user.is_admin ? 'Remove Admin' : 'Make Admin'}">
+                ${user.is_admin ? '− Admin' : '+ Admin'}
+              </button>
+              <button onclick="toggleOwner(${user.id})"
+                style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid #a855f7;background:transparent;color:#a855f7;cursor:pointer;white-space:nowrap;"
+                title="${user.is_owner ? 'Remove Owner' : 'Make Owner'}">
+                ${user.is_owner ? '− Owner' : '+ Owner'}
+              </button>
+            ` : ''}
+          </div>
+        </div>
       </td>
       <td>
         <div class="action-btns">
@@ -274,6 +312,12 @@ function renderTable() {
         : ''}
           <button class="btn-action" style="color:#3f8ff9" onclick="openExtendModal(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Extend Subscription"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i></button>
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
+          ${user.social_media_url ? `
+          <a href="${escapeHtml(user.social_media_url)}" target="_blank" rel="noopener noreferrer"
+            class="btn-action" style="color:#a855f7;text-decoration:none;display:inline-flex;align-items:center;"
+            title="Social Link">
+            <i data-lucide="link" style="width:14px;height:14px;"></i>
+          </a>` : ''}
           <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
         </div>
       </td>
@@ -301,7 +345,8 @@ function applyFilters(search, status) {
   filteredUsers = allUsers.filter(u => {
     const matchSearch = !search ||
       u.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.phone && u.phone.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = status === 'all' ||
       (status === 'active' && u.is_active) ||
       (status === 'inactive' && !u.is_active);
@@ -386,6 +431,32 @@ async function toggleAdmin(userId) {
     }
   } catch (e) {
     showToast('❌ Failed', 'error');
+  }
+}
+
+// ── Toggle Owner ─────────────────────────────────────
+async function toggleOwner(userId) {
+  if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
+  try {
+    const res = await fetch(`${API}/admin/users/${userId}/toggle-owner`, {
+      method: 'PATCH', headers
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed');
+    }
+    const data = await res.json();
+    // Update the cache
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+      user.is_owner = data.is_owner;
+      user.is_admin = data.is_admin;
+    }
+    renderTable();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    showToast(data.is_owner ? '👑 Made Owner' : '👤 Removed Owner', 'success');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
   }
 }
 
@@ -2383,12 +2454,44 @@ function buildLessonEntry(index, defaultOrder) {
           <input type="number" id="lesson-order-${index}" value="${defaultOrder}" style="width:100%;" />
         </div>
       </div>
-      <div class="fg" style="display:flex;flex-direction:column;gap:6px;">
-        <label style="font-size:12px;color:#888;">VdoCipher Video ID *</label>
-        <input type="text" id="lesson-video-url-${index}"
-          placeholder="e.g. abc123def456..."
-          style="padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-family:inherit;font-size:14px;" />
-        <small style="font-size:11px;color:#555;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
+      <div class="fg" style="display:flex;flex-direction:column;gap:8px;">
+        <label style="font-size:12px;color:#888;">Video Provider *</label>
+        <div style="display:flex;gap:8px;margin-bottom:4px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#ccc;">
+            <input type="radio" name="video-provider-${index}" value="vdo" checked
+              onchange="toggleVideoProvider(${index})"
+              style="accent-color:#3f8ff9;" />
+            VdoCipher
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#ccc;">
+            <input type="radio" name="video-provider-${index}" value="bunny"
+              onchange="toggleVideoProvider(${index})"
+              style="accent-color:#3f8ff9;" />
+            Bunny.net
+          </label>
+        </div>
+
+        <!-- VdoCipher input (shown by default) -->
+        <div id="vdo-section-${index}">
+          <input type="text" id="lesson-video-url-${index}"
+            placeholder="VdoCipher Video ID, e.g. abc123def456..."
+            style="width:100%;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box;" />
+          <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ Video ID من لوحة تحكم VdoCipher (مش الـ URL كامل)</small>
+        </div>
+
+        <!-- Bunny input (hidden by default) -->
+        <div id="bunny-section-${index}" style="display:none;">
+          <input type="text" id="lesson-bunny-url-${index}"
+            placeholder="Bunny embed URL, e.g. https://iframe.mediadelivery.net/embed/..."
+            style="width:100%;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box;" />
+          <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ iframe embed URL من Bunny Stream</small>
+        </div>
+      </div>
+      <div style="margin-top:8px;padding:8px 10px;background:rgba(63,143,249,0.06);border:1px solid rgba(63,143,249,0.2);border-radius:6px;">
+        <p style="font-size:11px;color:#888;margin:0;">
+          📎 <strong style="color:#3f8ff9;">Resources (PDFs):</strong>
+          بعد إنشاء الـ lesson، افتح Edit عشان تضيف الـ PDF resources.
+        </p>
       </div>
     </div>
   </div>`;
@@ -2404,6 +2507,34 @@ function addAnotherLessonEntry() {
 function removeLessonEntry(index) {
   const el = document.getElementById(`lesson-entry-${index}`);
   if (el) el.remove();
+}
+
+function toggleVideoProvider(index) {
+  const selected = document.querySelector(`input[name="video-provider-${index}"]:checked`)?.value;
+  const vdoSection = document.getElementById(`vdo-section-${index}`);
+  const bunnySection = document.getElementById(`bunny-section-${index}`);
+  if (!vdoSection || !bunnySection) return;
+  if (selected === 'bunny') {
+    vdoSection.style.display = 'none';
+    bunnySection.style.display = 'block';
+  } else {
+    vdoSection.style.display = 'block';
+    bunnySection.style.display = 'none';
+  }
+}
+
+function toggleEditVideoProvider() {
+  const selected = document.querySelector('input[name="edit-video-provider"]:checked')?.value;
+  const vdoSection = document.getElementById('edit-vdo-section');
+  const bunnySection = document.getElementById('edit-bunny-section');
+  if (!vdoSection || !bunnySection) return;
+  if (selected === 'bunny') {
+    vdoSection.style.display = 'none';
+    bunnySection.style.display = 'block';
+  } else {
+    vdoSection.style.display = 'block';
+    bunnySection.style.display = 'none';
+  }
 }
 
 function handleSectionSelectChange(sel) {
@@ -2465,13 +2596,26 @@ async function submitAddLesson() {
   for (const entry of entries) {
     const idx = entry.id.split('-').pop();
     const title = document.getElementById(`lesson-title-${idx}`)?.value?.trim();
-    let videoUrl = document.getElementById(`lesson-video-url-${idx}`)?.value?.trim() || '';
     const order = parseInt(document.getElementById(`lesson-order-${idx}`)?.value) || 0;
 
-    if (!title) return showToast('كل lesson لازم يكون ليه عنوان', 'error');
-    if (!videoUrl) return showToast(`Lesson "${title}": Video ID مطلوب`, 'error');
+    // Detect which provider was selected for this lesson entry
+    const providerSelected = document.querySelector(`input[name="video-provider-${idx}"]:checked`)?.value || 'vdo';
+    const vdoUrl = document.getElementById(`lesson-video-url-${idx}`)?.value?.trim() || '';
+    const bunnyUrl = document.getElementById(`lesson-bunny-url-${idx}`)?.value?.trim() || '';
 
-    lessons.push({ title, section_title: sectionTitle, order, vdo_video_id: videoUrl });
+    if (!title) return showToast('كل lesson لازم يكون ليه عنوان', 'error');
+
+    const lessonData = { title, section_title: sectionTitle, order };
+
+    if (providerSelected === 'bunny') {
+      if (!bunnyUrl) return showToast(`Lesson "${title}": Bunny URL مطلوب`, 'error');
+      lessonData.bunny_video_url = bunnyUrl;
+    } else {
+      if (!vdoUrl) return showToast(`Lesson "${title}": VdoCipher Video ID مطلوب`, 'error');
+      lessonData.vdo_video_id = vdoUrl;
+    }
+
+    lessons.push(lessonData);
   }
 
   if (lessons.length === 0) return showToast('أضف lesson واحد على الأقل', 'error');
@@ -2500,6 +2644,13 @@ async function submitAddLesson() {
       showToast(`${successCount} succeeded, ${failCount} failed`, 'error');
     }
     loadLessons();
+
+    // If exactly one lesson was created, offer quick access to add resources
+    if (successCount === 1 && failCount === 0) {
+      setTimeout(() => {
+        showToast('💡 لإضافة PDF resources، افتح Edit على الـ lesson الجديدة', 'info');
+      }, 1500);
+    }
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
@@ -2515,7 +2666,17 @@ function openEditLessonModal(id) {
   document.getElementById('edit-lesson-title').value = l.title;
   document.getElementById('edit-lesson-section').value = l.section_title || '';
   document.getElementById('edit-lesson-status').value = l.video_status || 'pending';
-  document.getElementById('edit-lesson-video-url').value = l.vdo_video_id || l.bunny_video_url || '';
+  // Pre-select the correct provider based on what's stored
+  if (l.bunny_video_url) {
+    document.getElementById('edit-provider-bunny').checked = true;
+    document.getElementById('edit-lesson-bunny-url').value = l.bunny_video_url;
+    document.getElementById('edit-lesson-video-url').value = '';
+  } else {
+    document.getElementById('edit-provider-vdo').checked = true;
+    document.getElementById('edit-lesson-video-url').value = l.vdo_video_id || '';
+    document.getElementById('edit-lesson-bunny-url').value = '';
+  }
+  toggleEditVideoProvider(); // Apply visibility
   document.getElementById('edit-lesson-order').value = l.order || 0;
 
   // Render existing PDFs
@@ -2660,17 +2821,16 @@ async function deleteLessonPdf(encodedUrl) {
 
 async function submitEditLesson() {
   const id = document.getElementById('edit-lesson-id').value;
-  let videoUrl = document.getElementById('edit-lesson-video-url').value.trim();
-  const srcMatch = videoUrl.match(/src="([^"]+)"/);
-  if (srcMatch) videoUrl = srcMatch[1];
+  const providerSelected = document.querySelector('input[name="edit-video-provider"]:checked')?.value || 'vdo';
+  let vdoUrl = document.getElementById('edit-lesson-video-url').value.trim();
+  let bunnyUrl = document.getElementById('edit-lesson-bunny-url').value.trim();
 
-  let status = document.getElementById('edit-lesson-status').value;
-  // Auto update status based on video ID
-  if (videoUrl) {
-    status = 'ready';
-  } else if (!videoUrl) {
-    status = 'pending';
-  }
+  // Handle VdoCipher embed code paste (extract ID from src attribute if pasted as iframe)
+  const srcMatch = vdoUrl.match(/src="([^"]+)"/);
+  if (srcMatch) vdoUrl = srcMatch[1];
+
+  const hasVideo = providerSelected === 'bunny' ? !!bunnyUrl : !!vdoUrl;
+  const status = hasVideo ? 'ready' : 'pending';
 
   const body = {
     title: document.getElementById('edit-lesson-title').value,
@@ -2679,8 +2839,17 @@ async function submitEditLesson() {
     order: parseInt(document.getElementById('edit-lesson-order').value) || 0
   };
 
-  // Only include vdo_video_id if user entered something
-  if (videoUrl) body.vdo_video_id = videoUrl;
+  if (providerSelected === 'bunny') {
+    if (bunnyUrl) {
+      body.bunny_video_url = bunnyUrl;
+      body.vdo_video_id = null; // 🔒 clear the other provider's field
+    }
+  } else {
+    if (vdoUrl) {
+      body.vdo_video_id = vdoUrl;
+      body.bunny_video_url = null; // 🔒 clear the other provider's field
+    }
+  }
 
   try {
     const res = await fetch(API + `/courses/admin/lessons/${id}`, {

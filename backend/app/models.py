@@ -83,6 +83,7 @@ class User(Base):
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
+    is_owner = Column(Boolean, server_default=text('false'), default=False)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)

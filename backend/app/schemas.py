@@ -34,6 +34,7 @@ class UserOut(BaseModel):
     is_active: bool
     is_verified: bool
     is_admin: bool = False
+    is_owner: bool = False
     avatar_url: Optional[str] = None
     selected_avatar: Optional[str] = None
     bio: Optional[str] = None
@@ -69,6 +70,7 @@ class UserMemberOut(BaseModel):
     streak_days: int = 0
     badge: str = "Member"
     is_admin: bool = False
+    is_owner: bool = False
     is_active: bool = False
     onboarding_completed: bool = False
     social_media_url: Optional[str] = None

@@ -29,6 +29,12 @@ def require_admin(current_user: User):
         raise HTTPException(status_code=403, detail="Admins only")
 
 
+def require_owner(current_user: User):
+    """Raise 403 if the current user is not an owner."""
+    if not getattr(current_user, 'is_owner', False):
+        raise HTTPException(status_code=403, detail="Owners only")
+
+
 # ── Schemas ───────────────────────────────────────────────────
 class AdminAddUser(BaseModel):
     full_name: str
@@ -103,6 +109,9 @@ def list_users(
             "custom_title": u.custom_title or "",
             "avatar_url": u.avatar_url,
             "end_at": u.end_at.isoformat() if u.end_at else None,
+            "governorate": u.governorate,
+            "social_media_url": u.social_media_url,
+            "is_owner": getattr(u, 'is_owner', False),
         })
 
     return result
@@ -242,6 +251,35 @@ def toggle_admin(
         "user_id": user.id,
         "is_admin": user.is_admin,
         "message": f"User {'promoted to admin' if user.is_admin else 'removed from admin'} successfully",
+    }
+
+
+@router.patch("/users/{user_id}/toggle-owner")
+def toggle_owner(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Toggle a user's is_owner status. Only owners can do this."""
+    # 🔒 Only owners can promote/demote owners
+    if not getattr(current_user, 'is_owner', False):
+        raise HTTPException(status_code=403, detail="Owners only")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_owner = not user.is_owner
+    # Owners must also be admins
+    if user.is_owner:
+        user.is_admin = True
+    db.commit()
+
+    return {
+        "user_id": user.id,
+        "is_owner": user.is_owner,
+        "is_admin": user.is_admin,
+        "message": f"User {'promoted to owner' if user.is_owner else 'removed from owner'} successfully",
     }
 
 
@@ -393,7 +431,7 @@ def list_payments(
     db: Session = Depends(get_db),
 ):
     """List payments with pagination, search and filters."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -446,7 +484,7 @@ def payment_stats(
     db: Session = Depends(get_db),
 ):
     """Aggregate payment statistics."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -485,7 +523,7 @@ def export_payments_csv(
     db: Session = Depends(get_db),
 ):
     """Export filtered payments as CSV."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -539,7 +577,7 @@ def retry_payment(
     db: Session = Depends(get_db),
 ):
     """Retry a failed payment."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -560,7 +598,7 @@ def refund_payment(
     db: Session = Depends(get_db),
 ):
     """Mark a paid payment as refunded."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -599,7 +637,7 @@ def analytics_kpis(
     db: Session = Depends(get_db),
 ):
     """KPI metrics for the analytics dashboard."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     now = datetime.utcnow()
     start = _parse_range(range)
@@ -648,7 +686,7 @@ def members_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily new member signups for the given range."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -678,7 +716,7 @@ def revenue_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily revenue from confirmed payments for the given range."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only tab
 
     start = _parse_range(range)
     now = datetime.utcnow()

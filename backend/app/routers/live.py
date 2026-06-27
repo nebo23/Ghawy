@@ -14,7 +14,7 @@ from sqlalchemy import desc
 
 from app.database import get_db, SessionLocal
 from app.models import User, LiveSession, LiveAttendee, SessionBooking, SessionReminder, LiveSessionStatus
-from app.routers.users import get_current_user, get_current_admin_user
+from app.routers.users import get_current_user, get_current_admin_user, get_current_owner_user
 from app.routers.ws import get_user_from_token
 from app.services.live_manager import live_manager
 from app.schemas import LiveSessionCreate, LiveSessionUpdate
@@ -83,7 +83,7 @@ def _session_to_dict(session: LiveSession, user_id: int = None, db: Session = No
 @router.post("/admin/live/sessions", status_code=201)
 def admin_create_session(
     data: LiveSessionCreate,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     slug = _unique_slug(data.title, db)
@@ -116,7 +116,7 @@ def admin_create_session(
 def admin_update_session(
     session_id: int,
     data: LiveSessionUpdate,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
@@ -149,7 +149,7 @@ def admin_update_session(
 @router.delete("/admin/live/sessions/{session_id}", status_code=204)
 def admin_delete_session(
     session_id: int,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
@@ -163,7 +163,7 @@ def admin_delete_session(
 @router.post("/admin/live/sessions/{session_id}/notify")
 def admin_notify_session(
     session_id: int,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
@@ -195,7 +195,7 @@ def admin_notify_session(
 
 @router.get("/admin/live/sessions")
 def admin_list_sessions(
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     """List all sessions for admin (published + drafts)."""
@@ -207,7 +207,7 @@ def admin_list_sessions(
 def admin_get_attendees(
     session_id: int,
     export: Optional[str] = Query(None),
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(get_current_owner_user),  # 🔒 owner-only tab
     db: Session = Depends(get_db),
 ):
     session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
