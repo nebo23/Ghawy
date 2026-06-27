@@ -4,6 +4,8 @@ Keeps existing WebSocket endpoint for backward compatibility.
 """
 import logging
 import re
+import json
+import asyncio
 from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -358,16 +360,35 @@ def get_live_sessions_legacy(status_filter: Optional[str] = None, db: Session = 
 #  WEBSOCKET (kept from original)
 # ═══════════════════════════════════════════════════════════════
 
-@router.websocket("/api/live-sessions/ws/{token}")
-async def live_websocket(websocket: WebSocket, token: str):
+@router.websocket("/api/live-sessions/ws")
+async def live_websocket(websocket: WebSocket):
     db = SessionLocal()
+
+    # 🔒 Accept first, then wait for auth message — keeps the token out of the URL/logs
+    await websocket.accept()
+    try:
+        auth_msg_raw = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
+        auth_msg = json.loads(auth_msg_raw)
+    except (asyncio.TimeoutError, json.JSONDecodeError, Exception) as e:
+        logger.warning("Live WS auth failed: no/invalid auth message — %s", e)
+        await websocket.close(code=4001, reason="Auth required")
+        db.close()
+        return
+
+    token = auth_msg.get("token") if isinstance(auth_msg, dict) else None
+    if not token:
+        await websocket.close(code=4001, reason="Token missing")
+        db.close()
+        return
+
     user = get_user_from_token(token, db)
     if not user:
         await websocket.close(code=4001, reason="Invalid token")
         db.close()
         return
 
-    await live_manager.connect(websocket, user.id)
+    # Already accepted above, so skip the accept inside the manager
+    await live_manager.connect(websocket, user.id, accept=False)
     try:
         while True:
             data = await websocket.receive_json()

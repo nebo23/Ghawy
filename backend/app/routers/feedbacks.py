@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from datetime import datetime
+import os
 import httpx
 import logging
 
@@ -12,9 +13,12 @@ from app.routers.users import get_current_active_member
 router = APIRouter(prefix="/feedbacks", tags=["Feedbacks"])
 logger = logging.getLogger(__name__)
 
-WEBHOOK_URL = "https://n8n-vrtt.srv1552612.hstgr.cloud/webhook/5ae5882d-1e56-405f-9a9f-203ecd1d86ea"
+WEBHOOK_URL = os.getenv("N8N_FEEDBACK_WEBHOOK_URL")
 
 async def send_webhook(payload: dict):
+    if not WEBHOOK_URL:
+        logger.warning("⚠️ N8N_FEEDBACK_WEBHOOK_URL not configured — skipping notification")
+        return
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(WEBHOOK_URL, json=payload, timeout=10.0)

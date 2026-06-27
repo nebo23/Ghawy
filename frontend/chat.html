@@ -2582,9 +2582,13 @@
             // If API is a relative path (e.g. '/api' in production), use window.location.host
             // If API is absolute (e.g. 'http://127.0.0.1:8000' in local dev), strip protocol
             const apiHost = API.startsWith('/') ? window.location.host : API.replace(/^https?:\/\//, '');
-            ws = new WebSocket(`${wsProtocol}//${apiHost}/ws/${token}`);
+            ws = new WebSocket(`${wsProtocol}//${apiHost}/ws`);
 
-            ws.onopen = () => { console.log('WebSocket Connected'); };
+            ws.onopen = () => {
+                console.log('WebSocket Connected');
+                // 🔒 Send token as first message — keeps it out of the URL/logs
+                ws.send(JSON.stringify({ token: token }));
+            };
 
             ws.onmessage = (e) => {
                 try {

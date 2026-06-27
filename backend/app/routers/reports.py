@@ -3,6 +3,8 @@
 #  Daily Team Reports Router
 # ══════════════════════════════════════════════════════════════
 
+import os
+import logging
 from datetime import date, datetime
 from typing import Optional
 
@@ -16,6 +18,7 @@ from app.models import DailyReport, TeamRole, User
 from app.routers.users import get_current_active_member, get_current_admin_user
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
+logger = logging.getLogger(__name__)
 
 
 # ─── Pydantic Schemas ─────────────────────────────────────────
@@ -82,10 +85,13 @@ class ReportOut(BaseModel):
         from_attributes = True
 
 
-WEBHOOK_URL = "https://n8n-vrtt.srv1552612.hstgr.cloud/webhook/32d259c1-1902-44e6-8232-eada2e4f5598"
+WEBHOOK_URL = os.getenv("N8N_REPORTS_WEBHOOK_URL")
 
 async def send_report_to_webhook(payload: dict):
     """إرسال الريبورت للـ n8n في الخلفية بصورة Async"""
+    if not WEBHOOK_URL:
+        logger.warning("⚠️ N8N_REPORTS_WEBHOOK_URL not configured — skipping notification")
+        return
     async with httpx.AsyncClient() as client:
         try:
             await client.post(WEBHOOK_URL, json=payload, timeout=10.0)

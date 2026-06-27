@@ -12,8 +12,9 @@ class LiveConnectionManager:
         # session_id -> set of user_ids currently viewing the session
         self.session_viewers: Dict[int, Set[int]] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: int):
-        await websocket.accept()
+    async def connect(self, websocket: WebSocket, user_id: int, accept: bool = True):
+        if accept:
+            await websocket.accept()
         self.active_connections[user_id] = websocket
 
     def disconnect(self, user_id: int):

@@ -309,11 +309,15 @@ function connectLiveSocket() {
     const apiHost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
         ? '127.0.0.1:8000'
         : window.location.host;
-    const wsUrl = `${wsProtocol}//${apiHost}/api/live-sessions/ws/${token}`;
+    const wsUrl = `${wsProtocol}//${apiHost}/api/live-sessions/ws`;
 
     liveSocket = new WebSocket(wsUrl);
 
-    liveSocket.onopen = () => console.log("Connected to Live WS");
+    liveSocket.onopen = () => {
+        console.log("Connected to Live WS");
+        // 🔒 Send token as first message — keeps it out of the URL/logs
+        liveSocket.send(JSON.stringify({ token: token }));
+    };
 
     liveSocket.onmessage = (event) => {
         try {
