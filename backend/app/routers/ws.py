@@ -39,11 +39,27 @@ def get_user_from_token(token: str, db: Session) -> User:
     return user
 
 
-@router.websocket("/ws/{token}")
-async def websocket_endpoint(websocket: WebSocket, token: str):
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
     db = SessionLocal()
+    user = None  # defined up-front so the finally/except blocks are safe on early auth failure
 
     try:
+        # 🔒 Accept first, then wait for auth message — keeps the token out of the URL/logs
+        await websocket.accept()
+        try:
+            auth_msg_raw = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
+            auth_msg = json.loads(auth_msg_raw)
+        except (asyncio.TimeoutError, json.JSONDecodeError, Exception) as e:
+            logger.warning("WS auth failed: no/invalid auth message — %s", e)
+            await websocket.close(code=4001, reason="Auth required")
+            return
+
+        token = auth_msg.get("token") if isinstance(auth_msg, dict) else None
+        if not token:
+            await websocket.close(code=4001, reason="Token missing")
+            return
+
         # Authenticate
         user = get_user_from_token(token, db)
         if not user:
@@ -54,8 +70,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             await websocket.close(code=4003, reason="Account is not active")
             return
 
-        # Connect
-        await manager.connect(websocket, user.id)
+        # Connect (already accepted above, so skip the accept inside the manager)
+        await manager.connect(websocket, user.id, accept=False)
 
         # Subscribe user to all their channels
         memberships = db.query(ChatMember).filter(ChatMember.user_id == user.id).all()

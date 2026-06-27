@@ -3,6 +3,19 @@ const API = (location.hostname === 'localhost' || location.hostname === '127.0.0
   ? 'http://127.0.0.1:8000'
   : '/api';
 
+// 🔒 Escape HTML to prevent XSS when inserting user-supplied data into innerHTML
+// Usage: el.innerHTML = `<div>${escapeHtml(user.name)}</div>`;
+// IMPORTANT: still safer to use textContent when you don't need HTML formatting.
+window.escapeHtml = function(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
 function showAlert(msg, type) {
   const el = document.getElementById('alert');
   if (el) {
@@ -50,7 +63,7 @@ window.getAvatarSrc = function (user) {
   if (user.avatar_url) {
     if (user.avatar_url.startsWith('http')) return user.avatar_url;
     if (user.avatar_url.startsWith('/')) return window.location.origin + user.avatar_url;
-    return (window.API || 'http://localhost:8000') + user.avatar_url;
+    return (window.API || '/api') + user.avatar_url;
   }
   if (user.selected_avatar) return user.selected_avatar;
   return './imgs/default-avatar.png';

@@ -152,7 +152,7 @@ async function initInviteFlow() {
 
   // Invite flow
   try {
-    const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+    const apiBase = (typeof API !== 'undefined') ? API : '/api';
     const res = await fetch(`${apiBase}/auth/invite/${inviteToken}`);
     const data = await res.json();
 
@@ -252,7 +252,7 @@ async function submitRegister() {
 
   try {
     // API is assumed to be defined globally from utils.js
-    const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+    const apiBase = (typeof API !== 'undefined') ? API : '/api';
 
     if (inviteToken) {
       // Invite flow submit
@@ -320,7 +320,7 @@ async function submitRegister() {
 
 function googleSignIn() {
   // Trigger google sign in flow
-  const apiBase = (typeof API !== 'undefined') ? API : 'http://127.0.0.1:8000';
+  const apiBase = (typeof API !== 'undefined') ? API : '/api';
   window.location.href = `${apiBase}/auth/google/login`;
 }
 

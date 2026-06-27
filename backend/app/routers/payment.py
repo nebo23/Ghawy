@@ -11,6 +11,18 @@ from app.database import get_db
 
 router = APIRouter(prefix="/payment", tags=["Payment"])
 
+# ─── Server-side authoritative pricing ─────────────────────
+# Frontend prices in payment.js are display-only. These are the SOURCE OF TRUTH.
+# Any mismatch between this dict and frontend pricing means the frontend is stale.
+PLAN_PRICES = {
+    "monthly_egp":   {"amount": 600,   "currency": "EGP"},
+    "quarterly_egp": {"amount": 1200,  "currency": "EGP"},
+    "yearly_egp":    {"amount": 3000,  "currency": "EGP"},
+    "monthly_usd":   {"amount": 15,    "currency": "USD"},
+    "quarterly_usd": {"amount": 35,    "currency": "USD"},
+    "yearly_usd":    {"amount": 100,   "currency": "USD"},
+}
+
 
 from app.services.kashier_manager import create_kashier_payment_url
 import uuid
@@ -21,6 +33,15 @@ logger = logging.getLogger(__name__)
 # ─── Kashier: إنشاء أوردر ────────────────────────────────────
 @router.post("/kashier/create")
 async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 🔒 السعر يتحدد server-side فقط — أي amount/currency من الـ frontend بيتم تجاهلهم
+    if data.plan_key not in PLAN_PRICES:
+        logger.warning("🚨 Invalid plan_key from user %s: %s", current_user.id, data.plan_key)
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    plan = PLAN_PRICES[data.plan_key]
+    server_amount = plan["amount"]
+    server_currency = plan["currency"]
+
     # Delete old pending Kashier payments for this user so they don't pile up in the admin dashboard
     db.query(Payment).filter(
         Payment.user_id == current_user.id,
@@ -33,8 +54,8 @@ async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(
 
     result = await create_kashier_payment_url(
         order_id=order_id,
-        amount=data.amount,
-        currency=data.currency,
+        amount=server_amount,
+        currency=server_currency,
         user_email=current_user.email,
         user_phone=current_user.phone,
         user_id=current_user.id,
@@ -43,8 +64,8 @@ async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(
     payment = Payment(
         user_id=current_user.id,
         method=PaymentMethod.KASHIER,
-        amount=data.amount,
-        currency=data.currency,
+        amount=server_amount,
+        currency=server_currency,
         provider_order_id=order_id,
         plan_key=data.plan_key,
         status=PaymentStatus.PENDING,

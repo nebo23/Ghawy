@@ -23,9 +23,10 @@ class ConnectionManager:
         # channel_id -> set of user_ids subscribed
         self.channel_subscriptions: Dict[int, Set[int]] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: int):
-        """Accept connection and register user."""
-        await websocket.accept()
+    async def connect(self, websocket: WebSocket, user_id: int, accept: bool = True):
+        """Accept connection and register user. Pass accept=False if already accepted."""
+        if accept:
+            await websocket.accept()
         if user_id not in self.active_connections:
             self.active_connections[user_id] = set()
         self.active_connections[user_id].add(websocket)

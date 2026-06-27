@@ -7,6 +7,7 @@ from datetime import datetime
 from fastapi import Depends, BackgroundTasks
 import httpx
 import asyncio
+import os
 from app.services.kashier_manager import verify_kashier_webhook
 from datetime import timedelta
 import logging
@@ -14,7 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def send_n8n_webhook(payload: dict):
-    webhook_url = "https://n8n-vrtt.srv1552612.hstgr.cloud/webhook/d805c676-599f-43f5-b7f9-2a400e16d811"
+    webhook_url = os.getenv("N8N_WEBHOOK_URL")
+    if not webhook_url:
+        logger.warning("⚠️ N8N_WEBHOOK_URL not configured — skipping notification")
+        return
     try:
         async with httpx.AsyncClient() as client:
             await client.post(webhook_url, json=payload, timeout=10.0)
@@ -67,16 +71,13 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
     data.pop("hash", None)
     data.pop("signature", None)
 
-    # 3. Verify signature
+    # 3. Verify signature — reject if missing OR invalid
     if not received_hash:
-        logger.warning("⚠️ Kashier webhook missing hash! Processing anyway (test mode?)")
-    else:
-        if not verify_kashier_webhook(data, received_hash):
-            # ⚠️ TEMP: Log mismatch but continue processing.
-            # The payment is still validated against DB (status + orderId).
-            # TODO: Fix KASHIER_SECRET_KEY in .env.production to re-enable blocking.
-            logger.warning("⚠️ Webhook signature mismatch — processing anyway (key misconfigured). hash=%s", received_hash)
-            raise HTTPException(status_code=401, detail="Invalid signature")
+        logger.error("🚨 Kashier webhook missing signature! Possible spoofing attempt.")
+        raise HTTPException(status_code=401, detail="Missing signature")
+    if not verify_kashier_webhook(data, received_hash):
+        logger.error("🚨 Kashier webhook signature mismatch! hash=%s", received_hash)
+        raise HTTPException(status_code=401, detail="Invalid signature")
 
     
     status = data.get("status", "")
@@ -94,7 +95,32 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
             logger.warning("⚠️ Payment not found for order_id: %s", order_id)
             logger.info("🔍 FULL BODY for missing payment: %s", body)
             return {"status": "ok"}
-        
+
+        # 🔒 Verify amount and currency match what we stored at order creation
+        webhook_amount_raw = data.get("amount") or data.get("totalAmount") or data.get("orderAmount")
+        webhook_currency = (data.get("currency") or "").upper()
+
+        if webhook_amount_raw is not None:
+            try:
+                webhook_amount = float(webhook_amount_raw)
+                # Allow tiny float rounding tolerance (Kashier sometimes returns "3000.00")
+                if abs(webhook_amount - float(payment.amount)) > 0.01:
+                    logger.error(
+                        "🚨 Amount mismatch! Stored=%s, Webhook=%s, Order=%s, User=%s",
+                        payment.amount, webhook_amount, order_id, payment.user_id
+                    )
+                    raise HTTPException(status_code=400, detail="Amount mismatch")
+            except (ValueError, TypeError):
+                logger.error("🚨 Could not parse webhook amount: %s", webhook_amount_raw)
+                raise HTTPException(status_code=400, detail="Invalid amount in webhook")
+
+        if webhook_currency and webhook_currency != (payment.currency or "").upper():
+            logger.error(
+                "🚨 Currency mismatch! Stored=%s, Webhook=%s, Order=%s",
+                payment.currency, webhook_currency, order_id
+            )
+            raise HTTPException(status_code=400, detail="Currency mismatch")
+
         if payment.status == PaymentStatus.PENDING:
             payment.status = PaymentStatus.CONFIRMED
             payment.confirmed_at = datetime.utcnow()

@@ -19,6 +19,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 # Use WARNING in production to avoid leaking sensitive data in logs
 _log_level = logging.INFO
 logging.basicConfig(level=_log_level, format="%(levelname)s: %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 BACKEND_DIR = Path(__file__).resolve().parent
 
@@ -238,8 +239,14 @@ app = FastAPI(
     redoc_url=_redoc_url,
 )
 
-# ✅ SECRET_KEY من الـ .env مش الـ client secret
-app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET_KEY', 'fallback-secret'))
+# ✅ SECRET_KEY من الـ .env — لازم يكون موجود وإلا التطبيق ميشتغلش
+_SECRET_KEY = os.getenv('SECRET_KEY')
+if not _SECRET_KEY or _SECRET_KEY == 'fallback-secret':
+    raise RuntimeError(
+        "SECRET_KEY environment variable is required and must not be the fallback value. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+app.add_middleware(SessionMiddleware, secret_key=_SECRET_KEY)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5500").split(","), # 🌐 قراءة النطاقات المسموحة من متغيرات البيئة للسماح بنطاقات الإنتاج (CORS Fix)
@@ -291,19 +298,27 @@ def root():
     return {"message": "Community API Is Working"}
 
 @app.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 إضافة Depends(get_current_admin_user) لحماية مسار الحذف من الأشخاص غير المصرح لهم
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 محمي بـ admin auth + audit log
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    logger.warning(
+        "🗑️ ADMIN DELETE USER | admin_id=%s admin_email=%s | target_user_id=%s target_email=%s",
+        current_user.id, current_user.email, user.id, user.email
+    )
     db.delete(user)
     db.commit()
     return {"message": "User deleted successfully"}
 
 @app.delete("/payments/{payment_id}")
-def delete_payment(payment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 إضافة Depends(get_current_admin_user) لحماية مسار الحذف من الأشخاص غير المصرح لهم
+def delete_payment(payment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 محمي بـ admin auth + audit log
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    logger.warning(
+        "🗑️ ADMIN DELETE PAYMENT | admin_id=%s admin_email=%s | payment_id=%s amount=%s currency=%s user_id=%s",
+        current_user.id, current_user.email, payment.id, payment.amount, payment.currency, payment.user_id
+    )
     db.delete(payment)
     db.commit()
     return {"message": "Payment deleted successfully"}

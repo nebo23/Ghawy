@@ -547,13 +547,15 @@ function connectWebSocket() {
     // If API is a relative path (e.g. '/api' in production), use window.location.host
     // If API is absolute (e.g. 'http://127.0.0.1:8000' in local dev), strip protocol
     const host = API.startsWith('/') ? window.location.host : API.replace(/^https?:\/\//, '');
-    const wsUrl = `${protocol}//${host}/ws/${localStorage.getItem('token')}`;
+    const wsUrl = `${protocol}//${host}/ws`;
 
     try {
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             console.log('[WS] Connected to community chat');
+            // 🔒 Send token as first message — keeps it out of the URL/logs
+            ws.send(JSON.stringify({ token: localStorage.getItem('token') }));
             clearTimeout(wsReconnectTimer);
             const statusEl = document.querySelector('.chat-connecting');
             if (statusEl) statusEl.remove();
