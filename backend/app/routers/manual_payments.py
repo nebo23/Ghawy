@@ -15,6 +15,7 @@ import aiofiles
 from pathlib import Path
 from pydantic import BaseModel
 
+import httpx
 from app.database import get_db
 from app.models import User, ManualPaymentRequest
 from app.routers.users import get_current_user
@@ -23,6 +24,21 @@ from app.services.email_service import (
     send_payment_approval_email,
     send_payment_rejection_email,
 )
+
+PAYMENT_WEBHOOK_URL = os.getenv("N8N_PAYMENT_WEBHOOK_URL")
+
+
+async def _send_payment_webhook(payload: dict):
+    if not PAYMENT_WEBHOOK_URL:
+        logger.warning("⚠️ N8N_PAYMENT_WEBHOOK_URL not configured — skipping notification")
+        return
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(PAYMENT_WEBHOOK_URL, json=payload, timeout=10.0)
+            response.raise_for_status()
+            logger.info("✅ Payment webhook sent successfully")
+    except Exception as e:
+        logger.error("❌ Failed to send payment webhook: %s", e)
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +145,7 @@ async def submit_payment_request(
     db.commit()
     db.refresh(mpr)
 
-    # Send admin notification (non-blocking — don't fail if email fails)
+    # Send admin notification email (non-blocking)
     try:
         send_admin_payment_notification(
             full_name=mpr.full_name,
@@ -140,6 +156,22 @@ async def submit_payment_request(
         )
     except Exception as exc:
         logger.warning("Failed to send admin notification email: %s", exc)
+
+    # Send n8n webhook notification (non-blocking)
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    webhook_payload = {
+        "event": "payment_submitted",
+        "full_name": mpr.full_name,
+        "email": mpr.email,
+        "phone": mpr.phone or "",
+        "amount": float(mpr.amount) if mpr.amount else None,
+        "notes": mpr.notes or "",
+        "receipt_url": f"{frontend_url}{mpr.receipt_url}",
+        "submitted_at": mpr.created_at.isoformat() if mpr.created_at else "",
+        "review_url": f"{frontend_url}/teamdashboard.html#pending-requests",
+    }
+    import asyncio
+    asyncio.create_task(_send_payment_webhook(webhook_payload))
 
     return {
         "id": mpr.id,

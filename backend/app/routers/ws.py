@@ -4,7 +4,8 @@ WebSocket Router — Real-time chat messaging
 import json
 import logging
 import asyncio
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from contextlib import contextmanager
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from app.database import SessionLocal
@@ -27,6 +28,25 @@ ALGORITHM = "HS256"
 router = APIRouter(tags=["WebSocket"])
 
 
+@contextmanager
+def db_session():
+    """Short-lived DB session.
+
+    A WebSocket connection lives for minutes/hours but is idle almost the whole
+    time. Holding one `SessionLocal()` for the connection's lifetime pins a
+    pooled DB connection (often stuck "idle in transaction" after a read), so a
+    few dozen connected users exhaust the pool and every HTTP request starts
+    failing with QueuePool timeout. Instead we open a session only for the brief
+    moment we touch the DB and close it immediately, so an idle socket holds
+    zero DB connections.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def get_user_from_token(token: str, db: Session) -> User:
     """Validate JWT token and return user."""
     try:
@@ -41,8 +61,9 @@ def get_user_from_token(token: str, db: Session) -> User:
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    db = SessionLocal()
-    user = None  # defined up-front so the finally/except blocks are safe on early auth failure
+    user_id = None
+    user_name = None
+    channel_ids = []
 
     try:
         # 🔒 Accept first, then wait for auth message — keeps the token out of the URL/logs
@@ -60,46 +81,48 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close(code=4001, reason="Token missing")
             return
 
-        # Authenticate
-        user = get_user_from_token(token, db)
-        if not user:
-            await websocket.close(code=4001, reason="Invalid token")
-            return
+        # Authenticate + initial channel setup — short-lived session, closed before we idle
+        with db_session() as db:
+            user = get_user_from_token(token, db)
+            if not user:
+                await websocket.close(code=4001, reason="Invalid token")
+                return
 
-        if not user.is_active:
-            await websocket.close(code=4003, reason="Account is not active")
-            return
+            if not user.is_active:
+                await websocket.close(code=4003, reason="Account is not active")
+                return
+
+            user_id = user.id
+            user_name = user.full_name
+
+            # Subscribe user to all their channels
+            memberships = db.query(ChatMember).filter(ChatMember.user_id == user_id).all()
+            channel_ids = [m.channel_id for m in memberships]
+
+            # Also subscribe to all group channels (auto-join behavior)
+            all_group_channels = db.query(Channel).filter(Channel.channel_type == "group").all()
+            for ch in all_group_channels:
+                if ch.id not in channel_ids:
+                    channel_ids.append(ch.id)
+                    # Auto-create membership only if not already a member
+                    already_member = db.query(ChatMember).filter(
+                        ChatMember.channel_id == ch.id,
+                        ChatMember.user_id == user_id
+                    ).first()
+                    if not already_member:
+                        db.add(ChatMember(channel_id=ch.id, user_id=user_id))
+            db.commit()
 
         # Connect (already accepted above, so skip the accept inside the manager)
-        await manager.connect(websocket, user.id, accept=False)
-
-        # Subscribe user to all their channels
-        memberships = db.query(ChatMember).filter(ChatMember.user_id == user.id).all()
-        channel_ids = [m.channel_id for m in memberships]
-
-        # Also subscribe to all group channels (auto-join behavior)
-        all_group_channels = db.query(Channel).filter(Channel.channel_type == "group").all()
-        for ch in all_group_channels:
-            if ch.id not in channel_ids:
-                channel_ids.append(ch.id)
-                # Auto-create membership only if not already a member
-                already_member = db.query(ChatMember).filter(
-                    ChatMember.channel_id == ch.id,
-                    ChatMember.user_id == user.id
-                ).first()
-                if not already_member:
-                    new_member = ChatMember(channel_id=ch.id, user_id=user.id)
-                    db.add(new_member)
-        db.commit()
-
-        manager.subscribe(user.id, channel_ids)
+        await manager.connect(websocket, user_id, accept=False)
+        manager.subscribe(user_id, channel_ids)
 
         # Send initial connection confirmation
-        await manager.send_personal(user.id, {
+        await manager.send_personal(user_id, {
             "event": "connected",
             "data": {
-                "user_id": user.id,
-                "user_name": user.full_name,
+                "user_id": user_id,
+                "user_name": user_name,
                 "channels": channel_ids,
                 "online_count": manager.get_online_count(),
             }
@@ -109,24 +132,33 @@ async def websocket_endpoint(websocket: WebSocket):
         for ch_id in channel_ids:
             await manager.broadcast_to_channel(ch_id, {
                 "event": "user_online",
-                "data": {"user_id": user.id, "user_name": user.full_name}
-            }, exclude_user=user.id)
+                "data": {"user_id": user_id, "user_name": user_name}
+            }, exclude_user=user_id)
 
-        # Listen for messages — with periodic re-validation every 30s
-        last_check = asyncio.get_event_loop().time()
-        CHECK_INTERVAL = 30  # seconds
+        # Listen for messages — with periodic re-validation
+        CHECK_INTERVAL = 25  # seconds — ping before most proxy 30s idle timeouts
 
         while True:
             try:
                 raw = await asyncio.wait_for(websocket.receive_text(), timeout=CHECK_INTERVAL)
             except asyncio.TimeoutError:
-                # Periodic check: re-validate user still exists and is active
-                db.expire_all()  # refresh DB session
-                fresh_user = db.query(User).filter(User.id == user.id).first()
-                if not fresh_user or not fresh_user.is_active:
-                    reason = "User deleted" if not fresh_user else "Account deactivated"
-                    logger.info(f"WS kicking user {user.id}: {reason}")
-                    await websocket.close(code=4003, reason=reason)
+                # Periodic keepalive: re-validate user + ping to detect dead connections
+                with db_session() as db:
+                    fresh_user = db.query(User).filter(User.id == user_id).first()
+                    still_active = bool(fresh_user and fresh_user.is_active)
+                    kick_reason = None if still_active else (
+                        "User deleted" if not fresh_user else "Account deactivated"
+                    )
+                if not still_active:
+                    logger.info(f"WS kicking user {user_id}: {kick_reason}")
+                    await websocket.close(code=4003, reason=kick_reason)
+                    return
+                # 🏓 Send ping — keeps connection alive through proxies and detects silent drops
+                try:
+                    await websocket.send_text('{"event":"ping"}')
+                except Exception:
+                    # Connection is dead — exit so onclose fires and client reconnects
+                    logger.info(f"WS ping failed for user {user_id}, treating as disconnect")
                     return
                 continue
 
@@ -139,10 +171,10 @@ async def websocket_endpoint(websocket: WebSocket):
             event = data.get("event")
 
             if action == "send_message":
-                await handle_send_message(user, data, db)
+                await handle_send_message(user_id, data)
 
             elif event == "message_reaction":
-                await handle_message_reaction(user, data.get("data") or {}, db)
+                await handle_message_reaction(user_id, data.get("data") or {})
 
             elif action == "typing":
                 channel_id = data.get("channel_id")
@@ -151,41 +183,43 @@ async def websocket_endpoint(websocket: WebSocket):
                         "event": "typing",
                         "data": {
                             "channel_id": channel_id,
-                            "user_id": user.id,
-                            "user_name": user.full_name,
+                            "user_id": user_id,
+                            "user_name": user_name,
                         }
-                    }, exclude_user=user.id)
+                    }, exclude_user=user_id)
 
             elif action == "mark_read":
                 channel_id = data.get("channel_id")
                 if channel_id:
                     from datetime import datetime
-                    membership = db.query(ChatMember).filter(
-                        ChatMember.channel_id == channel_id,
-                        ChatMember.user_id == user.id,
-                    ).first()
-                    if membership:
-                        membership.last_read_at = datetime.utcnow()
-                        db.commit()
+                    with db_session() as db:
+                        membership = db.query(ChatMember).filter(
+                            ChatMember.channel_id == channel_id,
+                            ChatMember.user_id == user_id,
+                        ).first()
+                        if membership:
+                            membership.last_read_at = datetime.utcnow()
+                            db.commit()
 
     except WebSocketDisconnect:
-        logger.info(f"WS disconnect: user {user.id if user else '?'}")
+        logger.info(f"WS disconnect: user {user_id if user_id else '?'}")
     except Exception as e:
         logger.error(f"WS error: {e}")
     finally:
-        if user:
-            manager.disconnect(websocket, user.id)
+        if user_id:
+            manager.disconnect(websocket, user_id)
             # Broadcast offline status
-            memberships = db.query(ChatMember).filter(ChatMember.user_id == user.id).all()
-            for m in memberships:
-                await manager.broadcast_to_channel(m.channel_id, {
+            with db_session() as db:
+                memberships = db.query(ChatMember).filter(ChatMember.user_id == user_id).all()
+                offline_channel_ids = [m.channel_id for m in memberships]
+            for ch_id in offline_channel_ids:
+                await manager.broadcast_to_channel(ch_id, {
                     "event": "user_offline",
-                    "data": {"user_id": user.id, "user_name": user.full_name}
+                    "data": {"user_id": user_id, "user_name": user_name}
                 })
-        db.close()
 
 
-async def handle_send_message(user: User, data: dict, db: Session):
+async def handle_send_message(user_id: int, data: dict):
     """Process and broadcast a new chat message."""
     channel_id = data.get("channel_id")
     content = data.get("content", "")
@@ -204,89 +238,115 @@ async def handle_send_message(user: User, data: dict, db: Session):
     except ValueError:
         msg_type = MessageType.TEXT
 
-    # Save to database
-    msg = Message(
-        channel_id=channel_id,
-        sender_id=user.id,
-        content=content,
-        message_type=msg_type,
-        file_url=file_url,
-        file_name=file_name,
-        file_size=file_size,
-        reply_to_id=reply_to_id,
-    )
-    db.add(msg)
-    db.commit()
-    db.refresh(msg)
+    with db_session() as db:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return
 
-    # Process admin mentions
-    notified_ids = process_admin_mentions(db, user, content)
+        # Save to database
+        msg = Message(
+            channel_id=channel_id,
+            sender_id=user_id,
+            content=content,
+            message_type=msg_type,
+            file_url=file_url,
+            file_name=file_name,
+            file_size=file_size,
+            reply_to_id=reply_to_id,
+        )
+        db.add(msg)
+        db.commit()
+        db.refresh(msg)
+
+        # Process admin mentions
+        notified_ids = process_admin_mentions(db, user, content)
+
+        # Build broadcast payload while the session is still open
+        broadcast_data = {
+            "event": "new_message",
+            "data": {
+                "id": msg.id,
+                "channel_id": msg.channel_id,
+                "sender_id": msg.sender_id,
+                "sender_name": user.full_name,
+                "sender_avatar": user.avatar_url,
+                "content": msg.content,
+                "message_type": msg.message_type.value,
+                "file_url": msg.file_url,
+                "file_name": msg.file_name,
+                "file_size": msg.file_size,
+                "reply_to_id": msg.reply_to_id,
+                "created_at": msg.created_at.isoformat(),
+            }
+        }
+        sender_name = user.full_name
+
+    # Session closed — now do the async broadcasts
     for aid in notified_ids:
         await manager.send_personal(aid, {
             "event": "new_notification",
             "data": {
                 "title": "New Mention in Chat",
-                "body": f"{user.full_name} mentioned you in the community chat."
+                "body": f"{sender_name} mentioned you in the community chat."
             }
         })
-
-    # Broadcast to all channel members
-    broadcast_data = {
-        "event": "new_message",
-        "data": {
-            "id": msg.id,
-            "channel_id": msg.channel_id,
-            "sender_id": msg.sender_id,
-            "sender_name": user.full_name,
-            "sender_avatar": user.avatar_url,
-            "content": msg.content,
-            "message_type": msg.message_type.value,
-            "file_url": msg.file_url,
-            "file_name": msg.file_name,
-            "file_size": msg.file_size,
-            "reply_to_id": msg.reply_to_id,
-            "created_at": msg.created_at.isoformat(),
-        }
-    }
 
     await manager.broadcast_to_channel(channel_id, broadcast_data)
 
 
-async def handle_message_reaction(user: User, data: dict, db: Session):
+async def handle_message_reaction(user_id: int, data: dict):
     """Save/delete a reaction and broadcast personalized reaction summaries."""
     message_id = data.get("message_id")
     emoji = data.get("emoji")
     action = data.get("action")
 
     if not message_id or not emoji or action not in {"add", "remove"}:
-        await manager.send_personal(user.id, {
+        await manager.send_personal(user_id, {
             "event": "reaction_error",
             "data": {"message": "Invalid reaction payload"}
         })
         return
 
-    try:
-        message = set_message_reaction(
-            db,
-            message_id=int(message_id),
-            user_id=user.id,
-            emoji=emoji,
-            action=action,
-        )
-    except (LookupError, PermissionError, ValueError) as exc:
-        await manager.send_personal(user.id, {
+    error_message = None
+    channel_id = None
+    summaries = {}
+
+    with db_session() as db:
+        try:
+            message = set_message_reaction(
+                db,
+                message_id=int(message_id),
+                user_id=user_id,
+                emoji=emoji,
+                action=action,
+            )
+        except (LookupError, PermissionError, ValueError) as exc:
+            error_message = str(exc)
+            message = None
+
+        if message is not None:
+            channel_id = message.channel_id
+            message_id_val = message.id
+            subscribers = list(manager.channel_subscriptions.get(channel_id, set()))
+            # Compute per-subscriber summaries while the session is open
+            summaries = {
+                subscriber_id: get_reaction_summary(db, message_id_val, subscriber_id)
+                for subscriber_id in subscribers
+            }
+
+    if error_message is not None:
+        await manager.send_personal(user_id, {
             "event": "reaction_error",
-            "data": {"message": str(exc)}
+            "data": {"message": error_message}
         })
         return
 
-    subscribers = list(manager.channel_subscriptions.get(message.channel_id, set()))
-    for subscriber_id in subscribers:
+    for subscriber_id, summary in summaries.items():
         await manager.send_personal(subscriber_id, {
             "event": "reaction_updated",
             "type": "reaction_updated",
             "data": {
-                "message_id": message.id,
-                "reactions_summary": get_reaction_summary(db, message.id, subscriber_id),
+                "message_id": int(message_id),
+                "reactions_summary": summary,
             }
         })

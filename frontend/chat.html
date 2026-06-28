@@ -2559,6 +2559,8 @@
         let isRecording = false;
         let ws = null;
         const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+        // Normalize emoji before sending (strip variation selector U+FE0F for backend match)
+        const normalizeEmoji = (e) => e.replace(/\ufe0f/g, '');
         const messageReactionsCache = {};
 
         // ── Post-mode state ──
@@ -2605,7 +2607,11 @@
                     } else if (msg.event === 'reaction_updated' || msg.type === 'reaction_updated') {
                         if (msg.data) applyReactionUpdate(msg.data.message_id, msg.data.reactions_summary || []);
                     } else if (msg.event === 'reaction_error') {
-                        notifyToast(msg.data?.message || 'Reaction could not be saved', 'error');
+                        // Show the actual error so it's visible in debug
+                        const errMsg = msg.data?.message || 'Reaction could not be saved';
+                        console.warn('Reaction error from server:', errMsg);
+                        notifyToast('❗ ' + errMsg, 'error');
+                        // Revert the optimistic update by reloading
                         loadMessages();
                     } else if (msg.event === 'connected') {
                         document.getElementById('onlineCount').textContent = msg.data.online_count + ' online';
@@ -2631,11 +2637,21 @@
                     } else if (msg.event === 'message_deleted') {
                         const el = document.getElementById(`msg-${msg.data.message_id}`);
                         if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
+                    } else if (msg.event === 'ping') {
+                        // 🏓 Keepalive — respond so server knows we're alive
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ event: 'pong' }));
+                        }
                     }
                 } catch (err) { console.error('WS parse error', err); }
             };
 
-            ws.onclose = () => {
+            ws.onclose = (evt) => {
+                // Don't reconnect if closed intentionally (4001 = auth failed, 4003 = deactivated)
+                if (evt.code === 4001 || evt.code === 4003) {
+                    console.warn('WS closed intentionally, code:', evt.code);
+                    return;
+                }
                 console.log('WebSocket disconnected, reconnecting in 3s...');
                 setTimeout(connectWS, 3000);
             };
@@ -3097,7 +3113,7 @@
 
             ws.send(JSON.stringify({
                 event: 'message_reaction',
-                data: { message_id: messageId, emoji, action }
+                data: { message_id: messageId, emoji: normalizeEmoji(emoji), action }
             }));
         }
 

@@ -459,6 +459,8 @@ class FeedbackOut(BaseModel):
     person_email: str
     feedback_text: str
     created_at: datetime
+    submitted_by_name: Optional[str] = None
+    submitted_by_avatar: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -269,6 +269,28 @@ async def post_message_simple(
     }
     await manager.broadcast_to_channel(msg.channel_id, broadcast_data)
 
+    # 🔔 For DM channels: notify the recipient with a personal notification event
+    # Channel name format is "dm_{user1_id}_{user2_id}"
+    if ch.channel_type == ChannelType.DM:
+        parts = ch.name.split("_")
+        if len(parts) == 3:
+            try:
+                u1, u2 = int(parts[1]), int(parts[2])
+                recipient_id = u2 if u1 == current_user.id else u1
+                if recipient_id != current_user.id:
+                    preview = (data.content or "")[:60]
+                    if not preview:
+                        preview = "📎 Sent a file"
+                    await manager.send_personal(recipient_id, {
+                        "event": "new_notification",
+                        "data": {
+                            "title": f"💬 {current_user.full_name}",
+                            "body": preview,
+                        }
+                    })
+            except (ValueError, IndexError):
+                pass  # malformed channel name — skip notification silently
+
     return result
 
 

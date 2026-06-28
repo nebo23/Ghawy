@@ -2449,7 +2449,9 @@
        ═══════════════════════════════════════════════════════ -->
   <script>
     (function () {
-      var API_URL = (typeof API !== 'undefined' ? API : (window.API_BASE || 'http://localhost:8000')) + '/feedbacks/';
+      var API_BASE_FB = (typeof API !== 'undefined' ? API : (window.API_BASE || 'http://localhost:8000'));
+      var API_URL     = API_BASE_FB + '/feedbacks/';
+      var ADMIN_API_URL = API_BASE_FB + '/feedbacks/admin';
 
       function fbToken() { return localStorage.getItem('token') || ''; }
 
@@ -2476,7 +2478,7 @@
         container.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:#555;">Loading...</div>';
 
         try {
-          var res = await fetch(API_URL, { headers: { 'Authorization': 'Bearer ' + fbToken() } });
+          var res = await fetch(ADMIN_API_URL, { headers: { 'Authorization': 'Bearer ' + fbToken() } });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           var feedbacks = await res.json();
           renderFeedbacks(feedbacks);
@@ -2502,8 +2504,17 @@
       function renderCard(f) {
         var roleCls = (f.role || '').toLowerCase().replace(/ /g, '_');
         var roleLabel = fbRoleLabel(f.role || '');
-        var avatarHtml = '<div class="rc-avatar-placeholder" style="background:linear-gradient(135deg,#f97316,#c2410c);font-size:18px;">💬</div>';
-        var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) + ' (' + fbEscape(f.person_email) + ')</div><div class="rc-date">' + fbFmtDate(f.created_at) + '</div>';
+
+        var avatarHtml = f.submitted_by_avatar
+          ? '<img src="' + fbEscape(f.submitted_by_avatar) + '" class="rc-avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\'">'
+          : '<div class="rc-avatar-placeholder" style="background:linear-gradient(135deg,#f97316,#c2410c);font-size:18px;">💬</div>';
+
+        var submittedBy = f.submitted_by_name
+          ? '<div style="font-size:11px;color:#6b7280;margin-top:2px;">submitted by ' + fbEscape(f.submitted_by_name) + '</div>'
+          : '';
+
+        var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) + ' (' + fbEscape(f.person_email) + ')</div>' +
+          '<div class="rc-date">' + fbFmtDate(f.created_at) + '</div>' + submittedBy;
 
         return '<div class="report-card">' +
           '<div class="rc-header">' + avatarHtml + '<div class="rc-meta">' + nameHtml + '</div><span class="rc-role-badge ' + roleCls + '">' + roleLabel + '</span></div>' +

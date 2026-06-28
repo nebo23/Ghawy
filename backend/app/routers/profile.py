@@ -356,11 +356,18 @@ async def send_phone_otp(
     """
     يبعت OTP على الرقم المدخل
     """
+    import re as _re
     phone = req.phone.strip()
 
-    # Check if number is valid
-    if not (phone.startswith("01") and len(phone) == 11 and phone.isdigit()):
+    # Accept Egyptian local format (01XXXXXXXXX) OR international E.164 (+XXXXXXXXXXX)
+    # E.164: starts with +, followed by 7–15 digits (ITU-T E.164 standard)
+    _cleaned = _re.sub(r'[\s\-\(\)]', '', phone)
+    _is_egypt_local = _cleaned.startswith('01') and len(_cleaned) == 11 and _cleaned.isdigit()
+    _is_e164 = bool(_re.match(r'^\+\d{7,15}$', _cleaned))
+    if not (_is_egypt_local or _is_e164):
         raise HTTPException(status_code=400, detail="Invalid phone number")
+    # Use the cleaned version for the rest of the function
+    phone = _cleaned
 
     # Check if number is used
     existing = db.query(User).filter(

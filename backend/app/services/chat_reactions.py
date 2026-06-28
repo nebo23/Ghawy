@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 from app.models import ChatMember, ChatMessageReaction, Message
 
 
-ALLOWED_REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
+# Canonical emoji without variation selectors — normalized at boundary
+_RAW_REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
+# Strip U+FE0F variation selector for comparison stability
+ALLOWED_REACTION_EMOJIS = [e.replace('\ufe0f', '') for e in _RAW_REACTION_EMOJIS]
+ALLOWED_REACTION_EMOJIS_DISPLAY = _RAW_REACTION_EMOJIS  # Use original for display
 
 
 def user_can_access_message(db: Session, message: Message, user_id: int) -> bool:
@@ -25,8 +29,10 @@ def set_message_reaction(
     emoji: str,
     action: str,
 ) -> Message:
+    # Normalize incoming emoji (strip variation selector U+FE0F)
+    emoji = emoji.replace('\ufe0f', '')
     if emoji not in ALLOWED_REACTION_EMOJIS:
-        raise ValueError("Unsupported reaction emoji")
+        raise ValueError(f"Unsupported reaction emoji: {repr(emoji)}")
 
     message = db.query(Message).filter(
         Message.id == message_id,
@@ -80,9 +86,11 @@ def get_reaction_summary(db: Session, message_id: int, user_id: int) -> list[dic
         .all()
     }
 
+    # Map back to display emoji (with variation selector if applicable)
+    _display_map = dict(zip(ALLOWED_REACTION_EMOJIS, ALLOWED_REACTION_EMOJIS_DISPLAY))
     return [
         {
-            "emoji": emoji,
+            "emoji": _display_map.get(emoji, emoji),
             "count": int(counts.get(emoji, 0)),
             "user_reacted": emoji in mine,
         }
@@ -118,13 +126,15 @@ def get_reaction_summaries(db: Session, message_ids: Iterable[int], user_id: int
     for message_id, emoji in mine_rows:
         mine_by_message[message_id].add(emoji)
 
+    # Map back to display emoji (with variation selector if applicable)
+    _display_map = dict(zip(ALLOWED_REACTION_EMOJIS, ALLOWED_REACTION_EMOJIS_DISPLAY))
     summaries = {}
     for message_id in ids:
         counts = counts_by_message.get(message_id, {})
         mine = mine_by_message.get(message_id, set())
         summaries[message_id] = [
             {
-                "emoji": emoji,
+                "emoji": _display_map.get(emoji, emoji),
                 "count": counts.get(emoji, 0),
                 "user_reacted": emoji in mine,
             }

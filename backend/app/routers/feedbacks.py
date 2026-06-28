@@ -8,7 +8,7 @@ import logging
 from app.database import get_db
 from app.models import User, CommunityFeedback
 from app.schemas import FeedbackCreate, FeedbackOut
-from app.routers.users import get_current_active_member
+from app.routers.users import get_current_active_member, get_current_admin_user
 
 router = APIRouter(prefix="/feedbacks", tags=["Feedbacks"])
 logger = logging.getLogger(__name__)
@@ -60,13 +60,41 @@ async def create_feedback(
 
     return db_feedback
 
+@router.get("/admin", response_model=list[FeedbackOut])
+def get_all_feedbacks(
+    skip: int = 0, limit: int = 100,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """All feedbacks — admins and owners only."""
+    feedbacks = (
+        db.query(CommunityFeedback)
+        .order_by(CommunityFeedback.created_at.desc())
+        .offset(skip).limit(limit).all()
+    )
+    result = []
+    for f in feedbacks:
+        submitter = db.query(User).filter(User.id == f.user_id).first()
+        out = FeedbackOut(
+            id=f.id,
+            user_id=f.user_id,
+            role=f.role,
+            person_name=f.person_name,
+            person_email=f.person_email,
+            feedback_text=f.feedback_text,
+            created_at=f.created_at,
+            submitted_by_name=submitter.full_name if submitter else None,
+            submitted_by_avatar=(submitter.avatar_url or submitter.selected_avatar) if submitter else None,
+        )
+        result.append(out)
+    return result
+
+
 @router.get("/", response_model=list[FeedbackOut])
 def get_feedbacks(
     skip: int = 0, limit: int = 50,
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
-    # Only users can see their own feedbacks, or if it's admin, we can show all.
-    # Based on the prompt, it seems users see "previous feedbacks". Let's show the user's own feedbacks.
     feedbacks = db.query(CommunityFeedback).filter(CommunityFeedback.user_id == current_user.id).order_by(CommunityFeedback.created_at.desc()).offset(skip).limit(limit).all()
     return feedbacks

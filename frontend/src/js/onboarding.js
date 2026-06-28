@@ -303,6 +303,49 @@ function goToPhoneStep() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Country Configuration ────────────────────────────────
+const COUNTRY_CONFIG = {
+  EG: { dialCode: '+20',  digits: 11, placeholder: '01XXXXXXXXX',  hint: 'مثال: 01012345678',  stripZero: true,  regex: /^01[0-9]{9}$/ },
+  SA: { dialCode: '+966', digits: 10, placeholder: '05XXXXXXXX',   hint: 'مثال: 0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
+  AE: { dialCode: '+971', digits: 10, placeholder: '05XXXXXXXX',   hint: 'مثال: 0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
+  KW: { dialCode: '+965', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 51234567',     stripZero: false, regex: /^[569][0-9]{7}$/ },
+  QA: { dialCode: '+974', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 33123456',     stripZero: false, regex: /^[3567][0-9]{7}$/ },
+  BH: { dialCode: '+973', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 36123456',     stripZero: false, regex: /^[3689][0-9]{7}$/ },
+  OM: { dialCode: '+968', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 91234567',     stripZero: false, regex: /^[279][0-9]{7}$/ },
+  JO: { dialCode: '+962', digits: 10, placeholder: '07XXXXXXXX',   hint: 'مثال: 0791234567',   stripZero: true,  regex: /^07[789][0-9]{7}$/ },
+};
+
+// ── Helpers ──────────────────────────────────────────────
+function getSelectedCountry() {
+  const sel = document.getElementById('countrySelect');
+  return (sel && sel.value) ? sel.value : 'EG';
+}
+
+function buildE164(localNumber, countryCode) {
+  const cfg = COUNTRY_CONFIG[countryCode];
+  if (!cfg) return localNumber;
+  const digits = localNumber.replace(/[^0-9]/g, '');
+  if (cfg.stripZero && digits.startsWith('0')) {
+    return cfg.dialCode + digits.slice(1);
+  }
+  return cfg.dialCode + digits;
+}
+
+function onCountryChange() {
+  const code = getSelectedCountry();
+  const cfg = COUNTRY_CONFIG[code];
+  if (!cfg) return;
+  const input = document.getElementById('phoneInput');
+  const hint  = document.getElementById('phoneHint');
+  if (input) {
+    input.placeholder = cfg.placeholder;
+    input.maxLength   = 20;
+    input.value       = '';
+    input.focus();
+  }
+  if (hint) hint.textContent = cfg.hint;
+}
+
 let enteredPhone = '';
 
 function setLoadingBtn(btnId, isLoading) {
@@ -323,15 +366,32 @@ function setLoadingBtn(btnId, isLoading) {
 }
 
 async function sendPhoneOTP() {
-  const phone = document.getElementById('phoneInput').value.trim();
+  const localNumber = document.getElementById('phoneInput').value.trim();
+  const countryCode = getSelectedCountry();
+  const cfg = COUNTRY_CONFIG[countryCode];
 
-  if (!/^01[0-9]{9}$/.test(phone)) {
-    if (typeof showToast !== 'undefined') {
-      showToast('Enter a valid Egyptian phone number', 'error');
-    } else {
-      showToast('Enter a valid Egyptian phone number', 'error');
+  // Strip formatting characters the user may have typed/pasted
+  const normalized = localNumber.replace(/[\s\-\(\)]/g, '');
+
+  let phoneE164;
+  if (normalized.startsWith('+') || (cfg && normalized.startsWith(cfg.dialCode.slice(1)))) {
+    // User entered international format: +966551996766 or 966551996766
+    phoneE164 = normalized.startsWith('+') ? normalized : '+' + normalized;
+    if (!cfg || !phoneE164.startsWith(cfg.dialCode)) {
+      showToast(`الرقم لا يبدأ بـ ${cfg ? cfg.dialCode : ''} — اختر الدولة الصحيحة`, 'error');
+      return;
     }
-    return;
+    if (!/^\+\d{7,15}$/.test(phoneE164)) {
+      showToast(`أدخل رقم ${document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || ''} صحيح — ${cfg ? cfg.hint : ''}`, 'error');
+      return;
+    }
+  } else {
+    // Local format (e.g. 0551996766 for SA, 51234567 for KW)
+    if (!cfg || !cfg.regex.test(normalized)) {
+      showToast(`أدخل رقم ${document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || ''} صحيح — ${cfg ? cfg.hint : ''}`, 'error');
+      return;
+    }
+    phoneE164 = buildE164(normalized, countryCode);
   }
 
   setLoadingBtn('sendOtpBtn', true);
@@ -340,26 +400,23 @@ async function sendPhoneOTP() {
     const res = await fetch(`${API}/profile/send-phone-otp`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ phone })
+      body: JSON.stringify({ phone: phoneE164 })
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      enteredPhone = phone;
-      document.getElementById('phoneSent').textContent = phone;
+      enteredPhone = phoneE164;
+      document.getElementById('phoneSent').textContent = localNumber + ' (' + phoneE164 + ')';
       document.getElementById('phone-input-phase').style.display = 'none';
       document.getElementById('otp-input-phase').style.display = 'block';
-      if (typeof showToast !== 'undefined') showToast('Code sent ✅', 'success');
-      // Focus first box
+      showToast('تم إرسال الكود ✅', 'success');
       document.querySelectorAll('.otp-box')[0].focus();
     } else {
-      if (typeof showToast !== 'undefined') showToast(data.detail || 'An error occurred', 'error');
-      else alert(data.detail || 'An error occurred');
+      showToast(data.detail || 'حدث خطأ، حاول مرة أخرى', 'error');
     }
   } catch (err) {
-    if (typeof showToast !== 'undefined') showToast('No connection to server', 'error');
-    else showToast('No connection to server', 'error');
+    showToast('لا يوجد اتصال بالسيرفر', 'error');
   } finally {
     setLoadingBtn('sendOtpBtn', false);
   }
@@ -370,8 +427,7 @@ async function verifyPhoneOTP() {
   const code = Array.from(boxes).map(b => b.value).join('');
 
   if (code.length !== 6) {
-    if (typeof showToast !== 'undefined') showToast('Enter the full 6-digit code', 'error');
-    else showToast('Enter the full 6-digit code', 'error');
+    showToast('أدخل الكود المكون من 6 أرقام كاملاً', 'error');
     return;
   }
 
@@ -404,8 +460,13 @@ async function verifyPhoneOTP() {
 async function resendOTP() {
   document.getElementById('otp-input-phase').style.display = 'none';
   document.getElementById('phone-input-phase').style.display = 'block';
-  if (typeof showToast !== 'undefined') showToast('Enter your number again and request a new code', 'info');
+  // Re-apply country config in case user wants to switch country on resend
+  onCountryChange();
+  showToast('أدخل رقمك مرة أخرى واطلب كود جديد', 'info');
 }
+
+// Initialize country config on load (sets correct placeholder/maxlength for default Egypt)
+if (typeof onCountryChange === 'function') onCountryChange();
 
 // Auto-focus between OTP boxes
 document.querySelectorAll('.otp-box').forEach((box, index, boxes) => {

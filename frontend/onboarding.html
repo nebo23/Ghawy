@@ -105,9 +105,26 @@
 
         <!-- Phase 1: إدخال الرقم -->
         <div id="phone-input-phase">
-          <div class="ob-input-group mt-6 text-right" dir="rtl">
+          <!-- Country selector -->
+          <div class="ob-input-group mt-4" dir="rtl">
+            <select id="countrySelect"
+              onchange="onCountryChange()"
+              style="width:100%; padding:12px 16px; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; font-size:16px; font-family:inherit; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23888%22 d=%22M6 8L1 3h10z%22/></svg>'); background-repeat:no-repeat; background-position:left 14px center; direction:rtl;">
+              <option value="EG">🇪🇬 مصر (+20)</option>
+              <option value="SA">🇸🇦 السعودية (+966)</option>
+              <option value="AE">🇦🇪 الإمارات (+971)</option>
+              <option value="KW">🇰🇼 الكويت (+965)</option>
+              <option value="QA">🇶🇦 قطر (+974)</option>
+              <option value="BH">🇧🇭 البحرين (+973)</option>
+              <option value="OM">🇴🇲 عُمان (+968)</option>
+              <option value="JO">🇯🇴 الأردن (+962)</option>
+            </select>
+          </div>
+          <!-- Phone number input -->
+          <div class="ob-input-group mt-3 text-right" dir="rtl">
             <input type="tel" id="phoneInput" class="ob-input text-center text-xl tracking-widest"
               placeholder="01XXXXXXXXX" maxlength="11" inputmode="numeric" style="direction: ltr;" />
+            <small id="phoneHint" style="display:block; color:#888; font-size:12px; margin-top:6px; text-align:center; direction:ltr;"></small>
           </div>
           <button class="ob-continue-btn" id="sendOtpBtn" onclick="sendPhoneOTP()" style="margin-top:20px;">
             <span class="btn-text">إرسال الكود</span>
@@ -198,7 +215,7 @@
 
   <script src="src/js/utils.js?v=10"></script>
     
-  <script src="src/js/onboarding.js"></script>
+  <script src="src/js/onboarding.js?v=3"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
