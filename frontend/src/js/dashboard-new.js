@@ -266,6 +266,10 @@ async function loadStatsCards() {
 // ═══════════════════════════════════════════════════════
 
 function renderCourses(courses) {
+    // Only run on dashboard page — courses.html has its own loader (courses.js)
+    // Note: nginx strips .html so pathname may be /courses or /courses.html
+    const path = window.location.pathname;
+    if (path.endsWith('/courses') || path.includes('courses.html')) return;
     const grid = document.getElementById('coursesGrid');
     if (!grid) return;
 

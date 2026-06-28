@@ -58,7 +58,7 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
     }
 
     # 2. Courses (For now, let's just return all published courses with the user's progress)
-    courses_query = db.query(Course).filter(Course.is_published == True).limit(4).all()
+    courses_query = db.query(Course).filter(Course.is_published == True).all()
     courses_data = []
     for course in courses_query:
         from app.models import UserProgress

@@ -94,27 +94,35 @@ async function loadCourses() {
         }
 
         grid.innerHTML = courses.map(c => {
-            const icon = getCourseIcon(c.title);
-            const desc = c.description ? c.description.substring(0, 80) + '...' : '';
-            const thumb = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
-            return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'">
-                <div class="course-thumb">
-                    ${thumb ? `<img src="${thumb}" alt="${c.title}" style="width:100%;height:100%;object-fit:cover;z-index:0;position:relative;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>` : ''}
-                    <div style="position:absolute;inset:0;display:${thumb ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:3rem;z-index:1">${icon}</div>
-                    <div class="course-thumb-overlay"></div>
+            const thumb = c.thumbnail_url
+                ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url)
+                : '';
 
+            let status = 'not-started';
+            let statusLabel = 'Not Started';
+
+            return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'" role="button" tabindex="0">
+                <div class="course-thumb-wrap">
+                    ${thumb ? `<img src="${thumb}" alt="${window.escapeHtml ? window.escapeHtml(c.title) : c.title}" class="course-thumb-img" onerror="this.style.display='none';"/>` : ''}
+                    <div class="course-pct-badge" style="display:none">0%</div>
                 </div>
                 <div class="course-body">
-                    <h3>${c.title}</h3>
-                    <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4">${desc}</p>
-                    <div class="course-meta" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                        <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons} Lessons</span>
+                    <h3>${window.escapeHtml ? window.escapeHtml(c.title) : c.title}</h3>
+                    <div class="course-meta-row" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+                        <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons || 0} Lessons</span>
                         ${c.course_time ? `<span><i class="fa-regular fa-clock" style="margin-right:6px; color:var(--gold);"></i>${c.course_time}</span>` : ''}
                     </div>
-                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-                        <div class="course-progress" style="flex:1"><div class="course-progress-bar" style="width:0%"></div></div>
-                        <span class="course-progress-text" style="min-width:30px">0%</span>
+                    <div class="course-prog-wrap">
+                        <div class="course-prog-bg">
+                            <div class="course-prog-fill" style="width:0%"></div>
+                        </div>
                     </div>
+                </div>
+                <div class="course-footer" style="display:none">
+                    <span class="course-status ${status}">${statusLabel}</span>
+                    <span class="course-action">
+                        Start Course <i class="fa-solid fa-play"></i>
+                    </span>
                 </div>
             </div>`;
         }).join('');
@@ -127,8 +135,26 @@ async function loadCourses() {
                 const pct = Math.round(prog.percentage || 0);
                 const card = grid.querySelector(`[onclick*="id=${c.id}"]`);
                 if (card) {
-                    card.querySelector('.course-progress-bar').style.width = pct + '%';
-                    card.querySelector('.course-progress-text').textContent = pct + '%';
+                    card.querySelector('.course-prog-fill').style.width = pct + '%';
+                    
+                    const badge = card.querySelector('.course-pct-badge');
+                    if (pct > 0) {
+                        badge.style.display = 'block';
+                        badge.textContent = pct + '%';
+                        
+                        const statusEl = card.querySelector('.course-status');
+                        const actionEl = card.querySelector('.course-action');
+                        
+                        if (pct >= 100) {
+                            statusEl.className = 'course-status completed';
+                            statusEl.textContent = 'Completed';
+                            actionEl.innerHTML = 'Review <i class="fa-solid fa-arrow-right"></i>';
+                        } else {
+                            statusEl.className = 'course-status in-progress';
+                            statusEl.textContent = 'In Progress';
+                            actionEl.innerHTML = 'Continue <i class="fa-solid fa-arrow-right"></i>';
+                        }
+                    }
                 }
             } catch (e) { /* skip */ }
         }

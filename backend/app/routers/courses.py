@@ -28,7 +28,7 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 @router.get("", response_model=List[CourseOut])
 def get_courses(
     db: Session = Depends(get_db),
-    limit: int = Query(50, le=100),
+    limit: int = Query(1000),
     offset: int = Query(0)
 ):
     return db.query(Course)\

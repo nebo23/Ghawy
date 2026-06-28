@@ -4212,7 +4212,47 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=15"></script>
+    <script src="src/js/dashboard-new.js?v=18"></script>
+
+    <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
+    <script>
+        (function () {
+            function wire() {
+                var btn = document.getElementById('hamburgerBtn');
+                var sidebar = document.getElementById('dashSidebar');
+                var overlay = document.getElementById('sidebarOverlay');
+                if (!btn || !sidebar) return;
+                // Other scripts (utils.js, dashboard-new.js) each bind a toggle to
+                // this button; an even number of toggles cancels out so the menu
+                // never opens. Run after `load` (once every other script has
+                // bound), clone the node to drop ALL stale listeners, then bind
+                // exactly one deterministic handler.
+                var b = btn.cloneNode(true);
+                btn.parentNode.replaceChild(b, btn);
+                function setOpen(open) {
+                    sidebar.classList.toggle('open', open);
+                    if (overlay) {
+                        overlay.classList.toggle('active', open);
+                        overlay.classList.toggle('visible', open);
+                    }
+                    b.classList.toggle('active', open);
+                }
+                b.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    setOpen(!sidebar.classList.contains('open'));
+                });
+                if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
+                // Close the drawer when a sidebar menu item is selected.
+                sidebar.querySelectorAll('a').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        if (window.innerWidth <= 1024) setOpen(false);
+                    });
+                });
+            }
+            if (document.readyState === 'complete') wire();
+            else window.addEventListener('load', wire);
+        })();
+    </script>
 </body>
 
 </html>

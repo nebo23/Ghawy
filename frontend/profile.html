@@ -43,6 +43,33 @@
         })();
     </script>
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+
+    <!-- ── Achievements page responsive fixes (mobile/tablet only) ──
+         Desktop (≥1025px) is untouched. These classes live only on this page. -->
+    <style>
+        @media (max-width: 1024px) {
+            /* Tablet: keep grids tidy, no overflow */
+            .quick-stats-row { grid-template-columns: repeat(2, 1fr); }
+            #achievements .achievements-grid-premium { grid-template-columns: repeat(3, 1fr); }
+            .stats-grid-premium { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            /* Stats rows stack vertically (reduce the row's own side padding) */
+            .quick-stats-row { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
+            .stats-grid-premium { grid-template-columns: 1fr; }
+
+            /* Achievement cards stack to a single column */
+            #achievements .achievements-grid-premium { grid-template-columns: 1fr; }
+
+            /* Next-achievement widget: stack instead of side-by-side */
+            .next-achievement-widget { flex-direction: column; align-items: stretch; gap: 12px; }
+            .next-ach-right { align-items: flex-start; min-width: 0; width: 100%; }
+
+            /* Keep "Edit Profile" a comfortable touch target and on its own line */
+            #editProfileBtn { margin-left: 0; min-height: 40px; }
+        }
+    </style>
 </head>
 
 <body>
