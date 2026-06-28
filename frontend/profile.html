@@ -48,26 +48,47 @@
          Desktop (≥1025px) is untouched. These classes live only on this page. -->
     <style>
         @media (max-width: 1024px) {
-            /* Tablet: keep grids tidy, no overflow */
+            /* Tablet: multi-column grids reduce to 2 columns max, no overflow */
             .quick-stats-row { grid-template-columns: repeat(2, 1fr); }
-            #achievements .achievements-grid-premium { grid-template-columns: repeat(3, 1fr); }
+            #achievements .achievements-grid-premium { grid-template-columns: repeat(2, 1fr); }
             .stats-grid-premium { grid-template-columns: repeat(2, 1fr); }
+
+            /* Tighten the header card / stats row side insets so nothing overflows */
+            .profile-header-card { margin-left: 16px; margin-right: 16px; padding-left: 18px; padding-right: 18px; }
+            .quick-stats-row { padding-left: 16px; padding-right: 16px; }
         }
 
         @media (max-width: 640px) {
-            /* Stats rows stack vertically (reduce the row's own side padding) */
-            .quick-stats-row { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
+            /* All containers become fluid — zero horizontal scroll */
+            .profile-header-card { margin-left: 12px; margin-right: 12px; padding: 16px; }
+            .quick-stats-row { grid-template-columns: 1fr; padding-left: 12px; padding-right: 12px; gap: 12px; }
             .stats-grid-premium { grid-template-columns: 1fr; }
 
             /* Achievement cards stack to a single column */
             #achievements .achievements-grid-premium { grid-template-columns: 1fr; }
 
+            /* Profile header reflows cleanly */
+            .profile-header-top { gap: 14px; }
+
             /* Next-achievement widget: stack instead of side-by-side */
             .next-achievement-widget { flex-direction: column; align-items: stretch; gap: 12px; }
             .next-ach-right { align-items: flex-start; min-width: 0; width: 100%; }
 
-            /* Keep "Edit Profile" a comfortable touch target and on its own line */
-            #editProfileBtn { margin-left: 0; min-height: 40px; }
+            /* Progress bars stay full-width */
+            .xp-bar-bg-hero, .next-ach-bar-bg, .stat-progress-bg { width: 100%; }
+
+            /* Avatar scales within its frame */
+            .profile-avatar-lg img { max-width: 100%; object-fit: cover; }
+
+            /* Comfortable touch targets (min 44px) */
+            .q-stat-card { min-height: 44px; }
+            #editProfileBtn { margin-left: 0; align-self: stretch; min-height: 44px; justify-content: center; }
+
+            /* Keep fonts readable (min ~13px) */
+            .ach-info .ach-name { font-size: 14px; }
+            .ach-info .ach-desc { font-size: 13px; }
+            .stat-badge-inline { font-size: 13px; }
+            .q-stat-card { font-size: 14px; }
         }
     </style>
 </head>

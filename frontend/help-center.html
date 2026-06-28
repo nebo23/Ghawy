@@ -507,13 +507,29 @@
                 return '<i class="fa-solid fa-user"></i>';
             }
 
+            // Fallback shown when the team can't be loaded — placeholder avatar +
+            // "Support Team" text instead of leaving the card blank.
+            function renderFallback() {
+                listEl.innerHTML = `
+                    <div class="member-row">
+                        <div class="member-info">
+                            <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
+                            <div>
+                                <h4>فريق الدعم</h4>
+                                <span>Support Team</span>
+                            </div>
+                        </div>
+                        <a href="mailto:support@ghawy.ai" class="btn-outline btn-sm">إرسال رسالة</a>
+                    </div>`;
+            }
+
             try {
                 const res = await fetch(apiBase + '/help-center/team', {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
                 });
-                if (!res.ok) return;
+                if (!res.ok) { renderFallback(); return; }
                 const team = await res.json();
-                if (!Array.isArray(team) || team.length === 0) return;
+                if (!Array.isArray(team) || team.length === 0) { renderFallback(); return; }
 
                 listEl.innerHTML = team.map(m => `
                     <div class="member-row">
@@ -554,6 +570,7 @@
                 });
             } catch (e) {
                 console.error('Support team load error:', e);
+                renderFallback();
             }
         })();
     </script>
