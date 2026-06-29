@@ -43,6 +43,40 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
     # Exposed as both `streak_days` (so the profile card / achievements that
     # already read this field show it) and `days_streak` (dashboard stat card).
     video_streak = calculate_video_streak(current_user.id, db)
+
+    # ── Achievement unlock computations (all derived from existing data) ──
+    # 1. First Post in introduce-yourself channel
+    introduce_post = db.query(Post).filter(
+        Post.user_id == current_user.id,
+        Post.category_slug == "introduce-yourself"
+    ).first()
+    has_first_post = introduce_post is not None
+
+    # 2. 7-Day Streak (reuse already computed video_streak)
+    has_7day_streak = video_streak >= 7
+
+    # 3. Top Student — rank #1 in ANY course
+    from app.services.progress_service import get_top_students_for_course
+    all_courses = db.query(Course).filter(Course.is_published == True).all()
+    is_top_student = False
+    for course in all_courses:
+        leaderboard = get_top_students_for_course(course.id, current_user.id, db)
+        top = leaderboard.get("top_students", [])
+        if top and top[0].get("rank") == 1 and top[0].get("user_id") == current_user.id:
+            is_top_student = True
+            break
+
+    # 4. Course Complete — completed at least 1 course
+    courses_done = count_completed_courses(current_user.id, db)
+    has_course_complete = courses_done >= 1
+
+    # 5. 100% Progress — completed ALL published courses
+    total_published = db.query(Course).filter(Course.is_published == True).count()
+    has_all_courses = (total_published > 0) and (courses_done >= total_published)
+
+    # 6. Pro Member — all other achievements unlocked
+    has_pro_member = all([has_first_post, has_7day_streak, is_top_student, has_course_complete, has_all_courses])
+
     user_data = {
         "full_name": current_user.full_name,
         "email": current_user.email,
@@ -54,7 +88,13 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
         # Total number of fully completed courses (all time).
         "courses_completed": count_completed_courses(current_user.id, db),
         "badge": current_user.badge,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "has_first_post": has_first_post,
+        "has_7day_streak": has_7day_streak,
+        "is_top_student": is_top_student,
+        "has_course_complete": has_course_complete,
+        "has_all_courses": has_all_courses,
+        "has_pro_member": has_pro_member,
     }
 
     # 2. Courses (For now, let's just return all published courses with the user's progress)

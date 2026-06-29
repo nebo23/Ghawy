@@ -69,7 +69,7 @@ def list_users(
     db: Session = Depends(get_db),
 ):
     """Return list of all users with admin-relevant fields."""
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only — admins cannot view members
 
     query = db.query(User)
 

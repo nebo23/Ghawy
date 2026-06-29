@@ -17,8 +17,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-  <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
-  <link rel="stylesheet" href="src/css/team.css?v=4" />
+  <link rel="stylesheet" href="src/css/dashboard.css?v=13" />
+  <link rel="stylesheet" href="src/css/team.css?v=5" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -615,13 +615,39 @@
       }
 
       .team-table-wrap {
-        overflow-x: auto
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch
+      }
+
+      .team-toolbar > * {
+        flex: 1 1 auto
       }
 
       .team-table th:nth-child(5),
       .team-table td:nth-child(5),
       .team-table th:nth-child(6),
       .team-table td:nth-child(6) {
+        display: none
+      }
+    }
+
+    @media(max-width:640px) {
+      .page-hdr {
+        padding: 0 16px !important
+      }
+
+      .team-toolbar {
+        flex-direction: column
+      }
+
+      .team-toolbar > * {
+        width: 100%
+      }
+
+      .team-table th:nth-child(3),
+      .team-table td:nth-child(3),
+      .team-table th:nth-child(4),
+      .team-table td:nth-child(4) {
         display: none
       }
     }
@@ -756,10 +782,14 @@
 </head>
 
 <body>
+  <div class="team-sections-backdrop" id="teamSectionsBackdrop"></div>
   <div class="dash-layout">
     <!-- MAIN -->
     <div class="dash-main" style="margin-left: 0;">
       <header class="dash-topbar">
+        <button class="team-sections-toggle" id="teamNavToggle" aria-label="Open sections">
+          <i class="fa-solid fa-bars"></i>
+        </button>
 
         <div class="topbar-actions">
           <div class="notif-wrapper" id="notifWrapper">
@@ -811,7 +841,7 @@
 
       <div class="dash-content">
         <!-- Page Header -->
-        <div style="padding:0 32px 0">
+        <div class="page-hdr" style="padding:0 32px 0">
           <div class="breadcrumb"><a href="dashboard.html?v=2"><i data-lucide="layout-grid" class="nav-icon"></i></a><i
               class="fa-solid fa-chevron-right"></i><span id="page-breadcrumb">Team Dashboard</span></div>
           <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px" id="page-heading">Team Dashboard</h1>
@@ -1966,7 +1996,7 @@
   <script src="src/js/utils.js?v=10"></script>
     <script src="src/js/dashboard-new.js?v=15"></script>
   <script src="src/js/i18n.js?v=2"></script>
-  <script src="src/js/team.js?v=6"></script>
+  <script src="src/js/team.js?v=8"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
@@ -2269,6 +2299,7 @@
         html += '<th>Proj Rej</th>';
         html += '<th>WFs Res</th>';
         html += '<th>WFs Time</th>';
+        html += '<th></th>';
         html += '</tr></thead><tbody>';
 
         html += reports.map(function (r) { return renderReportRow(r, isAdmin); }).join('');
@@ -2327,9 +2358,30 @@
         html += cell(r.workflows_resolved_count, '#a855f7');
         html += cell(r.avg_resolution_time, '#9ca3af');
 
+        if (isAdmin) {
+          html += '<td><button onclick="deleteReport(' + r.id + ')" title="حذف" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:13px;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">🗑</button></td>';
+        } else {
+          html += '<td></td>';
+        }
+
         html += '</tr>';
         return html;
       }
+
+      window.deleteReport = async function (id) {
+        if (!confirm('هتمسح الريبورت ده؟')) return;
+        try {
+          var res = await fetch(RPT_API + '/reports/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + rptToken() }
+          });
+          if (!res.ok && res.status !== 204) throw new Error('HTTP ' + res.status);
+          showToast('✅ تم حذف الريبورت', 'success');
+          loadReportsTab();
+        } catch (err) {
+          showToast('❌ فشل الحذف: ' + err.message, 'error');
+        }
+      };
 
       window.handleRoleChange = function() {
         var role = document.getElementById('rpt-role').value;
@@ -2463,8 +2515,13 @@
       function fbFmtDate(iso) {
         if (!iso) return '—';
         try {
-          return new Date(iso).toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          var d = new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
+          return d.toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         } catch (e) { return iso; }
+      }
+
+      function fbCurrentUser() {
+        try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch (e) { return {}; }
       }
 
       function fbEscape(str) {
@@ -2481,14 +2538,15 @@
           var res = await fetch(ADMIN_API_URL, { headers: { 'Authorization': 'Bearer ' + fbToken() } });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           var feedbacks = await res.json();
-          renderFeedbacks(feedbacks);
+          var me = fbCurrentUser();
+          renderFeedbacks(feedbacks, !!(me.is_admin || me.is_owner));
         } catch (err) {
           container.innerHTML = '<div class="reports-empty"><div class="empty-icon">⚠️</div><p style="color:#ef4444;">فشل في تحميل الـ Feedbacks — ' + err.message + '</p></div>';
         }
       };
 
       // ─── Render ────────────────────────────────────────────
-      function renderFeedbacks(feedbacks) {
+      function renderFeedbacks(feedbacks, canDelete) {
         var container = document.getElementById('feedbacks-cards-container');
 
         if (!feedbacks || feedbacks.length === 0) {
@@ -2497,11 +2555,11 @@
           return;
         }
 
-        container.innerHTML = feedbacks.map(function (f) { return renderCard(f); }).join('');
+        container.innerHTML = feedbacks.map(function (f) { return renderCard(f, canDelete); }).join('');
         if (window.lucide) window.lucide.createIcons();
       }
 
-      function renderCard(f) {
+      function renderCard(f, canDelete) {
         var roleCls = (f.role || '').toLowerCase().replace(/ /g, '_');
         var roleLabel = fbRoleLabel(f.role || '');
 
@@ -2516,12 +2574,31 @@
         var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) + ' (' + fbEscape(f.person_email) + ')</div>' +
           '<div class="rc-date">' + fbFmtDate(f.created_at) + '</div>' + submittedBy;
 
+        var deleteBtn = canDelete
+          ? '<button onclick="deleteFeedback(' + f.id + ')" title="حذف" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:13px;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">🗑</button>'
+          : '';
+
         return '<div class="report-card">' +
-          '<div class="rc-header">' + avatarHtml + '<div class="rc-meta">' + nameHtml + '</div><span class="rc-role-badge ' + roleCls + '">' + roleLabel + '</span></div>' +
+          '<div class="rc-header">' + avatarHtml + '<div class="rc-meta">' + nameHtml + '</div><span class="rc-role-badge ' + roleCls + '">' + roleLabel + '</span>' + deleteBtn + '</div>' +
           '<div class="rc-questions">' +
             '<div class="rc-question"><div class="rc-q-text" style="white-space:pre-wrap;">' + fbEscape(f.feedback_text) + '</div></div>' +
           '</div></div>';
       }
+
+      window.deleteFeedback = async function (id) {
+        if (!confirm('هتمسح الـ Feedback ده؟')) return;
+        try {
+          var res = await fetch(API_BASE_FB + '/feedbacks/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + fbToken() }
+          });
+          if (!res.ok && res.status !== 204) throw new Error('HTTP ' + res.status);
+          showToast('✅ تم حذف الـ Feedback', 'success');
+          loadFeedbacksTab();
+        } catch (err) {
+          showToast('❌ فشل الحذف: ' + err.message, 'error');
+        }
+      };
 
       // ─── Modal Open ────────────────────────────────────────
       window.openFeedbackModal = function () {
@@ -2601,6 +2678,36 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function initTeamNav() {
+      var toggle = document.getElementById('teamNavToggle');
+      var nav = document.querySelector('.team-sections-nav');
+      var backdrop = document.getElementById('teamSectionsBackdrop');
+      if (!toggle || !nav || !backdrop) return;
+
+      function openNav() {
+        nav.classList.add('mobile-open');
+        backdrop.classList.add('show');
+      }
+      function closeNav() {
+        nav.classList.remove('mobile-open');
+        backdrop.classList.remove('show');
+      }
+
+      toggle.addEventListener('click', function() {
+        nav.classList.contains('mobile-open') ? closeNav() : openNav();
+      });
+
+      backdrop.addEventListener('click', closeNav);
+
+      document.querySelectorAll('.team-section-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          if (window.innerWidth <= 768) closeNav();
+        });
+      });
+    })();
+  </script>
 
 </body>
 

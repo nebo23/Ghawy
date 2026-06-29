@@ -123,12 +123,6 @@ async function loadProfile() {
         setTxt('avatarLevel', u.level || 1);
         setTxt('xpLevelNum', u.level || 1);
 
-        // Next Achievement
-        const streakDays = u.streak_days || 0;
-        setTxt('nextAchProgress', streakDays);
-        const nextAchBar = document.getElementById('nextAchBar');
-        if (nextAchBar) nextAchBar.style.width = Math.min((streakDays / 7) * 100, 100) + '%';
-
         // Update XP Progress Bar
         const xpCurrent = u.xp || 0;
         const xpTarget = (u.level || 1) * 1000;
@@ -457,6 +451,57 @@ async function loadProgressStats() {
         setBar('barLevel', avgPct);
         const pctL = document.getElementById('pctLevel');
         if (pctL) pctL.textContent = avgPct + '%';
+
+        // ── Achievement Unlock Logic ──
+        const u = data.user;
+
+        // Helper: unlock or lock a card
+        function setAch(achKey, unlocked) {
+            const card = document.querySelector(`[data-ach="${achKey}"]`);
+            if (!card) return;
+            if (unlocked) {
+                card.classList.remove('locked');
+                // Remove the lock indicator icon if present
+                const lockEl = card.querySelector('.lock-indicator');
+                if (lockEl) lockEl.remove();
+            } else {
+                if (!card.classList.contains('locked')) card.classList.add('locked');
+            }
+        }
+
+        // First Login: always unlocked
+        setAch('first-login', true);
+
+        // First Post in introduce-yourself
+        setAch('first-post', !!u.has_first_post);
+
+        // 7-Day Streak
+        setAch('streak-7', !!u.has_7day_streak);
+
+        // Top Student
+        setAch('top-student', !!u.is_top_student);
+
+        // Course Complete
+        setAch('course-complete', !!u.has_course_complete);
+
+        // 100% Progress
+        setAch('all-progress', !!u.has_all_courses);
+
+        // Pro Member
+        setAch('pro-member', !!u.has_pro_member);
+
+        // Update unlocked counter
+        const unlockedAchs = [true, !!u.has_first_post, !!u.has_7day_streak, !!u.is_top_student, !!u.has_course_complete, !!u.has_all_courses, !!u.has_pro_member];
+        const unlockedCount = unlockedAchs.filter(Boolean).length;
+        const achCountEl = document.getElementById('achUnlockedCount');
+        if (achCountEl) achCountEl.textContent = `${unlockedCount} / 7 Unlocked`;
+
+        // Next Achievement Widget — update streak progress
+        const streakDays = u.streak_days || 0;
+        const nextAchProgressEl = document.getElementById('nextAchProgress');
+        if (nextAchProgressEl) nextAchProgressEl.textContent = streakDays;
+        const nextAchBar = document.getElementById('nextAchBar');
+        if (nextAchBar) nextAchBar.style.width = Math.min((streakDays / 7) * 100, 100) + '%';
 
     } catch (e) { console.error('Progress stats error:', e); }
 }

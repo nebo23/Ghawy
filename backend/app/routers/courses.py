@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
 from app.routers.users import get_current_user, get_current_active_member, get_current_admin_user, get_current_owner_user
 from app.schemas import (
-    CourseOut, CourseDetailOut, CourseCreate, CourseUpdate,
+    CourseOut, CourseDetailOut, CourseCreate, CourseUpdate, CourseReorder,
     LessonCreate, AdminLessonCreate, LessonUpdate, LessonOut,
     UserCourseProgressOut, CourseProgressUpdate,
 )
@@ -34,6 +34,7 @@ def get_courses(
     return db.query(Course)\
         .options(joinedload(Course.lessons))\
         .filter(Course.is_published == True)\
+        .order_by(Course.sort_order.asc(), Course.id.asc())\
         .limit(limit)\
         .offset(offset)\
         .all()
@@ -160,7 +161,20 @@ async def get_course_progress(
 # ─── Admin: List ALL courses ─────────────────────────────────
 @router.get("/admin/courses", response_model=List[CourseOut])
 def admin_list_courses(admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
-    return db.query(Course).order_by(Course.created_at.desc()).all()
+    return db.query(Course).order_by(Course.sort_order.asc(), Course.id.asc()).all()
+
+# ─── Admin: Reorder courses ──────────────────────────────────
+# NOTE: declared BEFORE "/admin/courses/{course_id}" so the literal
+# path "reorder" is not captured as an int course_id.
+@router.patch("/admin/courses/reorder")
+def reorder_courses(data: CourseReorder, admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+    """Set each course's sort_order to its position in the provided ID list."""
+    for index, course_id in enumerate(data.order):
+        db.query(Course).filter(Course.id == course_id).update(
+            {Course.sort_order: index}, synchronize_session=False
+        )
+    db.commit()
+    return {"message": "Course order updated", "count": len(data.order)}
 
 # ─── Admin: Create course ────────────────────────────────────
 @router.post("/admin/courses", response_model=CourseOut, status_code=201)

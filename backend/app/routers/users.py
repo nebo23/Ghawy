@@ -279,6 +279,12 @@ def get_current_owner_user(current_user: User = Depends(get_current_user)) -> Us
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Owners only")
     return current_user
 
+def get_current_admin_or_owner_user(current_user: User = Depends(get_current_user)) -> User:
+    """Admins or owners."""
+    if not (current_user.is_admin or getattr(current_user, 'is_owner', False)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins or owners only")
+    return current_user
+
 # ─── Get All Users (مع إضافة الـ Pagination وتأمين الصلاحية) ───
 @router.get("", response_model=list[UserOut])
 def get_all_users(

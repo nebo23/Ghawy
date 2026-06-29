@@ -93,13 +93,24 @@ function initTabs() {
   // 🔒 Hide owner-only tabs from non-owner admins
   // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
   function applyTabVisibility() {
-    const ownerOnlyTabs = ['payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
+    const ownerOnlyTabs = ['users', 'payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
     ownerOnlyTabs.forEach(tabId => {
       const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
       if (btn) {
         btn.style.display = currentUserIsOwner ? '' : 'none';
       }
     });
+
+    // If the active tab is now hidden (non-owner admin landing on Members),
+    // switch to the first visible tab so the page isn't blank.
+    if (!currentUserIsOwner) {
+      const activeBtn = document.querySelector('.team-section-btn.active');
+      if (!activeBtn || activeBtn.style.display === 'none') {
+        const firstVisible = Array.from(document.querySelectorAll('.team-section-btn'))
+          .find(b => b.style.display !== 'none');
+        if (firstVisible) firstVisible.click();
+      }
+    }
   }
   window.applyTabVisibility = applyTabVisibility;
 }
@@ -160,7 +171,8 @@ async function loadTeamPage() {
       });
     }
   } catch (e) { }
-  await loadUsers();
+  // Members list is owner-only; skip the fetch for non-owner admins
+  if (currentUserIsOwner) await loadUsers();
 
   // Set up listeners for Users tab
   document.getElementById('search-input')?.addEventListener('keyup', (e) => {
@@ -1507,6 +1519,33 @@ let coursesCache = [];
 let currentCourseId = null;
 let uploadPollInterval = null;
 
+// ── Reorder courses (controls public Courses page display order) ──
+function moveCourse(id, dir) {
+  const idx = coursesCache.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const swapWith = dir === 'up' ? idx - 1 : idx + 1;
+  if (swapWith < 0 || swapWith >= coursesCache.length) return;
+  [coursesCache[idx], coursesCache[swapWith]] = [coursesCache[swapWith], coursesCache[idx]];
+  renderCourses();
+  persistCourseOrder();
+}
+
+async function persistCourseOrder() {
+  try {
+    const order = coursesCache.map(c => c.id);
+    const res = await fetch(API + '/courses/admin/courses/reorder', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ order })
+    });
+    if (!res.ok) throw new Error('Failed to save order');
+    showToast('Course order saved', 'success');
+  } catch (err) {
+    showToast('Error saving order — reloading', 'error');
+    loadCoursesTab(); // reload to reflect the true saved order
+  }
+}
+
 async function loadCoursesTab() {
   document.getElementById('courses-list-view').style.display = 'block';
   document.getElementById('lessons-manager-view').style.display = 'none';
@@ -1530,7 +1569,7 @@ function renderCourses() {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No courses found. Add one above.</td></tr>`;
     return;
   }
-  tbody.innerHTML = coursesCache.map(c => {
+  tbody.innerHTML = coursesCache.map((c, idx) => {
     const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
     let resources = [];
     try { resources = c.pdf_url ? JSON.parse(c.pdf_url) : []; } catch(e) {
@@ -1564,6 +1603,8 @@ function renderCourses() {
         </label>
       </td>
       <td>
+        <button class="btn-action" onclick="moveCourse(${c.id}, 'up')" title="Move up" ${idx === 0 ? 'disabled' : ''} style="margin-right:4px;${idx === 0 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-up"></i></button>
+        <button class="btn-action" onclick="moveCourse(${c.id}, 'down')" title="Move down" ${idx === coursesCache.length - 1 ? 'disabled' : ''} style="margin-right:8px;${idx === coursesCache.length - 1 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-down"></i></button>
         <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
@@ -1729,7 +1770,7 @@ function renderCourses() {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#555;">No courses found. Add one above.</td></tr>`;
     return;
   }
-  tbody.innerHTML = coursesCache.map(c => {
+  tbody.innerHTML = coursesCache.map((c, idx) => {
     const thumbSrc = c.thumbnail_url ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url) : '';
     let resources = [];
     try { resources = c.pdf_url ? JSON.parse(c.pdf_url) : []; } catch(e) {
@@ -1763,6 +1804,8 @@ function renderCourses() {
         </label>
       </td>
       <td>
+        <button class="btn-action" onclick="moveCourse(${c.id}, 'up')" title="Move up" ${idx === 0 ? 'disabled' : ''} style="margin-right:4px;${idx === 0 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-up"></i></button>
+        <button class="btn-action" onclick="moveCourse(${c.id}, 'down')" title="Move down" ${idx === coursesCache.length - 1 ? 'disabled' : ''} style="margin-right:8px;${idx === coursesCache.length - 1 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-down"></i></button>
         <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>

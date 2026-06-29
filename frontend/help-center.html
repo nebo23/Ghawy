@@ -249,10 +249,8 @@
                             <i data-lucide="help-circle"></i>
                         </a>
                         <span class="separator">›</span>
-                        <span>مركز المساعدة</span>
                     </div>
-                    <h1>مركز المساعدة</h1>
-                    <p>كيف يمكننا مساعدتك اليوم؟</p>
+
                 </div>
 
                 <div class="help-grid">
@@ -388,7 +386,7 @@
                 const bg = avatarColor(userId);
                 const init = initials(name);
                 if (avatarUrl) {
-                    const full = avatarUrl.startsWith('http') ? avatarUrl : (window.API || '') + avatarUrl;
+                    const full = avatarUrl.startsWith('http') ? avatarUrl : ((typeof API !== 'undefined' && API) ? API : '/api') + avatarUrl;
                     return `<img src="${full}" alt="" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;"
                 onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.35)}px;font-weight:800;\\'>${init}</div>'" />`;
                 }
@@ -427,7 +425,7 @@
 
             // ── Step 2: Fetch fresh data from API for accurate avatar ──
             try {
-                const apiBase = window.API || '';
+                const apiBase = (typeof API !== 'undefined' && API) ? API : '/api';
                 const res = await fetch(apiBase + '/dashboard/summary?_t=' + Date.now(), {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
                 });
@@ -443,8 +441,10 @@
                 setText('topbarNameWelcome', name);
                 setText('dropdownName', name);
 
-                // Badge
-                const badge = u.badge || 'Member';
+                // Badge (shows "Admin" for admins, custom title, or badge label)
+                const badge = (typeof getRoleLabel === 'function')
+                    ? getRoleLabel(u)
+                    : (u.is_admin ? 'Admin' : (u.badge || 'Member'));
                 setText('sidebarBadge', badge);
 
                 // Level + XP

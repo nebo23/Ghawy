@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import DailyReport, TeamRole, User
-from app.routers.users import get_current_active_member, get_current_admin_user
+from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 logger = logging.getLogger(__name__)
@@ -310,3 +310,17 @@ def admin_reports(
         .all()
     )
     return [_serialize(r, include_author=True) for r in reports]
+
+
+@router.delete("/{report_id}", status_code=204)
+def delete_report(
+    report_id: int,
+    admin: User = Depends(get_current_admin_or_owner_user),
+    db: Session = Depends(get_db),
+):
+    """DELETE /reports/{report_id} — admins and owners only."""
+    report = db.query(DailyReport).filter(DailyReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    db.delete(report)
+    db.commit()

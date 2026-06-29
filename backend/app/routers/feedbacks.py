@@ -8,7 +8,7 @@ import logging
 from app.database import get_db
 from app.models import User, CommunityFeedback
 from app.schemas import FeedbackCreate, FeedbackOut
-from app.routers.users import get_current_active_member, get_current_admin_user
+from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user
 
 router = APIRouter(prefix="/feedbacks", tags=["Feedbacks"])
 logger = logging.getLogger(__name__)
@@ -98,3 +98,17 @@ def get_feedbacks(
 ):
     feedbacks = db.query(CommunityFeedback).filter(CommunityFeedback.user_id == current_user.id).order_by(CommunityFeedback.created_at.desc()).offset(skip).limit(limit).all()
     return feedbacks
+
+
+@router.delete("/{feedback_id}", status_code=204)
+def delete_feedback(
+    feedback_id: int,
+    admin: User = Depends(get_current_admin_or_owner_user),
+    db: Session = Depends(get_db),
+):
+    """DELETE /feedbacks/{feedback_id} — admins and owners only."""
+    feedback = db.query(CommunityFeedback).filter(CommunityFeedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    db.delete(feedback)
+    db.commit()

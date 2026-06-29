@@ -322,7 +322,6 @@
                             Days</span></div>
                     <div class="q-stat-card"><i data-lucide="graduation-cap"></i> Courses Completed <span
                             id="qsCourses">2</span></div>
-                    <div class="q-stat-card"><i data-lucide="star"></i> XP Earned <span id="qsXP">0</span></div>
                 </div>
 
                 <!-- Achievements -->
@@ -331,12 +330,13 @@
                         style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
                         <h3 class="card-title" data-i18n="achievements" style="font-size: 1.1rem; margin: 0;">
                             Achievements</h3>
-                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">3 / 8
+                        <span id="achUnlockedCount"
+                            style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">0 / 7
                             Unlocked</span>
                     </div>
                     <div class="achievements-grid-premium" id="achievementsGrid">
                         <!-- First Login: Bronze -->
-                        <div class="achievement-card ach-tier-bronze">
+                        <div class="achievement-card ach-tier-bronze" data-ach="first-login">
                             <div class="ach-icon-wrapper"><i data-lucide="rocket"></i></div>
                             <div class="ach-info">
                                 <div class="ach-name">First Login</div>
@@ -344,23 +344,15 @@
                             </div>
                         </div>
                         <!-- First Post: Silver -->
-                        <div class="achievement-card ach-tier-silver">
+                        <div class="achievement-card ach-tier-silver" data-ach="first-post">
                             <div class="ach-icon-wrapper"><i data-lucide="pen-square"></i></div>
                             <div class="ach-info">
                                 <div class="ach-name">First Post</div>
                                 <div class="ach-desc">Shared your voice</div>
                             </div>
                         </div>
-                        <!-- Chatterbox: Gold -->
-                        <div class="achievement-card ach-tier-gold">
-                            <div class="ach-icon-wrapper"><i data-lucide="message-square"></i></div>
-                            <div class="ach-info">
-                                <div class="ach-name">Chatterbox</div>
-                                <div class="ach-desc">Active community member</div>
-                            </div>
-                        </div>
                         <!-- 7-Day Streak: Locked -->
-                        <div class="achievement-card locked">
+                        <div class="achievement-card locked" data-ach="streak-7">
                             <div class="ach-icon-wrapper"><i data-lucide="flame"></i>
                                 <div class="lock-indicator"><i data-lucide="lock"></i></div>
                             </div>
@@ -370,7 +362,7 @@
                             </div>
                         </div>
                         <!-- Top Student: Locked -->
-                        <div class="achievement-card locked">
+                        <div class="achievement-card locked" data-ach="top-student">
                             <div class="ach-icon-wrapper"><i data-lucide="trophy"></i>
                                 <div class="lock-indicator"><i data-lucide="lock"></i></div>
                             </div>
@@ -380,7 +372,7 @@
                             </div>
                         </div>
                         <!-- Course Complete: Locked -->
-                        <div class="achievement-card locked">
+                        <div class="achievement-card locked" data-ach="course-complete">
                             <div class="ach-icon-wrapper"><i data-lucide="graduation-cap"></i>
                                 <div class="lock-indicator"><i data-lucide="lock"></i></div>
                             </div>
@@ -390,7 +382,7 @@
                             </div>
                         </div>
                         <!-- 100% Progress: Locked -->
-                        <div class="achievement-card locked">
+                        <div class="achievement-card locked" data-ach="all-progress">
                             <div class="ach-icon-wrapper"><i data-lucide="target"></i>
                                 <div class="lock-indicator"><i data-lucide="lock"></i></div>
                             </div>
@@ -400,7 +392,7 @@
                             </div>
                         </div>
                         <!-- Pro Member: Diamond -->
-                        <div class="achievement-card ach-tier-diamond">
+                        <div class="achievement-card ach-tier-diamond" data-ach="pro-member">
                             <div class="ach-icon-wrapper"><i data-lucide="gem"></i></div>
                             <div class="ach-info">
                                 <div class="ach-name">Pro Member</div>
@@ -411,7 +403,7 @@
                 </div>
 
                 <!-- Next Achievement Widget -->
-                <div class="next-achievement-widget">
+                <div class="next-achievement-widget" id="nextAchWidgetStreak">
                     <div class="next-ach-left">
                         <div class="next-ach-icon"><i data-lucide="flame"></i></div>
                         <div class="next-ach-info">

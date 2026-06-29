@@ -329,6 +329,7 @@ class CourseOut(BaseModel):
     total_lessons: int
     course_time: Optional[str] = None
     is_published: bool
+    sort_order: int = 0
     created_at: datetime
 
     class Config:
@@ -396,6 +397,9 @@ class CourseUpdate(BaseModel):
     pdf_url: Optional[str] = None
     course_time: Optional[str] = None
     is_published: Optional[bool] = None
+
+class CourseReorder(BaseModel):
+    order: List[int]  # course IDs in the desired display order
 
 
 ProjectStatusLiteral = Literal["pending", "approved", "changes_requested"]

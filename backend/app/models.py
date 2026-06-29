@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, backref
@@ -83,7 +84,6 @@ class User(Base):
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
-    is_owner = Column(Boolean, server_default=text('false'), default=False)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)
@@ -92,7 +92,7 @@ class User(Base):
     badge = Column(String, default="Member")
     birth_date = Column(Date, nullable=True)
     social_media_url = Column(String, nullable=True)
-    show_social_media = Column(Boolean, server_default=text('true'), default=True)
+    shر_social_media = Column(Boolean, server_default=text('true'), default=True)
     onboarding_completed = Column(Boolean, server_default=text('false'), default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
@@ -797,28 +797,6 @@ class DailyReport(Base):
 
     # Relationship
     author = relationship("User")
-
-
-class AdminMemberNote(Base):
-    """
-    Private admin note attached to a community member.
-    One shared note per member, editable only by admins (never visible to members).
-
-    المكان: backend/app/models.py
-    """
-    __tablename__ = "admin_member_notes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    # العضو اللي الملاحظة بتخصه (واحدة لكل عضو)
-    member_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
-    note = Column(Text, nullable=False, default="")
-    # آخر أدمن عدّل الملاحظة
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
-    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow, onupdate=func.now())
-
-    member = relationship("User", foreign_keys=[member_id])
-    editor = relationship("User", foreign_keys=[updated_by])
 
 
 class CommunityFeedback(Base):

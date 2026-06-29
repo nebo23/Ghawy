@@ -554,7 +554,30 @@
             max-width: 90vw;
             max-height: 90vh;
             border-radius: 8px;
+            cursor: default;
         }
+
+        .lightbox-close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 301;
+            transition: background 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        .lightbox-close-btn:hover { background: rgba(255,255,255,0.25); }
 
         /* Fix white flash / scrollbar */
         * {
@@ -1117,7 +1140,10 @@
         </div>
     </div>
 
-    <div class="lightbox-overlay" id="lightbox"><img id="lightboxImg" src="" alt="" /></div>
+    <div class="lightbox-overlay" id="lightbox">
+        <button class="lightbox-close-btn" id="lightboxCloseBtn" title="Close">✕</button>
+        <img id="lightboxImg" src="" alt="" />
+    </div>
 
 
     <!-- User Profile Panel -->
@@ -1660,6 +1686,27 @@
 
         .notif-panel.open {
             display: flex;
+        }
+
+        /* Mobile/tablet: pin to viewport so the panel never overflows */
+        @media (max-width: 1024px) {
+            .notif-panel {
+                position: fixed;
+                top: 60px;
+                right: 8px;
+                left: auto;
+                width: calc(100vw - 16px);
+                max-width: 340px;
+                max-height: 70vh;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .notif-panel {
+                width: calc(100vw - 32px);
+                max-width: 300px;
+                max-height: 60vh;
+            }
         }
 
         .notif-panel-header {
@@ -3244,7 +3291,13 @@
             document.getElementById('lightboxImg').src = src;
             document.getElementById('lightbox').classList.add('open');
         }
-        document.getElementById('lightbox').addEventListener('click', function () { this.classList.remove('open'); });
+        document.getElementById('lightbox').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+        document.getElementById('lightboxCloseBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('lightbox').classList.remove('open');
+        });
 
         // ── Event Listeners ──
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
@@ -4456,7 +4509,6 @@
             if (lb && img) {
                 img.src = src;
                 lb.classList.add('open');
-                lb.style.display = 'flex';
             }
         }
 

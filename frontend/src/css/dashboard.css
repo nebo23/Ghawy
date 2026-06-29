@@ -102,6 +102,15 @@ img{max-width:100%;display:block}
 .notif-item-text { font-size: 0.78rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notif-item-count { background: var(--gold); color: #000; font-size: 0.7rem; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
 
+/* Mobile/tablet: pin the notification panel to the viewport so it never overflows */
+@media (max-width: 1024px) {
+  .notif-panel { position: fixed; top: calc(var(--topbar-h, 56px) + 4px); right: 8px; left: auto; width: calc(100vw - 16px); max-width: 340px; max-height: 70vh; }
+  .notif-item-text, .notif-item-name { overflow-wrap: break-word; word-break: break-word; min-width: 0; }
+}
+@media (max-width: 640px) {
+  .notif-panel { width: calc(100vw - 32px); max-width: 300px; max-height: 60vh; }
+}
+
 /* === BREADCRUMB === */
 .breadcrumb{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-muted);margin-bottom:20px}
 .breadcrumb a{color:var(--gold);font-weight:600}

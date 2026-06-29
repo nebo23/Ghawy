@@ -714,17 +714,19 @@ async function loadActiveUsers() {
         });
         const members = await membersRes.json();
         
-        // Filter out offline members and limit to top 15
-        const activeMembers = members.filter(m => m.is_online).slice(0, 15);
-        
+        // Filter to online members, fetch up to 50 for scroll
+        const activeMembers = members.filter(m => m.is_online).slice(0, 50);
+
         const headerEl = document.querySelector('.ai-sidebar-header h3');
         if (headerEl) headerEl.textContent = `Online Now (${activeMembers.length})`;
-        
+
         if (activeMembers.length === 0) {
             list.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px 0;">No one is online right now</div>';
             return;
         }
-        
+
+        const hiddenCount = activeMembers.length - 10;
+
         list.innerHTML = activeMembers.map(m => `
             <div class="ai-active-user-item">
                 <div class="ai-active-user-av" onclick="openUserProfile(${m.id})" style="cursor: pointer;">
@@ -737,6 +739,17 @@ async function loadActiveUsers() {
                 </div>
             </div>
         `).join('');
+
+        // Apply scroll container so extra users are accessible via scroll
+        list.style.maxHeight = '420px';
+        list.style.overflowY = 'auto';
+        list.style.scrollbarWidth = 'thin';
+        list.style.scrollbarColor = '#333 transparent';
+        list.style.paddingRight = '4px';
+
+        if (hiddenCount > 0) {
+            list.innerHTML += `<div style="text-align:center;font-size:0.75rem;color:#555;padding:8px 0 4px;border-top:1px solid #222;margin-top:8px;">scroll to see ${hiddenCount} more</div>`;
+        }
     } catch(err) {
         list.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85rem;padding:20px 0;">Could not load users</div>';
     }

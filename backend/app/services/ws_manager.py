@@ -96,6 +96,23 @@ class ConnectionManager:
                 except Exception:
                     self.disconnect(ws, uid)
 
+    async def broadcast_to_all(self, data: dict, exclude_user: int = None):
+        """Broadcast a message to every connected user (all their tabs).
+
+        Used for events that are not tied to a real Channel row — e.g. new
+        community posts, whose channels are category slugs rather than chat
+        Channel records.
+        """
+        message_text = json.dumps(data, default=str)
+        for uid in list(self.active_connections.keys()):
+            if uid == exclude_user:
+                continue
+            for ws in list(self.active_connections.get(uid, set())):
+                try:
+                    await ws.send_text(message_text)
+                except Exception:
+                    self.disconnect(ws, uid)
+
     def get_online_count(self) -> int:
         return len(self.active_connections)
 

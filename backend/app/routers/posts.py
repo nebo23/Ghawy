@@ -220,13 +220,15 @@ async def create_post(
 
     post_data = build_post_dict(post, current_user.id)
 
-    # Broadcast via WebSocket
-    channel_obj = db.query(Channel).filter(Channel.name == channel).first()
-    if channel_obj:
-        await manager.broadcast_to_channel(channel_obj.id, {
-            "event": "new_post",
-            "data": post_data,
-        })
+    # Broadcast via WebSocket to all online users. Post "channels" are category
+    # slugs (e.g. "introduce-yourself"), not chat Channel rows, so we cannot
+    # scope by channel id. The client filters by the channel it is viewing and
+    # ignores its own posts, so a global broadcast delivers new posts in
+    # real-time without requiring a page refresh.
+    await manager.broadcast_to_all({
+        "event": "new_post",
+        "data": post_data,
+    }, exclude_user=current_user.id)
 
     return post_data
 
@@ -577,15 +579,13 @@ async def add_comment(
             "data": {"id": notif.id, "title": notif.title, "body": notif.body, "type": notif.type, "link": notif.link, "is_read": notif.is_read}
         })
 
-    # Broadcast via WebSocket
-    channel_name = post.category_slug
-    if channel_name:
-        channel_obj = db.query(Channel).filter(Channel.name == channel_name).first()
-        if channel_obj:
-            await manager.broadcast_to_channel(channel_obj.id, {
-                "event": "new_comment",
-                "data": {**comment_data, "post_id": post_id},
-            })
+    # Broadcast via WebSocket to all online users. Post channels are category
+    # slugs (not chat Channel rows), so we broadcast globally; the client only
+    # refreshes the comment thread if it currently has that post open.
+    await manager.broadcast_to_all({
+        "event": "new_comment",
+        "data": {**comment_data, "post_id": post_id},
+    }, exclude_user=current_user.id)
 
     # Notification for reply
     if data.parent_id:
