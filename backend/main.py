@@ -337,7 +337,7 @@ def get_payment_info():
     """Public endpoint to get payment details for manual flow."""
     return {
         "instapay_number": os.getenv("INSTAPAY_NUMBER", "xxxx"),
-        "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "500"),
+        "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "600"),
         "currency": "EGP"
     }
 
