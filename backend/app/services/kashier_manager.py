@@ -71,6 +71,11 @@ async def create_kashier_payment_url(
         KASHIER_MERCHANT_ID, order_id, amount_str, currency, signing_key
     )
 
+    # Egyptian mobile wallets (Vodafone Cash, etc.) settle in EGP only — offering
+    # them on a non-EGP order makes Kashier reject/error the checkout. Restrict to
+    # card-only for any currency other than EGP.
+    allowed_methods = "card,wallet" if currency.upper() == "EGP" else "card"
+
     params = {
         "merchantId": KASHIER_MERCHANT_ID,
         "amount": amount_str,
@@ -81,7 +86,7 @@ async def create_kashier_payment_url(
         "merchantRedirect": os.getenv("KASHIER_RETURN_URL"),
         "failureRedirect": os.getenv("KASHIER_FAILURE_URL"),
         "serverWebhook": os.getenv("KASHIER_WEBHOOK_URL"),
-        "allowedMethods": "card,wallet",
+        "allowedMethods": allowed_methods,
         "display": "ar",
         "customerName": f"User {user_id}" if user_id else "Customer",
         "customerEmail": user_email or "customer@example.com",
@@ -112,6 +117,7 @@ def _create_kashier_url_fallback(
     user_email: str, user_id: int
 ) -> dict:
     """Fallback: بناء الـ URL يدوياً بدون saveCard لو الـ Payment Session فشل."""
+    allowed_methods = "card,wallet" if currency.upper() == "EGP" else "card"
     params = {
         "merchantId": KASHIER_MERCHANT_ID,
         "amount": amount_str,
@@ -122,7 +128,7 @@ def _create_kashier_url_fallback(
         "merchantRedirect": os.getenv("KASHIER_RETURN_URL"),
         "failureRedirect": os.getenv("KASHIER_FAILURE_URL"),
         "serverWebhook": os.getenv("KASHIER_WEBHOOK_URL"),
-        "allowedMethods": "card,wallet",
+        "allowedMethods": allowed_methods,
         "display": "ar",
         "customerEmail": user_email or "customer@example.com",
         "customerName": f"User {user_id}" if user_id else "Customer",

@@ -624,6 +624,36 @@ input::placeholder {
   gap: 6px;
 }
 
+.plan-instapay-btn {
+  width: 100%;
+  margin-top: 18px;
+  background: transparent;
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  border-radius: 10px;
+  padding: 11px 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.plan-instapay-btn:hover {
+  background: var(--gold);
+  color: #000;
+  transform: translateY(-1px);
+}
+
+.plan-instapay-btn i {
+  width: 16px;
+  height: 16px;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

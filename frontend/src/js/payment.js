@@ -56,6 +56,7 @@ function renderPlans(region) {
     const symbol = p.currency === 'USD' ? '$' : '';
     const curr = p.currency === 'USD' ? 'USD' : 'EGP';
     const badge = p.badge ? `<div class="plan-badge">${p.badge}</div>` : '';
+    const instaLabel = currentLang === 'ar' ? 'ادفع عبر انستاباي' : 'Pay via Instapay';
 
     return `
       <div class="plan-card${isActive ? ' active' : ''}" data-plan="${key}" onclick="selectPlan('${key}')">
@@ -65,8 +66,15 @@ function renderPlans(region) {
           ${symbol}${p.amount.toLocaleString()}
           <span>${curr} / ${period}</span>
         </div>
+        <button class="plan-instapay-btn" type="button" onclick="event.stopPropagation(); goManual('${key}')">
+          <i data-lucide="wallet"></i>
+          <span>${instaLabel}</span>
+        </button>
       </div>`;
   }).join('');
+
+  // Re-render lucide icons for the freshly injected buttons
+  if (window.lucide) lucide.createIcons();
 }
 
 function selectPlan(key) {

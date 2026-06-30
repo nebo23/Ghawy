@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الاشتراك — Ghawy</title>
   <link rel="icon" type="image/png" href="./imgs/community-logo.png">
-  <link rel="stylesheet" href="src/css/style.css">
+  <link rel="stylesheet" href="src/css/style.css?v=20260630">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     body {
@@ -66,10 +66,17 @@
   <script src="src/js/utils.js?v=10"></script>
     
   <script src="src/js/i18n.js"></script>
-  <script src="src/js/payment.js"></script>
+  <script src="src/js/payment.js?v=20260630"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+
+    // Manual payment → go to the manual payment page (pay.html) with the chosen plan
+    function goManual(key) {
+      const planKey = key || (typeof selectedPlan === 'string' ? selectedPlan : 'monthly_egp');
+      const cycle = planKey.replace(/_(egp|usd)$/, '');
+      window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}`;
+    }
   </script>
 </body>
 
