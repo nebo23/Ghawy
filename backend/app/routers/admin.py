@@ -68,17 +68,26 @@ def list_users(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return list of all users with admin-relevant fields."""
-    require_owner(current_user)  # 🔒 owner-only — admins cannot view members
+    """Return list of all users with admin-relevant fields.
+
+    Admins may view the members list, but contact details (email, phone,
+    social link) are redacted for non-owner admins — only owners see them.
+    """
+    require_admin(current_user)
+    viewer_is_owner = bool(getattr(current_user, "is_owner", False))
 
     query = db.query(User)
 
-    # Search filter
+    # Search filter — non-owner admins cannot search by email (it's hidden),
+    # so restrict their search to full_name only to avoid email enumeration.
     if search:
         search_term = f"%{search}%"
-        query = query.filter(
-            (User.full_name.ilike(search_term)) | (User.email.ilike(search_term))
-        )
+        if viewer_is_owner:
+            query = query.filter(
+                (User.full_name.ilike(search_term)) | (User.email.ilike(search_term))
+            )
+        else:
+            query = query.filter(User.full_name.ilike(search_term))
 
     # Status filter
     if status == "active":
@@ -97,8 +106,9 @@ def list_users(
         result.append({
             "id": u.id,
             "full_name": u.full_name,
-            "email": u.email,
-            "phone": u.phone,
+            # Contact details are owner-only — redacted for non-owner admins
+            "email": u.email if viewer_is_owner else None,
+            "phone": u.phone if viewer_is_owner else None,
             "country": u.country,
             "is_active": u.is_active,
             "is_verified": u.is_verified,
@@ -110,7 +120,7 @@ def list_users(
             "avatar_url": u.avatar_url,
             "end_at": u.end_at.isoformat() if u.end_at else None,
             "governorate": u.governorate,
-            "social_media_url": u.social_media_url,
+            "social_media_url": u.social_media_url if viewer_is_owner else None,
             "is_owner": getattr(u, 'is_owner', False),
         })
 
@@ -291,7 +301,7 @@ async def delete_user(
 ):
     """Delete a user and all related data (cascade via model relationships)."""
     from app.services.ws_manager import manager as ws_manager
-    require_admin(current_user)
+    require_owner(current_user)  # 🔒 owner-only — admins cannot delete members
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

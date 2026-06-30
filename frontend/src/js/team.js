@@ -93,7 +93,9 @@ function initTabs() {
   // 🔒 Hide owner-only tabs from non-owner admins
   // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
   function applyTabVisibility() {
-    const ownerOnlyTabs = ['users', 'payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
+    // 'users' (Members) is visible to admins too — contact details/delete are
+    // restricted per-row below and enforced server-side. Other tabs stay owner-only.
+    const ownerOnlyTabs = ['payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
     ownerOnlyTabs.forEach(tabId => {
       const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
       if (btn) {
@@ -171,8 +173,9 @@ async function loadTeamPage() {
       });
     }
   } catch (e) { }
-  // Members list is owner-only; skip the fetch for non-owner admins
-  if (currentUserIsOwner) await loadUsers();
+  // Members list is available to admins (owners + non-owner admins).
+  // Contact details are redacted server-side for non-owner admins.
+  if (currentUserIsAdmin) await loadUsers();
 
   // Set up listeners for Users tab
   document.getElementById('search-input')?.addEventListener('keyup', (e) => {
@@ -271,11 +274,12 @@ function renderTable() {
           <div>
             <div class="member-name">${escapeHtml(user.full_name)}</div>
             <div class="member-badge">${escapeHtml(getRoleLabel(user))}</div>
+            <div class="member-id" style="font-size:11px;color:#888;font-weight:600;margin-top:2px;">🆔 ID: ${user.id}</div>
           </div>
         </div>
       </td>
-      <td class="text-secondary">${escapeHtml(user.email)}</td>
-      <td class="text-secondary">${user.phone || '—'}</td>
+      <td class="text-secondary">${currentUserIsOwner ? escapeHtml(user.email || '—') : '<span style="color:#666" title="Owners only">🔒</span>'}</td>
+      <td class="text-secondary">${currentUserIsOwner ? (user.phone || '—') : '<span style="color:#666" title="Owners only">🔒</span>'}</td>
       <td class="text-secondary">${user.country || '—'}</td>
       <td class="text-secondary">${escapeHtml(user.governorate || '—')}</td>
       <td>
@@ -324,13 +328,13 @@ function renderTable() {
         : ''}
           <button class="btn-action" style="color:#3f8ff9" onclick="openExtendModal(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Extend Subscription"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i></button>
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
-          ${user.social_media_url ? `
+          ${currentUserIsOwner && user.social_media_url ? `
           <a href="${escapeHtml(user.social_media_url)}" target="_blank" rel="noopener noreferrer"
             class="btn-action" style="color:#a855f7;text-decoration:none;display:inline-flex;align-items:center;"
             title="Social Link">
             <i data-lucide="link" style="width:14px;height:14px;"></i>
           </a>` : ''}
-          <button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+          ${currentUserIsOwner ? `<button class="btn-action delete" onclick="confirmDelete(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>` : ''}
         </div>
       </td>
     </tr>
@@ -357,7 +361,7 @@ function applyFilters(search, status) {
   filteredUsers = allUsers.filter(u => {
     const matchSearch = !search ||
       u.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.email && u.email.toLowerCase().includes(search.toLowerCase())) ||
       (u.phone && u.phone.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = status === 'all' ||
       (status === 'active' && u.is_active) ||

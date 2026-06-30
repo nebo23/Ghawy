@@ -5282,7 +5282,8 @@ footer a:hover {
 }
 
 .card-meta span:last-child {
-    margin-right: auto;
+    margin-inline-start: auto;
+    margin-right: 0;
 }
 
 .card-meta i {
@@ -6529,7 +6530,7 @@ footer a:hover {
     background: #0a0a0a;
     color: #fff;
     padding: 80px 20px;
-    direction: rtl;
+    /* direction inherited from <html dir> so the offer cards flip with language */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -7078,7 +7079,6 @@ html[dir="rtl"] .nav-links,
 html[dir="rtl"] .nav-auth,
 html[dir="rtl"] .hero-cta-row,
 html[dir="rtl"] .hero-stats-inline,
-html[dir="rtl"] .pricing-features li,
 html[dir="rtl"] .info-item {
     /* Removed flex-direction: row-reverse; to let RTL flow naturally */
 }
@@ -7087,9 +7087,35 @@ html[dir="ltr"] .nav-links,
 html[dir="ltr"] .nav-auth,
 html[dir="ltr"] .hero-cta-row,
 html[dir="ltr"] .hero-stats-inline,
-html[dir="ltr"] .pricing-features li,
 html[dir="ltr"] .info-item {
     /* Removed flex-direction: row; */
+}
+
+/* ─── Pricing features list direction ─── */
+/* Icon side is controlled by `direction` alone (flex-direction stays row).
+   RTL → icon on the right; LTR → icon on the left. */
+html[dir="rtl"] .pricing-features {
+    direction: rtl;
+}
+html[dir="rtl"] .pricing-features li {
+    flex-direction: row;
+    text-align: right;
+}
+html[dir="rtl"] .pricing-features li i {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+html[dir="ltr"] .pricing-features {
+    direction: ltr;
+}
+html[dir="ltr"] .pricing-features li {
+    flex-direction: row;
+    text-align: left;
+}
+html[dir="ltr"] .pricing-features li i {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 html[dir="rtl"] .hero-left,
@@ -7106,6 +7132,18 @@ html[dir="ltr"] .pricing-card,
 html[dir="ltr"] .pr-title-area,
 html[dir="ltr"] .footer-col {
     text-align: left;
+}
+
+html[dir="ltr"] .feature-icon {
+    margin-left: 0;
+    margin-right: auto;
+    margin-bottom: 18px;
+}
+
+html[dir="rtl"] .feature-icon {
+    margin-right: 0;
+    margin-left: auto;
+    margin-bottom: 18px;
 }
 
 html[dir="rtl"] .hero-left {

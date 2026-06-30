@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
 import os
@@ -33,12 +33,16 @@ async def create_feedback(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
+    # person_user_id is an optional informational reference — stored as-is.
+    # Not validated against existing users so admins aren't blocked by it.
+
     # Save to database
     db_feedback = CommunityFeedback(
         user_id=current_user.id,
         role=feedback_in.role,
         person_name=feedback_in.person_name,
-        person_email=feedback_in.person_email,
+        person_user_id=feedback_in.person_user_id,
+        image_url=feedback_in.image_url,
         feedback_text=feedback_in.feedback_text
     )
     db.add(db_feedback)
@@ -49,7 +53,8 @@ async def create_feedback(
     payload = {
         "role": feedback_in.role.value if hasattr(feedback_in.role, 'value') else str(feedback_in.role),
         "person_name": feedback_in.person_name,
-        "person_email": feedback_in.person_email,
+        "person_user_id": feedback_in.person_user_id,
+        "image_url": feedback_in.image_url,
         "feedback_text": feedback_in.feedback_text,
         "submitted_by": current_user.full_name,
         "submitted_at": db_feedback.created_at.isoformat()
@@ -59,6 +64,23 @@ async def create_feedback(
     background_tasks.add_task(send_webhook, payload)
 
     return db_feedback
+
+
+@router.post("/upload-image")
+async def upload_feedback_image(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Upload an image to attach to a feedback card — admins and owners only."""
+    from app.services.file_service import save_upload, ALLOWED_IMAGE_TYPES
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="File must be an image (JPEG, PNG, GIF, or WebP)")
+    try:
+        result = await save_upload(file, subfolder="feedbacks")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"image_url": result["file_url"]}
 
 @router.get("/admin", response_model=list[FeedbackOut])
 def get_all_feedbacks(
@@ -80,7 +102,9 @@ def get_all_feedbacks(
             user_id=f.user_id,
             role=f.role,
             person_name=f.person_name,
+            person_user_id=f.person_user_id,
             person_email=f.person_email,
+            image_url=f.image_url,
             feedback_text=f.feedback_text,
             created_at=f.created_at,
             submitted_by_name=submitter.full_name if submitter else None,

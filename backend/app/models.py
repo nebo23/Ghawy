@@ -84,6 +84,7 @@ class User(Base):
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
+    is_owner = Column(Boolean, server_default=text('false'), default=False)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)
@@ -92,7 +93,7 @@ class User(Base):
     badge = Column(String, default="Member")
     birth_date = Column(Date, nullable=True)
     social_media_url = Column(String, nullable=True)
-    shر_social_media = Column(Boolean, server_default=text('true'), default=True)
+    show_social_media = Column(Boolean, server_default=text('true'), default=True)
     onboarding_completed = Column(Boolean, server_default=text('false'), default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
@@ -353,6 +354,7 @@ class Course(Base):
     total_lessons = Column(Integer, server_default=text('0'), default=0)
     course_time = Column(String, nullable=True)
     is_published = Column(Boolean, server_default=text('false'), default=False)
+    sort_order = Column(Integer, server_default=text('0'), default=0)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
@@ -809,7 +811,13 @@ class CommunityFeedback(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(Enum(TeamRole), nullable=False)
     person_name = Column(String, nullable=False)
-    person_email = Column(String, nullable=False)
+    # Legacy: kept nullable for old records; new feedbacks identify the member by id instead.
+    person_email = Column(String, nullable=True)
+    # The member this feedback is about, stored as a plain user id (validated in
+    # the app layer). No FK constraint — avoids locking the busy users table.
+    person_user_id = Column(Integer, nullable=True)
+    # Optional image attached to the feedback, shown inside the card.
+    image_url = Column(String, nullable=True)
     feedback_text = Column(Text, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
@@ -817,3 +825,18 @@ class CommunityFeedback(Base):
     submitted_by_user = relationship("User")
 
 
+class AdminMemberNote(Base):
+    """
+    Notes added by admins to member profiles.
+    """
+    __tablename__ = "admin_member_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    note = Column(Text, nullable=False, default='')
+    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=datetime.utcnow, default=datetime.utcnow)
+
+    member = relationship("User", foreign_keys=[member_id])
+    admin = relationship("User", foreign_keys=[updated_by])

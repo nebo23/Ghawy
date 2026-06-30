@@ -1566,7 +1566,12 @@
           </select>
         </div>
         <div class="fg"><label>Person Name *</label><input type="text" id="fb-person-name" placeholder="Member Name" /></div>
-        <div class="fg"><label>Person Email *</label><input type="email" id="fb-person-email" placeholder="member@example.com" /></div>
+        <div class="fg"><label>Member ID</label><input type="number" id="fb-person-id" placeholder="e.g. 123" min="1" /></div>
+        <div class="fg">
+          <label>Image</label>
+          <input type="file" id="fb-image" accept="image/*" onchange="fbPreviewImage()" />
+          <img id="fb-image-preview" style="display:none;margin-top:8px;max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;" />
+        </div>
         <div class="fg">
           <label>Feedback *</label>
           <textarea id="fb-text" rows="4" placeholder="Their feedback..." style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
@@ -1996,7 +2001,7 @@
   <script src="src/js/utils.js?v=10"></script>
     <script src="src/js/dashboard-new.js?v=15"></script>
   <script src="src/js/i18n.js?v=2"></script>
-  <script src="src/js/team.js?v=8"></script>
+  <script src="src/js/team.js?v=20260629b"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
@@ -2571,17 +2576,27 @@
           ? '<div style="font-size:11px;color:#6b7280;margin-top:2px;">submitted by ' + fbEscape(f.submitted_by_name) + '</div>'
           : '';
 
-        var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) + ' (' + fbEscape(f.person_email) + ')</div>' +
+        // Prefer the linked member id; fall back to legacy email for old records.
+        var identifier = (f.person_user_id != null && f.person_user_id !== '')
+          ? '#' + fbEscape(String(f.person_user_id))
+          : (f.person_email ? fbEscape(f.person_email) : '');
+        var nameHtml = '<div class="rc-name">' + fbEscape(f.person_name) +
+          (identifier ? ' (' + identifier + ')' : '') + '</div>' +
           '<div class="rc-date">' + fbFmtDate(f.created_at) + '</div>' + submittedBy;
 
         var deleteBtn = canDelete
           ? '<button onclick="deleteFeedback(' + f.id + ')" title="حذف" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:13px;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">🗑</button>'
           : '';
 
+        var imageHtml = f.image_url
+          ? '<div class="rc-question" style="margin-top:8px;"><img src="' + fbEscape(f.image_url) + '" alt="feedback image" style="max-width:100%;border-radius:8px;display:block;" onerror="this.style.display=\'none\'"></div>'
+          : '';
+
         return '<div class="report-card">' +
           '<div class="rc-header">' + avatarHtml + '<div class="rc-meta">' + nameHtml + '</div><span class="rc-role-badge ' + roleCls + '">' + roleLabel + '</span>' + deleteBtn + '</div>' +
           '<div class="rc-questions">' +
             '<div class="rc-question"><div class="rc-q-text" style="white-space:pre-wrap;">' + fbEscape(f.feedback_text) + '</div></div>' +
+            imageHtml +
           '</div></div>';
       }
 
@@ -2604,28 +2619,67 @@
       window.openFeedbackModal = function () {
         document.getElementById('fb-role').value = 'community_manager';
         document.getElementById('fb-person-name').value = '';
-        document.getElementById('fb-person-email').value = '';
+        document.getElementById('fb-person-id').value = '';
         document.getElementById('fb-text').value = '';
+        var imgInput = document.getElementById('fb-image');
+        if (imgInput) imgInput.value = '';
+        var preview = document.getElementById('fb-image-preview');
+        if (preview) { preview.style.display = 'none'; preview.src = ''; }
         document.getElementById('add-feedback-modal').style.display = 'flex';
+      };
+
+      window.fbPreviewImage = function () {
+        var input = document.getElementById('fb-image');
+        var preview = document.getElementById('fb-image-preview');
+        if (!input || !preview) return;
+        var file = input.files && input.files[0];
+        if (file) {
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        } else {
+          preview.style.display = 'none';
+          preview.src = '';
+        }
       };
 
       // ─── Submit ────────────────────────────────────────────
       window.submitFeedback = async function () {
         var role = document.getElementById('fb-role').value.trim();
         var personName = document.getElementById('fb-person-name').value.trim();
-        var personEmail = document.getElementById('fb-person-email').value.trim();
+        var personIdRaw = document.getElementById('fb-person-id').value.trim();
         var feedbackText = document.getElementById('fb-text').value.trim();
+        var imgInput = document.getElementById('fb-image');
+        var imgFile = imgInput && imgInput.files && imgInput.files[0];
 
         if (!personName) { showToast('Please enter person name', 'error'); return; }
-        if (!personEmail) { showToast('Please enter person email', 'error'); return; }
         if (!feedbackText) { showToast('Please enter feedback', 'error'); return; }
 
+        var personUserId = personIdRaw ? parseInt(personIdRaw, 10) : null;
+        if (personIdRaw && (isNaN(personUserId) || personUserId < 1)) {
+          showToast('Member ID must be a valid number', 'error'); return;
+        }
+
         try {
+          // Upload the image first (if any) to get its URL.
+          var imageUrl = null;
+          if (imgFile) {
+            var fd = new FormData();
+            fd.append('file', imgFile);
+            var up = await fetch(API_BASE_FB + '/feedbacks/upload-image', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + fbToken() },
+              body: fd
+            });
+            if (!up.ok) { var ue = await up.json().catch(function(){ return {}; }); throw new Error(ue.detail || 'Image upload failed'); }
+            imageUrl = (await up.json()).image_url;
+          }
+
           var res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + fbToken() },
             body: JSON.stringify({
-              role: role, person_name: personName, person_email: personEmail, feedback_text: feedbackText
+              role: role, person_name: personName, person_user_id: personUserId,
+              image_url: imageUrl, feedback_text: feedbackText
             })
           });
           if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.detail || 'HTTP ' + res.status); }

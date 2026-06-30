@@ -1171,6 +1171,9 @@
             </div>
             <!-- Badge -->
             <div id="ppBadge" class="pp-badge"></div>
+            <!-- User ID (admins/owners only) -->
+            <p id="ppUserId" class="pp-userid"
+                style="display:none; margin:6px 0 0; font-size:12px; font-weight:700; letter-spacing:0.3px; color:#888;"></p>
             <!-- Bio -->
             <p id="ppBio" class="pp-bio"></p>
             <!-- Social Media Link -->
@@ -3382,6 +3385,17 @@
                 resolvedPpBadge === 'Admin' ? 'admin' :
                     resolvedPpBadge === 'Pro Member' ? 'pro' : 'member'
             );
+
+            // User ID — visible to admins/owners only (owners are always admins)
+            const idEl = document.getElementById('ppUserId');
+            if (idEl) {
+                if (currentUserIsAdmin) {
+                    idEl.textContent = `🆔 ID: ${p.id}`;
+                    idEl.style.display = 'block';
+                } else {
+                    idEl.style.display = 'none';
+                }
+            }
 
             // Bio
             const bioEl = document.getElementById('ppBio');

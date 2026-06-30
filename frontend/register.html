@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Your Account — Ghawy</title>
-  <link rel="icon" type="image/png" href="./imgs/ghawy-new-logo-transparent.png">
+  <link rel="icon" type="image/png" href="./imgs/community-logo.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script>
@@ -199,7 +199,9 @@
               <input type="checkbox" id="terms"
                 class="mr-2 rounded border-gray-700 bg-[#1a1a1a] text-brand focus:ring-brand w-4 h-4 cursor-pointer"
                 required>
-              I agree to the <a href="terms.html" target="_blank" class="text-brand hover:underline mx-1"><u>Terms & Conditions</u></a> and <a href="privacy.html" target="_blank" class="text-brand hover:underline ml-1"><u>Privacy Policy</u></a>
+              I agree to the <a href="terms.html" target="_blank" class="text-brand hover:underline mx-1"><u>Terms &
+                  Conditions</u></a> and <a href="privacy.html" target="_blank"
+                class="text-brand hover:underline ml-1"><u>Privacy Policy</u></a>
             </label>
           </div>
         </div>
@@ -210,10 +212,14 @@
         class="w-full bg-brand hover:bg-[#99e600] text-black font-bold py-3 rounded-full transition-colors flex justify-center items-center relative disabled:opacity-70 disabled:cursor-not-allowed"
         disabled>
         <span class="transition-opacity duration-200">Sign Up Now <i class="fa-solid fa-arrow-right ml-1"></i></span>
-        <div id="spinner" class="hidden absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
-          <svg class="animate-spin h-6 w-6 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div id="spinner"
+          class="hidden absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center">
+          <svg class="animate-spin h-6 w-6 text-black" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
           </svg>
         </div>
       </button>
@@ -250,8 +256,17 @@
   </div>
 
   <script src="src/js/utils.js?v=10"></script>
-    
+
   <script src="src/js/i18n.js"></script>
+  <script>
+    // Register page is always English — block localStorage write so user preference on other pages is preserved
+    (function() {
+      const _orig = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(k, v) { if (k !== 'ghawy_lang') _orig(k, v); };
+      applyLanguage('en');
+      localStorage.setItem = _orig;
+    })();
+  </script>
   <script src="src/js/register.js"></script>
 
   <script>

@@ -5,7 +5,7 @@ import logging
 import os
 import json
 from dotenv import load_dotenv
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
@@ -140,79 +140,75 @@ def _create_kashier_url_fallback(
     }
 
 
-def verify_kashier_webhook(data: dict, received_hash: str) -> bool:
+def _rfc3986(value) -> str:
     """
-    Try all combinations of keys and amount formats to find a match.
-    Kashier may use API_KEY or SECRET_KEY, and amount may be '10' or '10.00'.
+    Percent-encode like PHP's rawurlencode / http_build_query(PHP_QUERY_RFC3986)
+    and JS encodeURIComponent: keep only A-Za-z0-9 and -_.~, encode everything else.
     """
-    import hmac as _hmac
+    return quote(str(value), safe="-_.~")
 
-    if not received_hash:
+
+def verify_kashier_webhook(data: dict, received_signature: str) -> bool:
+    """
+    Validate the Kashier **server webhook** signature.
+
+    Kashier sends the signature in the `x-kashier-signature` HTTP header (NOT the
+    body `hash` field). It is computed over the fields named in `data.signatureKeys`,
+    sorted, encoded as an RFC3986 query string, and HMAC-SHA256'd with the Payment
+    API key. See https://developers.kashier.io/payment/webhook/
+    """
+    if not received_signature:
+        return False
+    signing_key = KASHIER_API_KEY
+    if not signing_key:
+        logger.error("❌ KASHIER_API_KEY missing — cannot verify webhook signature")
         return False
 
-    # Both possible signing keys
-    keys_to_try = []
-    if KASHIER_SECRET_KEY:
-        keys_to_try.append(("SECRET_KEY", KASHIER_SECRET_KEY))
-    if KASHIER_API_KEY and KASHIER_API_KEY != KASHIER_SECRET_KEY:
-        keys_to_try.append(("API_KEY", KASHIER_API_KEY))
+    sig_keys = data.get("signatureKeys") or []
+    if not sig_keys:
+        logger.error("❌ Webhook payload has no signatureKeys")
+        return False
 
-    # Build possible messages
-    signature_keys = data.get("signatureKeys", [])
+    query = "&".join(f"{_rfc3986(k)}={_rfc3986(data.get(k, ''))}" for k in sorted(sig_keys))
+    expected = hmac.new(signing_key.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
+    ok = hmac.compare_digest(expected, received_signature)
+    if not ok:
+        logger.error("❌ Webhook signature mismatch | computed=%s | received=%s | payload=%s",
+                     expected, received_signature, query)
+    return ok
 
-    def build_messages(d):
-        """Return list of possible messages to try."""
-        candidates = []
-        if signature_keys:
-            # Use signatureKeys from Kashier payload
-            parts = [f"{k}={d.get(k, '')}" for k in signature_keys]
-            candidates.append(("signatureKeys", "&".join(parts)))
 
-        # Fallback: standard fields
-        amount_raw = d.get("amount", "")
-        currency = d.get("currency", "")
-        merchant_order_id = d.get("merchantOrderId", "")
-        merchant_id = d.get("merchantId", "")
+def verify_kashier_redirect_signature(query_pairs) -> bool:
+    """
+    Validate the Kashier **merchantRedirect** (success/fail) signature.
 
-        # Try amount as-is
-        msg1 = f"amount={amount_raw}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
-        candidates.append(("fallback_raw", msg1))
+    `query_pairs` must be the ordered list of (key, value) tuples exactly as they
+    appeared in the redirect URL's query string. The signature (the `signature`
+    param) is HMAC-SHA256, with the Payment API key, of every other param joined
+    raw (no URL-encoding) as `key=value` with `&`, excluding `signature` and `mode`.
+    """
+    signing_key = KASHIER_API_KEY
+    if not signing_key:
+        logger.error("❌ KASHIER_API_KEY missing — cannot verify redirect signature")
+        return False
 
-        # Try amount as formatted decimal
-        try:
-            amount_dec = _format_amount(amount_raw)
-            if amount_dec != str(amount_raw):
-                msg2 = f"amount={amount_dec}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
-                candidates.append(("fallback_dec", msg2))
-        except Exception:
-            pass
+    received = None
+    parts = []
+    for k, v in query_pairs:
+        if k == "signature":
+            received = v
+            continue
+        if k == "mode":
+            continue
+        parts.append(f"{k}={v}")
 
-        # Try amount as plain integer
-        try:
-            amount_int = str(int(float(amount_raw)))
-            if amount_int != str(amount_raw):
-                msg3 = f"amount={amount_int}&currency={currency}&merchantOrderId={merchant_order_id}&merchantId={merchant_id}"
-                candidates.append(("fallback_int", msg3))
-        except Exception:
-            pass
+    if not received:
+        return False
 
-        return candidates
-
-    messages = build_messages(data)
-
-    for key_name, signing_key in keys_to_try:
-        for msg_type, message in messages:
-            expected = _hmac.new(
-                signing_key.encode("utf-8"),
-                message.encode("utf-8"),
-                hashlib.sha256
-            ).hexdigest()
-            logger.info("🔑 [%s][%s] computed=%s | received=%s | match=%s",
-                        key_name, msg_type, expected, received_hash,
-                        expected == received_hash)
-            if _hmac.compare_digest(expected, received_hash):
-                logger.info("✅ Signature matched! key=%s msg_type=%s", key_name, msg_type)
-                return True
-
-    logger.error("❌ No combination matched for received_hash=%s", received_hash)
-    return False
+    message = "&".join(parts)
+    expected = hmac.new(signing_key.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
+    ok = hmac.compare_digest(expected, received)
+    if not ok:
+        logger.error("❌ Redirect signature mismatch | computed=%s | received=%s | payload=%s",
+                     expected, received, message)
+    return ok

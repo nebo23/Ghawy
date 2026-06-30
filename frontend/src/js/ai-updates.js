@@ -202,8 +202,8 @@ function createPostElement(post) {
             </div>
             ${adminActions}
         </div>
-        <div class="ai-post-title">${escapeHtml(post.title)}</div>
-        <div class="ai-post-body">${escapeHtml(post.body)}</div>
+        <div class="ai-post-title" dir="auto">${escapeHtml(post.title)}</div>
+        <div class="ai-post-body" dir="auto">${escapeHtml(post.body)}</div>
         ${contentHtml}
         
         <div class="ai-post-actions">
@@ -231,7 +231,7 @@ function renderPollHtml(poll) {
     const hasVoted = poll.user_voted_option_id !== null;
     let html = `
         <div class="ai-poll-container" id="poll-${poll.id}">
-            <div class="ai-poll-question">${escapeHtml(poll.question)}</div>
+            <div class="ai-poll-question" dir="auto">${escapeHtml(poll.question)}</div>
     `;
 
     poll.options.forEach(opt => {
@@ -246,7 +246,7 @@ function renderPollHtml(poll) {
                     <div class="poll-progress" style="width: ${opt.percentage}%"></div>
                     <div style="display:flex; align-items:center; gap:12px; position:relative; z-index:1;">
                         ${customIcon}
-                        <span class="poll-option-text">${escapeHtml(opt.text)}</span>
+                        <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                     </div>
                     <span class="poll-option-pct">${opt.percentage}%</span>
                 </div>
@@ -256,7 +256,7 @@ function renderPollHtml(poll) {
                 <label class="ai-poll-option unvoted">
                     <input type="radio" name="poll-${poll.id}" value="${opt.id}" onchange="submitVote(${poll.id}, ${opt.id})">
                     <span class="radio-custom"></span>
-                    <span class="poll-option-text">${escapeHtml(opt.text)}</span>
+                    <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                 </label>
             `;
         }
@@ -411,7 +411,7 @@ function createCommentElement(comment) {
                     <span class="ai-comment-author">${comment.author?.full_name || 'User'}</span>
                     <span class="ai-comment-time">${comment.time_ago}</span>
                 </div>
-                <div class="ai-comment-body">${escapeHtml(comment.body)}</div>
+                <div class="ai-comment-body" dir="auto">${escapeHtml(comment.body)}</div>
             </div>
             <div class="ai-comment-actions">
                 ${actionsHtml}
@@ -832,6 +832,17 @@ function renderProfilePanel(p) {
         resolvedPpBadge === 'Admin' ? 'admin' :
         resolvedPpBadge === 'Pro Member' ? 'pro' : 'member'
     );
+
+    // User ID — visible to admins/owners only (owners are always admins)
+    const idEl = document.getElementById('ppUserId');
+    if (idEl) {
+        if (currentUser && (currentUser.is_admin || currentUser.is_owner)) {
+            idEl.textContent = `🆔 ID: ${p.id}`;
+            idEl.style.display = 'block';
+        } else {
+            idEl.style.display = 'none';
+        }
+    }
 
     // Bio
     const bioEl = document.getElementById('ppBio');

@@ -40,7 +40,7 @@
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/main.css?v=2">
+    <link rel="stylesheet" href="src/css/main.css?v=20260629">
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
@@ -121,19 +121,38 @@
             margin-left: auto;
         }
 
+        [dir="ltr"] .feature-icon {
+            margin-left: 0;
+            margin-right: auto;
+        }
+
         /* ─── PRICING SECTION ─── */
         [dir="rtl"] .pricing-card {
             text-align: right;
         }
 
+        [dir="rtl"] .pricing-features {
+            direction: rtl;
+        }
+
         [dir="rtl"] .pricing-features li {
+            flex-direction: row;
             text-align: right;
         }
 
         [dir="rtl"] .pricing-features li svg,
         [dir="rtl"] .pricing-features li i {
             margin-right: 0;
-            margin-left: 8px;
+            margin-left: 0;
+        }
+
+        [dir="ltr"] .pricing-features {
+            direction: ltr;
+        }
+
+        [dir="ltr"] .pricing-features li {
+            flex-direction: row;
+            text-align: left;
         }
 
         /* ─── EXPLICIT GRID DIRECTION FIX ─── */
@@ -596,21 +615,21 @@
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-video"></i>
                             <div>
-                                <span class="stat-num-inline">24+</span>
+                                <span class="stat-num-inline">8+</span>
                                 <span class="stat-lbl-inline" data-ar="كورسات" data-en="Courses">كورسات</span>
                             </div>
                         </div>
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-code-fork"></i>
                             <div>
-                                <span class="stat-num-inline">100+</span>
+                                <span class="stat-num-inline">25+</span>
                                 <span class="stat-lbl-inline" data-ar="مشاريع" data-en="Projects">مشاريع</span>
                             </div>
                         </div>
                         <div class="hero-stat-inline">
                             <i class="fa-solid fa-users"></i>
                             <div>
-                                <span class="stat-num-inline">10K+</span>
+                                <span class="stat-num-inline">500+</span>
                                 <span class="stat-lbl-inline" data-ar="أعضاء" data-en="Members">أعضاء</span>
                             </div>
                         </div>
@@ -650,7 +669,7 @@
 
                         <!-- Thumbnail overlay -->
                         <div id="vslOverlay" class="vsl-overlay-img" style="
-                            background-image: url('https://atlas-vsl-cdn.b-cdn.net/thumbnail.png');
+                            background-image: url('');
                             background-size: cover;
                             background-position: center;
                         "></div>
@@ -664,7 +683,9 @@
                         <!-- Video -->
                         <video id="mainNativeVsl" playsinline autoplay muted loop
                             style="width:100%; height:100%; object-fit:cover; display:block; border-radius: 12px;">
-                            <source src="https://atlas-vsl-cdn.b-cdn.net/vsl.mp4" type="video/mp4" />
+                            <source
+                                src="https://vz-f6a6ad82-250.b-cdn.net/4c83ddac-fcc8-48b1-ba90-256ada86b588/play_720p.mp4"
+                                type="video/mp4" />
                         </video>
 
                         <!-- Custom Bottom Controls -->
@@ -699,18 +720,18 @@
             <!-- Avatars + Rating Centered Below -->
             <div class="hero-rating" style="margin-top: 80px;">
                 <div class="hero-avatars">
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=11" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=22" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=33" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=44" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=55" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=66" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=12" alt="" />
-                    <img class="hero-av" src="https://i.pravatar.cc/40?img=13" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review1.jpg" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review2.jpg" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review3.jpg" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review4.jpg" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review5.jpg" alt="" />
+                    <img class="hero-av" src="./imgs/avatars/review6.jpg" alt="" />
                 </div>
-                <div class="hero-rating-info" style="direction: rtl;">
-                    <span class="hero-rating-text" data-i18n="lp_ratingText">حاصل علي تقييم <span
-                            style="font-weight:bold;color:#fff;">5.0</span>
+                <div class="hero-rating-info">
+                    <span class="hero-rating-text" data-html="true"
+                        data-ar='حاصل علي تقييم <span style="font-weight:bold;color:#fff;">5.0</span> من اكثر من 30 مراجعة'
+                        data-en='Rated <span style="font-weight:bold;color:#fff;">5.0</span> from over 30 reviews'>حاصل
+                        علي تقييم <span style="font-weight:bold;color:#fff;">5.0</span>
                         من اكثر من 30 مراجعة</span>
                     <div class="hero-stars">
                         <span class="star">★</span><span class="star">★</span><span class="star">★</span><span
@@ -733,15 +754,18 @@
             <div class="pr-header">
                 <div class="pr-title-area">
                     <h2 class="pr-title">
-                        آراء ناس حقيقية
-                        <span class="pr-gradient-text">بدأت من الصفر</span>
+                        <span data-ar="آراء ناس حقيقية" data-en="Real People.">آراء ناس حقيقية</span>
+                        <span class="pr-gradient-text" data-ar="بدأت من الصفر" data-en="Real Results.">بدأت من
+                            الصفر</span>
                     </h2>
-                    <p class="pr-subtitle">
+                    <p class="pr-subtitle"
+                        data-ar="متاخدش بكلامنا, اسمع بنفسك من الناس اللي انضمت وحققت أرباح بعد اشتراكها في البرنامج."
+                        data-en="Don't take our word for it — hear from people who joined and started making real income.">
                         متاخدش بكلامنا, اسمع بنفسك من الناس اللي انضمت وحققت أرباح بعد اشتراكها في البرنامج.
                     </p>
                 </div>
-                <div class="pr-badge">
-                    ⭐ +2,400 طالب سعيد
+                <div class="pr-badge" data-ar="⭐ +500 طالب سعيد" data-en="⭐ +500 Happy Students">
+                    ⭐ +500 طالب سعيد
                 </div>
             </div>
 
@@ -758,14 +782,16 @@
         <div class="container">
             <div class="courses-header-wrapper">
                 <div class="courses-title-area">
-                    <span class="neon-subtitle">محتوى الكورس</span>
-                    <h2 class="courses-main-title">ايه اللي هتتعلمه؟</h2>
+                    <span class="neon-subtitle" data-ar="محتوى الكورس" data-en="Course Content">محتوى الكورس</span>
+                    <h2 class="courses-main-title" data-ar="ايه اللي هتتعلمه؟" data-en="What Will You Learn">ايه اللي
+                        هتتعلمه؟</h2>
                 </div>
                 <div class="courses-info-bar">
-                    <div class="info-item"><i class="fa-solid fa-play"></i><span>عدد الدروس: <strong>44</strong></span>
+                    <div class="info-item"><i class="fa-solid fa-play"></i><span><span data-ar="عدد الدروس:"
+                                data-en="Lessons:">عدد الدروس:</span> <strong>40</strong></span>
                     </div>
-                    <div class="info-item"><i class="fa-solid fa-stopwatch"></i><span>المدة الاجمالية: <strong>46h
-                                12m</strong></span></div>
+                    <div class="info-item"><i class="fa-solid fa-stopwatch"></i><span><span data-ar="المدة الاجمالية:"
+                                data-en="Total Duration:">المدة الاجمالية:</span> <strong>48h 12m</strong></span></div>
                 </div>
             </div>
 
@@ -773,27 +799,27 @@
             <div class="courses-carousel-wrapper">
                 <button class="carousel-arrow prev" id="cPrevBtn"><i class="fa-solid fa-chevron-right"></i></button>
 
-                <div class="swiper coursesSwiper" dir="rtl">
+                <div class="swiper coursesSwiper" id="coursesSwiper">
                     <div class="swiper-wrapper">
 
                         <!-- CARD 1: Prompt Engineering -->
                         <div class="swiper-slide">
                             <div class="premium-course-card" data-slug="prompt-engineering">
                                 <div class="card-image-wrapper">
-                                    <img src="./imgs/image_49611d.png" alt="Prompt Engineering" />
+                                    <img src="./imgs/course3.jpg" alt="Prompt Engineering" />
                                 </div>
                                 <div class="card-content">
                                     <h3>Prompt Engineering</h3>
 
-                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
-                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 11
-                                            فيديو</span>
-                                        <span class="cd-meta-dot">•</span>
-                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 11h 54m</span>
+                                    <div class="card-meta">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 4
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 5h 3m</span>
                                     </div>
-                                    <a href="course-details.html" class="course-content-btn"
+                                    <a href="course-details.html?course=prompt-engineering" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
-                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
                                     </a>
                                 </div>
                             </div>
@@ -803,20 +829,20 @@
                         <div class="swiper-slide">
                             <div class="premium-course-card" data-slug="aaa-core">
                                 <div class="card-image-wrapper">
-                                    <img src="./imgs/image_49595e.png" alt="AAA Core" />
+                                    <img src="./imgs/course2.jpg" alt="AAA Core" />
                                 </div>
                                 <div class="card-content">
                                     <h3>AAA Core</h3>
 
-                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
+                                    <div class="card-meta">
                                         <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 7
-                                            فيديو</span>
-                                        <span class="cd-meta-dot">•</span>
-                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 10h 17m</span>
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 12h 11m</span>
                                     </div>
-                                    <a href="course-details.html" class="course-content-btn"
+                                    <a href="course-details.html?course=aaa-core" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
-                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
                                     </a>
                                 </div>
                             </div>
@@ -826,20 +852,20 @@
                         <div class="swiper-slide">
                             <div class="premium-course-card" data-slug="ai-foundations">
                                 <div class="card-image-wrapper">
-                                    <img src="./imgs/image_49595e.png" alt="AI Foundations" />
+                                    <img src="./imgs/course1.jpg" alt="AI Foundations" />
                                 </div>
                                 <div class="card-content">
                                     <h3>AI Foundations</h3>
 
-                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
-                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 4
-                                            فيديو</span>
-                                        <span class="cd-meta-dot">•</span>
-                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 5h 01m</span>
+                                    <div class="card-meta">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 10
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 12h 3m</span>
                                     </div>
-                                    <a href="course-details.html" class="course-content-btn"
+                                    <a href="course-details.html?course=ai-foundations" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
-                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
                                     </a>
                                 </div>
                             </div>
@@ -849,20 +875,66 @@
                         <div class="swiper-slide">
                             <div class="premium-course-card" data-slug="ai-automation-lab">
                                 <div class="card-image-wrapper">
-                                    <img src="./imgs/image_4960ff.jpg" alt="AI Automation Lab" />
+                                    <img src="./imgs/course4.jpg" alt="AI Automation Lab" />
                                 </div>
                                 <div class="card-content">
                                     <h3>AI Automation Lab</h3>
 
-                                    <div class="card-meta" style="justify-content: flex-start; gap: 10px;">
-                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 5
-                                            فيديو</span>
-                                        <span class="cd-meta-dot">•</span>
-                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 9h 47m</span>
+                                    <div class="card-meta">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 11
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 10h 36m</span>
                                     </div>
-                                    <a href="course-details.html" class="course-content-btn"
+                                    <a href="course-details.html?course=ai-automation-lab" class="course-content-btn"
                                         style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
-                                        <i class="fa-solid fa-list-check"></i> محتويات الكورس
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 5: Client Acquisition -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="client-acquisition">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/course6.jpg" alt="Client Acquisition" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>Client Acquisition</h3>
+
+                                    <div class="card-meta">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 6
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 7h 30m</span>
+                                    </div>
+                                    <a href="course-details.html?course=client-acquisition" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 6: Practical AI Systems -->
+                        <div class="swiper-slide">
+                            <div class="premium-course-card" data-slug="practical-ai-systems">
+                                <div class="card-image-wrapper">
+                                    <img src="./imgs/course5.jpg" alt="Practical AI Systems" />
+                                </div>
+                                <div class="card-content">
+                                    <h3>Practical AI Systems</h3>
+
+                                    <div class="card-meta">
+                                        <span><i data-lucide="play-circle" class="nav-icon" style="margin: 0;"></i> 3
+                                            <span data-ar="فيديو" data-en="videos">فيديو</span></span>
+                                        <span><i class="fa-regular fa-clock" style="margin: 0;"></i> 9h 45m</span>
+                                    </div>
+                                    <a href="course-details.html?course=practical-ai-systems" class="course-content-btn"
+                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: rgba(193, 255, 17, 0.05); border: 1px solid rgba(193, 255, 17, 0.2); color: var(--gold); border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.3s; margin-top: auto;">
+                                        <i class="fa-solid fa-list-check"></i> <span data-ar="محتويات الكورس"
+                                            data-en="Course Contents">محتويات الكورس</span>
                                     </a>
                                 </div>
                             </div>
@@ -886,39 +958,58 @@
     <section class="story-section">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">القصة وراء غاوي</span>
+                <span class="section-eyebrow" data-ar="القصة وراء غاوي" data-en="The Story Behind Ghawy">القصة وراء
+                    غاوي</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title">ليه عملت البروجرام ده؟</h2>
+                <h2 class="section-title" data-ar="ليه عملت البروجرام ده؟" data-en="Why Did I Build This Program?">ليه
+                    عملت البروجرام ده؟</h2>
             </div>
             <div class="story-flex">
                 <div class="story-content">
-                    <p class="story-body">
+                    <p class="story-body"
+                        data-ar="انا بدأت اونلاين بيزنس وانا عندي 14 سنه، وكنت زيّك بالظبط, بحاول ألاقي طريقة أزود بيها دخلي. جربت البرمجة، الجرافيك، التسويق, لكن كنت دايماً بحس إن الوقت بيسبقني والمنافسة صعبه, لحد ما جربت ابدأ في الاوتوميشن والAI بس التعلم بنسبالي كان صعب جدا من قلة المصادر العربية وحتي الاجنبية"
+                        data-en="I started an online business at 14, just like you — trying to find a way to make real income. I tried programming, design, marketing, but I always felt like time was running out and competition was fierce. When I finally tried AI and Automation, learning was extremely difficult due to the lack of resources — both Arabic and international.">
                         انا بدأت اونلاين بيزنس وانا عندي 14 سنه، وكنت زيّك بالظبط, بحاول
                         ألاقي طريقة أزود بيها دخلي. جربت البرمجة، الجرافيك، التسويق, لكن
                         كنت دايماً بحس إن الوقت بيسبقني والمنافسة صعبه, لحد ما جربت ابدأ
                         في الاوتوميشن والAI بس التعلم بنسبالي كان صعب جدا من قلة المصادر
                         العربية وحتي الاجنبية
                     </p>
-                    <p class="story-body">إيه المشاكل اللي بدأت استغلها؟</p>
+                    <p class="story-body" data-ar="إيه المشاكل اللي بدأت استغلها؟"
+                        data-en="What Problems Did I Decide to Solve?">إيه المشاكل اللي بدأت استغلها؟</p>
                     <ul class="pain-points">
                         <li class="pain-point">
-                            <span class="pain-icon">✕</span> الشركات محتاجة مساعدة بس مش
-                            عارفة تضيف الـ AI ازاي في شغلها
+                            <span class="pain-icon">✕</span>
+                            <span data-ar="الشركات محتاجة مساعدة بس مش عارفة تضيف الـ AI ازاي في شغلها"
+                                data-en="Businesses need help but don't know how to integrate AI into their operations">الشركات
+                                محتاجة مساعدة بس مش
+                                عارفة تضيف الـ AI ازاي في شغلها</span>
                         </li>
                         <li class="pain-point">
-                            <span class="pain-icon">✕</span> الكورسات الموجودة إما اكاديميه
-                            جداً أو فاضية وسطحية من الناحية العملية
+                            <span class="pain-icon">✕</span>
+                            <span data-ar="الكورسات الموجودة إما اكاديميه جداً أو فاضية وسطحية من الناحية العملية"
+                                data-en="Existing courses are either too academic or completely shallow in practical application">الكورسات
+                                الموجودة إما اكاديميه
+                                جداً أو فاضية وسطحية من الناحية العملية</span>
                         </li>
                         <li class="pain-point">
-                            <span class="pain-icon">✕</span> الناس بتضيع وقتها تتعلم أدوات
-                            من غير ما تعرف تبيعها ولا تفهم البيزنس نفسه
+                            <span class="pain-icon">✕</span>
+                            <span data-ar="الناس بتضيع وقتها تتعلم أدوات من غير ما تعرف تبيعها ولا تفهم البيزنس نفسه"
+                                data-en="People waste time learning tools without knowing how to sell them or understand the business model">الناس
+                                بتضيع وقتها تتعلم أدوات
+                                من غير ما تعرف تبيعها ولا تفهم البيزنس نفسه</span>
                         </li>
                         <li class="pain-point">
-                            <span class="pain-icon">✕</span> سوق الـ AI بينمو بسرعة, الطلب
-                            عالي, ولكن التنفيذ قليل, والمتأخر بيخسر الفرصة
+                            <span class="pain-icon">✕</span>
+                            <span data-ar="سوق الـ AI بينمو بسرعة, الطلب عالي, ولكن التنفيذ قليل, والمتأخر بيخسر الفرصة"
+                                data-en="The AI market is growing fast, demand is high, but execution is scarce — those who delay lose the opportunity">سوق
+                                الـ AI بينمو بسرعة, الطلب
+                                عالي, ولكن التنفيذ قليل, والمتأخر بيخسر الفرصة</span>
                         </li>
                     </ul>
-                    <p class="story-body">
+                    <p class="story-body" data-html="true"
+                        data-ar='هنا قررت استغل الفرصة واساعد الناس يضيفوا AI في شغلهم واعلمهم ازاي يعملوا كدا. قدرت أبني <strong>"AI Agents"</strong> بيشتغلوا 24 ساعة وبيحلوا مشاكل للشركات ويوفروا وقت ومجهود وفلوس وقدرت احقق ربح وسمعة كبيرة جدا. من هنا قررت أجمع كل خبرتي في <strong>وكالتي</strong> عشان أوفر عليك سنين من التوهان والتشتت.'
+                        data-en='That&apos;s when I decided to seize the opportunity — help people integrate AI into their work. I built <strong>"AI Agents"</strong> that work 24/7, solve real business problems, and save time and money. I achieved serious income and built a great reputation. So I put all my experience into one program to save you years of confusion.'>
                         هنا قررت استغل الفرصة واساعد الناس يضيفوا AI في شغلهم واعلمهم ازاي
                         يعملوا كدا. قدرت أبني
                         <strong>"AI Agents"</strong> بيشتغلوا 24 ساعة وبيحلوا مشاكل
@@ -945,21 +1036,21 @@
                 <div class="stat-item">
                     <div class="stat-num">
                         <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-users"></i><span
-                                class="counter-value" data-target="350">0</span>+</span>
+                                class="counter-value" data-target="500">0</span>+</span>
                     </div>
                     <div class="stat-label">عدد الطلاب</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-num">
                         <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-clock"></i><span
-                                class="counter-value" data-target="60">0</span>+</span>
+                                class="counter-value" data-target="8">0</span>+</span>
                     </div>
                     <div class="stat-label">ساعات الكورس</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-num">
                         <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-star"></i><span
-                                class="counter-value" data-target="5.0" data-decimals="1">0</span></span>
+                                class="counter-value" data-target="4.9" data-decimals="1">0</span></span>
                     </div>
                     <div class="stat-label">التقييمات</div>
                 </div>
@@ -1020,43 +1111,59 @@
     <section class="features-section reveal" id="features">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">لماذا تختارنا؟</span>
+                <span class="section-eyebrow" data-ar="لماذا تختارنا؟" data-en="Why Choose Us?">لماذا تختارنا؟</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title">منصة متكاملة تقدم لك كل ما تحتاجه</h2>
-                <p class="section-sub">
+                <h2 class="section-title" data-ar="منصة متكاملة تقدم لك كل ما تحتاجه"
+                    data-en="An All-in-One Platform Built for Your Success">منصة متكاملة تقدم لك كل ما تحتاجه</h2>
+                <p class="section-sub"
+                    data-ar="كل اللي محتاجه عشان تبني وكالة AI Automation ناجحة وتحقق دخل حقيقي — في مكان واحد"
+                    data-en="Everything you need to build a successful AI Automation agency and generate real income — in one place.">
                     كل اللي محتاجه عشان تبني وكالة AI Automation ناجحة وتحقق دخل حقيقي — في مكان واحد
                 </p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-brands fa-openai"></i></div>
-                    <h4>بناء وكالة AI Automation</h4>
-                    <p>هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة</p>
+                    <h4 data-ar="بناء وكالة AI Automation" data-en="Build an AI Automation Agency">بناء وكالة AI
+                        Automation</h4>
+                    <p data-ar="هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة"
+                        data-en="Learn how to build your own agency from scratch and sell AI services to businesses using proven, practical methods.">
+                        هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                    <h4>هندسة البرومبت</h4>
-                    <p>إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق</p>
+                    <h4 data-ar="هندسة البرومبت" data-en="Prompt Engineering">هندسة البرومبت</h4>
+                    <p data-ar="إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق"
+                        data-en="Master the art of communicating with AI — write professional prompts that produce incredible results in minutes.">
+                        إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-code-fork"></i></div>
-                    <h4>أوتوميشن بدون كود</h4>
-                    <p>هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد</p>
+                    <h4 data-ar="أوتوميشن بدون كود" data-en="No-Code Automation">أوتوميشن بدون كود</h4>
+                    <p data-ar="هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد"
+                        data-en="Build complete automation systems using n8n and Make — without writing a single line of code.">
+                        هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-bullhorn"></i></div>
-                    <h4>جذب العملاء</h4>
-                    <p>هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة</p>
+                    <h4 data-ar="جذب العملاء" data-en="Client Acquisition">جذب العملاء</h4>
+                    <p data-ar="هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة"
+                        data-en="Learn how to land your first client and build a steady client base — with clear steps and proven strategies.">
+                        هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-microchip"></i></div>
-                    <h4>أساسيات الـ AI</h4>
-                    <p>فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر</p>
+                    <h4 data-ar="أساسيات الـ AI" data-en="AI Fundamentals">أساسيات الـ AI</h4>
+                    <p data-ar="فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر"
+                        data-en="Deep understanding of the technology — from Neural Networks to LLMs and AI Agents, everything from scratch.">
+                        فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-phone"></i></div>
-                    <h4>دعم VIP ومتابعة شخصية</h4>
-                    <p>مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم</p>
+                    <h4 data-ar="دعم VIP ومتابعة شخصية" data-en="VIP Support & Mentoring">دعم VIP ومتابعة شخصية</h4>
+                    <p data-ar="مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم"
+                        data-en="You won't be alone — 24/7 support group and weekly live calls with Mohamed and the team.">
+                        مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم</p>
                 </div>
             </div>
         </div>
@@ -1072,8 +1179,11 @@
 
             <!-- Header -->
             <div class="vs-header">
-                <h2 class="vs-main-title">كل اللي هتمتلكه بمجرد دخولك</h2>
-                <p class="vs-subtitle">قيمة حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك</p>
+                <h2 class="vs-main-title" data-ar="كل اللي هتمتلكه بمجرد دخولك"
+                    data-en="Everything you'll get upon joining">كل اللي هتمتلكه بمجرد دخولك</h2>
+                <p class="vs-subtitle" data-ar="قيمة حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك"
+                    data-en="Real value that can completely change your career path and multiply your profits">قيمة
+                    حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك</p>
             </div>
 
             <!-- Main Product -->
@@ -1083,16 +1193,21 @@
                         <i data-lucide="presentation" class="nav-icon"></i>
                     </div>
                     <div>
-                        <h3 class="vs-product-title">البرنامج التدريبي الشامل</h3>
-                        <p class="vs-product-desc">أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف</p>
+                        <h3 class="vs-product-title" data-ar="البرنامج التدريبي الشامل"
+                            data-en="The Comprehensive Training Program">البرنامج التدريبي الشامل</h3>
+                        <p class="vs-product-desc" data-ar="أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف"
+                            data-en="Over 120 hours of detailed and practical explanation from scratch to professionalism">
+                            أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف</p>
                     </div>
                 </div>
-                <div class="vs-product-price" id="vs-price-main">10,000 ج.م</div>
+                <div class="vs-product-price" id="vs-price-main" data-ar="10,000 ج.م" data-en="10,000 EGP">10,000 ج.م
+                </div>
             </div>
 
             <!-- Bonus Bundle Container -->
             <div class="vs-bonus-bundle">
-                <div class="vs-bonus-badge">باقات الهدايا (مجاناً اليوم)</div>
+                <div class="vs-bonus-badge" data-ar="باقات الهدايا (مجاناً اليوم)" data-en="Bonus Bundles (Free Today)">
+                    باقات الهدايا (مجاناً اليوم)</div>
 
                 <div class="vs-bonus-items">
                     <!-- Item 1 -->
@@ -1100,11 +1215,15 @@
                         <div class="vs-bonus-left">
                             <div class="vs-bonus-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                             <div class="vs-bonus-text">
-                                <h4>أداة Perfect Prompt Generator</h4>
-                                <p>أداة ذكية لتوليد البرومبتات الاحترافية بضغطة زر</p>
+                                <h4 data-ar="أداة Perfect Prompt Generator" data-en="Perfect Prompt Generator Tool">أداة
+                                    Perfect Prompt Generator</h4>
+                                <p data-ar="أداة ذكية لتوليد البرومبتات الاحترافية بضغطة زر"
+                                    data-en="A smart tool to generate professional prompts with a click">أداة ذكية
+                                    لتوليد البرومبتات الاحترافية بضغطة زر</p>
                             </div>
                         </div>
-                        <div class="vs-bonus-price" id="vs-price-1">5,000 ج.م</div>
+                        <div class="vs-bonus-price" id="vs-price-1" data-ar="5,000 ج.م" data-en="5,000 EGP">5,000 ج.م
+                        </div>
                     </div>
 
                     <!-- Item 2 -->
@@ -1112,11 +1231,15 @@
                         <div class="vs-bonus-left">
                             <div class="vs-bonus-icon"><i class="fa-solid fa-layer-group"></i></div>
                             <div class="vs-bonus-text">
-                                <h4>أكثر من 2000+ قالب جاهز لبيئة العمل</h4>
-                                <p>نماذج جاهزة للاستخدام في وكالتك أو مشاريعك</p>
+                                <h4 data-ar="أكثر من 2000+ قالب جاهز لبيئة العمل"
+                                    data-en="Over 2000+ Ready-to-use Templates">أكثر من 2000+ قالب جاهز لبيئة العمل</h4>
+                                <p data-ar="نماذج جاهزة للاستخدام في وكالتك أو مشاريعك"
+                                    data-en="Ready-to-use templates for your agency or projects">نماذج جاهزة للاستخدام
+                                    في وكالتك أو مشاريعك</p>
                             </div>
                         </div>
-                        <div class="vs-bonus-price" id="vs-price-2">2,500 ج.م</div>
+                        <div class="vs-bonus-price" id="vs-price-2" data-ar="2,500 ج.م" data-en="2,500 EGP">2,500 ج.م
+                        </div>
                     </div>
 
                     <!-- Item 3 -->
@@ -1124,11 +1247,15 @@
                         <div class="vs-bonus-left">
                             <div class="vs-bonus-icon"><i class="fa-solid fa-phone-volume"></i></div>
                             <div class="vs-bonus-text">
-                                <h4>جروب دعم VIP + مكالمة أسبوعية</h4>
-                                <p>دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك</p>
+                                <h4 data-ar="جروب دعم VIP + مكالمة أسبوعية" data-en="VIP Support Group + Weekly Call">
+                                    جروب دعم VIP + مكالمة أسبوعية</h4>
+                                <p data-ar="دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك"
+                                    data-en="Direct technical support and continuous follow-up to answer all your questions">
+                                    دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك</p>
                             </div>
                         </div>
-                        <div class="vs-bonus-price" id="vs-price-3">8,500 ج.م</div>
+                        <div class="vs-bonus-price" id="vs-price-3" data-ar="8,500 ج.م" data-en="8,500 EGP">8,500 ج.م
+                        </div>
                     </div>
 
                     <!-- Item 4 -->
@@ -1136,74 +1263,49 @@
                         <div class="vs-bonus-left">
                             <div class="vs-bonus-icon"><i class="fa-solid fa-file-pdf"></i></div>
                             <div class="vs-bonus-text">
-                                <h4>أكثر من 50 ملف PDF ملخص</h4>
-                                <p>خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات</p>
+                                <h4 data-ar="أكثر من 50 ملف PDF ملخص" data-en="Over 50 Summary PDF Files">أكثر من 50 ملف
+                                    PDF ملخص</h4>
+                                <p data-ar="خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات"
+                                    data-en="Mind maps and comprehensive summaries that save you hundreds of hours">
+                                    خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات</p>
                             </div>
                         </div>
-                        <div class="vs-bonus-price" id="vs-price-4">4,000 ج.م</div>
+                        <div class="vs-bonus-price" id="vs-price-4" data-ar="4,000 ج.م" data-en="4,000 EGP">4,000 ج.م
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Pricing Anchor -->
             <div class="vs-pricing-anchor">
-                <div class="vs-total-value-text">القيمة الإجمالية الكاملة للبرنامج والهدايا:</div>
+                <div class="vs-total-value-text" data-ar="القيمة الإجمالية الكاملة للبرنامج والهدايا:"
+                    data-en="Total Value of the Program and Bonuses:">القيمة الإجمالية الكاملة للبرنامج والهدايا:</div>
                 <div class="vs-old-price-wrap">
-                    <span class="vs-old-price" id="vs-price-old">30,000 ج.م</span>
+                    <span class="vs-old-price" id="vs-price-old" data-ar="30,000 ج.م" data-en="30,000 EGP">30,000
+                        ج.م</span>
                 </div>
-                <div class="vs-invest-text">استثمر اليوم فقط بـ</div>
+
 
                 <!-- Animated Reveal -->
-                <div class="vs-new-price-reveal" id="vsNewPrice">
-                    <div class="vs-new-price" id="vs-price-new">2,999 <span>ج.م</span></div>
-                </div>
-            </div>
 
-            <!-- CTA Section -->
-            <div class="vs-cta-section">
-                <a href="#payment" class="vs-cta-btn">
-                    <div class="vs-btn-shimmer"></div>
-                    <span>احجز مكانك الان بالخصم</span>
-                </a>
 
-                <!-- Trust Badges -->
-                <div class="vs-trust-badges">
-                    <div class="vs-badge">
-                        <i class="fa-solid fa-lock" style="color: #f59e0b;"></i>
-                        دفع آمن 100%
-                    </div>
-                    <div class="vs-badge">
-                        <i class="fa-solid fa-shield-halved" style="color: #c1ff11;"></i>
-                        ضمان استرداد الأموال
+                <!-- CTA Section -->
+                <div class="vs-cta-section">
+                    <a href="#payment" class="vs-cta-btn">
+                        <div class="vs-btn-shimmer"></div>
+                        <span data-ar="احجز مكانك الان بالخصم" data-en="Reserve Your Spot Now with Discount">احجز مكانك
+                            الان بالخصم</span>
+                    </a>
+
+                    <!-- Trust Badges -->
+                    <div class="vs-trust-badges">
+                        <div class="vs-badge">
+                            <i class="fa-solid fa-lock" style="color: #f59e0b;"></i>
+                            <span data-ar="دفع آمن 100%" data-en="100% Secure Payment">دفع آمن 100%</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- ════════════════════════════════════════
-     GUARANTEE
-    ════════════════════════════════════════ -->
-    <section class="guarantee-section">
-        <div class="container">
-            <div class="guarantee-box">
-                <span class="guarantee-badge"><i class="fa-solid fa-shield-heart"></i></span>
-                <h3>ضمان استرداد 100% | 3 أيام من غير أسئلة</h3>
-                <p>
-                    أنا واثق جداً من قوة المحتوى. لو اشتركت وطبقت اللي في الكورس ومحستش
-                    إنك أخدت قيمة أضعاف اللي دفعته — ابعتلي رسالة خلال 3 أيام وهردلك
-                    فلوسك كاملة. بدون أي أسئلة، بدون أي تعقيد.
-                </p>
-                <div class="guarantee-points">
-                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
-                        استرداد فوري</span>
-                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
-                        لا شروط خفية</span>
-                    <span class="gp"><span class="gp-icon"><i class="fa-solid fa-circle-check"></i></span>
-                        لا تحتاج مبرر</span>
-                </div>
-            </div>
-        </div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -1212,12 +1314,16 @@
     <section class="screenshots-section">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">نتائج بالأرقام</span>
-                <h2 class="section-title">
+                <span class="section-eyebrow" data-ar="نتائج بالأرقام" data-en="Results in Numbers">نتائج
+                    بالأرقام</span>
+                <h2 class="section-title" data-html="true"
+                    data-ar='مجتمعنا لا يتوقف عن <span style="color: var(--gold)">تحقيق النتائج</span>'
+                    data-en='Our community never stops <span style="color: var(--gold)">achieving results</span>'>
                     مجتمعنا لا يتوقف عن
                     <span style="color: var(--gold)">تحقيق النتائج</span>
                 </h2>
-                <p class="section-sub">آراء حقيقية من أعضاء المجتمع</p>
+                <p class="section-sub" data-ar="آراء حقيقية من أعضاء المجتمع"
+                    data-en="Real reviews from community members">آراء حقيقية من أعضاء المجتمع</p>
             </div>
         </div>
 
@@ -1827,9 +1933,13 @@
 
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">ابدأ دلوقتي</span>
-                <h2 class="section-title">Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
-                <p class="section-sub">اختار الخطة اللي تناسب رحلتك.</p>
+                <span class="section-eyebrow" data-ar="ابدأ دلوقتي" data-en="Get Started">ابدأ دلوقتي</span>
+                <h2 class="section-title" data-html="true"
+                    data-ar='أسعار <span style="color: var(--gold)">بسيطة.</span> قيمة قصوى.'
+                    data-en='Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.'>Simple <span
+                        style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
+                <p class="section-sub" data-ar="اختار الخطة اللي تناسب رحلتك."
+                    data-en="Choose the plan that fits your journey.">اختار الخطة اللي تناسب رحلتك.</p>
             </div>
 
             <input type="checkbox" id="pricingToggle" hidden aria-hidden="true">
@@ -1838,8 +1948,9 @@
                 <div class="pricing-card" data-plan-card="monthly">
                     <div class="pricing-card-glow"></div>
 
-                    <h3 class="pricing-plan-name">التجربة</h3>
-                    <p class="pricing-plan-sub">اختبار أولي قبل الالتزام.</p>
+                    <h3 class="pricing-plan-name" data-ar="التجربة" data-en="Starter">التجربة</h3>
+                    <p class="pricing-plan-sub" data-ar="اختبار أولي قبل الالتزام." data-en="Try before you commit.">
+                        اختبار أولي قبل الالتزام.</p>
 
                     <div class="pricing-price-block">
                         <div class="pricing-current">
@@ -1855,20 +1966,31 @@
                     <div class="pricing-divider"></div>
 
                     <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> افتح كورس خارطة طريق الـ AI والكورسات المتاحة كل
-                            شهر</li>
-                        <li><i class="fa-solid fa-circle-check"></i> تنضم لمجتمع المتعلمين وتتكلم معاهم</li>
-                        <li><i class="fa-solid fa-circle-check"></i> تتابع محتوى المجتمع خلال الشهر</li>
-                        <li><i class="fa-solid fa-circle-check"></i> كل شهر تقدر تشوف محتوى جديد</li>
-                        <li><i class="fa-solid fa-circle-check"></i> تجربة مناسبة لو لسه بتستكشف</li>
-                        <li><i class="fa-solid fa-circle-check"></i> وصول أساسي للدعم والمتابعة</li>
-                        <li><i class="fa-solid fa-circle-check"></i> ابدأ من غير التزام طويل</li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="افتح كورس خارطة طريق الـ AI والكورسات المتاحة كل شهر"
+                                data-en="Access the AI Roadmap course and all monthly courses">افتح كورس خارطة طريق الـ
+                                AI والكورسات المتاحة كل شهر</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
+                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
+                                وتتكلم معاهم</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تتابع محتوى المجتمع خلال الشهر"
+                                data-en="Follow community content throughout the month">تتابع محتوى المجتمع خلال
+                                الشهر</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="كل شهر تقدر تشوف محتوى جديد"
+                                data-en="New content available every month">كل شهر تقدر تشوف محتوى جديد</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تجربة مناسبة لو لسه بتستكشف"
+                                data-en="Perfect if you're still exploring">تجربة مناسبة لو لسه بتستكشف</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="وصول أساسي للدعم والمتابعة"
+                                data-en="Basic access to support and mentoring">وصول أساسي للدعم والمتابعة</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="ابدأ من غير التزام طويل"
+                                data-en="Start without a long-term commitment">ابدأ من غير التزام طويل</span></li>
                     </ul>
 
-                    <button class="pricing-cta" type="button" data-plan-checkout="monthly">اشترك الآن</button>
+                    <button class="pricing-cta" type="button" data-plan-checkout="monthly" data-ar="اشترك الآن"
+                        data-en="Subscribe Now">اشترك الآن</button>
                     <button class="pricing-instapay-btn" type="button" data-plan-instapay="monthly">
                         <i class="fa-solid fa-wallet"></i>
-                        ادفع Instapay
+                        <span data-ar="ادفع Instapay" data-en="Pay via Instapay">ادفع Instapay</span>
                     </button>
                     <div class="pricing-payment-note">
                     </div>
@@ -1877,39 +1999,60 @@
                 <div class="pricing-card pricing-card-featured" data-plan-card="yearly">
                     <div class="pricing-card-glow"></div>
 
-                    <span class="pricing-badge">🔥 الأكثر توفيراً</span>
-                    <h3 class="pricing-plan-name">عضو غاوي الكامل</h3>
-                    <p class="pricing-plan-sub">كل حاجة — بدون استثناءات.</p>
+                    <span class="pricing-badge" data-ar="🔥 الأكثر توفيراً" data-en="🔥 Best Value">🔥 الأكثر
+                        توفيراً</span>
+                    <h3 class="pricing-plan-name" data-ar="عضو غاوي الكامل" data-en="Full Ghawy Member">عضو غاوي الكامل
+                    </h3>
+                    <p class="pricing-plan-sub" data-ar="كل حاجة — بدون استثناءات."
+                        data-en="Everything — no exceptions.">كل حاجة — بدون استثناءات.</p>
 
                     <div class="pricing-price-block">
                         <div class="pricing-current">
-                            <span class="pricing-amount" data-plan-amount>333</span>
+                            <span class="pricing-amount" data-plan-amount>4000</span>
                             <div class="pricing-currency-col">
                                 <span class="pricing-currency" data-plan-currency>ج.م</span>
                                 <span class="pricing-period-label" data-plan-period>سنوياً</span>
                             </div>
                         </div>
-                        <span class="pricing-period" data-plan-note>وفّرت 3000 جنيه — كأنك واخد 6 شهور مجانية.</span>
+                        <span class="pricing-period" data-plan-note>وفّرت 3200 جنيه — كأنك واخد 6 شهور مجانية.</span>
                     </div>
 
                     <div class="pricing-divider"></div>
 
                     <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر
-                        </li>
-                        <li><i class="fa-solid fa-circle-check"></i> تنضم لمجتمع المتعلمين وتتكلم معاهم</li>
-                        <li><i class="fa-solid fa-circle-check"></i> كل شهر تظهر مشاريع AI حقيقية معنا live</li>
-                        <li><i class="fa-solid fa-circle-check"></i> كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI</li>
-                        <li><i class="fa-solid fa-circle-check"></i> شهادة رسمية لكل كورس بتخلصه</li>
-                        <li><i class="fa-solid fa-circle-check"></i> التحديثات الحصرية لأول سنة بتوصلك قبل الكل بأسبوع
-                        </li>
-                        <li><i class="fa-solid fa-circle-check"></i> قناة VIP خاصة وردود مباشرة على أسئلتك</li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر"
+                                data-en="Access the AI Roadmap course — content refreshes every month">افتح كورس خارطة
+                                طريق الـ AI — الكورسات تتحرك كل شهر</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
+                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
+                                وتتكلم معاهم</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="كل شهر تظهر مشاريع AI حقيقية معنا live"
+                                data-en="Monthly live sessions building real AI projects">كل شهر تظهر مشاريع AI حقيقية
+                                معنا live</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI"
+                                data-en="Monthly live Q&amp;A with a top AI figure">كل شهر تسأل وتتكلم مع شخصية بارزة في
+                                الـ AI</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="شهادة رسمية لكل كورس بتخلصه"
+                                data-en="Official certificate for every course you complete">شهادة رسمية لكل كورس
+                                بتخلصه</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="التحديثات الحصرية لأول سنة بتوصلك قبل الكل بأسبوع"
+                                data-en="Exclusive updates delivered to you a week before everyone else">التحديثات
+                                الحصرية لأول سنة بتوصلك قبل الكل بأسبوع</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="قناة VIP خاصة وردود مباشرة على أسئلتك"
+                                data-en="Private VIP channel with direct answers to your questions">قناة VIP خاصة وردود
+                                مباشرة على أسئلتك</span></li>
                     </ul>
 
-                    <button class="pricing-cta" type="button" data-plan-checkout="yearly">وفر أكثر</button>
+                    <button class="pricing-cta" type="button" data-plan-checkout="yearly" data-ar="وفر أكثر"
+                        data-en="Save More">وفر أكثر</button>
                     <button class="pricing-instapay-btn" type="button" data-plan-instapay="yearly">
                         <i class="fa-solid fa-wallet"></i>
-                        ادفع Instapay
+                        <span data-ar="ادفع Instapay" data-en="Pay via Instapay">ادفع Instapay</span>
                     </button>
                     <div class="pricing-payment-note">
                     </div>
@@ -1918,37 +2061,55 @@
                 <div class="pricing-card" data-plan-card="quarterly">
                     <div class="pricing-card-glow"></div>
 
-                    <h3 class="pricing-plan-name">المتعلم الجاد</h3>
-                    <p class="pricing-plan-sub">بتبني وتثبت مع المجتمع.</p>
+                    <h3 class="pricing-plan-name" data-ar="المتعلم الجاد" data-en="Serious Learner">المتعلم الجاد</h3>
+                    <p class="pricing-plan-sub" data-ar="بتبني وتثبت مع المجتمع."
+                        data-en="Build and grow with the community.">بتبني وتثبت مع المجتمع.</p>
 
                     <div class="pricing-price-block">
                         <div class="pricing-current">
-                            <span class="pricing-amount" data-plan-amount>400</span>
+                            <span class="pricing-amount" data-plan-amount>1200</span>
                             <div class="pricing-currency-col">
                                 <span class="pricing-currency" data-plan-currency>ج.م</span>
                                 <span class="pricing-period-label" data-plan-period>كل 3 شهور</span>
                             </div>
                         </div>
-                        <span class="pricing-period" data-plan-note>قيمة حقيقية وتفاعل حقيقي بدون ضغط.</span>
+                        <span class="pricing-period" data-plan-note>وفّرت 600 جنيه — بدلاً من 1,800 جنيه.</span>
                     </div>
 
                     <div class="pricing-divider"></div>
 
                     <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر"
+                                data-en="Access the AI Roadmap course — content refreshes every month">افتح كورس خارطة
+                                طريق الـ AI — الكورسات تتحرك كل شهر</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
+                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
+                                وتتكلم معاهم</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="كل شهر تظهر مشاريع AI حقيقية معنا live"
+                                data-en="Monthly live sessions building real AI projects">كل شهر تظهر مشاريع AI حقيقية
+                                معنا live</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span
+                                data-ar="كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI"
+                                data-en="Monthly live Q&amp;A with a top AI figure">كل شهر تسأل وتتكلم مع شخصية بارزة في
+                                الـ AI</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="شهادة رسمية لكل كورس بتخلصه"
+                                data-en="Official certificate for every course you complete">شهادة رسمية لكل كورس
+                                بتخلصه</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="متابعة أفضل من الاشتراك الشهري"
+                                data-en="Better mentoring than the monthly plan">متابعة أفضل من الاشتراك الشهري</span>
                         </li>
-                        <li><i class="fa-solid fa-circle-check"></i> تنضم لمجتمع المتعلمين وتتكلم معاهم</li>
-                        <li><i class="fa-solid fa-circle-check"></i> كل شهر تظهر مشاريع AI حقيقية معنا live</li>
-                        <li><i class="fa-solid fa-circle-check"></i> كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI</li>
-                        <li><i class="fa-solid fa-circle-check"></i> شهادة رسمية لكل كورس بتخلصه</li>
-                        <li><i class="fa-solid fa-circle-check"></i> متابعة أفضل من الاشتراك الشهري</li>
-                        <li><i class="fa-solid fa-circle-check"></i> مناسب لو داخل تتعلم وتطبق بجدية</li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="مناسب لو داخل تتعلم وتطبق بجدية"
+                                data-en="Ideal if you're ready to learn and apply seriously">مناسب لو داخل تتعلم وتطبق
+                                بجدية</span></li>
                     </ul>
 
-                    <button class="pricing-cta" type="button" data-plan-checkout="quarterly">الأكثر توفيراً</button>
+                    <button class="pricing-cta" type="button" data-plan-checkout="quarterly" data-ar="الأكثر توفيراً"
+                        data-en="Best Deal">الأكثر توفيراً</button>
                     <button class="pricing-instapay-btn" type="button" data-plan-instapay="quarterly">
                         <i class="fa-solid fa-wallet"></i>
-                        ادفع Instapay
+                        <span data-ar="ادفع Instapay" data-en="Pay via Instapay">ادفع Instapay</span>
                     </button>
                     <div class="pricing-payment-note">
                     </div>
@@ -1968,46 +2129,51 @@
                             amount: 600,
                             display: '600',
                             currency: 'ج.م',
-                            period: 'شهرياً',
+                            period: 'شهرياً', periodEn: 'Monthly',
                             note: 'تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك.',
+                            noteEn: 'A flexible monthly trial so you can start and see for yourself.',
                             methods: 'الدفع عن طريق كاشير / انستاباي',
                             planKey: 'monthly_egp'
                         },
                         yearly: {
-                            amount: 3000,
-                            display: '333',
+                            amount: 4000,
+                            display: '4000',
                             currency: 'ج.م',
-                            period: 'سنوياً',
-                            note: 'وفّرت 3000 جنيه — كأنك واخد 6 شهور مجانية.',
+                            period: 'سنوياً', periodEn: 'Yearly',
+                            note: 'وفّرت 3200 جنيه — كأنك واخد 6 شهور مجانية.',
+                            noteEn: 'Save 3,200 EGP — like getting 6 months free.',
                             methods: 'الدفع عن طريق كاشير / انستاباي',
                             planKey: 'yearly_egp'
                         },
                         quarterly: {
                             amount: 1200,
-                            display: '400',
+                            display: '1200',
                             currency: 'ج.م',
-                            period: 'كل 3 شهور',
-                            note: 'قيمة حقيقية وتفاعل حقيقي بدون ضغط.',
+                            period: 'كل 3 شهور', periodEn: 'Every 3 Months',
+                            note: 'وفّرت 600 جنيه — بدلاً من 1,800 جنيه.',
+                            noteEn: 'Save 600 EGP — instead of paying 1,800 EGP.',
                             methods: 'الدفع عن طريق كاشير / انستاباي',
                             planKey: 'quarterly_egp'
                         }
                     },
                     USD: {
                         monthly: {
-                            amount: 15,
-                            display: '15',
+                            amount: 20,
+                            display: '20',
                             currency: '$',
-                            period: 'شهرياً',
+                            period: 'شهرياً', periodEn: 'Monthly',
                             note: 'تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك.',
+                            noteEn: 'A flexible monthly trial so you can start and see for yourself.',
                             methods: 'الدفع الدولي عن طريق PayPal',
                             planKey: 'monthly_usd'
                         },
                         yearly: {
-                            amount: 85,
-                            display: '85',
+                            amount: 100,
+                            display: '100',
                             currency: '$',
-                            period: 'سنوياً',
+                            period: 'سنوياً', periodEn: 'Yearly',
                             note: 'وفّرت 95$ مقارنة بالدفع الشهري.',
+                            noteEn: 'Save $95 compared to monthly billing.',
                             methods: 'الدفع الدولي عن طريق PayPal',
                             planKey: 'yearly_usd'
                         },
@@ -2015,8 +2181,9 @@
                             amount: 35,
                             display: '35',
                             currency: '$',
-                            period: 'كل 3 شهور',
+                            period: 'كل 3 شهور', periodEn: 'Every 3 Months',
                             note: 'قيمة حقيقية وتفاعل حقيقي بدون ضغط.',
+                            noteEn: 'Real value and real engagement without pressure.',
                             methods: 'الدفع الدولي عن طريق PayPal',
                             planKey: 'quarterly_usd'
                         }
@@ -2036,6 +2203,7 @@
                 function applyPricingCurrency(currency) {
                     const safeCurrency = currency === 'USD' ? 'USD' : 'EGP';
                     section.dataset.pricingCurrency = safeCurrency;
+                    const lang = localStorage.getItem('ghawy_lang') || 'ar';
 
                     section.querySelectorAll('[data-plan-card]').forEach(card => {
                         const plan = card.dataset.planCard;
@@ -2050,11 +2218,30 @@
 
                         if (amount) amount.textContent = data.display;
                         if (currencyLabel) currencyLabel.textContent = data.currency;
-                        if (period) period.textContent = data.period;
-                        if (note) note.textContent = data.note;
+                        if (period) {
+                            period.setAttribute('data-ar', data.period);
+                            period.setAttribute('data-en', data.periodEn || data.period);
+                            period.textContent = lang === 'en' ? (data.periodEn || data.period) : data.period;
+                        }
+                        if (note) {
+                            note.setAttribute('data-ar', data.note);
+                            note.setAttribute('data-en', data.noteEn || data.note);
+                            note.textContent = lang === 'en' ? (data.noteEn || data.note) : data.note;
+                        }
                         if (methods) methods.textContent = data.methods;
+
+                        // Update plan name & sub if they have data-ar/data-en
+                        card.querySelectorAll('[data-ar]').forEach(el => {
+                            const arText = el.getAttribute('data-ar');
+                            const enText = el.getAttribute('data-en');
+                            if (arText && enText) {
+                                el.textContent = lang === 'en' ? enText : arText;
+                            }
+                        });
                     });
                 }
+                // Expose globally so applyLanguage can call it on language switch
+                window.applyPricingCurrency = applyPricingCurrency;
 
                 async function startPlanCheckout(plan, trigger) {
                     const currency = section.dataset.pricingCurrency === 'USD' ? 'USD' : 'EGP';
@@ -2167,16 +2354,22 @@
     <section class="faq-section" id="faq">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">الأسئلة الشائعة</span>
+                <span class="section-eyebrow" data-ar="الأسئلة الشائعة" data-en="Frequently Asked Questions">الأسئلة
+                    الشائعة</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title">كل اللي عايز تعرفه</h2>
+                <h2 class="section-title" data-ar="كل اللي عايز تعرفه" data-en="Everything You Need to Know">كل اللي
+                    عايز تعرفه</h2>
             </div>
             <div class="faq-list">
                 <div class="faq-item">
                     <div class="faq-q">
-                        هل هحتاج خبرة سابقة في البرمجة؟<span class="faq-icon">+</span>
+                        <span data-ar="هل هحتاج خبرة سابقة في البرمجة؟"
+                            data-en="Do I need prior programming experience?">هل هحتاج خبرة سابقة في
+                            البرمجة؟</span><span class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="لا خالص, الكورس متصمم من الصفر. الأدوات اللي بنستخدمها زي n8n وMake هي No-Code مش بتعتمد على كتابة أي كود, وغير كدا انواع البيانات والحاجات اللي هنحتاجها في البرمجه هنشرحها بالكامل من الصفر, وعندنا شابتر كامل عن Machine learning للي عايز يتعمق في البرمجة"
+                        data-en="Not at all — the course is designed from scratch. The tools we use, like n8n and Make, are No-Code and don't rely on writing any code. We also fully explain the data types and programming basics you'll need from scratch, and there's a complete chapter on Machine Learning for anyone who wants to go deeper into programming.">
                         لا خالص, الكورس متصمم من الصفر. الأدوات اللي بنستخدمها زي n8n
                         وMake هي No-Code مش بتعتمد على كتابة أي كود, وغير كدا انواع
                         البيانات والحاجات اللي هنحتاجها في البرمجه هنشرحها بالكامل من
@@ -2186,9 +2379,13 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">
-                        امتي هبدأ احقق ربح من المجال؟<span class="faq-icon">+</span>
+                        <span data-ar="امتي هبدأ احقق ربح من المجال؟"
+                            data-en="When will I start making money from this field?">امتي هبدأ احقق ربح من
+                            المجال؟</span><span class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="الأمر بالكامل بيعتمد على مجهودك وتطبيقك, مفيش وقت محدد, بس بعض المشتركين قدروا يجيبوا أول عميل بعد 14 يوماً من التطبيق وانهاء الكورس"
+                        data-en="It depends entirely on your effort and how much you apply. There's no fixed timeline, but some members managed to land their first client just 14 days after applying and finishing the course.">
                         الأمر بالكامل بيعتمد على مجهودك وتطبيقك, مفيش وقت محدد, بس بعض
                         المشتركين قدروا يجيبوا أول عميل بعد 14 يوماً من التطبيق وانهاء
                         الكورس
@@ -2196,9 +2393,12 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">
-                        هل الكورس مسجل ولا بث مباشر؟<span class="faq-icon">+</span>
+                        <span data-ar="هل الكورس مسجل ولا بث مباشر؟" data-en="Is the course recorded or live?">هل الكورس
+                            مسجل ولا بث مباشر؟</span><span class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="الكورس متسجل بالكامل بجودة عالية تقدر تشوفه في أي وقت وبالسرعة اللي تناسبك, بالإضافة لجروب دعم VIP ومكالمات اسبوعية للإجابة على أسئلتك."
+                        data-en="The course is fully recorded in high quality, so you can watch it anytime at the speed that suits you, plus a VIP support group and weekly calls to answer your questions.">
                         الكورس متسجل بالكامل بجودة عالية تقدر تشوفه في أي وقت وبالسرعة
                         اللي تناسبك, بالإضافة لجروب دعم VIP ومكالمات اسبوعية للإجابة على
                         أسئلتك.
@@ -2206,27 +2406,37 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">
-                        كيف أستلم الكورس بعد الدفع؟<span class="faq-icon">+</span>
+                        <span data-ar="كيف أستلم الكورس بعد الدفع؟"
+                            data-en="How do I receive the course after payment?">كيف أستلم الكورس بعد الدفع؟</span><span
+                            class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="بمجرد إتمام الدفع بنجاح، سيتم إنشاء حساب لك على منصة Whop وإرسال بيانات الدخول على رقمك فوراً - الوصول فوري."
+                        data-en="As soon as your payment is completed successfully, an account will be created for you on the Whop platform and your login details will be sent to your number immediately — access is instant.">
                         بمجرد إتمام الدفع بنجاح، سيتم إنشاء حساب لك على منصة Whop وإرسال
                         بيانات الدخول على رقمك فوراً - الوصول فوري.
                     </div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">
-                        هل يوجد ضمان استرداد الأموال؟<span class="faq-icon">+</span>
+                        <span data-ar="هل يوجد ضمان استرداد الأموال؟" data-en="Is there a money-back guarantee?">هل يوجد
+                            ضمان استرداد الأموال؟</span><span class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="أيوه أكيد. ضمان استرداد 100% خلال 3 أيام من الشراء, بدون أسئلة وبدون أي تعقيدات."
+                        data-en="Yes, absolutely. A 100% refund guarantee within 3 days of purchase — no questions asked and no complications.">
                         أيوه أكيد. ضمان استرداد 100% خلال 3 أيام من الشراء, بدون أسئلة
                         وبدون أي تعقيدات.
                     </div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">
-                        هل انا محتاج لاب توب غالي؟<span class="faq-icon">+</span>
+                        <span data-ar="هل انا محتاج لاب توب غالي؟" data-en="Do I need an expensive laptop?">هل انا محتاج
+                            لاب توب غالي؟</span><span class="faq-icon">+</span>
                     </div>
-                    <div class="faq-a">
+                    <div class="faq-a"
+                        data-ar="لا نهائي, شغلنا مش تقيل خالص, اي نوع لاب توب عشان تقدر تحضر ميتينجز وتعمل الاوتوميشن علي n8n مش اكتر."
+                        data-en="Not at all. Our work isn't heavy — any laptop will do, so you can attend meetings and build automations on n8n, nothing more.">
                         لا نهائي, شغلنا مش تقيل خالص, اي نوع لاب توب عشان تقدر تحضر
                         ميتينجز وتعمل الاوتوميشن علي n8n مش اكتر.
                     </div>
@@ -2241,20 +2451,25 @@
     <section class="final-cta-section" id="checkout">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow">الخطوة الأخيرة</span>
+                <span class="section-eyebrow" data-ar="الخطوة الأخيرة" data-en="Final Step">الخطوة الأخيرة</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title" style="max-width: 600px; margin-inline: auto">
+                <h2 class="section-title" style="max-width: 600px; margin-inline: auto"
+                    data-ar="القرار ده ممكن يكون أهم قرار بتاخده في 2026, يا هتبدأ دلوقتي, يا كأن مفيش حاجه حصلت"
+                    data-en="This decision could be the most important one you make in 2026. Either you start now, or it's as if nothing happened">
                     القرار ده ممكن يكون أهم قرار بتاخده في 2026, يا هتبدأ دلوقتي, يا كأن
                     مفيش حاجه حصلت
                 </h2>
-                <p class="section-sub" style="margin: 0 auto 36px">
+                <p class="section-sub" style="margin: 0 auto 36px"
+                    data-ar="سوق الـ AI بينمو بشكل تاريخي كأسرع سوق واكبر ثورة تكنولوجيه في التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية والوقت فات."
+                    data-en="The AI market is growing historically as the fastest market and biggest technological revolution in history. Those who start today win. Those who delay will face fierce competition when it's too late.">
                     سوق الـ AI بينمو بشكل تاريخي كأسرع سوق واكبر ثورة تكنولوجيه في
                     التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية
                     والوقت فات.
                 </p>
                 <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta"
-                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px">
-                    انضم الآن — EGP 2,999 فقط
+                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px" data-ar="انضم الآن — EGP 600 فقط"
+                    data-en="Join Now — Only EGP 600">
+                    انضم الآن — EGP 600 فقط
                 </a>
                 <!-- INSTAPAY OPTION -->
                 <div style="margin-top: 16px; display: flex; justify-content: center;">
@@ -2269,14 +2484,20 @@
                             <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" />
                         </svg>
-                        <span>الدفع عن طريق انستاباي / فودافون كاش &rarr;</span>
+                        <span data-html="true" data-ar="الدفع عن طريق انستاباي / فودافون كاش &rarr;"
+                            data-en="Pay via Instapay / Vodafone Cash &rarr;">الدفع عن طريق انستاباي / فودافون كاش
+                            &rarr;</span>
                     </a>
                 </div>
                 <div class="cta-sub-note" style="margin-top: 18px">
-                    <span class="note-item"><i class="fa-solid fa-users"></i> +350 مشترك</span>
-                    <span class="note-item"><span><i class="fa-solid fa-circle-check"></i> ضمان 3 أيام</span></span>
-                    <span class="note-item"><i class="fa-solid fa-bolt"></i> وصول فوري</span>
-                    <span class="note-item"><i class="fa-solid fa-infinity"></i> دعم مدي الحياة</span>
+                    <span class="note-item"><i class="fa-solid fa-users"></i> <span data-ar="+350 مشترك"
+                            data-en="+350 Members">+350 مشترك</span></span>
+                    <span class="note-item"><i class="fa-solid fa-circle-check"></i> <span data-ar="ضمان 3 أيام"
+                            data-en="3 Days Guarantee">ضمان 3 أيام</span></span>
+                    <span class="note-item"><i class="fa-solid fa-bolt"></i> <span data-ar="وصول فوري"
+                            data-en="Instant Access">وصول فوري</span></span>
+                    <span class="note-item"><i class="fa-solid fa-infinity"></i> <span data-ar="دعم مدي الحياة"
+                            data-en="Lifetime Support">دعم مدي الحياة</span></span>
                 </div>
             </div>
         </div>
@@ -2285,51 +2506,56 @@
     <!-- ════════════════════════════════════════
      FOOTER
     ════════════════════════════════════════ -->
-    <footer
-        style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px; direction: rtl;">
+    <footer style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px;">
         <div class="container">
             <div
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
                 <!-- Brand Info -->
                 <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">عن غاوي</h3>
-                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;">
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;" data-ar="عن غاوي"
+                        data-en="About Ghawy">عن غاوي</h3>
+                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;"
+                        data-ar="منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة."
+                        data-en="Ghawy is the best place to learn AI and build your own agency step by step.">
                         منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
                     </p>
                 </div>
 
                 <!-- Quick Links -->
                 <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">روابط سريعة</h3>
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
+                        data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
                     <a href="index.html#modules" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'">الكورسات</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="الكورسات" data-en="Courses">الكورسات</a>
                     <a href="index.html#reviews" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">آراء
-                        المشتركين</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="آراء المشتركين" data-en="Reviews">آراء المشتركين</a>
                     <a href="index.html#features" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'">المميزات</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="المميزات" data-en="Features">المميزات</a>
                     <a href="index.html#checkout" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'">الأسعار</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="الأسعار" data-en="Pricing">الأسعار</a>
                 </div>
 
                 <!-- Legal / Policies -->
                 <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">الشروط والسياسات
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
+                        data-ar="الشروط والسياسات" data-en="Terms & Policies">الشروط والسياسات
                     </h3>
                     <a href="terms.html" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">الشروط
-                        والأحكام</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="الشروط والأحكام" data-en="Terms & Conditions">الشروط والأحكام</a>
                     <a href="terms.html#privacy" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">سياسة
-                        الخصوصية</a>
+                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
+                        data-ar="سياسة الخصوصية" data-en="Privacy Policy">سياسة الخصوصية</a>
                 </div>
 
                 <!-- Contact -->
                 <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;">تواصل معنا</h3>
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;" data-ar="تواصل معنا"
+                        data-en="Contact Us">تواصل معنا</h3>
                     <a href="mailto:support@ghawy.com"
                         style="color: #9ca3af; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: color 0.3s; width: fit-content;"
                         onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">
@@ -2340,7 +2566,8 @@
 
             <!-- Bottom Bar -->
             <div class="footer-bottom">
-                <p class="footer-copy">
+                <p class="footer-copy" data-ar="© 2026 Ghawy. جميع الحقوق محفوظة."
+                    data-en="© 2026 Ghawy. All rights reserved.">
                     © 2026 Ghawy. جميع الحقوق محفوظة.
                 </p>
                 <div class="social-icons">
@@ -2364,7 +2591,7 @@
 
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="src/js/main.js"></script>
+    <script src="src/js/main.js?v=20260629"></script>
     <script src="src/js/utils.js?v=10"></script>
 
     <script>
@@ -2797,7 +3024,7 @@
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // Add reveal class to major sections dynamically
-        document.querySelectorAll('.reviews-section, .story-section, .chapters-section, .offer-section, .guarantee-section, .screenshots-section, .faq-section, .final-cta-section, .payment-section').forEach(s => {
+        document.querySelectorAll('.reviews-section, .story-section, .chapters-section, .offer-section, .screenshots-section, .faq-section, .final-cta-section, .payment-section').forEach(s => {
             s.classList.add('reveal');
             revealObserver.observe(s);
         });
@@ -2833,7 +3060,7 @@
             } else {
                 if (priceAmount) priceAmount.innerText = '600';
                 if (priceCurrency) priceCurrency.innerText = 'ج.م';
-                if (finalCta) finalCta.innerHTML = 'انضم الآن — ج.م 2,999 فقط';
+                if (finalCta) finalCta.innerHTML = 'انضم الآن — ج.م 600 فقط';
 
                 if (vsMain) vsMain.innerText = '10,000 ج.م';
                 if (vs1) vs1.innerText = '5,000 ج.م';
@@ -2841,7 +3068,7 @@
                 if (vs3) vs3.innerText = '8,500 ج.م';
                 if (vs4) vs4.innerText = '4,000 ج.م';
                 if (vsOld) vsOld.innerText = '30,000 ج.م';
-                if (vsNew) vsNew.innerHTML = '2,999 <span>ج.م</span>';
+                if (vsNew) vsNew.innerHTML = '600 <span>ج.م</span>';
             }
         }
         setupDynamicPricing();
@@ -2888,9 +3115,14 @@
 
             // 2. Update all text elements
             document.querySelectorAll('[data-ar]').forEach(el => {
-                el.textContent = lang === 'ar'
+                const text = lang === 'ar'
                     ? el.getAttribute('data-ar')
                     : el.getAttribute('data-en');
+                if (el.getAttribute('data-html') === 'true') {
+                    el.innerHTML = text;
+                } else {
+                    el.textContent = text;
+                }
             });
 
             // 3. Update placeholders
@@ -2917,8 +3149,40 @@
                 el.style.display = '';
             });
 
+            // 5b. Update swiper direction for courses carousel.
+            // Set the container dir first, then rebuild so Swiper re-reads it
+            // (changeLanguageDirection is unreliable with loop mode).
+            const swiperEl = document.getElementById('coursesSwiper');
+            if (swiperEl) {
+                swiperEl.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+                if (typeof window.rebuildCoursesSwiper === 'function') {
+                    window.rebuildCoursesSwiper();
+                }
+                // Re-apply translations to the freshly-created loop clones so the
+                // duplicated cards reflect the selected language too.
+                swiperEl.querySelectorAll('[data-ar]').forEach(el => {
+                    const text = lang === 'ar'
+                        ? el.getAttribute('data-ar')
+                        : el.getAttribute('data-en');
+                    if (el.getAttribute('data-html') === 'true') {
+                        el.innerHTML = text;
+                    } else {
+                        el.textContent = text;
+                    }
+                });
+            }
+
             // 6. Save preference
             localStorage.setItem('ghawy_lang', lang);
+
+            // 7. Re-apply pricing currency to update dynamic pricing texts in new language
+            if (typeof window.applyPricingCurrency === 'function') {
+                const pricingSection = document.getElementById('payment');
+                if (pricingSection) {
+                    const currency = pricingSection.dataset.pricingCurrency || 'EGP';
+                    window.applyPricingCurrency(currency);
+                }
+            }
         }
 
         function toggleLanguage() {

@@ -452,7 +452,8 @@ class LiveSessionUpdate(BaseModel):
 class FeedbackCreate(BaseModel):
     role: TeamRole
     person_name: str
-    person_email: EmailStr
+    person_user_id: Optional[int] = None
+    image_url: Optional[str] = None
     feedback_text: str
 
 class FeedbackOut(BaseModel):
@@ -460,7 +461,9 @@ class FeedbackOut(BaseModel):
     user_id: int
     role: TeamRole
     person_name: str
-    person_email: str
+    person_user_id: Optional[int] = None
+    person_email: Optional[str] = None   # legacy records only
+    image_url: Optional[str] = None
     feedback_text: str
     created_at: datetime
     submitted_by_name: Optional[str] = None

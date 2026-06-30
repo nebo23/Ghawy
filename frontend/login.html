@@ -88,6 +88,15 @@
 
   <script src="src/js/utils.js?v=10"></script>
   <script src="src/js/i18n.js"></script>
+  <script>
+    // Login page is always English — block localStorage write so user preference on other pages is preserved
+    (function() {
+      const _orig = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(k, v) { if (k !== 'ghawy_lang') _orig(k, v); };
+      applyLanguage('en');
+      localStorage.setItem = _orig;
+    })();
+  </script>
   <script src="src/js/login.js?v=2"></script>
 
   <script>

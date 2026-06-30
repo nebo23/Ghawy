@@ -289,11 +289,16 @@ def get_current_admin_or_owner_user(current_user: User = Depends(get_current_use
 @router.get("", response_model=list[UserOut])
 def get_all_users(
     skip: int = 0,
-    limit: int = 100,
+    limit: int | None = None,
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    users = db.query(User).filter(User.is_active == True).offset(skip).limit(limit).all()
+    # Return all active members by default; the community members modal needs the
+    # full list, not a 100-cap. `limit` is still honoured if a caller passes one.
+    query = db.query(User).filter(User.is_active == True).offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+    users = query.all()
     return users
 
 # ─── Delete Account ──────────────────────────────────────────

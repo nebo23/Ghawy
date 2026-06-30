@@ -511,31 +511,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Swiper Infinite Carousel
     if (document.querySelector('.coursesSwiper')) {
-        const coursesSwiper = new Swiper('.coursesSwiper', {
-            slidesPerView: 3,
-            spaceBetween: 15,
-            loop: true,
-            grabCursor: true,
-            centeredSlides: false,
-            speed: 500,
-            preventClicks: false,
-            preventClicksPropagation: false,
-            breakpoints: {
-                0: { slidesPerView: 1, spaceBetween: 10 },
-                600: { slidesPerView: 2, spaceBetween: 15 },
-                1024: { slidesPerView: 3, spaceBetween: 30 }
+        let coursesSwiper = null;
+
+        // Build (or rebuild) the swiper. Swiper auto-detects RTL/LTR from the
+        // container's `dir` attribute at construction time, so to switch
+        // direction reliably we destroy and recreate it.
+        function buildCoursesSwiper() {
+            if (coursesSwiper) {
+                coursesSwiper.destroy(true, true);
+                coursesSwiper = null;
             }
-        });
+            // Remove any leftover loop clones so rebuilding (on language switch)
+            // doesn't accumulate duplicate cards / clone-of-clone garbage.
+            document.querySelectorAll('.coursesSwiper .swiper-slide-duplicate')
+                .forEach(el => el.remove());
+            coursesSwiper = new Swiper('.coursesSwiper', {
+                slidesPerView: 3,
+                spaceBetween: 15,
+                loop: true,
+                grabCursor: true,
+                centeredSlides: false,
+                speed: 500,
+                preventClicks: false,
+                preventClicksPropagation: false,
+                breakpoints: {
+                    0: { slidesPerView: 1, spaceBetween: 10 },
+                    600: { slidesPerView: 2, spaceBetween: 15 },
+                    1024: { slidesPerView: 3, spaceBetween: 30 }
+                }
+            });
+        }
+
+        buildCoursesSwiper();
+        // Exposed so the language toggle (in index.html) can rebuild with the
+        // correct direction after updating the container's `dir` attribute.
+        window.rebuildCoursesSwiper = buildCoursesSwiper;
 
         const prevBtn = document.getElementById('cPrevBtn');
         const nextBtn = document.getElementById('cNextBtn');
         if (prevBtn) {
-            prevBtn.addEventListener('click', () => coursesSwiper.slidePrev());
-            prevBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper.slidePrev(); });
+            prevBtn.addEventListener('click', () => coursesSwiper && coursesSwiper.slidePrev());
+            prevBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper && coursesSwiper.slidePrev(); });
         }
         if (nextBtn) {
-            nextBtn.addEventListener('click', () => coursesSwiper.slideNext());
-            nextBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper.slideNext(); });
+            nextBtn.addEventListener('click', () => coursesSwiper && coursesSwiper.slideNext());
+            nextBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper && coursesSwiper.slideNext(); });
         }
     }
 
@@ -610,13 +630,41 @@ if (navLogo) {
 //   PREMIUM REVIEWS LOGIC
 // ════════════════════════════════════════
 const reviewsData = [
-    { id: 'oqg0kwtp2y', name: 'عمر عماد', city: 'الإسكندرية', quote: 'وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه', initial: 'ع' },
-    { id: 'p6kqa3edvy', name: 'كريم طارق', city: 'القاهرة', quote: 'خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها', initial: 'ك' },
-    { id: 'vj9ymlhi7z', name: 'زياد تامر', city: 'القاهرة', quote: 'سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته', initial: 'ز' },
-    { id: 'f19iov9z3o', name: 'منذر', city: 'الغربية', quote: 'أسست وكالة stirx.ai, أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في كورس واحد', initial: 'م' },
-    { id: 'lh58056wkw', name: 'يوسف دسوقي', city: 'القاهرة', quote: 'مفيش كورس متكامل بالشكل ده في الوطن العربي', initial: 'ي' },
-    { id: 'sn2k9l641c', name: 'ياسين مصطفى', city: 'الجيزة', quote: 'جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين', initial: 'ي' },
-    { id: '8n571cb98s', name: 'معتز', city: 'القاهرة', quote: 'لما دخلت الكورس لقيت حاجات عمري ما سمعت عنها, أنت مش بتشتري كورس، أنت بتشتري باكج كاملة فيها مجتمع ومتابعة شخصية', initial: 'م' }
+    {
+        id: 'oqg0kwtp2y', name: 'عمر عماد', city: 'الإسكندرية', cityEn: 'Alexandria', initial: 'ع',
+        quote: 'وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه',
+        quoteEn: 'Halfway through the course, I landed my first client — a dental clinic. They paid well.'
+    },
+    {
+        id: 'p6kqa3edvy', name: 'كريم طارق', city: 'القاهرة', cityEn: 'Cairo', initial: 'ك',
+        quote: 'خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها',
+        quoteEn: 'Finished the course — it covers everything. One of the best courses I\'ve ever taken.'
+    },
+    {
+        id: 'vj9ymlhi7z', name: 'زياد تامر', city: 'القاهرة', cityEn: 'Cairo', initial: 'ز',
+        quote: 'سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته',
+        quoteEn: 'Left media buying and pivoted my career. Mohamed\'s course was the best I\'ve ever seen.'
+    },
+    {
+        id: 'f19iov9z3o', name: 'منذر', city: 'الغربية', cityEn: 'Al-Gharbia', initial: 'م',
+        quote: 'أسست وكالة stirx.ai, أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في كورس واحد',
+        quoteEn: 'Founded stirx.ai. I\'ve taken courses on Udemy and Coursera — never seen this much value in a single course.'
+    },
+    {
+        id: 'lh58056wkw', name: 'يوسف دسوقي', city: 'القاهرة', cityEn: 'Cairo', initial: 'ي',
+        quote: 'مفيش كورس متكامل بالشكل ده في الوطن العربي',
+        quoteEn: 'There is no other course this complete in the Arab world.'
+    },
+    {
+        id: 'sn2k9l641c', name: 'ياسين مصطفى', city: 'الجيزة', cityEn: 'Giza', initial: 'ي',
+        quote: 'جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين',
+        quoteEn: 'Got my first client just two weeks after finishing the course.'
+    },
+    {
+        id: '8n571cb98s', name: 'معتز', city: 'القاهرة', cityEn: 'Cairo', initial: 'م',
+        quote: 'لما دخلت الكورس لقيت حاجات عمري ما سمعت عنها, أنت مش بتشتري كورس، أنت بتشتري باكج كاملة فيها مجتمع ومتابعة شخصية',
+        quoteEn: 'Joined and found things I\'d never heard of before. You\'re not buying a course — you\'re buying a complete package with community and personal mentoring.'
+    }
 ];
 
 let currentHeroIdx = 0;
@@ -630,18 +678,19 @@ function initReviews() {
     if (!layout) return;
 
     // Generate all cards
+    const lang = localStorage.getItem('ghawy_lang') || 'ar';
     layout.innerHTML = reviewsData.map((rev, i) => `
         <div class="pr-card" id="prCard-${i}" onclick="promoteToHero(${i})">
             <img src="https://fast.wistia.com/embed/medias/${rev.id}/swatch" class="pr-thumb" alt="${rev.name}" />
-            
+
             <div class="pr-quotes-icon">«</div>
-            
-            <div class="pr-pulse"><div class="pr-dot"></div> جاري المشاهدة</div>
-            
+
+            <div class="pr-pulse"><div class="pr-dot"></div> ${lang === 'ar' ? 'جاري المشاهدة' : 'Watching now'}</div>
+
             <div class="pr-play-btn" onclick="playWistiaVideo(event, ${i}, '${rev.id}')">
                 <i class="fa-solid fa-play"></i>
             </div>
-            
+
             <div class="pr-wistia-wrapper" id="prWistia-${i}"></div>
 
             <div class="pr-content">
@@ -649,13 +698,13 @@ function initReviews() {
                     <div class="pr-avatar">${rev.initial}</div>
                     <div class="pr-details">
                         <span class="pr-name">${rev.name}</span>
-                        <span class="pr-city">${rev.city}</span>
+                        <span class="pr-city">${lang === 'ar' ? rev.city : (rev.cityEn || rev.city)}</span>
                     </div>
                     <div class="pr-stars">★★★★★</div>
                 </div>
-                <div class="pr-quote">${rev.quote}</div>
+                <div class="pr-quote">${lang === 'ar' ? rev.quote : (rev.quoteEn || rev.quote)}</div>
             </div>
-            
+
             <div class="pr-progress"><div class="pr-progress-fill" id="prProg-${i}"></div></div>
         </div>
     `).join('');
