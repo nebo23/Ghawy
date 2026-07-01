@@ -51,6 +51,10 @@ RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_RECEIPT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 MAX_RECEIPT_SIZE = 5 * 1024 * 1024  # 5 MB
 
+# Subscription length granted on approval, per plan.
+PLAN_DURATION_DAYS = {"monthly": 30, "quarterly": 90, "yearly": 365}
+DEFAULT_PLAN = "monthly"
+
 
 # ── Helper ─────────────────────────────────────────────────
 def require_admin(current_user: User):
@@ -73,6 +77,7 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
         "email": req.email,
         "phone": req.phone,
         "amount": float(req.amount) if req.amount else None,
+        "plan": req.plan,
         "notes": req.notes,
         "receipt_url": req.receipt_url,
         "status": req.status,
@@ -92,6 +97,7 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
 @router.post("/submit")
 async def submit_payment_request(
     amount: Optional[float] = Form(None),
+    plan: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
     receipt: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
@@ -131,6 +137,11 @@ async def submit_payment_request(
 
     receipt_url = f"/uploads/receipts/{unique_name}"
 
+    # Normalize the plan to a known value (defaults to monthly).
+    normalized_plan = (plan or "").strip().lower()
+    if normalized_plan not in PLAN_DURATION_DAYS:
+        normalized_plan = DEFAULT_PLAN
+
     # Create request
     mpr = ManualPaymentRequest(
         full_name=full_name,
@@ -138,6 +149,7 @@ async def submit_payment_request(
         phone=phone,
         receipt_url=receipt_url,
         amount=amount,
+        plan=normalized_plan,
         notes=notes.strip() if notes else None,
         status="pending",
     )
@@ -320,8 +332,10 @@ def approve_request(
         user.is_active = True
         user.is_verified = True
         user.subscription_source = "manual_payment"
+        # Subscription length follows the plan chosen at submission (defaults to monthly/30d).
+        plan_days = PLAN_DURATION_DAYS.get(req.plan or DEFAULT_PLAN, 30)
         # Always extend from now (approval time), not from previous end_at
-        user.end_at = now + timedelta(days=30)
+        user.end_at = now + timedelta(days=plan_days)
 
     db.commit()
 

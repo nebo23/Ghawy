@@ -603,6 +603,7 @@ class ManualPaymentRequest(Base):
     phone = Column(String, nullable=True)
     receipt_url = Column(String, nullable=False)       # uploaded screenshot path
     amount = Column(Numeric(12, 2), nullable=True)     # optional, what they claim to have paid
+    plan = Column(String, nullable=True)               # monthly | quarterly | yearly (drives subscription length)
     notes = Column(Text, nullable=True)                # any notes from user
     status = Column(String, default="pending")         # pending | approved | rejected
     invite_token = Column(String, nullable=True, unique=True)  # one-time registration token

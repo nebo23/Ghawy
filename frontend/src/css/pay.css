@@ -140,19 +140,41 @@ body {
     color: #555;
     font-weight: 600;
 }
+
+.pi-period {
+    font-size: 15px;
+    color: #777;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.pi-plan-tag {
+    color: #3f8ff9;
+    font-weight: 700;
+    margin-left: 4px;
+}
   
 .pi-copy-wrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
 }
-  
+
 .pi-number {
-    font-size: 24px;
-    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
     color: #3f8ff9;
     font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 1px;
+    letter-spacing: 0;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.pi-copy-btn {
+    flex-shrink: 0;
 }
   
 .pi-copy-btn {
@@ -435,6 +457,18 @@ body {
   
 .success-details p:last-child {
     margin: 0;
+}
+
+.success-support {
+    border-top: 1px solid #2a2a2a;
+    padding-top: 12px;
+    margin-top: 12px !important;
+}
+
+.success-support a {
+    color: #4ade80;
+    font-weight: 700;
+    text-decoration: none;
 }
   
 .success-details span {

@@ -801,6 +801,42 @@ async function refundPayment(id) {
   }
 }
 
+function exportMembersCSV() {
+  const rows = filteredUsers;
+  if (!rows.length) { showToast('No members to export', 'error'); return; }
+
+  const showContact = currentUserIsOwner;
+  const headers = ['ID', 'Name', 'Role', ...(showContact ? ['Email', 'Phone'] : []),
+    'Country', 'Governorate', 'Joined', 'Subscription Start', 'End Date', 'Status'];
+
+  const cell = (v) => {
+    const s = (v === null || v === undefined) ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const roleOf = (u) => u.is_owner ? 'Owner' : u.is_admin ? 'Admin' : 'Member';
+  const dateOf = (v) => v ? new Date(v).toISOString().slice(0, 10) : '';
+
+  const lines = [headers.map(cell).join(',')];
+  rows.forEach(u => {
+    const row = [u.id, u.full_name, roleOf(u),
+      ...(showContact ? [u.email || '', u.phone || ''] : []),
+      u.country || '', u.governorate || '', dateOf(u.created_at),
+      dateOf(u.subscription_start), dateOf(u.end_at), u.is_active ? 'Active' : 'Inactive'];
+    lines.push(row.map(cell).join(','));
+  });
+
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = `ghawy_members_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+  showToast('⬇ CSV exported', 'success');
+}
+
 function exportPaymentsCSV() {
   const search = document.getElementById('pay-search').value;
   const status = document.getElementById('pay-status-filter').value;
@@ -1067,6 +1103,20 @@ async function loadPendingRequestsTab() {
   }
 }
 
+// Normalize an Egyptian phone number into a wa.me-friendly international form.
+function toWaMeNumber(phone) {
+  let p = (phone || '').replace(/[\s\-+()]/g, '');
+  if (p.startsWith('00')) p = p.slice(2);
+  else if (p.startsWith('0')) p = '20' + p.slice(1);
+  return p;
+}
+
+const MPR_PLAN_LABELS = {
+  monthly: 'Monthly (30 days)',
+  quarterly: '3 Months (90 days)',
+  yearly: 'Yearly (365 days)',
+};
+
 function renderMprCards(requests, container) {
   container.innerHTML = '';
 
@@ -1077,6 +1127,11 @@ function renderMprCards(requests, container) {
     let statusClass = 'pending';
     if (req.status === 'approved') statusClass = 'approved';
     if (req.status === 'rejected') statusClass = 'rejected';
+
+    const phoneHtml = req.phone
+      ? `<a class="mpr-phone" href="https://wa.me/${toWaMeNumber(req.phone)}" target="_blank" rel="noopener" title="Open WhatsApp">${escapeHtml(req.phone)}</a>`
+      : `<div class="mpr-phone">No phone</div>`;
+    const planLabel = MPR_PLAN_LABELS[req.plan] || (req.plan ? req.plan : '—');
 
     let actionsHtml = '';
 
@@ -1104,7 +1159,7 @@ function renderMprCards(requests, container) {
         <div class="mpr-user-info">
           <div class="mpr-name">${req.full_name}</div>
           <div class="mpr-email">${req.email}</div>
-          <div class="mpr-phone">${req.phone || 'No phone'}</div>
+          ${phoneHtml}
         </div>
         <div class="mpr-status-badge ${statusClass}">${req.status.toUpperCase()}</div>
       </div>
@@ -1113,6 +1168,10 @@ function renderMprCards(requests, container) {
         <div class="mpr-detail-row">
           <span>Amount</span>
           <strong>${req.amount ? req.amount + ' EGP' : '--'}</strong>
+        </div>
+        <div class="mpr-detail-row">
+          <span>Plan</span>
+          <strong>${planLabel}</strong>
         </div>
         <div class="mpr-detail-row">
           <span>Date</span>

@@ -4294,16 +4294,16 @@
 
             return `<div class="comm-post-card" id="post-${p.id}" data-post-id="${p.id}">
                 <div style="display:flex;align-items:flex-start;gap:12px;">
-                    ${avatarHtml(a, 40)}
+                    <span onclick="openUserProfile(${a.id})" style="cursor:pointer;flex-shrink:0;">${avatarHtml(a, 40)}</span>
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${pinnedBadge}
-                            <span style="font-weight:700;font-size:0.88rem;color:#f1f0ea;">${escHtml(a.full_name || 'User')}</span>
+                            <span onclick="openUserProfile(${a.id})" style="font-weight:700;font-size:0.88rem;color:#f1f0ea;cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
                             ${badgeHtml}
                             <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
                         </div>
-                        <h4 style="font-size:1rem;font-weight:700;color:#f1f0ea;margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
-                        <div class="${bodyClass}" style="font-size:0.88rem;color:#b8b8b8;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
+                        <h4 dir="auto" style="font-size:1rem;font-weight:700;color:#f1f0ea;margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
+                        <div class="${bodyClass}" dir="auto" style="font-size:0.88rem;color:#b8b8b8;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
                         ${seeMoreBtn}
                         ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${tagsHtml}</div>` : ''}
                         ${imageHtml}
@@ -4544,13 +4544,13 @@
             </div>`;
 
             return `<div class="comm-inline-comment" id="comment-${c.id}">
-                ${avatarHtml(a, 28)}
+                <span onclick="openUserProfile(${a.id})" style="cursor:pointer;flex-shrink:0;">${avatarHtml(a, 28)}</span>
                 <div class="comm-inline-comment-body">
                     <div class="comm-inline-comment-header">
-                        <span class="comm-inline-comment-author">${escHtml(a.full_name || 'User')}</span>
+                        <span class="comm-inline-comment-author" onclick="openUserProfile(${a.id})" style="cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
                         <span class="comm-inline-comment-time">${c.time_ago || ''}</span>
                     </div>
-                    <div class="comm-inline-comment-text">${escHtml(c.body || '')}</div>
+                    <div class="comm-inline-comment-text" dir="auto">${escHtml(c.body || '')}</div>
                     ${actionsHtml}
                     <div id="reply-input-${c.id}" style="display:none;"></div>
                 </div>

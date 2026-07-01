@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="src/css/main.css">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260630">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260630c">
 </head>
 
 <body>
@@ -50,14 +50,15 @@
           <p class="step-desc">Send the exact amount via Instapay to the number below. Keep the receipt screenshot.</p>
 
           <div class="payment-info-box">
-            <div class="pi-label">Amount Due</div>
-            <div class="pi-amount"><span id="display-price">600</span> <span class="pi-currency">EGP</span></div>
+            <div class="pi-label">Amount Due <span id="display-plan" class="pi-plan-tag"></span></div>
+            <div class="pi-amount"><span id="display-price">600</span> <span class="pi-currency">EGP</span><span
+                id="display-period" class="pi-period"></span></div>
           </div>
 
           <div class="payment-info-box">
             <div class="pi-label">Instapay Number</div>
             <div class="pi-copy-wrap">
-              <div class="pi-number" id="display-instapay">xxxx</div>
+              <div class="pi-number" id="display-instapay">https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU</div>
               <button class="pi-copy-btn" id="copy-instapay-btn" onclick="copyInstapay()">
                 <i data-lucide="copy"></i> Copy
               </button>
@@ -65,7 +66,7 @@
           </div>
 
           <a href="https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU" target="_blank" rel="noopener"
-            class="pi-instapay-link">
+            class="pi-instapay-link" id="pi-instapay-link">
             <i data-lucide="wallet"></i> Pay now via Instapay
           </a>
 
@@ -88,7 +89,7 @@
                 <i data-lucide="upload-cloud" class="upload-icon"></i>
                 <div class="upload-text">Click or drag receipt here</div>
                 <div class="upload-hint">JPG, PNG, PDF (Max 5MB)</div>
-                <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf" required
+                <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf"
                   hidden>
 
                 <!-- Preview area (hidden by default) -->
@@ -124,6 +125,9 @@
       <div class="success-details">
         <p><strong>Reference ID:</strong> <span id="success-ref">---</span></p>
         <p>Once approved, we will send an email confirmation and your account will be activated instantly.</p>
+        <p class="success-support">Need help? Contact support on
+          <a href="tel:01033903334" dir="ltr">01033903334</a>
+        </p>
       </div>
 
       <p class="success-footer">Usually takes less than 12 hours.</p>
@@ -139,7 +143,7 @@
   <!-- Scripts -->
   <script src="src/js/utils.js?v=10"></script>
 
-  <script src="src/js/pay.js"></script>
+  <script src="src/js/pay.js?v=20260630c"></script>
   <script>
     lucide.createIcons();
   </script>

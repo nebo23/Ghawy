@@ -5,6 +5,17 @@
 
 let selectedFile = null;
 
+// EGP plans for the Instapay flow. Keyed by the ?plan= cycle passed from the pricing page.
+const PLAN_PRICES = {
+    monthly: { amount: 600, label: 'Monthly', period: '/ month' },
+    quarterly: { amount: 1200, label: '3 Months', period: '/ 3 months' },
+    yearly: { amount: 4000, label: 'Yearly', period: '/ year' },
+};
+
+// Resolve the selected plan from the URL (defaults to monthly).
+const selectedPlanKey = (new URLSearchParams(location.search).get('plan') || 'monthly').toLowerCase();
+const selectedPlan = PLAN_PRICES[selectedPlanKey] || null;
+
 const token = localStorage.getItem('token');
 if (!token) {
     localStorage.removeItem('user'); window.location.href = '/login';
@@ -36,8 +47,24 @@ async function loadPaymentConfig() {
         if (!res.ok) throw new Error("Failed to load config");
         const config = await res.json();
 
-        document.getElementById('display-instapay').innerText = config.instapay_number;
-        document.getElementById('display-price').innerText = config.subscription_price;
+        // Only override the hardcoded link if the backend has a real value configured
+        // (default placeholder "xxxx" / empty would otherwise hide the payment link).
+        const instapay = config.instapay_number;
+        if (instapay && instapay !== "xxxx") {
+            document.getElementById('display-instapay').innerText = instapay;
+            // If it's a full payment URL, point the "Pay now" button to it too.
+            if (/^https?:\/\//i.test(instapay)) {
+                document.getElementById('pi-instapay-link').href = instapay;
+            }
+        }
+        // Price/period follow the chosen plan; fall back to the backend default (monthly).
+        if (selectedPlan) {
+            document.getElementById('display-price').innerText = selectedPlan.amount;
+            document.getElementById('display-period').innerText = selectedPlan.period;
+            document.getElementById('display-plan').innerText = `• ${selectedPlan.label}`;
+        } else {
+            document.getElementById('display-price').innerText = config.subscription_price;
+        }
     } catch (error) {
         console.error("Error loading payment config:", error);
         showToast("Error loading payment information", "error");
@@ -152,6 +179,11 @@ async function submitPayment() {
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount)) {
         formData.append('amount', parsedAmount);
+    }
+
+    // Send the chosen plan so approval grants the matching subscription length.
+    if (selectedPlan) {
+        formData.append('plan', selectedPlanKey);
     }
 
     formData.append('receipt', selectedFile);
