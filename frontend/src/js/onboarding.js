@@ -313,6 +313,20 @@ const COUNTRY_CONFIG = {
   BH: { dialCode: '+973', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 36123456',     stripZero: false, regex: /^[3689][0-9]{7}$/ },
   OM: { dialCode: '+968', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 91234567',     stripZero: false, regex: /^[279][0-9]{7}$/ },
   JO: { dialCode: '+962', digits: 10, placeholder: '07XXXXXXXX',   hint: 'مثال: 0791234567',   stripZero: true,  regex: /^07[789][0-9]{7}$/ },
+  LB: { dialCode: '+961', digits: 8,  placeholder: '03XXXXXX',     hint: 'مثال: 03123456',     stripZero: true,  regex: /^0?(3[0-9]{6}|(7[0-9]|8[0-9])[0-9]{6})$/ },
+  IQ: { dialCode: '+964', digits: 11, placeholder: '07XXXXXXXXX',  hint: 'مثال: 07901234567',  stripZero: true,  regex: /^07[0-9]{9}$/ },
+  SY: { dialCode: '+963', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
+  PS: { dialCode: '+970', digits: 10, placeholder: '059XXXXXXX',   hint: 'مثال: 0591234567',   stripZero: true,  regex: /^05[69][0-9]{7}$/ },
+  YE: { dialCode: '+967', digits: 9,  placeholder: '7XXXXXXXX',    hint: 'مثال: 712345678',    stripZero: true,  regex: /^0?7[0-9]{8}$/ },
+  SD: { dialCode: '+249', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
+  LY: { dialCode: '+218', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[1-6][0-9]{7}$/ },
+  TN: { dialCode: '+216', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 21234567',     stripZero: false, regex: /^[2-9][0-9]{7}$/ },
+  DZ: { dialCode: '+213', digits: 10, placeholder: '0XXXXXXXXX',   hint: 'مثال: 0551234567',   stripZero: true,  regex: /^0[5-7][0-9]{8}$/ },
+  MA: { dialCode: '+212', digits: 10, placeholder: '06XXXXXXXX',   hint: 'مثال: 0612345678',   stripZero: true,  regex: /^0[67][0-9]{8}$/ },
+  MR: { dialCode: '+222', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 31234567',     stripZero: false, regex: /^[2-4][0-9]{7}$/ },
+  SO: { dialCode: '+252', digits: 9,  placeholder: '6XXXXXXXX',    hint: 'مثال: 612345678',    stripZero: true,  regex: /^0?[6-9][0-9]{7,8}$/ },
+  DJ: { dialCode: '+253', digits: 8,  placeholder: '77XXXXXX',     hint: 'مثال: 77123456',     stripZero: false, regex: /^77[0-9]{6}$/ },
+  KM: { dialCode: '+269', digits: 7,  placeholder: 'XXXXXXX',      hint: 'مثال: 3212345',      stripZero: false, regex: /^[347][0-9]{6}$/ },
 };
 
 // ── Helpers ──────────────────────────────────────────────

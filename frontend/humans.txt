@@ -1,0 +1,13 @@
+/* TEAM */
+
+Founder: Mohamed Salah
+Site: https://ghawy.ai
+
+Developer / Creator: Nabil Ahmed
+Role: Software Developer — built and programmed Ghawy
+
+/* SITE */
+
+Standards: HTML5, CSS3, JavaScript
+Components: FastAPI, WhatsApp Cloud API
+Language: Arabic / English
