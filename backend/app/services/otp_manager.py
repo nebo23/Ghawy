@@ -45,13 +45,13 @@ def _send_whatsapp_otp(phone_e164: str, otp_code: str) -> tuple:
     """
     يبعت رسالة WhatsApp عبر Meta Cloud API بإستخدام الـ Template المعتمد.
 
-    Template: phoneotp (MARKETING/CUSTOM)
-    Body: "استخدم {{1}} لإكمال خطوتك"
+    Template: ghawyphone (UTILITY, lang=en)
+    Body: "استخدم *{{1}}* لإكمال خطوتك"
     """
     access_token = os.getenv("WA_ACCESS_TOKEN")
     phone_number_id = os.getenv("WA_PHONE_NUMBER_ID")
-    template_name = os.getenv("WA_TEMPLATE_NAME", "phoneotp")
-    template_lang = os.getenv("WA_TEMPLATE_LANG", "ar")
+    template_name = os.getenv("WA_TEMPLATE_NAME", "ghawyphone")
+    template_lang = os.getenv("WA_TEMPLATE_LANG", "en")
 
     if not access_token or not phone_number_id:
         logger.error("❌ WA_ACCESS_TOKEN أو WA_PHONE_NUMBER_ID مش موجودين في .env")

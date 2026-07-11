@@ -103,7 +103,7 @@ async function loadCourses() {
 
             return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'" role="button" tabindex="0">
                 <div class="course-thumb-wrap">
-                    ${thumb ? `<img src="${thumb}" alt="${window.escapeHtml ? window.escapeHtml(c.title) : c.title}" class="course-thumb-img" onerror="this.style.display='none';"/>` : ''}
+                    ${thumb ? `<img src="${thumb}" loading="lazy" decoding="async" alt="${window.escapeHtml ? window.escapeHtml(c.title) : c.title}" class="course-thumb-img" onerror="this.style.display='none';"/>` : ''}
                     <div class="course-pct-badge" style="display:none">0%</div>
                 </div>
                 <div class="course-body">
@@ -135,8 +135,11 @@ async function loadCourses() {
                 const pct = Math.round(prog.percentage || 0);
                 const card = grid.querySelector(`[onclick*="id=${c.id}"]`);
                 if (card) {
-                    card.querySelector('.course-prog-fill').style.width = pct + '%';
-                    
+                    const fillEl = card.querySelector('.course-prog-fill');
+                    fillEl.style.width = pct + '%';
+                    fillEl.classList.remove('in-progress', 'completed', 'not-started');
+                    fillEl.classList.add(pct >= 100 ? 'completed' : (pct > 0 ? 'in-progress' : 'not-started'));
+
                     const badge = card.querySelector('.course-pct-badge');
                     if (pct > 0) {
                         badge.style.display = 'block';

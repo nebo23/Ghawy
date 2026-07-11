@@ -300,7 +300,10 @@ function startHeartbeat() {
 if (getToken()) {
   startHeartbeat();
   fetchGlobalNotifications();
-  setInterval(fetchGlobalNotifications, 10000); // Poll every 10s
+  // Poll every 30s, and only while the tab is visible — hidden tabs were
+  // hammering the API (4 requests per tick per tab) for badges nobody sees.
+  setInterval(() => { if (!document.hidden) fetchGlobalNotifications(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchGlobalNotifications(); });
 
   // Show admin-only sidebar links for admins
   (async function showAdminLinks() {
@@ -339,11 +342,28 @@ async function fetchGlobalNotifications() {
         if (notifRes.ok) notifications = await notifRes.json();
     } catch(e) {}
 
+    let communityUnread = 0;
+    let communityChannels = {};
+    try {
+        const commRes = await fetch(`${API}/chat/community/unread`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (commRes.ok) {
+            const commData = await commRes.json();
+            communityUnread = commData.unread_count || 0;
+            communityChannels = commData.channels || {};
+        }
+    } catch(e) {}
+
+    let aiUpdatesUnread = 0;
+    try {
+        const aiRes = await fetch(`${API}/ai-updates/unread`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (aiRes.ok) aiUpdatesUnread = (await aiRes.json()).unread_count || 0;
+    } catch(e) {}
+
     let unreadDmsOnly = 0;
     dms.forEach(dm => { unreadDmsOnly += dm.unread_count; });
 
     let unreadNotifs = notifications.filter(n => !n.is_read).length;
-    let totalUnread = unreadDmsOnly + unreadNotifs;
+    let totalUnread = unreadDmsOnly + unreadNotifs + communityUnread + aiUpdatesUnread;
 
     const notifBadge = document.getElementById('notifBadge');
     const notifDot = document.getElementById('notifDot');
@@ -369,24 +389,85 @@ async function fetchGlobalNotifications() {
       }
     }
 
-    renderGlobalNotifList(dms, notifications);
+    const communityBadge = document.getElementById('communityTotalBadge');
+    if (communityBadge) {
+      if (communityUnread > 0) {
+        communityBadge.textContent = communityUnread > 10 ? '+10' : communityUnread;
+        communityBadge.style.display = '';
+      } else {
+        communityBadge.style.display = 'none';
+      }
+    }
+
+    // Per-channel badges inside the community chat page (chat + post channels)
+    document.querySelectorAll('[data-unread-channel]').forEach(el => {
+      const n = communityChannels[el.getAttribute('data-unread-channel')] || 0;
+      if (n > 0) {
+        el.textContent = n > 10 ? '+10' : n;
+        el.style.display = '';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+
+    const aiBadge = document.getElementById('aiUpdatesTotalBadge');
+    if (aiBadge) {
+      if (aiUpdatesUnread > 0) {
+        aiBadge.textContent = aiUpdatesUnread > 10 ? '+10' : aiUpdatesUnread;
+        aiBadge.style.display = '';
+      } else {
+        aiBadge.style.display = 'none';
+      }
+    }
+
+    renderGlobalNotifList(dms, notifications, communityUnread, aiUpdatesUnread);
   } catch (e) { console.error('Global notif error:', e); }
 }
 
-function renderGlobalNotifList(dms, notifs) {
+function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
   const el = document.getElementById('notifList');
   if (!el) return;
 
   dms = dms || [];
   notifs = notifs || [];
+  communityUnread = communityUnread || 0;
+  aiUpdatesUnread = aiUpdatesUnread || 0;
 
-  if (dms.length === 0 && notifs.length === 0) {
+  if (dms.length === 0 && notifs.length === 0 && communityUnread === 0 && aiUpdatesUnread === 0) {
     el.innerHTML = `<div class="notif-empty">No notifications</div>`;
     return;
   }
 
   let html = '';
-  
+
+  if (communityUnread > 0) {
+    const commCount = communityUnread > 10 ? '+10' : communityUnread;
+    html += `
+        <div class="notif-item" style="cursor:pointer;" onclick="window.location.href='chat.html?channel=general'">
+            <div class="notif-item-av"><i class="fa-solid fa-comments" style="color:var(--gold)"></i></div>
+            <div class="notif-item-body">
+                <div class="notif-item-name">Community Chat</div>
+                <div class="notif-item-text">${commCount} new message${communityUnread > 1 ? 's' : ''}</div>
+            </div>
+            <div class="notif-item-count">${commCount}</div>
+        </div>
+    `;
+  }
+
+  if (aiUpdatesUnread > 0) {
+    const aiCount = aiUpdatesUnread > 10 ? '+10' : aiUpdatesUnread;
+    html += `
+        <div class="notif-item" style="cursor:pointer;" onclick="window.location.href='ai-updates.html'">
+            <div class="notif-item-av"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold)"></i></div>
+            <div class="notif-item-body">
+                <div class="notif-item-name">AI Updates</div>
+                <div class="notif-item-text">${aiCount} new post${aiUpdatesUnread > 1 ? 's' : ''}</div>
+            </div>
+            <div class="notif-item-count">${aiCount}</div>
+        </div>
+    `;
+  }
+
   notifs.forEach(n => {
      html += `
         <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${n.id}, '${n.link || '#'}')">

@@ -80,13 +80,13 @@ body {
     z-index: 90;
 }
 
-/* Override RTL rule that moves sidebar to the right */
+/* RTL: mirror the layout — sidebar anchors to the RIGHT */
 [dir="rtl"] .dash-sidebar,
 [dir="rtl"] .dash-sidebar:not(.open) {
-    left: 0 !important;
-    right: auto !important;
-    border-right: 1px solid var(--border-subtle) !important;
-    border-left: none !important;
+    left: auto !important;
+    right: 0 !important;
+    border-left: 1px solid var(--border-subtle) !important;
+    border-right: none !important;
 }
 
 .dash-sidebar::-webkit-scrollbar {
@@ -103,10 +103,10 @@ body {
     margin-right: 0 !important;
 }
 
-/* Override RTL rule that swaps margins */
+/* RTL: content sits to the LEFT of the right-anchored sidebar */
 [dir="rtl"] .dash-main {
-    margin-left: var(--sidebar-w) !important;
-    margin-right: 0 !important;
+    margin-right: var(--sidebar-w) !important;
+    margin-left: 0 !important;
 }
 
 /* Logo */
@@ -434,10 +434,10 @@ body {
     margin-right: 0 !important;
 }
 
-/* Override RTL rule that moves actions to the left */
+/* RTL: mirror — actions push to the LEFT edge */
 [dir="rtl"] .topbar-actions {
-    margin-left: auto !important;
-    margin-right: 0 !important;
+    margin-right: auto !important;
+    margin-left: 0 !important;
 }
 
 .topbar-actions .notif-wrapper {
@@ -860,6 +860,9 @@ body {
     height: 100%;
     border-radius: 2px;
     transition: width .4s ease;
+    /* Default fill colour so the bar is visible even before JS adds a
+       status modifier class. */
+    background: var(--neon-blue);
 }
 
 .course-prog-fill.in-progress {
@@ -1720,6 +1723,12 @@ body {
     display: block;
 }
 
+/* RTL: avatar sits at the far LEFT, so the dropdown anchors left too */
+[dir="rtl"] .user-dropdown.whop-style {
+    right: auto;
+    left: 24px;
+}
+
 .dropdown-profile-header {
     display: flex;
     align-items: center;
@@ -1806,6 +1815,14 @@ body {
     display: flex;
 }
 
+/* RTL desktop: the bell is at the far LEFT — open the panel to the right */
+@media (min-width: 1025px) {
+    [dir="rtl"] .notif-panel {
+        right: auto;
+        left: 0;
+    }
+}
+
 .notif-panel-header {
     display: flex;
     justify-content: space-between;
@@ -1878,11 +1895,11 @@ body {
         transition: transform 0.3s ease !important;
     }
 
-    /* Keep sidebar on the LEFT even in RTL (dashboard is always LTR layout) */
+    /* RTL: drawer lives on the RIGHT and slides in from the right */
     [dir="rtl"] .dash-sidebar {
-        left: 0 !important;
-        right: auto !important;
-        transform: translateX(-100%) !important;
+        left: auto !important;
+        right: 0 !important;
+        transform: translateX(100%) !important;
     }
 
     /* 3. Revealed when JS adds .open */
@@ -1890,8 +1907,10 @@ body {
         transform: translateX(0) !important;
     }
 
-    /* 4. Main: no sidebar margin */
-    .dash-main {
+    /* 4. Main: no sidebar margin (RTL selector needed to beat the
+       higher-specificity desktop [dir="rtl"] .dash-main margin rule) */
+    .dash-main,
+    [dir="rtl"] .dash-main {
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
@@ -2016,11 +2035,11 @@ body {
         transition: transform 0.3s ease !important;
     }
 
-    [dir="rtl"] body:not(.dashboard-page) .dash-sidebar,
-    body:not(.dashboard-page)[dir="rtl"] .dash-sidebar {
-        left: 0 !important;
-        right: auto !important;
-        transform: translateX(-100%) !important;
+    /* RTL: drawer lives on the RIGHT and slides in from the right */
+    [dir="rtl"] body:not(.dashboard-page) .dash-sidebar {
+        left: auto !important;
+        right: 0 !important;
+        transform: translateX(100%) !important;
     }
 
     body:not(.dashboard-page) .dash-sidebar.open {
@@ -2061,6 +2080,12 @@ body {
         max-width: 340px;
         max-height: 70vh;
         overflow: hidden;
+    }
+
+    /* RTL: pin to the LEFT edge instead (bell is on the left in RTL) */
+    [dir="rtl"] .notif-panel {
+        right: auto;
+        left: 8px;
     }
 
     .notif-panel-list {

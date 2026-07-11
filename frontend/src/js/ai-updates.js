@@ -1,5 +1,36 @@
 // ai-updates.js
 let currentUser = null;
+let currentCategory = 'all';
+let currentSort = 'latest';
+let editingPostId = null;        // set while the create modal is in "edit" mode
+const postCache = {};            // id -> post object, used to prefill the edit modal
+
+// ── Category metadata (badge label + accent color per editorial category) ──
+const CATEGORY_META = {
+    news:        { label: 'NEWS',        color: '#3f8ff9' },
+    tools:       { label: 'TOOLS',       color: '#a855f7' },
+    models:      { label: 'MODELS',      color: '#f59e0b' },
+    updates:     { label: 'UPDATES',     color: '#22d3ee' },
+    tutorials:   { label: 'TUTORIALS',   color: '#34d399' },
+    discussions: { label: 'DISCUSSIONS', color: '#ec4899' },
+};
+function catMeta(cat) { return CATEGORY_META[cat] || CATEGORY_META.news; }
+
+// Brand logo detection for the post thumbnail fallback (Font Awesome brand icons).
+const BRAND_ICONS = [
+    { re: /openai|gpt|chatgpt|sora|dall/i,        icon: 'fa-solid fa-robot',   bg: '#10a37f' },
+    { re: /anthropic|claude/i,                    icon: 'fa-solid fa-star',    bg: '#d97757' },
+    { re: /google|gemini|deepmind|bard/i,         icon: 'fa-brands fa-google', bg: '#4285f4' },
+    { re: /meta|llama/i,                          icon: 'fa-brands fa-meta',   bg: '#0866ff' },
+    { re: /microsoft|copilot|azure/i,             icon: 'fa-brands fa-microsoft', bg: '#5e5eff' },
+    { re: /mistral/i,                             icon: 'fa-solid fa-wind',    bg: '#f97316' },
+    { re: /midjourney/i,                          icon: 'fa-solid fa-sailboat', bg: '#111827' },
+    { re: /nvidia/i,                              icon: 'fa-solid fa-microchip', bg: '#76b900' },
+];
+function brandFor(text) {
+    for (const b of BRAND_ICONS) { if (b.re.test(text || '')) return b; }
+    return null;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -64,7 +95,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         setupAdminControls();
+        setupToolbar();
         await loadFeed();
+        loadOverview();
         if (typeof loadActiveUsers === 'function') {
             loadActiveUsers();
         }
@@ -77,27 +110,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── Helpers ───────────────────────────────────────────────
 
+// ── Read marker (clears the sidebar AI Updates badge) ─────
+async function markAiUpdatesRead() {
+    if (document.visibilityState !== 'visible') return;
+    try {
+        await fetch(`${API}/ai-updates/read`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+    } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') markAiUpdatesRead();
+});
+
 // ── Feed ──────────────────────────────────────────────────
 async function loadFeed(page = 1) {
     const feed = document.getElementById('aiFeed');
     if (page === 1) feed.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
-    
+
     try {
-        const res = await fetch(`${API}/ai-updates/posts?page=${page}&limit=20`, {
+        const params = new URLSearchParams({ page, limit: 20, sort: currentSort });
+        if (currentCategory && currentCategory !== 'all') params.set('category', currentCategory);
+        const res = await fetch(`${API}/ai-updates/posts?${params.toString()}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!res.ok) throw new Error('Failed to load posts');
-        
+
         const data = await res.json();
-        
+        if (page === 1) markAiUpdatesRead();
+
         if (page === 1) feed.innerHTML = '';
-        
+
         if (data.posts.length === 0 && page === 1) {
+            const isFiltered = currentCategory && currentCategory !== 'all';
             feed.innerHTML = `
                 <div class="ai-empty-state">
                     <i data-lucide="sparkles"></i>
-                    <h3>No AI Updates Yet</h3>
-                    <p>Check back later for the latest news and polls.</p>
+                    <h3>${isFiltered ? 'Nothing here yet' : 'No AI Updates Yet'}</h3>
+                    <p>${isFiltered ? 'No posts in this category. Try another filter.' : 'Check back later for the latest news and polls.'}</p>
                 </div>
             `;
             lucide.createIcons();
@@ -136,17 +187,43 @@ async function loadFeed(page = 1) {
 }
 
 // ── Rendering ─────────────────────────────────────────────
+const EXCERPT_LEN = 160;
+
+function postHasMedia(post) {
+    return (post.post_type === 'photo' && post.image_url) || (post.post_type === 'video' && post.video_url);
+}
+
+// Full-width media rendered inline inside the post body (always visible).
+function postMediaHtml(post) {
+    if (post.post_type === 'photo' && post.image_url) {
+        const url = post.image_url.startsWith('http') ? post.image_url : API + post.image_url;
+        return `<div class="ai-post-media"><img src="${url}" alt="Post Image"></div>`;
+    }
+    if (post.post_type === 'video' && post.video_url) {
+        return `<div class="ai-post-media">
+            <iframe src="${post.video_url}" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
+        </div>`;
+    }
+    return '';
+}
+
 function createPostElement(post) {
     const div = document.createElement('div');
     div.className = `ai-post-card ${post.is_pinned ? 'pinned' : ''}`;
     div.id = `post-${post.id}`;
+    div.dataset.cat = post.category || 'news';
 
-    let pinHtml = post.is_pinned ? `<i data-lucide="pin" class="pin-badge"></i>` : '';
-    
+    postCache[post.id] = post;   // keep for the edit modal
+
+    const meta = catMeta(post.category);
+
     let adminActions = '';
     if (currentUser.is_admin) {
         adminActions = `
             <div class="ai-post-admin-actions">
+                <button class="admin-action-btn edit-btn" onclick="openEditModal(${post.id})" title="Edit">
+                    <i data-lucide="pencil"></i>
+                </button>
                 <button class="admin-action-btn pin-btn" onclick="togglePin(${post.id})" title="${post.is_pinned ? 'Unpin' : 'Pin'}">
                     <i data-lucide="pin"></i>
                 </button>
@@ -157,29 +234,31 @@ function createPostElement(post) {
         `;
     }
 
-    let contentHtml = '';
-    
-    // Photo
-    if (post.post_type === 'photo' && post.image_url) {
-        const fullUrl = post.image_url.startsWith('http') ? post.image_url : API + post.image_url;
-        contentHtml += `<div class="ai-post-media"><img src="${fullUrl}" alt="Post Image"></div>`;
-    }
-    
-    // Video
-    if (post.post_type === 'video' && post.video_url) {
-        contentHtml += `
-            <div class="ai-post-media">
-                <iframe src="${post.video_url}" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
-            </div>
-        `;
+    // Badges row
+    let badgesHtml = '<div class="ai-post-badges">';
+    if (post.is_pinned) badgesHtml += `<span class="ai-badge featured"><i data-lucide="pin"></i> FEATURED</span>`;
+    badgesHtml += `<span class="ai-badge" style="color:${meta.color};background:${meta.color}1f;border-color:${meta.color}44;">${meta.label}</span>`;
+    badgesHtml += '</div>';
+
+    // Excerpt / read-more (controls the TEXT body only; media stays inline & visible).
+    // URLs stay INLINE in the text, rendered as buttons in place (see linkifyHtml).
+    const body = post.body || '';
+    const needsExpand = body.length > EXCERPT_LEN;
+    const excerpt = needsExpand ? body.slice(0, EXCERPT_LEN).trim() + '…' : body;
+
+    let bodyBlock = `<div class="ai-post-excerpt" dir="auto">${linkifyHtml(excerpt)}</div>`;
+    if (needsExpand) {
+        bodyBlock += `<div class="ai-post-full" dir="auto" style="display:none;">${linkifyHtml(body)}</div>`;
+        bodyBlock += `<button class="read-more-btn" onclick="toggleReadMore(${post.id}, this)">Read More <i data-lucide="chevron-down"></i></button>`;
     }
 
-    // Poll
-    if (post.post_type === 'poll' && post.poll) {
-        contentHtml += renderPollHtml(post.poll);
-    }
+    // Media (photo/video) rendered inline in the body, always visible
+    const mediaHtml = postMediaHtml(post);
 
-    // Reactions setup
+    // Poll (always visible, interactive)
+    const pollHtml = (post.post_type === 'poll' && post.poll) ? renderPollHtml(post.poll) : '';
+
+    // Reactions
     const heartCount = post.reaction_counts['❤️'] || 0;
     const isHeartActive = post.user_reactions.includes('❤️');
     let reactionsHtml = `
@@ -190,22 +269,27 @@ function createPostElement(post) {
     `;
 
     div.innerHTML = `
-        ${pinHtml}
-        <div class="ai-post-header">
-            <img src="${getAvatarSrc(post.author)}" class="ai-post-avatar" onclick="openUserProfile(${post.author?.id})" style="cursor: pointer;">
-            <div class="ai-post-meta">
-                <div class="ai-post-author">
-                    ${post.author?.full_name || 'Admin'}
-                    ${post.author?.is_admin ? '<span class="admin-badge">Admin</span>' : ''}
+        ${adminActions}
+        <div class="ai-post-inner">
+            <div class="ai-post-main">
+                ${badgesHtml}
+                <div class="ai-post-header">
+                    <img src="${getAvatarSrc(post.author)}" class="ai-post-avatar" onclick="openUserProfile(${post.author?.id})" style="cursor: pointer;">
+                    <div class="ai-post-meta">
+                        <div class="ai-post-author">
+                            ${escapeHtml(post.author?.full_name || 'Admin')}
+                            ${post.author?.is_admin ? '<span class="admin-badge">Admin</span>' : ''}
+                        </div>
+                        <div class="ai-post-time">${post.time_ago}</div>
+                    </div>
                 </div>
-                <div class="ai-post-time">${post.time_ago}</div>
+                <div class="ai-post-title" dir="auto">${escapeHtml(post.title)}</div>
+                ${bodyBlock}
+                ${mediaHtml}
+                ${pollHtml}
             </div>
-            ${adminActions}
         </div>
-        <div class="ai-post-title" dir="auto">${escapeHtml(post.title)}</div>
-        <div class="ai-post-body" dir="auto">${escapeHtml(post.body)}</div>
-        ${contentHtml}
-        
+
         <div class="ai-post-actions">
             ${reactionsHtml}
             <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">
@@ -213,7 +297,7 @@ function createPostElement(post) {
                 <span id="comment-count-${post.id}">${post.comment_count || 0}</span>
             </button>
         </div>
-        
+
         <div class="ai-comments-section" id="comments-${post.id}">
             <div class="comments-list" id="comments-list-${post.id}"></div>
             <div class="ai-comment-input-wrapper">
@@ -225,6 +309,212 @@ function createPostElement(post) {
     `;
 
     return div;
+}
+
+function toggleReadMore(postId, btn) {
+    const card = document.getElementById(`post-${postId}`);
+    if (!card) return;
+    const excerpt = card.querySelector('.ai-post-excerpt');
+    const full = card.querySelector('.ai-post-full');
+    if (!full) return;
+    const expanded = full.style.display === 'block';
+    if (expanded) {
+        full.style.display = 'none';
+        if (excerpt) excerpt.style.display = '';
+        btn.innerHTML = 'Read More <i data-lucide="chevron-down"></i>';
+    } else {
+        full.style.display = 'block';
+        if (excerpt) excerpt.style.display = 'none';
+        btn.innerHTML = 'Show Less <i data-lucide="chevron-up"></i>';
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+// ── Toolbar: filters, sort, view toggle, subscribe ────────
+function setupToolbar() {
+    // Category filter tabs
+    document.querySelectorAll('.ai-filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ai-filter-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentCategory = tab.dataset.cat;
+            loadFeed(1);
+        });
+    });
+
+    // "View All" links in sidebar rails jump to a category filter
+    document.querySelectorAll('[data-cat-link]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectCategory(link.dataset.catLink);
+        });
+    });
+
+    // Sort dropdown
+    const sortBtn = document.getElementById('aiSortBtn');
+    const sortMenu = document.getElementById('aiSortMenu');
+    if (sortBtn && sortMenu) {
+        sortBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sortMenu.classList.toggle('open');
+        });
+        sortMenu.querySelectorAll('button').forEach(opt => {
+            opt.addEventListener('click', () => {
+                currentSort = opt.dataset.sort;
+                sortMenu.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                opt.classList.add('active');
+                document.getElementById('aiSortLabel').textContent = opt.textContent;
+                sortMenu.classList.remove('open');
+                loadFeed(1);
+            });
+        });
+        document.addEventListener('click', () => sortMenu.classList.remove('open'));
+    }
+
+    // View toggle (list / grid)
+    const feed = document.getElementById('aiFeed');
+    document.querySelectorAll('#aiViewToggle button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#aiViewToggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            feed.classList.toggle('grid-view', btn.dataset.view === 'grid');
+            try { localStorage.setItem('ai_view', btn.dataset.view); } catch (e) {}
+        });
+    });
+    // Restore saved view
+    try {
+        const savedView = localStorage.getItem('ai_view');
+        if (savedView === 'grid') {
+            feed.classList.add('grid-view');
+            document.querySelectorAll('#aiViewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === 'grid'));
+        }
+    } catch (e) {}
+
+}
+
+function selectCategory(cat) {
+    const tab = document.querySelector(`.ai-filter-tab[data-cat="${cat}"]`);
+    if (tab) tab.click();
+    document.querySelector('.dash-content')?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Overview: header stats + sidebar rails ────────────────
+async function loadOverview() {
+    try {
+        const res = await fetch(`${API}/ai-updates/overview`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!res.ok) throw new Error('overview failed');
+        const data = await res.json();
+
+        // Stats
+        const s = data.stats || {};
+        setStat('statUpdates', s.updates_this_week);
+        setStat('statTools', s.tools_this_week);
+        setStat('statModels', s.models_this_week);
+        setStat('statDiscussions', s.discussions_this_week);
+
+        renderMostPopular(data.most_popular || []);
+        renderNewTools(data.new_tools || []);
+        renderWhatsNew(data.whats_new || []);
+        renderContributors(data.top_contributors || []);
+
+        if (window.lucide) lucide.createIcons();
+    } catch (err) {
+        console.warn('Overview load failed:', err);
+    }
+}
+
+function setStat(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = (val != null ? val : 0);
+}
+
+function goToPost(postId) {
+    const el = document.getElementById(`post-${postId}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'box-shadow 0.5s ease';
+        el.style.boxShadow = '0 0 15px rgba(193, 255, 17, 0.5)';
+        setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+    }
+}
+
+function renderMostPopular(list) {
+    const box = document.getElementById('railMostPopular');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = emptyRail('No posts yet'); return; }
+    box.innerHTML = list.map((p, i) => {
+        const meta = catMeta(p.category);
+        return `
+        <div class="rail-item rank" onclick="goToPost(${p.id})">
+            <span class="rail-rank">${i + 1}</span>
+            <div class="rail-item-body">
+                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-sub"><span style="color:${meta.color}">${meta.label}</span></div>
+            </div>
+            <span class="rail-item-metric"><i data-lucide="flame"></i> ${p.engagement}</span>
+        </div>`;
+    }).join('');
+}
+
+function renderNewTools(list) {
+    const box = document.getElementById('railNewTools');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = emptyRail('No tools yet'); return; }
+    box.innerHTML = list.map(p => `
+        <div class="rail-item" onclick="goToPost(${p.id})">
+            <span class="rail-dot" style="background:${catMeta('tools').color}"></span>
+            <div class="rail-item-body">
+                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-sub">${p.time_ago}</div>
+            </div>
+            <span class="rail-new-badge">NEW</span>
+        </div>
+    `).join('');
+}
+
+function renderWhatsNew(list) {
+    const box = document.getElementById('railWhatsNew');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = emptyRail('Nothing new'); return; }
+    box.innerHTML = list.map(p => {
+        const brand = brandFor(p.title);
+        const meta = catMeta(p.category);
+        const icon = brand
+            ? `<span class="rail-brand" style="background:${brand.bg}22;color:${brand.bg}"><i class="${brand.icon}"></i></span>`
+            : `<span class="rail-brand" style="background:${meta.color}22;color:${meta.color}"><i data-lucide="sparkles"></i></span>`;
+        return `
+        <div class="rail-item" onclick="goToPost(${p.id})">
+            ${icon}
+            <div class="rail-item-body">
+                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-sub">${p.time_ago}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderContributors(list) {
+    const box = document.getElementById('railContributors');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = emptyRail('No contributors yet'); return; }
+    box.innerHTML = list.map((u, i) => `
+        <div class="rail-item contributor" onclick="openUserProfile(${u.id})">
+            <span class="rail-rank ${i === 0 ? 'gold' : ''}">${i + 1}</span>
+            <img src="${getAvatarSrc(u)}" class="rail-avatar" alt="">
+            <div class="rail-item-body">
+                <div class="rail-item-title" dir="auto">${escapeHtml(u.full_name)}</div>
+                <div class="rail-item-sub">${escapeHtml(getRoleLabel(u))}</div>
+            </div>
+            <span class="rail-points">${u.points} pts</span>
+        </div>
+    `).join('');
+}
+
+function emptyRail(msg) {
+    return `<div class="rail-empty">${msg}</div>`;
 }
 
 function renderPollHtml(poll) {
@@ -370,19 +660,10 @@ async function loadComments(postId) {
     }
 }
 
-function createCommentElement(comment) {
-    let repliesHtml = '';
-    if (comment.replies && comment.replies.length > 0) {
-        repliesHtml = `
-            <div class="ai-comment-replies">
-                ${comment.replies.map(r => createCommentElement(r)).join('')}
-            </div>
-        `;
-    }
-
-    const isAuthor = currentUser.id === comment.author.id;
+function createCommentElement(comment, isReply = false) {
+    const isAuthor = currentUser.id === comment.author?.id;
     const canDelete = isAuthor || currentUser.is_admin;
-    
+
     // Check local storage for mocked likes to persist them across reloads
     const localLikes = JSON.parse(localStorage.getItem('ai_comment_likes') || '{}');
     if (localLikes[comment.id]) {
@@ -396,12 +677,17 @@ function createCommentElement(comment) {
         </button>
     `;
 
+    // Reply is only allowed on top-level comments (backend enforces 1-level nesting)
+    if (!isReply) {
+        actionsHtml += `<button class="comment-action-btn reply" onclick="toggleReplyBox(${comment.post_id}, ${comment.id})"><i data-lucide="reply"></i> Reply</button>`;
+    }
+
     if (canDelete) {
         actionsHtml += `<button class="comment-action-btn delete" onclick="deleteComment(${comment.post_id}, ${comment.id})"><i data-lucide="trash-2"></i></button>`;
     }
 
     const div = document.createElement('div');
-    div.className = 'ai-comment';
+    div.className = isReply ? 'ai-comment ai-comment-reply' : 'ai-comment';
     div.id = `comment-${comment.id}`;
     div.innerHTML = `
         <img src="${getAvatarSrc(comment.author)}" class="ai-comment-avatar" onclick="openUserProfile(${comment.author?.id})" style="cursor: pointer;">
@@ -411,16 +697,76 @@ function createCommentElement(comment) {
                     <span class="ai-comment-author">${comment.author?.full_name || 'User'}</span>
                     <span class="ai-comment-time">${comment.time_ago}</span>
                 </div>
-                <div class="ai-comment-body" dir="auto">${escapeHtml(comment.body)}</div>
+                <div class="ai-comment-body" dir="auto">${linkifyHtml(comment.body)}</div>
             </div>
             <div class="ai-comment-actions">
                 ${actionsHtml}
             </div>
-            ${repliesHtml}
+            ${!isReply ? `<div class="ai-reply-box" id="reply-box-${comment.id}" style="display:none;"></div>` : ''}
+            ${!isReply ? `<div class="ai-comment-replies" id="replies-${comment.id}"></div>` : ''}
         </div>
     `;
 
+    // Append replies as real DOM nodes (recursively). String interpolation of
+    // DOM elements would render as "[object HTMLDivElement]", so we append here.
+    if (!isReply && comment.replies && comment.replies.length > 0) {
+        const repliesContainer = div.querySelector(`#replies-${comment.id}`);
+        comment.replies.forEach(r => repliesContainer.appendChild(createCommentElement(r, true)));
+    }
+
     return div;
+}
+
+// Toggle inline reply input under a top-level comment
+function toggleReplyBox(postId, parentId) {
+    const box = document.getElementById(`reply-box-${parentId}`);
+    if (!box) return;
+    if (box.style.display === 'block') {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+    box.style.display = 'block';
+    box.innerHTML = `
+        <div class="ai-comment-input-wrapper ai-reply-input-wrapper">
+            <img src="${getAvatarSrc(currentUser)}" class="ai-comment-avatar">
+            <textarea class="ai-comment-input" id="reply-input-${parentId}" placeholder="Write a reply..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitReply(${postId}, ${parentId});}"></textarea>
+            <button class="ai-comment-send" onclick="submitReply(${postId}, ${parentId})"><i data-lucide="send" size="16"></i></button>
+        </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    const ta = document.getElementById(`reply-input-${parentId}`);
+    if (ta) ta.focus();
+}
+
+async function submitReply(postId, parentId) {
+    const input = document.getElementById(`reply-input-${parentId}`);
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    try {
+        const res = await fetch(`${API}/ai-updates/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ body: text, parent_id: parentId })
+        });
+
+        if (!res.ok) throw new Error('Failed to post reply');
+
+        input.value = '';
+        await loadComments(postId); // reload list (shows the new reply nested)
+
+        // update count visually (backend counts replies too)
+        const countSpan = document.getElementById(`comment-count-${postId}`);
+        if (countSpan) countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
+
+    } catch (err) {
+        showToast("Error adding reply", "error");
+    }
 }
 
 async function submitComment(postId) {
@@ -504,27 +850,26 @@ async function likeComment(postId, commentId, btnElement) {
 // ── Admin Actions ─────────────────────────────────────────
 function setupAdminControls() {
     const btn = document.getElementById('newPostBtn');
-    const modal = document.getElementById('createPostModal');
-    
+
     if (btn) {
-        btn.addEventListener('click', () => {
-            modal.style.display = 'flex';
-        });
+        btn.addEventListener('click', () => openCreateModal());
     }
 
+    // Category chips
+    const catChips = document.querySelectorAll('#postCatChips .cat-chip');
+    catChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            catChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            document.getElementById('postCategory').value = chip.dataset.cat;
+        });
+    });
+
     // Tabs
-    const tabs = document.querySelectorAll('.post-type-tab');
-    tabs.forEach(tab => {
+    document.querySelectorAll('.post-type-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             e.preventDefault();
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const type = tab.dataset.type;
-            document.getElementById('postType').value = type;
-            
-            document.getElementById('videoFields').style.display = type === 'video' ? 'block' : 'none';
-            document.getElementById('photoFields').style.display = type === 'photo' ? 'block' : 'none';
-            document.getElementById('pollFields').style.display = type === 'poll' ? 'block' : 'none';
+            selectPostType(tab.dataset.type);
         });
     });
 
@@ -578,15 +923,25 @@ function setupAdminControls() {
                         if (uploadRes.ok) {
                             const uploadData = await uploadRes.json();
                             imageUrl = uploadData.file_url;
+                        } else {
+                            throw new Error('upload failed');
                         }
                     } catch (e) {
                         console.error('Image upload failed:', e);
+                        showToast('Image upload failed', 'error');
+                        btn.disabled = false;
+                        btn.textContent = editingPostId ? 'Save Changes' : 'Post Update';
+                        return;
                     }
+                } else if (editingPostId && postCache[editingPostId]) {
+                    // Editing without picking a new file → keep the current image.
+                    imageUrl = postCache[editingPostId].image_url || '';
                 }
             }
             
             const payload = {
                 post_type: currentPostType,
+                category: document.getElementById('postCategory')?.value || 'news',
                 title: title,
                 body: body,
                 video_url: document.getElementById('postVideoUrl')?.value || null,
@@ -615,8 +970,10 @@ function setupAdminControls() {
             }
 
             try {
-                const res = await fetch(API + '/ai-updates/posts', {
-                    method: 'POST',
+                const isEdit = !!editingPostId;
+                const url = isEdit ? `${API}/ai-updates/posts/${editingPostId}` : `${API}/ai-updates/posts`;
+                const res = await fetch(url, {
+                    method: isEdit ? 'PATCH' : 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -626,33 +983,107 @@ function setupAdminControls() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    throw new Error(err.detail || 'Failed to create post');
+                    throw new Error(err.detail || (isEdit ? 'Failed to update post' : 'Failed to create post'));
                 }
 
-                showToast("Post created successfully");
+                showToast(isEdit ? "Post updated successfully" : "Post created successfully");
                 closeCreateModal();
                 form.reset();
+                // Reset category chips to default
+                document.querySelectorAll('#postCatChips .cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'news'));
+                document.getElementById('postCategory').value = 'news';
                 // Reset options to 2
                 document.getElementById('pollOptionsContainer').innerHTML = `
                     <label>Options (2-4)</label>
                     <div class="poll-option-wrapper"><input type="text" class="form-control poll-option-input" placeholder="Option 1"></div>
                     <div class="poll-option-wrapper"><input type="text" class="form-control poll-option-input" placeholder="Option 2"></div>
                 `;
-                
+
                 await loadFeed(1);
+                loadOverview();
 
             } catch (err) {
                 showToast(err.message, "error");
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Post Update';
+                btn.textContent = editingPostId ? 'Save Changes' : 'Post Update';
             }
         });
     }
 }
 
+// Switch the create/edit modal to a given post type (updates tab + visible fields).
+function selectPostType(type) {
+    document.querySelectorAll('.post-type-tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+    document.getElementById('postType').value = type;
+    document.getElementById('videoFields').style.display = type === 'video' ? 'block' : 'none';
+    document.getElementById('photoFields').style.display = type === 'photo' ? 'block' : 'none';
+    document.getElementById('pollFields').style.display = type === 'poll' ? 'block' : 'none';
+}
+
+// Highlight one category chip and sync the hidden input.
+function selectCategoryChip(cat) {
+    document.querySelectorAll('#postCatChips .cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+    document.getElementById('postCategory').value = cat;
+}
+
+// Reset the modal to a clean "create" state and open it.
+function openCreateModal() {
+    editingPostId = null;
+    const form = document.getElementById('createPostForm');
+    if (form) form.reset();
+    document.getElementById('modalTitle').textContent = 'Create AI Update';
+    document.getElementById('submitPostBtn').textContent = 'Post Update';
+    selectCategoryChip('news');
+    selectPostType('text');
+    document.getElementById('fileNameDisplay').textContent = 'No file chosen';
+    hideCurrentImage();
+    document.getElementById('createPostModal').style.display = 'flex';
+}
+
+// Open the modal pre-filled with an existing post's data (edit mode).
+function openEditModal(postId) {
+    const post = postCache[postId];
+    if (!post) return;
+    editingPostId = postId;
+    const form = document.getElementById('createPostForm');
+    if (form) form.reset();
+
+    document.getElementById('modalTitle').textContent = 'Edit AI Update';
+    document.getElementById('submitPostBtn').textContent = 'Save Changes';
+    document.getElementById('postTitle').value = post.title || '';
+    document.getElementById('postBody').value = post.body || '';
+    selectCategoryChip(post.category || 'news');
+    selectPostType(post.post_type || 'text');
+    document.getElementById('fileNameDisplay').textContent = 'No file chosen';
+
+    document.getElementById('postVideoUrl').value = post.video_url || '';
+    if (post.post_type === 'photo' && post.image_url) {
+        showCurrentImage(post.image_url);
+    } else {
+        hideCurrentImage();
+    }
+
+    document.getElementById('createPostModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function showCurrentImage(url) {
+    const box = document.getElementById('postImageCurrent');
+    if (!box) return;
+    const src = url.startsWith('http') ? url : API + url;
+    document.getElementById('postImageCurrentImg').src = src;
+    box.style.display = 'block';
+}
+function hideCurrentImage() {
+    const box = document.getElementById('postImageCurrent');
+    if (box) box.style.display = 'none';
+}
+
 function closeCreateModal() {
     document.getElementById('createPostModal').style.display = 'none';
+    editingPostId = null;
+    hideCurrentImage();
 }
 
 async function deletePost(postId) {
@@ -696,6 +1127,28 @@ function escapeHtml(unsafe) {
          .replace(/>/g, "&gt;")
          .replace(/"/g, "&quot;")
          .replace(/'/g, "&#039;");
+}
+
+const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+function prettyDomain(href) {
+    try { return new URL(href).hostname.replace(/^www\./, ''); }
+    catch (e) { return 'Visit Link'; }
+}
+
+// Escape first (XSS-safe), then turn each URL — in place, inline — into a button
+// (a lime pill labelled with the domain) that opens the link in a new tab.
+function linkifyHtml(text) {
+    const escaped = escapeHtml(text || '');
+    return escaped.replace(URL_RE, (match) => {
+        // Keep trailing punctuation out of the link.
+        let url = match;
+        let trail = '';
+        const t = url.match(/[.,!?;:)\]}'"]+$/);
+        if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+        const href = url.startsWith('www.') ? 'https://' + url : url;
+        const label = prettyDomain(href);
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="ai-post-link-btn" dir="ltr"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${escapeHtml(label)}</span></a>${trail}`;
+    });
 }
 
 // ── Active Users Sidebar ──────────────────────────────────

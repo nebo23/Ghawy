@@ -11,6 +11,7 @@ from app.database import get_db
 import os
 import random
 import logging
+import threading
 from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email
@@ -52,6 +53,16 @@ def create_token(user_id: int) -> str:
 def generate_verification_code() -> str:
     return f"{random.randint(0, 999999):06d}"
 
+def send_verification_email_bg(email: str, code: str) -> None:
+    """SMTP بطيء أحياناً — بنبعت في thread منفصل عشان الـ request يرجع فوراً
+    ويسيب الـ DB connection بدل ما يمسكها 20 ثانية والموقع واقع مستنيها."""
+    def _run():
+        try:
+            send_verification_email(email, code)
+        except Exception as exc:
+            logger.warning("SMTP send failed for %s: %s", email, exc)
+    threading.Thread(target=_run, daemon=True).start()
+
 # ─── Register ────────────────────────────────────────────────
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(data: UserRegister, db: Session = Depends(get_db)):
@@ -92,10 +103,7 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
     logger.info(" Verification code for %s: %s", user.email, verification_code)
 
-    try:
-        send_verification_email(user.email, verification_code)
-    except Exception as exc:
-        logger.warning("SMTP send failed for %s: %s", user.email, exc)
+    send_verification_email_bg(user.email, verification_code)
 
     return user
 
@@ -226,10 +234,7 @@ def resend_verification_code(data: ResendVerificationRequest, db: Session = Depe
 
     logger.info(" Resent verification code for %s: %s", user.email, verification_code)
 
-    try:
-        send_verification_email(user.email, verification_code)
-    except Exception as exc:
-        logger.warning("SMTP send failed for %s: %s", user.email, exc)
+    send_verification_email_bg(user.email, verification_code)
 
     return {"message": "Verification code resent successfully"}
 

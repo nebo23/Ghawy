@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
   <!-- CACHE BUSTER -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -17,8 +18,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-  <link rel="stylesheet" href="src/css/dashboard.css?v=13" />
-  <link rel="stylesheet" href="src/css/team.css?v=5" />
+  <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+  <link rel="stylesheet" href="src/css/team.css?v=6" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -965,6 +966,7 @@
                       <th>Phone</th>
                       <th>Country</th>
                       <th>Governorate</th>
+                      <th>Birth Date</th>
                       <th>Joined</th>
                       <th>End Date</th>
                       <th>Status</th>
@@ -974,7 +976,7 @@
                   </thead>
                   <tbody id="users-tbody">
                     <tr>
-                      <td colspan="10" style="text-align:center;color:#888;padding:40px">Loading...</td>
+                      <td colspan="11" style="text-align:center;color:#888;padding:40px">Loading...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1243,6 +1245,38 @@
                     <tbody id="lessons-body">
                       <tr>
                         <td colspan="6" style="text-align:center;padding:40px;color:#555;">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Level 2b: Exams Manager -->
+              <div id="exams-manager-view" style="display:none;">
+                <div style="display:flex;align-items:center;margin-bottom:20px;gap:12px;">
+                  <button class="btn-action" onclick="showCoursesList()" style="padding:8px 12px;"><i
+                      class="fa-solid fa-arrow-left"></i> Back</button>
+                  <h3 style="margin:0;color:#fff;" id="em-course-title">Manage Exams</h3>
+                  <button class="btn-add-member" style="margin-left:auto;" onclick="openExamBuilder()">+ Add
+                    Exam</button>
+                </div>
+
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                  <table class="team-table" id="exams-table">
+                    <thead>
+                      <tr>
+                        <th style="width:40px">#</th>
+                        <th>Title</th>
+                        <th>Questions</th>
+                        <th>Placement</th>
+                        <th>Pass %</th>
+                        <th>Published</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="exams-body">
+                      <tr>
+                        <td colspan="7" style="text-align:center;padding:40px;color:#555;">Loading...</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1815,6 +1849,78 @@
     </div>
   </div>
 
+  <!-- Course Certificate Modal -->
+  <div class="modal-overlay-team" id="certificate-modal" style="display:none">
+    <div class="modal-box-team" style="max-width:560px;width:95%;">
+      <div class="modal-header-team">
+        <h3 id="cert-modal-title">Certificate</h3><button class="modal-close-team"
+          onclick="closeModal('certificate-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="cert-course-id" />
+        <div id="cert-preview" style="margin-bottom:16px;"></div>
+        <div class="fg"><label>Certificate Template Image (JPG / PNG)</label>
+          <input type="file" id="cert-file-input" accept="image/png,image/jpeg,image/webp"
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;" />
+          <small style="color:#777;font-size:12px;display:block;margin-top:4px;">On download, the member's name, the
+            course name and the date are drawn onto this image automatically.</small>
+        </div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" id="cert-remove-btn" onclick="removeCertificate()"
+          style="color:#ef4444;border-color:rgba(239,68,68,.4);">Remove</button>
+        <button class="btn-cancel-team" onclick="closeModal('certificate-modal')">Close</button>
+        <button class="btn-confirm-team" id="cert-upload-btn" onclick="uploadCertificate()"><i
+            class="fa-solid fa-upload"></i> Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exam Builder Modal -->
+  <div class="modal-overlay-team" id="exam-builder-modal" style="display:none">
+    <div class="modal-box-team" style="max-width:720px;width:95%;">
+      <div class="modal-header-team">
+        <h3 id="exam-builder-heading">Add Exam</h3><button class="modal-close-team"
+          onclick="closeModal('exam-builder-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <input type="hidden" id="exam-builder-id" />
+        <div class="fg"><label>Exam Title *</label><input type="text" id="exam-builder-title"
+            placeholder="e.g. Module 1 Quiz" /></div>
+        <div class="fg"><label>Description</label><textarea id="exam-builder-desc" rows="2"
+            placeholder="Short description (optional)..."
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+          <div class="fg" style="flex:1;min-width:160px;"><label>Pass Percentage (%)</label>
+            <input type="number" id="exam-builder-pass" value="70" min="0" max="100" /></div>
+          <label style="display:flex;align-items:center;gap:8px;color:#ccc;font-size:14px;margin-top:18px;cursor:pointer;">
+            <input type="checkbox" id="exam-builder-published" style="width:18px;height:18px;accent-color:#3f8ff9;cursor:pointer;">
+            Published
+          </label>
+        </div>
+        <div class="fg"><label>Placement in Curriculum</label>
+          <select id="exam-builder-lesson"
+            style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-family:inherit;cursor:pointer;">
+            <option value="">End of course (not tied to a lesson)</option>
+          </select>
+          <small style="color:#777;font-size:12px;display:block;margin-top:4px;">The exam will appear in the course
+            curriculum right after the selected lesson.</small>
+        </div>
+
+        <div style="margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;">
+          <strong style="color:#fff;font-size:14px;">Questions</strong>
+          <button type="button" class="btn-action" onclick="addExamQuestion()" style="font-size:12px;padding:6px 12px;"><i class="fa-solid fa-plus"></i> Add Question</button>
+        </div>
+        <div id="exam-questions-container"></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('exam-builder-modal')">Cancel</button>
+        <button class="btn-confirm-team" onclick="submitExam()">Save Exam</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Course Modal -->
   <div class="modal-overlay-team" id="edit-course-modal" style="display:none">
     <div class="modal-box-team">
@@ -1942,7 +2048,12 @@
         </div>
         <div style="display:flex;gap:12px;">
           <div class="fg" style="flex:1"><label>Order</label><input type="number" id="edit-lesson-order" /></div>
+          <div class="fg" style="flex:1"><label>Duration (minutes)</label><input type="number" id="edit-lesson-duration" min="0" /></div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#ccc;margin-top:4px;">
+          <input type="checkbox" id="edit-lesson-is-project" style="accent-color:#3f8ff9;width:16px;height:16px;" />
+          📋 Project — الدرس ده ليه project (هيظهر زرار في صفحة الكورس يودّي على الـ Projects)
+        </label>
 
         <!-- ═══ Multi-PDF Section ═══ -->
         <div style="margin-top:18px;">
@@ -2001,10 +2112,10 @@
 
   <!-- Close dropdowns on outside click -->
   <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
-  <script src="src/js/utils.js?v=10"></script>
-    <script src="src/js/dashboard-new.js?v=15"></script>
-  <script src="src/js/i18n.js?v=2"></script>
-  <script src="src/js/team.js?v=20260701a"></script>
+  <script src="src/js/utils.js?v=1783908000"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
+  <script src="src/js/i18n.js?v=4"></script>
+  <script src="src/js/team.js?v=1783627998"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
@@ -2218,7 +2329,11 @@
       function rptFmtDate(iso) {
         if (!iso) return '—';
         try {
-          return new Date(iso).toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          // Backend sends naive UTC (no timezone marker). Mark it as UTC so the
+          // browser doesn't misread it as local time, then render in Egypt time.
+          var s = String(iso);
+          if (!/([zZ]|[+-]\d{2}:?\d{2})$/.test(s)) s += 'Z';
+          return new Date(s).toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         } catch (e) { return iso; }
       }
 
@@ -2523,8 +2638,11 @@
       function fbFmtDate(iso) {
         if (!iso) return '—';
         try {
-          var d = new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
-          return d.toLocaleString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          // Backend sends naive UTC (no timezone marker). Mark it as UTC, then
+          // render in Egypt time — the Africa/Cairo zone handles DST (+2 / +3).
+          var s = String(iso);
+          if (!/([zZ]|[+-]\d{2}:?\d{2})$/.test(s)) s += 'Z';
+          return new Date(s).toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         } catch (e) { return iso; }
       }
 

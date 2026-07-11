@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <!-- Cache Buster -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -9,7 +10,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Help Center — Ghawy</title>
-    <meta name="description" content="Ghawy Help Center — تواصل مع فريق الدعم" />
+    <meta name="description" content="Ghawy Help Center — contact the support team" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,8 +23,8 @@
     <link rel="icon" type="image/png" href="./imgs/g-icon-logo.png" />
 
     <!-- Styles -->
-    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
     <link rel="stylesheet" href="src/css/help-center.css" />
 
     <!-- Auth Guard (inline, runs before render) -->
@@ -51,6 +52,7 @@
             } catch (e) { }
         })();
     </script>
+    <script src="src/js/community-i18n.js?v=5"></script>
 </head>
 
 <body>
@@ -85,6 +87,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -98,6 +101,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -240,8 +244,8 @@
                 </div>
             </header>
 
-            <!-- CONTENT — dir="rtl" on the content div only -->
-            <div class="dash-content" dir="rtl">
+            <!-- CONTENT — direction follows the selected language (html[dir]) -->
+            <div class="dash-content">
 
                 <div class="page-header">
                     <div class="page-breadcrumb">
@@ -258,24 +262,24 @@
                     <!-- Card 1: Email -->
                     <div class="help-card">
                         <div class="help-icon"><i class="fa-regular fa-envelope"></i></div>
-                        <h3>راسلنا على الإيميل</h3>
-                        <p>بعت مشكلتك وهنرد عليك في أقرب وقت</p>
+                        <h3>Email us</h3>
+                        <p>Send us your issue and we'll get back to you soon</p>
                         <div class="help-action">
                             <a href="mailto:support@ghawy.ai" class="btn-accent">
-                                فتح الإيميل&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                Open Email&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </a>
-                            <button class="btn-outline" id="copyEmailBtn" onclick="copyEmail()">نسخ الإيميل</button>
+                            <button class="btn-outline" id="copyEmailBtn" onclick="copyEmail()">Copy Email</button>
                         </div>
                     </div>
 
                     <!-- Card 2: WhatsApp -->
                     <div class="help-card">
                         <div class="help-icon"><i class="fa-brands fa-whatsapp"></i></div>
-                        <h3>تواصل معنا على الواتساب</h3>
-                        <p>ابعت رسالة وهنرد عليك بسرعة</p>
+                        <h3>Contact us on WhatsApp</h3>
+                        <p>Send a message and we'll reply quickly</p>
                         <div class="help-action">
                             <a href="https://wa.me/201033903334" target="_blank" class="btn-accent">
-                                فتح واتساب&nbsp;<i class="fa-brands fa-whatsapp"></i>
+                                Open WhatsApp&nbsp;<i class="fa-brands fa-whatsapp"></i>
                             </a>
                         </div>
                     </div>
@@ -283,16 +287,16 @@
                     <!-- Card 3: Support Team -->
                     <div class="help-card team-card">
                         <div class="help-icon"><i class="fa-regular fa-comments"></i></div>
-                        <h3>تكلم فريق الدعم مباشرة</h3>
-                        <p>تقدر تتواصل مع أي عضو من فريقنا داخل غاوي</p>
+                        <h3>Talk to the support team directly</h3>
+                        <p>You can reach any of our team members inside Ghawy</p>
                         <div class="team-members" id="supportTeamList"></div>
                     </div>
 
                 </div><!-- /.help-grid -->
 
                 <div class="help-footer">
-                    لا تنسى تقرأ <a href="terms.html">الشروط والأحكام</a> و <a href="privacy.html">سياسة الخصوصية</a>
-                    قبل التواصل معنا.
+                    Please read our <a href="terms.html">Terms &amp; Conditions</a> and <a href="privacy.html">Privacy Policy</a>
+                    before contacting us.
                 </div>
 
             </div><!-- /.dash-content -->
@@ -325,11 +329,11 @@
         function copyEmail() {
             navigator.clipboard.writeText('support@ghawy.ai').then(() => {
                 const btn = document.getElementById('copyEmailBtn');
-                btn.textContent = '✓ تم النسخ';
+                btn.textContent = '✓ Copied';
                 btn.style.borderColor = 'var(--gold)';
                 btn.style.color = 'var(--gold)';
                 setTimeout(() => {
-                    btn.textContent = 'نسخ الإيميل';
+                    btn.textContent = 'Copy Email';
                     btn.style.borderColor = '';
                     btn.style.color = '';
                 }, 2000);
@@ -369,7 +373,7 @@
     </script>
 
     <!-- utils.js — provides API, buildAvatarHtml, etc. -->
-    <script src="src/js/utils.js?v=10"></script>
+    <script src="src/js/utils.js?v=1783908000"></script>
 
     <!-- Inline: load user profile for this page -->
     <script>
@@ -515,11 +519,11 @@
                         <div class="member-info">
                             <div class="member-avatar"><i class="fa-solid fa-user"></i></div>
                             <div>
-                                <h4>فريق الدعم</h4>
-                                <span>Support Team</span>
+                                <h4>Support Team</h4>
+                                <span>We're here to help you</span>
                             </div>
                         </div>
-                        <a href="mailto:support@ghawy.ai" class="btn-outline btn-sm">إرسال رسالة</a>
+                        <a href="mailto:support@ghawy.ai" class="btn-outline btn-sm">Send Message</a>
                     </div>`;
             }
 
@@ -540,7 +544,7 @@
                                 <span>${esc(m.title)}</span>
                             </div>
                         </div>
-                        <a href="direct-messages.html" class="btn-outline btn-sm" data-user-id="${m.id}">إرسال رسالة</a>
+                        <a href="direct-messages.html" class="btn-outline btn-sm" data-user-id="${m.id}">Send Message</a>
                     </div>
                 `).join('');
 

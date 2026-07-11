@@ -404,7 +404,7 @@ function logout() { localStorage.removeItem('token'); localStorage.removeItem('u
 // ═══ INIT ═══
 loadDashboard();
 fetchOnlineCount();
-setInterval(fetchOnlineCount, 30000);
+setInterval(() => { if (!document.hidden) fetchOnlineCount(); }, 30000);
 startCountdown();
 
 

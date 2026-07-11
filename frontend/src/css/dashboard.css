@@ -26,8 +26,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 img{max-width:100%;display:block}
 
 /* === LAYOUT === */
-/* direction: ltr ensures sidebar is ALWAYS on the left even when i18n sets dir=rtl */
-.dash-layout{display:flex;height:100vh;direction:ltr}
+/* Layout inherits the page direction: LTR in English, mirrored RTL in Arabic */
+.dash-layout{display:flex;height:100vh}
 .dash-main{flex:1;display:flex;flex-direction:column;overflow:hidden;margin-left:var(--sidebar-w)}
 .dash-content{flex:1;overflow-y:auto;padding:24px 28px}
 
@@ -370,18 +370,18 @@ img{max-width:100%;display:block}
    RTL SUPPORT
 ═══════════════════════════════════ */
 
-/* Dashboard layout is always LTR — sidebar stays on the LEFT
-   even when Arabic (RTL) language is selected via i18n.js */
+/* Arabic (RTL) mirrors the layout — sidebar moves to the RIGHT
+   when Arabic is selected via i18n.js / community-i18n.js */
 [dir="rtl"] .dash-sidebar {
-  left: 0;
-  right: auto;
-  border-right: 1px solid var(--border);
-  border-left: none;
+  right: 0;
+  left: auto;
+  border-left: 1px solid var(--border);
+  border-right: none;
 }
 
 [dir="rtl"] .dash-main {
-  margin-left: var(--sidebar-w);
-  margin-right: 0;
+  margin-right: var(--sidebar-w);
+  margin-left: 0;
 }
 
 [dir="rtl"] .nav-item {
@@ -395,8 +395,8 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .nav-item .nav-badge {
-  margin-right: 0;
-  margin-left: auto;
+  margin-left: 0;
+  margin-right: auto;
 }
 
 [dir="rtl"] .card-header {
@@ -412,9 +412,9 @@ img{max-width:100%;display:block}
 }
 
 [dir="rtl"] .topbar-actions {
-  /* Keep actions on the RIGHT even in RTL */
-  margin-left: auto;
-  margin-right: 0;
+  /* Mirror: actions push to the LEFT edge in RTL */
+  margin-right: auto;
+  margin-left: 0;
 }
 
 [dir="rtl"] .topbar-icon .notif-dot {
@@ -493,21 +493,21 @@ img{max-width:100%;display:block}
   transform: scaleX(-1);
 }
 
-/* Chat RTL */
+/* Chat RTL — !important beats the inline border-right on the POSTS column */
 [dir="rtl"] .chat-channels {
-  border-right: none;
-  border-left: 1px solid var(--border);
+  border-right: none !important;
+  border-left: 1px solid var(--border) !important;
 }
 
 [dir="rtl"] .ch-item {
-  
-  border-left: 3px solid transparent;
-  border-right: none;
+
+  border-right: 3px solid transparent;
+  border-left: none;
 }
 
 [dir="rtl"] .ch-item.active {
-  border-left-color: var(--gold);
-  border-right-color: transparent;
+  border-right-color: var(--gold);
+  border-left-color: transparent;
 }
 
 [dir="rtl"] .chat-input-bar {
@@ -529,11 +529,11 @@ img{max-width:100%;display:block}
 
 /* Mobile RTL sidebar */
 @media (max-width: 768px) {
-  /* Mobile RTL sidebar - keep on LEFT (dashboard is always LTR) */
+  /* Mobile RTL sidebar — drawer lives on the RIGHT, slides in from the right */
   [dir="rtl"] .dash-sidebar {
-    left: 0;
-    right: auto;
-    transform: translateX(-100%);
+    right: 0;
+    left: auto;
+    transform: translateX(100%);
   }
 
   [dir="rtl"] .dash-sidebar.open {
@@ -1083,16 +1083,30 @@ img{max-width:100%;display:block}
   right: -380px;
   width: 360px;
   height: 100vh;
-  background: #0a0a0a;
-  border-left: 1px solid rgba(193,255,17,0.2);
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--gold-border);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.35);
   overflow-y: auto;
   transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
 }
 
+:root[data-theme="light"] .profile-panel-card {
+  box-shadow: -8px 0 40px rgba(15, 23, 42, 0.12);
+}
+
 .profile-panel.open .profile-panel-card {
   right: 0;
+}
+
+/* The card is a fixed-height (100vh) flex column that scrolls. Its children
+   must keep their natural height — otherwise a tall profile (long bio +
+   achievements) makes flexbox shrink items below their content, so the bio
+   text overflows its box and visually covers the social-media link beneath it.
+   Locking flex-shrink to 0 makes the card scroll instead of squashing items. */
+.profile-panel-card > * {
+  flex-shrink: 0;
 }
 
 /* RTL: panel slides from left */
@@ -1110,8 +1124,11 @@ img{max-width:100%;display:block}
 /* Cover banner */
 .pp-cover {
   width: 100%;
-  height: 100px;
-  background: linear-gradient(135deg, #111111 0%, #1a1a00 50%, #111111 100%);
+  height: 104px;
+  background:
+    radial-gradient(130% 150% at 50% -30%, var(--gold-glow), transparent 62%),
+    var(--bg-card);
+  border-bottom: 1px solid var(--border);
   position: relative;
   flex-shrink: 0;
 }
@@ -1153,9 +1170,10 @@ img{max-width:100%;display:block}
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  border: 3px solid #0a0a0a;
+  border: 3px solid var(--bg-secondary);
   object-fit: cover;
-  background: #1a1a1a;
+  background: var(--bg-card);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .pp-online-dot {
@@ -1165,7 +1183,7 @@ img{max-width:100%;display:block}
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #0a0a0a;
+  border: 2px solid var(--bg-secondary);
   background: #6b7280;
 }
 
@@ -1181,7 +1199,7 @@ img{max-width:100%;display:block}
 .pp-name {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary);
   margin: 0 0 2px;
 }
 
@@ -1201,9 +1219,9 @@ img{max-width:100%;display:block}
 }
 
 .pp-badge.member {
-  background: rgba(255,255,255,0.08);
-  color: #b8b8b8;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }
 
 .pp-badge.pro {
@@ -1220,9 +1238,9 @@ img{max-width:100%;display:block}
 
 /* Bio */
 .pp-bio {
-  padding: 8px 20px;
+  padding: 8px 20px 14px;
   font-size: 0.88rem;
-  color: #b8b8b8;
+  color: var(--text-secondary);
   line-height: 1.6;
   min-height: 20px;
 }
@@ -1232,7 +1250,7 @@ img{max-width:100%;display:block}
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 20px 12px;
+  margin: 10px 20px 12px;
   padding: 8px 14px;
   background: rgba(193,255,17,0.06);
   border: 1px solid rgba(193,255,17,0.15);
@@ -1253,20 +1271,20 @@ img{max-width:100%;display:block}
   display: none;
 }
 
-/* Stats */
+/* Stats grid — still used by the ai-updates & direct-messages profile panels */
 .pp-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   margin: 0 20px 16px;
-  background: rgba(255,255,255,0.06);
+  background: var(--border);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
 }
 
 .pp-stat {
-  background: #111111;
+  background: var(--bg-card);
   padding: 12px 8px;
   text-align: center;
   display: flex;
@@ -1282,8 +1300,102 @@ img{max-width:100%;display:block}
 
 .pp-stat-label {
   font-size: 0.68rem;
-  color: #888;
+  color: var(--text-muted);
 }
+
+/* Streak chip */
+.pp-streak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 6px 20px 18px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,140,0,0.14), rgba(255,60,0,0.06));
+  border: 1px solid rgba(255,140,0,0.28);
+  width: fit-content;
+}
+
+.pp-streak-fire { font-size: 1.05rem; line-height: 1; }
+.pp-streak-num { font-size: 1.1rem; font-weight: 800; color: #ff8c00; }
+.pp-streak-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+
+/* Achievements */
+.pp-ach-section { padding: 0 20px 20px; }
+
+.pp-ach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pp-ach-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.pp-ach-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.pp-ach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  transition: transform 0.18s, border-color 0.18s;
+  min-width: 0;
+}
+
+.pp-ach:not(.locked):hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-border);
+}
+
+.pp-ach.locked {
+  opacity: 0.42;
+  filter: grayscale(100%);
+}
+
+.pp-ach-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.pp-ach-ic i { width: 20px; height: 20px; }
+
+.pp-ach-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tier accents (unlocked cards only — .locked greys them out) */
+.pp-ach.tier-bronze:not(.locked) .pp-ach-ic  { background: rgba(205,127,50,0.14); border-color: rgba(205,127,50,0.35); color: #cd7f32; }
+.pp-ach.tier-silver:not(.locked) .pp-ach-ic  { background: rgba(148,163,184,0.16); border-color: rgba(148,163,184,0.4); color: #94a3b8; }
+.pp-ach.tier-gold:not(.locked) .pp-ach-ic    { background: rgba(234,179,8,0.14); border-color: rgba(234,179,8,0.35); color: #eab308; }
+.pp-ach.tier-diamond:not(.locked) .pp-ach-ic { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); color: #38bdf8; }
 
 /* Joined */
 .pp-joined {
@@ -1451,7 +1563,10 @@ h1, .page-title, .dash-hero h2 {
 }
 
 h2, h3, .section-header {
-  color: rgba(255, 255, 255, 0.9) !important;
+  /* Theme-aware: near-white in dark, dark slate in light. Was a hard-coded
+     white !important that left every h3 (channel name, shv-title, empty
+     states, modal headers) invisible on the light-mode background. */
+  color: var(--text-primary) !important;
 }
 
 .card-title, .side-card-title, .course-body h3, .post-card-dash h4 {
@@ -1647,12 +1762,314 @@ h2, h3, .section-header {
     --text-muted: #64748b;
     --border: #e2e8f0;
     --border-light: #f1f5f9;
+    /* card :hover bg — undefined it falls back to near-black #1c1c26,
+       which turned every .card/.side-card black on hover in light mode. */
+    --bg-card-hover: #eef2f7;
+
+    /* dashboard-new.css design tokens — kept in sync so the community
+       shell (sidebar, topbar, cards) also switches to light mode. */
+    --bg-base: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card2: #f1f5f9;
+    --bg-hover-new: #e2e8f0;
+    --border-subtle: rgba(15, 23, 42, 0.08);
+    --border-light-new: rgba(15, 23, 42, 0.12);
+    --txt-primary: #0f172a;
+    --txt-secondary: #334155;
+    --txt-muted: #64748b;
 }
 
 /* Adjust dropdown shadow in light mode */
 :root[data-theme="light"] .user-dropdown.whop-style {
     box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
     border: 1px solid var(--border);
+}
+
+/* ── Light mode fix: chrome (sidebar, topbar, popovers) turns light too ──
+   These surfaces have hard-coded dark backgrounds; override them to light so
+   their variable-based text (already dark in light mode) reads correctly. */
+:root[data-theme="light"] .dash-sidebar {
+    background: #ffffff !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+:root[data-theme="light"] .dash-topbar {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+:root[data-theme="light"] .user-dropdown.whop-style,
+:root[data-theme="light"] .notif-panel {
+    background: #ffffff !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* Hard-coded WHITE text/icons on the (now light) chrome → dark so they show. */
+:root[data-theme="light"] .nav-icon-white {
+    color: #0f172a !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+}
+
+:root[data-theme="light"] .topbar-welcome .welcome-label,
+:root[data-theme="light"] .notif-panel-header h4,
+:root[data-theme="light"] .notif-close-btn:hover,
+:root[data-theme="light"] .sb-profile-name,
+:root[data-theme="light"] .sb-level-number,
+:root[data-theme="light"] .sb-streak-title {
+    color: #0f172a !important;
+}
+
+:root[data-theme="light"] .sb-level-title,
+:root[data-theme="light"] .sb-xp-text,
+:root[data-theme="light"] .sb-streak-sub {
+    color: #64748b !important;
+}
+
+/* Dark overlays inside the sidebar profile/level card → light. */
+:root[data-theme="light"] .sb-level-section {
+    background: #f1f5f9 !important;
+    border-top: 1px solid var(--border) !important;
+}
+
+:root[data-theme="light"] .sb-xp-bar-bg,
+:root[data-theme="light"] .sb-xp-track {
+    background: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ── Light mode fix: content text that is force-white for the dark theme ──
+   These headings/titles/values are `#fff !important` and would disappear on
+   the now-light content. Restore a dark color, scoped to the content area so
+   the (still-dark) sidebar profile card is untouched. */
+:root[data-theme="light"] .dash-content h1,
+:root[data-theme="light"] .dash-content h2,
+:root[data-theme="light"] .dash-content h3,
+:root[data-theme="light"] .dash-content .section-header,
+:root[data-theme="light"] .dash-content .page-title,
+:root[data-theme="light"] .dash-content .dash-hero h2,
+:root[data-theme="light"] .dash-content .card-title,
+:root[data-theme="light"] .dash-content .side-card-title,
+:root[data-theme="light"] .dash-content .course-body h3,
+:root[data-theme="light"] .dash-content .post-card-dash h4,
+:root[data-theme="light"] .dash-content .stat-val,
+:root[data-theme="light"] .dash-content .stats-number,
+:root[data-theme="light"] .dash-content .streak-count,
+:root[data-theme="light"] .dash-content .hero-accent-word,
+:root[data-theme="light"] .dash-content .green {
+    color: #0f172a !important;
+}
+
+/* ── Light mode: subscription card (Settings) — it is inline-styled dark, so
+   override the dark panels to light and flip its inline white text to dark.
+   The attribute selectors leave JS-set colors (green/red days, blue amount,
+   blue buttons) alone. */
+:root[data-theme="light"] #subActive,
+:root[data-theme="light"] #subInactive {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+:root[data-theme="light"] #subscriptionSection div[style*="background:rgba(255,255,255,0.04)"] {
+    background: #f1f5f9 !important;
+}
+
+:root[data-theme="light"] #subscriptionSection span[style*="color:#fff"],
+:root[data-theme="light"] #subscriptionSection div[style*="color:#fff"] {
+    color: #0f172a !important;
+}
+
+/* ── Light mode: achievements / profile page — dark cards → light.
+   (Their text uses design tokens, so it goes dark automatically.) */
+:root[data-theme="light"] .profile-cover {
+    background: linear-gradient(135deg, #e2e8f0, #f1f5f9) !important;
+}
+
+:root[data-theme="light"] .q-stat-card,
+:root[data-theme="light"] .stat-card-premium,
+:root[data-theme="light"] .next-achievement-widget,
+:root[data-theme="light"] .achievement-card {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Light mode performance ──
+   These cards keep a `backdrop-filter: blur(40px)` from the dark theme, but in
+   light mode they sit on OPAQUE white backgrounds — so the blur is invisible yet
+   still forces expensive per-card GPU compositing (repeated across every
+   achievement card), which made the light theme sluggish to render and scroll.
+   The topbar's sticky blur repaints on every scroll frame for the same non-gain.
+   Drop the wasted blurs in light mode. */
+:root[data-theme="light"] .profile-header-card,
+:root[data-theme="light"] .achievement-card,
+:root[data-theme="light"] .q-stat-card,
+:root[data-theme="light"] .stat-card-premium,
+:root[data-theme="light"] .next-achievement-widget,
+:root[data-theme="light"] .dash-topbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* profile-header-card is still semi-transparent (0.02 white) from the dark theme;
+   give it a solid surface now that its blur is gone. */
+:root[data-theme="light"] .profile-header-card {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+/* Light mode: the skeleton loaders use a white-on-white shimmer inherited from
+   the dark theme (rgba(255,255,255,.05–.07)), so while data loads the cards look
+   BLANK — the page reads as frozen/slow-to-load in light mode even though nothing
+   is wrong. Give the skeletons a dark tint so the loading state is visible. */
+:root[data-theme="light"] .sk-line,
+:root[data-theme="light"] .sk-thumb,
+:root[data-theme="light"] .goh-skeleton {
+    background: rgba(15, 23, 42, 0.09) !important;
+}
+
+:root[data-theme="light"] .next-ach-icon {
+    background: #f1f5f9 !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Light mode: dashboard AI hero (hard-coded dark gradient) → light.
+   Its heading/body text use design tokens, so they go dark automatically. */
+:root[data-theme="light"] .ai-hero {
+    background: linear-gradient(135deg, #ecfccb 0%, #f8fafc 45%, #eff6ff 100%) !important;
+    border-color: var(--border) !important;
+    border-top-color: rgba(132, 204, 22, 0.35) !important;
+    /* drop the heavy black blur shadow — it looks harsh on a light page */
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* The green/blue glow layer is meant for a dark bg — tone it down on light. */
+:root[data-theme="light"] .ai-hero::before {
+    opacity: 0.5 !important;
+}
+
+/* `mix-blend-mode: screen` makes the artwork glow on dark but washes it out
+   (near-invisible) on light — render it normally and soften its glow. */
+:root[data-theme="light"] .ai-hero-img img {
+    mix-blend-mode: normal !important;
+}
+
+:root[data-theme="light"] .ai-hero-img {
+    filter: drop-shadow(0 10px 24px rgba(63, 143, 249, 0.18)) !important;
+}
+
+/* ── Light mode: community chat surfaces that are hard-coded / semi-dark ── */
+:root[data-theme="light"] .chat-channels,
+:root[data-theme="light"] .chat-feed-header,
+:root[data-theme="light"] .comm-right-sidebar {
+    background: #ffffff !important;
+}
+
+:root[data-theme="light"] .chat-channels {
+    border-right-color: var(--border) !important;
+}
+
+:root[data-theme="light"] .chat-feed-header {
+    border-bottom-color: var(--border) !important;
+}
+
+:root[data-theme="light"] .comm-right-sidebar {
+    border-left-color: var(--border) !important;
+}
+
+/* Low-contrast gray names in the (now light) right sidebar → readable dark. */
+:root[data-theme="light"] .comm-active-more,
+:root[data-theme="light"] .comm-topic-name,
+:root[data-theme="light"] .comm-pinned-author-name {
+    color: #334155 !important;
+}
+
+/* Chat message text is hard-coded white → dark so it shows on the light feed
+   (covers both other people's and your own messages). */
+:root[data-theme="light"] .msg-txt {
+    color: #0f172a !important;
+}
+
+/* Composer voice / file (attach) icons are white → dark on the light bar. */
+:root[data-theme="light"] .chat-media-btn {
+    color: #475569 !important;
+}
+
+/* Community members modal (hard-coded #1a1a1a dark) → light + readable text. */
+:root[data-theme="light"] .members-modal-container {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+:root[data-theme="light"] .members-modal-header h2,
+:root[data-theme="light"] .member-details .m-name {
+    color: #0f172a !important;
+}
+
+:root[data-theme="light"] .members-search input {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Light mode: course-detail page cards (custom dark backgrounds) → light.
+   Covers the curriculum section blocks, projects module, resources panel,
+   leaderboard and progress card (the last three are all .cd-side-card). */
+:root[data-theme="light"] .section-block,
+:root[data-theme="light"] .cd-side-card,
+:root[data-theme="light"] .projects-module {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+/* course-detail card text hard-coded white → dark. Buttons/badges (btn-*,
+   complete-btn, live-badge, toast, hero) keep their white text. */
+:root[data-theme="light"] .course-progress-header,
+:root[data-theme="light"] #courseProgressHeader {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Inline white text inside the progress header → dark (beats inline styles). */
+:root[data-theme="light"] #courseProgressHeader [style*="color:#fff"],
+:root[data-theme="light"] #courseProgressHeader [style*="color: #fff"] {
+    color: #0f172a !important;
+}
+
+:root[data-theme="light"] .curriculum-header h3,
+:root[data-theme="light"] .section-header .sec-title,
+:root[data-theme="light"] .lesson-row .lesson-title,
+:root[data-theme="light"] .progress-ring .pct,
+:root[data-theme="light"] .projects-head h3,
+:root[data-theme="light"] .project-drop-icon,
+:root[data-theme="light"] .project-drop-copy strong,
+:root[data-theme="light"] .project-file-name,
+:root[data-theme="light"] .project-submissions-head,
+:root[data-theme="light"] .project-card-title,
+:root[data-theme="light"] .progress-card-headline .pct-text,
+:root[data-theme="light"] .leaderboard-name {
+    color: #0f172a !important;
+}
+
+/* ── Light mode: Build With Me cards (bwm.css hard-coded dark) → light. ── */
+:root[data-theme="light"] .stat-box,
+:root[data-theme="light"] .live-session-card,
+:root[data-theme="light"] .live-image-col,
+:root[data-theme="light"] .what-we-build,
+:root[data-theme="light"] .upcoming-card,
+:root[data-theme="light"] .bwm-widget {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+}
+
+:root[data-theme="light"] .cal-day:hover {
+    background: #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .instructor-name,
+:root[data-theme="light"] .project-title,
+:root[data-theme="light"] .schedule-title,
+:root[data-theme="light"] .session-details h3,
+:root[data-theme="light"] .stat-value {
+    color: #0f172a !important;
 }
 
 

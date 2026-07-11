@@ -6,7 +6,11 @@
 import os
 import logging
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from typing import Optional
+
+# Egypt timezone — handles DST automatically (UTC+2 winter / UTC+3 summer)
+CAIRO_TZ = ZoneInfo("Africa/Cairo")
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, validator
@@ -196,7 +200,9 @@ def create_report(
     payload = {
         "role": report.team_role.value if hasattr(report.team_role, "value") else str(report.team_role),
         "submitted_by": current_user.full_name,
-        "submitted_at": datetime.now().isoformat(),
+        # Egypt local time with correct offset (e.g. 2026-07-04T21:09:18+03:00)
+        # so n8n shows the real Cairo wall-clock time, not UTC.
+        "submitted_at": datetime.now(CAIRO_TZ).isoformat(),
         "what_went_well": report.what_went_well,
         "what_can_improve": report.what_can_improve,
     }

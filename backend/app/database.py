@@ -19,10 +19,11 @@ if not DATABASE_URL or not DATABASE_URL.startswith("postgresql"):
 # Create engine with PostgreSQL production-grade connection pooling
 engine = create_engine(
     DATABASE_URL,
-    pool_size=20,
-    max_overflow=10,
+    pool_size=30,
+    max_overflow=20,
     pool_pre_ping=True,
     pool_recycle=1800,  # recycle connections every 30m to avoid stale/leaked handles
+    pool_timeout=10,    # fail fast (10s) instead of default 30s to prevent request pile-up
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

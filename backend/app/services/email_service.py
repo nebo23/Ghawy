@@ -1,5 +1,6 @@
 import os
 import smtplib
+import unicodedata
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -397,3 +398,121 @@ def send_renewal_reminder_email(
         body_html=body_html,
     )
 
+
+
+# ═══════════════════════════════════════════════════════
+#  WINBACK EMAIL — للي سجلوا وموصلوش لآخر خطوة
+# ═══════════════════════════════════════════════════════
+
+# governorate بيتخزن بالإنجليزي من الـ geolocation بصيغ كتير مختلفة —
+# بنطبّع الاسم وبنترجمه للعربي؛ لو مش معروف بنسيب الجملة من غير اسم المحافظة.
+_GOV_AR = {
+    # القاهرة الكبرى
+    "cairo": "القاهرة", "new cairo": "القاهرة", "al qahirah al jadidah": "القاهرة",
+    "maadi": "القاهرة", "nasr city": "القاهرة", "heliopolis": "القاهرة",
+    "badr": "القاهرة", "al ubur": "القاهرة",
+    "10th of ramadan city": "العاشر من رمضان",
+    "giza": "الجيزة", "dokki": "الجيزة", "6th of october city": "الجيزة",
+    "shubra al khaymah": "القليوبية", "banha": "القليوبية", "qalyubia": "القليوبية",
+    # إسكندرية والدلتا
+    "alexandria": "إسكندرية", "moharam bek": "إسكندرية",
+    "beheira": "البحيرة", "damanhur": "البحيرة", "abu hummus": "البحيرة", "shubrakhit": "البحيرة",
+    "kafr ash shaykh": "كفر الشيخ", "kafr el sheikh": "كفر الشيخ", "al hamul": "كفر الشيخ",
+    "gharbia": "الغربية", "tanta": "طنطا", "al mahallah al kubra": "المحلة", "zefta": "الغربية",
+    "monufia": "المنوفية", "menouf": "المنوفية", "shibin al kawm": "المنوفية", "quweisna": "المنوفية",
+    "dakahlia": "الدقهلية", "al mansurah": "المنصورة", "mit ghamr": "الدقهلية",
+    "talkha": "الدقهلية", "bilqas": "الدقهلية",
+    "sharqia": "الشرقية", "zagazig": "الزقازيق",
+    "damietta": "دمياط", "kafr al battikh": "دمياط",
+    # القناة وسيناء
+    "port said": "بورسعيد", "ismailia": "الإسماعيلية", "suez": "السويس",
+    "north sinai": "سيناء", "south sinai": "سيناء",
+    # الصعيد والبحر الأحمر
+    "faiyum": "الفيوم", "al fayyum": "الفيوم", "fayoum": "الفيوم",
+    "beni suweif": "بني سويف", "bani suwayf": "بني سويف", "beni suef": "بني سويف",
+    "minya": "المنيا", "mallawi": "المنيا",
+    "asyut": "أسيوط", "sohag": "سوهاج", "qena": "قنا",
+    "luxor": "الأقصر", "aswan": "أسوان",
+    "hurghada": "الغردقة", "red sea": "البحر الأحمر", "matrouh": "مطروح",
+    # مدن عربية
+    "riyadh": "الرياض", "jeddah": "جدة", "dammam": "الدمام", "mecca": "مكة", "medina": "المدينة",
+    "dubai": "دبي", "abu dhabi": "أبوظبي", "sharjah": "الشارقة",
+    "fujairah": "الفجيرة", "ras al khaimah": "رأس الخيمة", "ajman": "عجمان",
+    "kuwait city": "الكويت", "doha": "الدوحة", "muscat": "مسقط", "manama": "المنامة",
+    "amman": "عمّان", "beirut": "بيروت", "baghdad": "بغداد", "erbil": "أربيل",
+    "damascus": "دمشق", "aleppo": "حلب",
+    "gaza": "غزة", "gaza strip": "غزة", "nablus": "نابلس", "ramallah": "رام الله",
+    "tripoli": "طرابلس", "sirte": "سرت", "benghazi": "بنغازي",
+    "tunis": "تونس", "algiers": "الجزائر", "annaba": "عنابة", "setif": "سطيف",
+    "mostaganem": "مستغانم", "casablanca": "الدار البيضاء", "rabat": "الرباط",
+    "khartoum": "الخرطوم", "nouakchott": "نواكشوط", "sanaa": "صنعاء", "taizz": "تعز",
+}
+
+
+def _governorate_to_arabic(raw: str) -> str:
+    """يحاول يطلع اسم عربي للمحافظة/المدينة، أو يرجع نص فاضي لو مش معروفة."""
+    if not raw or not raw.strip():
+        return ""
+    # فك التشكيل اللاتيني (Aswān -> Aswan) وتطبيع الاسم
+    s = unicodedata.normalize("NFKD", raw)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = s.replace("‘", "").replace("'", "").replace("ʻ", "").replace("-", " ").lower().strip()
+    for junk in (" governorate", " province", " region", " district", "emirate of "):
+        s = s.replace(junk, "")
+    s = " ".join(s.split())
+    return _GOV_AR.get(s, "")
+
+
+def send_winback_email(to_email: str, full_name: str, governorate: str = None) -> None:
+    """إيميل شخصي من محمد للي سجل وموصلش لآخر خطوة — بيتبعت مرة واحدة بس."""
+    gov_ar = _governorate_to_arabic(governorate or "")
+    greeting = f"حبايبنا والله اهل {gov_ar}" if gov_ar else "حبايبنا والله ❤️"
+    # أول اسم بس عشان التحية تطلع طبيعية (الاسم الكامل بيبقى تلات/أربع كلمات)
+    first_name = (full_name or "").strip().split()[0] if (full_name or "").strip() else ""
+    hello = f"ازيك يا {first_name}،" if first_name else "ازيك،"
+
+    subject = "خدت بالي إنك وقفت في آخر خطوة… 🤍"
+
+    body_text = (
+        f"{hello}\n"
+        "أنا محمد, من غاوي.\n"
+        f"{greeting}\n\n"
+        "بس انا خدت بالي إنك دخلت علي الموقع وسجلت بالفعل, بس فضلت في آخر خطوة…\n\n"
+        "انا بس عايز أفهم منك إيه اللي حصل وعطلك؟\n\n"
+        "هل كان في مشكلة في الدفع؟\n"
+        "ولا في حاجة في العرض مش واضحة؟\n"
+        "ولا في سبب تاني خالص؟\n\n"
+        "مقدر جدا اهتمامك وثقتك, فأتمني تقولي ايه السبب, وأنا هتواصل معاك شخصياً.\n\n"
+        "لو حبيت ترجع وتبدأ، اللينك هنا:\n"
+        "https://ghawy.ai/\n"
+        "افتكر, انت لسه فيها, مستنيك 🤍\n\n"
+        "محمد - غاوي"
+    )
+
+    # HTML بسيط ومقصود يبان كإيميل شخصي مش نشرة تسويقية
+    body_html = f"""
+    <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937; font-size: 1rem; line-height: 2; padding: 8px 4px;">
+        <p style="margin: 0 0 4px;">{hello}</p>
+        <p style="margin: 0 0 4px;">أنا محمد, من غاوي.</p>
+        <p style="margin: 0 0 20px;">{greeting}</p>
+        <p style="margin: 0 0 20px;">بس انا خدت بالي إنك دخلت علي الموقع وسجلت بالفعل, بس فضلت في آخر خطوة…</p>
+        <p style="margin: 0 0 20px;">انا بس عايز أفهم منك إيه اللي حصل وعطلك؟</p>
+        <p style="margin: 0 0 20px;">
+            هل كان في مشكلة في الدفع؟<br>
+            ولا في حاجة في العرض مش واضحة؟<br>
+            ولا في سبب تاني خالص؟
+        </p>
+        <p style="margin: 0 0 20px;">مقدر جدا اهتمامك وثقتك, فأتمني تقولي ايه السبب, وأنا هتواصل معاك شخصياً.</p>
+        <p style="margin: 0 0 4px;">لو حبيت ترجع وتبدأ، اللينك هنا:</p>
+        <p style="margin: 0 0 20px;"><a href="https://ghawy.ai/" style="color: #3f8ff9; font-weight: 700;">https://ghawy.ai/</a></p>
+        <p style="margin: 0 0 24px;">افتكر, انت لسه فيها, مستنيك 🤍</p>
+        <p style="margin: 0; font-weight: 700;">محمد - غاوي</p>
+    </div>
+    """
+
+    _send_email(
+        to_email=to_email,
+        subject=subject,
+        body_text=body_text,
+        body_html=body_html,
+    )

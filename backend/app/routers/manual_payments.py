@@ -5,7 +5,7 @@ Public endpoints for submission + Admin endpoints for review/approve/reject.
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func as sql_func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import secrets
 import logging
@@ -17,8 +17,9 @@ from pydantic import BaseModel
 
 import httpx
 from app.database import get_db
-from app.models import User, ManualPaymentRequest
+from app.models import User, ManualPaymentRequest, Payment, PaymentMethod, PaymentStatus
 from app.routers.users import get_current_user
+from app.services.payment_service import to_cairo_iso, CAIRO_TZ
 from app.services.email_service import (
     send_admin_payment_notification,
     send_payment_approval_email,
@@ -55,11 +56,44 @@ MAX_RECEIPT_SIZE = 5 * 1024 * 1024  # 5 MB
 PLAN_DURATION_DAYS = {"monthly": 30, "quarterly": 90, "yearly": 365}
 DEFAULT_PLAN = "monthly"
 
+# Fallback EGP price per plan when the member didn't state an amount.
+PLAN_DEFAULT_AMOUNT_EGP = {"monthly": 600, "quarterly": 1200, "yearly": 4000}
+
+
+def _record_manual_payment(db: Session, req: ManualPaymentRequest, user: User, when: datetime):
+    """Create a CONFIRMED manual Payment row so the approval shows in the Payments tab.
+
+    Idempotent: skips if a manual payment for this request already exists.
+    """
+    provider_order_id = f"manual-{req.id}"
+    existing = db.query(Payment).filter(
+        Payment.method == PaymentMethod.MANUAL,
+        Payment.provider_order_id == provider_order_id,
+    ).first()
+    if existing:
+        return existing
+
+    plan = (req.plan or DEFAULT_PLAN).lower()
+    amount = float(req.amount) if req.amount else PLAN_DEFAULT_AMOUNT_EGP.get(plan, 600)
+    payment = Payment(
+        user_id=user.id,
+        method=PaymentMethod.MANUAL,
+        status=PaymentStatus.CONFIRMED,
+        amount=amount,
+        currency="EGP",
+        provider_order_id=provider_order_id,
+        plan_key=f"{plan}_egp",
+        created_at=req.created_at or when,
+        confirmed_at=when,
+    )
+    db.add(payment)
+    return payment
+
 
 # ── Helper ─────────────────────────────────────────────────
 def require_admin(current_user: User):
-    """Raise 403 if the current user is not an admin."""
-    if not current_user.is_admin:
+    """Raise 403 if the current user is neither an admin nor an owner."""
+    if not (getattr(current_user, 'is_admin', False) or getattr(current_user, 'is_owner', False)):
         raise HTTPException(status_code=403, detail="Admins only")
 
 
@@ -164,7 +198,7 @@ async def submit_payment_request(
             email=mpr.email,
             phone=mpr.phone,
             amount=mpr.amount,
-            created_at=mpr.created_at.strftime("%Y-%m-%d %H:%M") if mpr.created_at else "N/A",
+            created_at=mpr.created_at.replace(tzinfo=timezone.utc).astimezone(CAIRO_TZ).strftime("%Y-%m-%d %H:%M") if mpr.created_at else "N/A",
         )
     except Exception as exc:
         logger.warning("Failed to send admin notification email: %s", exc)
@@ -179,7 +213,7 @@ async def submit_payment_request(
         "amount": float(mpr.amount) if mpr.amount else None,
         "notes": mpr.notes or "",
         "receipt_url": f"{frontend_url}{mpr.receipt_url}",
-        "submitted_at": mpr.created_at.isoformat() if mpr.created_at else "",
+        "submitted_at": to_cairo_iso(mpr.created_at),
         "review_url": f"{frontend_url}/teamdashboard.html#pending-requests",
     }
     import asyncio
@@ -219,7 +253,7 @@ def get_manual_payment_stats(
     db: Session = Depends(get_db),
 ):
     """Stats summary for dashboard badge."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     pending_count = db.query(sql_func.count(ManualPaymentRequest.id)).filter(
         ManualPaymentRequest.status == "pending"
@@ -251,7 +285,7 @@ def list_payment_requests(
     db: Session = Depends(get_db),
 ):
     """List all payment requests (admin only)."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     query = db.query(ManualPaymentRequest)
 
@@ -296,7 +330,7 @@ def get_payment_request(
     db: Session = Depends(get_db),
 ):
     """Get single request detail (admin only)."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -312,7 +346,7 @@ def approve_request(
     db: Session = Depends(get_db),
 ):
     """Approve a payment request and activate user account."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -336,6 +370,10 @@ def approve_request(
         plan_days = PLAN_DURATION_DAYS.get(req.plan or DEFAULT_PLAN, 30)
         # Always extend from now (approval time), not from previous end_at
         user.end_at = now + timedelta(days=plan_days)
+
+        # Record a confirmed manual Payment so it appears in the Payments tab
+        # (filterable by the "manual" method) and in revenue analytics.
+        _record_manual_payment(db, req, user, now)
 
     db.commit()
 
@@ -395,7 +433,7 @@ def reject_request(
     db: Session = Depends(get_db),
 ):
     """Reject a payment request with a reason."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -430,7 +468,7 @@ def resend_invite(
     db: Session = Depends(get_db),
 ):
     """Resend activation notification."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:

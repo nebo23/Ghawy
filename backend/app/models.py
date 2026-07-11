@@ -100,6 +100,7 @@ class User(Base):
     is_legacy_redeemed = Column(Boolean, server_default=text('false'), default=False)
     subscription_source = Column(String(64), nullable=True)
     custom_title = Column(String(120), nullable=True)
+    winback_email_sent_at = Column(DateTime, nullable=True)  # إيميل "ليه وقفت؟" — يتبعت مرة واحدة بس
 
     @property
     def is_online(self) -> bool:
@@ -248,6 +249,17 @@ class PostReaction(Base):
     post = relationship("Post", back_populates="reactions")
 
 
+class PostChannelRead(Base):
+    """Per-user last-seen marker for community post channels (sidebar unread badge)."""
+    __tablename__ = "post_channel_reads"
+    __table_args__ = (UniqueConstraint('user_id', 'channel'),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    channel = Column(String, nullable=False)  # posts.category_slug e.g. "announcements"
+    last_read_at = Column(DateTime, nullable=True)
+
+
 class CommentReaction(Base):
     __tablename__ = "comment_reactions"
     __table_args__ = (UniqueConstraint('comment_id', 'user_id'),)
@@ -351,6 +363,8 @@ class Course(Base):
     description = Column(Text, nullable=True)
     thumbnail_url = Column(String, nullable=True)
     pdf_url = Column(String, nullable=True)
+    # Certificate template image; personalized (name/course/date) client-side on download
+    certificate_url = Column(String, nullable=True)
     total_lessons = Column(Integer, server_default=text('0'), default=0)
     course_time = Column(String, nullable=True)
     is_published = Column(Boolean, server_default=text('false'), default=False)
@@ -360,6 +374,7 @@ class Course(Base):
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
     progress = relationship("UserCourseProgress", back_populates="course", cascade="all, delete-orphan")
     project_submissions = relationship("ProjectSubmission", back_populates="course", cascade="all, delete-orphan")
+    exams = relationship("Exam", back_populates="course", cascade="all, delete-orphan", order_by="Exam.sort_order")
 
 
 class Lesson(Base):
@@ -381,6 +396,8 @@ class Lesson(Base):
     vdo_video_id = Column(String, nullable=True)
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
     is_free_preview = Column(Boolean, server_default=text('false'), default=False)
+    # Marks a lesson that has an associated project — course page shows a "Go to Projects" button
+    is_project = Column(Boolean, server_default=text('false'), default=False)
     # PDF attachment
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
@@ -447,6 +464,45 @@ class ProjectSubmission(Base):
     user = relationship("User", foreign_keys=[user_id], back_populates="project_submissions")
     course = relationship("Course", back_populates="project_submissions")
     reviewer = relationship("User", foreign_keys=[reviewed_by])
+
+
+class Exam(Base):
+    __tablename__ = "exams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    pass_percent = Column(Integer, server_default=text('70'), default=70)
+    # questions: list of {"text": str, "options": [str, ...], "correct": int}
+    questions = Column(JSON, nullable=False, default=list, server_default=text("'[]'"))
+    is_published = Column(Boolean, server_default=text('false'), default=False)
+    sort_order = Column(Integer, server_default=text('0'), default=0)
+    # Curriculum placement: show this exam right after this lesson (null = end of course)
+    after_lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    course = relationship("Course", back_populates="exams")
+    attempts = relationship("ExamAttempt", back_populates="exam", cascade="all, delete-orphan")
+
+
+class ExamAttempt(Base):
+    __tablename__ = "exam_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    exam_id = Column(Integer, ForeignKey("exams.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    score = Column(Integer, nullable=False, default=0)  # percent 0-100
+    correct_count = Column(Integer, nullable=False, default=0)
+    total_questions = Column(Integer, nullable=False, default=0)
+    passed = Column(Boolean, nullable=False, default=False, server_default=text('false'))
+    # answers: {"<question_index>": <selected_option_index>}
+    answers = Column(JSON, nullable=False, default=dict, server_default=text("'{}'"))
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    exam = relationship("Exam", back_populates="attempts")
+    user = relationship("User")
 
 # ═══════════════════════════════════════════
 #  GUEST OF HONORS
@@ -623,6 +679,9 @@ class AiUpdatePost(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     post_type = Column(Enum(AiUpdatePostType), nullable=False, default=AiUpdatePostType.TEXT)
+    # Editorial category (news / tools / models / updates / tutorials / discussions).
+    # Distinct from post_type (which is the media kind). NULL is treated as "news".
+    category = Column(String(30), nullable=True, default="news")
     title = Column(String(120), nullable=False)
     body = Column(Text, nullable=False)
     image_url = Column(String, nullable=True)
@@ -710,6 +769,15 @@ class AiUpdateComment(Base):
     post = relationship("AiUpdatePost", back_populates="comments")
     author = relationship("User")
     replies = relationship("AiUpdateComment", backref=backref("parent", remote_side=[id]), cascade="all, delete-orphan")
+
+
+class AiUpdateRead(Base):
+    """Per-user last-seen marker for the AI Updates feed (sidebar unread badge)."""
+    __tablename__ = "ai_update_reads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    last_read_at = Column(DateTime, nullable=True)
 
 
 class CourseReview(Base):

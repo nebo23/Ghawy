@@ -1,17 +1,204 @@
 /* ai-updates.css */
 
+/* ══════════════════════════════════════════════════════════
+   REDESIGN 2026 — Product-Hunt-style AI Updates (lime accent)
+   Variables from dashboard.css: --gold (#c1ff11), --bg-card,
+   --bg-card2, --border, --text-* , --radius(-sm)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Header subtitle ── */
+.ai-page-header .ai-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 6px 0 0;
+  max-width: 640px;
+}
+
+/* ── Stat cards row ── */
+.ai-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 20px 0 4px;
+}
+
+.ai-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card2, #0a0a0a);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.ai-stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+.ai-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-stat-icon svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.ai-stat-icon.icon-updates { background: rgba(193, 255, 17, 0.14); color: var(--gold); }
+.ai-stat-icon.icon-tools   { background: rgba(168, 85, 247, 0.16); color: #a855f7; }
+.ai-stat-icon.icon-models  { background: rgba(245, 158, 11, 0.16); color: #f59e0b; }
+.ai-stat-icon.icon-disc    { background: rgba(236, 72, 153, 0.16); color: #ec4899; }
+
+.ai-stat-body { display: flex; flex-direction: column; min-width: 0; }
+.ai-stat-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1.1;
+}
+.ai-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Toolbar: filters + sort + view ── */
+.ai-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 0 24px;
+  margin: 20px 0 18px;
+}
+
+.ai-filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ai-filter-tabs::-webkit-scrollbar { display: none; }
+
+.ai-filter-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 7px 15px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.ai-filter-tab:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
+.ai-filter-tab.active {
+  background: var(--gold);
+  color: #0a0a0a;
+  border-color: var(--gold);
+}
+
+.ai-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Sort dropdown */
+.ai-sort-dropdown { position: relative; }
+.ai-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-sort-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+.ai-sort-btn svg { width: 15px; height: 15px; }
+.ai-sort-btn .chev { width: 13px; height: 13px; }
+
+.ai-sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light, #222);
+  border-radius: 10px;
+  padding: 5px;
+  min-width: 150px;
+  z-index: 50;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.ai-sort-menu.open { display: block; }
+.ai-sort-menu button {
+  display: block;
+  width: 100%;
+  text-align: start;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ai-sort-menu button:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+.ai-sort-menu button.active { color: var(--gold); }
+
+/* View toggle */
+.ai-view-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.ai-view-toggle button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  width: 32px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-view-toggle button svg { width: 16px; height: 16px; }
+.ai-view-toggle button.active { background: var(--gold); color: #0a0a0a; }
+
 .ai-updates-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 24px;
   padding: 0 24px 40px;
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .ai-updates-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
+  .ai-updates-sidebar { order: 2; }
+  .ai-updates-main { order: 1; }
 }
 
 .ai-updates-header {
@@ -464,6 +651,61 @@
   margin-top: 12px;
 }
 
+/* ── Threaded replies ── */
+.ai-comment-replies {
+  margin-top: 10px;
+  margin-left: 8px;
+  padding-left: 18px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-comment-replies:empty {
+  display: none;
+}
+
+.ai-comment-reply .ai-comment-avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.ai-comment-reply .ai-comment-actions {
+  margin-left: 38px;
+}
+
+.comment-action-btn.reply {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.comment-action-btn.reply:hover {
+  color: #3f8ff9;
+}
+
+.ai-reply-box {
+  margin-top: 10px;
+  margin-left: 44px;
+}
+
+.ai-reply-input-wrapper {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  .ai-comment-replies {
+    margin-left: 4px;
+    padding-left: 12px;
+  }
+
+  .ai-reply-box {
+    margin-left: 0;
+  }
+}
+
 .ai-comment-input-wrapper {
   display: flex;
   gap: 12px;
@@ -804,7 +1046,7 @@ textarea.form-control {
 /* ── Small Desktop 1024px ── */
 @media (max-width: 1024px) {
   .ai-updates-layout {
-    grid-template-columns: 1fr 260px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding: 0 16px 32px;
   }
@@ -821,9 +1063,8 @@ textarea.form-control {
 
 /* ── Tablet 768px ── */
 @media (max-width: 768px) {
-  /* Already handled at 900px: layout becomes 1-column */
   .ai-updates-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding: 0 12px 28px;
   }
@@ -1098,5 +1339,353 @@ textarea.form-control {
   .ai-replies {
     margin-left: 28px;
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   REDESIGN 2026 — post cards, rails, subscribe, overrides
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Feed spacing (wider than the old 700px, roomier cards) ── */
+.ai-feed { max-width: 760px; gap: 16px; }
+
+/* ── Post card ── */
+.ai-post-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.ai-post-card:hover { border-color: rgba(255, 255, 255, 0.13); }
+.ai-post-card.pinned {
+  border-color: var(--gold-border, rgba(193,255,17,0.25));
+  box-shadow: 0 0 0 1px rgba(193,255,17,0.06), 0 0 22px rgba(193,255,17,0.04);
+}
+
+.ai-post-inner { display: flex; gap: 16px; align-items: flex-start; }
+
+/* Thumbnail */
+.ai-post-thumb {
+  width: 104px;
+  height: 104px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--bg-card2, #0a0a0a);
+}
+.ai-post-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ai-post-thumb.thumb-video .thumb-play {
+  position: absolute; inset: 0; margin: auto;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.ai-post-thumb.thumb-video:not(:has(img)) { background: linear-gradient(135deg,#1a1a1a,#0a0a0a); }
+.ai-post-thumb.thumb-video .thumb-play svg { width: 18px; height: 18px; fill: #fff; }
+
+.ai-post-main { flex: 1; min-width: 0; }
+
+/* Badges */
+.ai-post-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.63rem; font-weight: 800; letter-spacing: 0.04em;
+  padding: 3px 8px; border-radius: 6px;
+  border: 1px solid transparent; text-transform: uppercase;
+}
+.ai-badge svg { width: 11px; height: 11px; }
+.ai-badge.featured {
+  color: var(--gold);
+  background: rgba(193,255,17,0.14);
+  border-color: rgba(193,255,17,0.4);
+}
+
+.ai-post-card .ai-post-title { font-size: 1.12rem; font-weight: 700; line-height: 1.4; margin-bottom: 8px; }
+
+/* Author row (compact) */
+.ai-post-card .ai-post-header { margin-bottom: 10px; gap: 9px; }
+.ai-post-card .ai-post-avatar { width: 30px; height: 30px; }
+.ai-post-card .ai-post-author { font-size: 0.85rem; }
+.ai-post-card .ai-post-time { font-size: 0.72rem; }
+
+/* Excerpt + full */
+.ai-post-excerpt {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ai-post-full {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.read-more-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--gold); font-family: inherit; font-weight: 700;
+  font-size: 0.82rem; padding: 6px 0 0; margin-top: 2px;
+}
+.read-more-btn svg { width: 14px; height: 14px; }
+.read-more-btn:hover { text-decoration: underline; }
+
+/* Inline media inside the post body */
+.ai-post-main .ai-post-media { margin-top: 12px; }
+.ai-post-main .ai-post-media img { margin-bottom: 0; max-height: 520px; object-fit: cover; }
+.ai-post-main .ai-post-media iframe { margin-bottom: 0; }
+
+/* Prevent long unbreakable tokens / URLs from overflowing the card */
+.ai-post-title,
+.ai-post-excerpt,
+.ai-post-full,
+.ai-comment-body,
+.rail-item-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.ai-feed, .ai-updates-main, .ai-post-card { max-width: 100%; min-width: 0; }
+
+/* Clickable links inside post/comment text */
+.ai-post-link {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+.ai-post-link:hover { text-decoration: underline; }
+
+/* Edit action hover */
+.admin-action-btn.edit-btn:hover { color: var(--gold); }
+
+/* URLs rendered inline in the post text as lime pill buttons */
+.ai-post-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 11px;
+  margin: 1px 2px;
+  border-radius: 999px;
+  background: rgba(193, 255, 17, 0.13);
+  border: 1px solid rgba(193, 255, 17, 0.45);
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.5;
+  vertical-align: middle;
+  transition: background 0.15s, transform 0.15s;
+}
+.ai-post-link-btn:hover {
+  background: rgba(193, 255, 17, 0.24);
+  transform: translateY(-1px);
+}
+.ai-post-link-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+  direction: ltr;
+}
+.ai-post-link-btn i { font-size: 0.72rem; flex-shrink: 0; }
+
+/* Admin actions float top-end */
+.ai-post-card .ai-post-admin-actions {
+  position: absolute; top: 14px; inset-inline-end: 14px;
+  margin: 0; z-index: 3;
+}
+.ai-post-card { position: relative; }
+
+/* ── Grid view ── */
+.ai-feed.grid-view {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 100%;
+  gap: 16px;
+}
+.ai-feed.grid-view .ai-post-inner { flex-direction: column; }
+.ai-feed.grid-view .ai-post-thumb { width: 100%; height: 150px; }
+.ai-feed.grid-view .ai-comments-section { display: none !important; }
+@media (max-width: 640px) {
+  .ai-feed.grid-view { grid-template-columns: 1fr; }
+}
+
+/* ══ Sidebar rails ══ */
+.ai-rail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.ai-rail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ai-rail-head h3 {
+  font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-primary);
+  display: flex; align-items: center; gap: 6px;
+}
+.ai-rail-viewall {
+  font-size: 0.72rem; font-weight: 700; color: var(--gold);
+  cursor: pointer; text-decoration: none;
+}
+.ai-rail-viewall:hover { text-decoration: underline; }
+
+.rail-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; margin: 0 -8px;
+  border-radius: 9px; cursor: pointer;
+  transition: background 0.15s;
+}
+.rail-item:hover { background: rgba(255,255,255,0.04); }
+
+.rail-rank {
+  flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 800;
+  background: rgba(255,255,255,0.06); color: var(--text-muted);
+}
+.rail-rank.gold { background: rgba(193,255,17,0.16); color: var(--gold); }
+
+.rail-item-body { flex: 1; min-width: 0; }
+.rail-item-title {
+  font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rail-item-sub {
+  font-size: 0.68rem; color: var(--text-muted); font-weight: 600;
+  margin-top: 1px;
+}
+.rail-item-metric {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 700; color: var(--gold);
+}
+.rail-item-metric svg { width: 12px; height: 12px; }
+
+.rail-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rail-new-badge {
+  flex-shrink: 0;
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.03em;
+  color: #34d399; background: rgba(52,211,153,0.15);
+  padding: 2px 6px; border-radius: 5px;
+}
+.rail-brand {
+  flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.rail-brand i { font-size: 0.9rem; }
+.rail-brand svg { width: 15px; height: 15px; }
+.rail-avatar {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+  flex-shrink: 0; border: 1px solid var(--border);
+}
+.rail-points {
+  flex-shrink: 0; font-size: 0.7rem; font-weight: 700; color: var(--gold);
+}
+.rail-empty { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 12px 0; }
+.ai-rail-skeleton {
+  height: 120px; border-radius: 10px;
+  background: rgba(255,255,255,0.03); animation: pulse 1.5s infinite;
+}
+
+/* Compact Online Now card */
+.ai-active-users-card.compact { padding: 16px; }
+.ai-active-users-card.compact .ai-users-list { max-height: 260px; overflow-y: auto; }
+
+/* ══ Modal: category chips ══ */
+.cat-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 13px; border-radius: 999px;
+  font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-chip:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+.cat-chip.active { background: var(--gold); color: #0a0a0a; border-color: var(--gold); }
+
+/* ══════════════════════════════════════════════════════════
+   ACCENT OVERRIDES — blue (#3f8ff9) → lime (--gold)
+   ══════════════════════════════════════════════════════════ */
+.new-post-btn { background: var(--gold); color: #0a0a0a; }
+.post-type-tab.active { background: rgba(193,255,17,0.15); color: var(--gold); }
+.btn-submit { background: var(--gold); color: #0a0a0a; }
+.btn-add-option:hover { border-color: var(--gold); color: var(--gold); }
+.ai-comment-send { background: var(--gold); color: #0a0a0a; }
+.ai-comment-input:focus,
+.form-control:focus { border-color: var(--gold); }
+.comment-action-btn.like:hover,
+.comment-action-btn.like.active,
+.comment-action-btn.reply:hover { color: var(--gold); }
+.ai-poll-option:hover { border-color: var(--gold); }
+.ai-poll-option.unvoted input[type="radio"]:checked + .radio-custom { border-color: var(--gold); }
+.ai-poll-option.unvoted input[type="radio"]:checked + .radio-custom::after { background: var(--gold); }
+.ai-poll-option.voted.user-choice { border-color: var(--gold); }
+.voted-check { background: var(--gold); color: #0a0a0a; }
+.poll-progress { background: rgba(193,255,17,0.15); }
+
+/* ══ Responsive ══ */
+@media (max-width: 1024px) {
+  .ai-stats-row { gap: 10px; }
+  .ai-stat-card { padding: 12px; }
+  .ai-stat-num { font-size: 1.3rem; }
+}
+@media (max-width: 768px) {
+  .ai-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .ai-toolbar {
+    padding: 0 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  /* Filter tabs: single scrollable row.
+     min-width:0 lets overflow-x:auto actually scroll instead of forcing the
+     toolbar (and the whole content area) to grow to the tabs' full width. */
+  .ai-filter-tabs {
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ai-toolbar-right { width: 100%; justify-content: space-between; }
+  .ai-toolbar-right .new-post-btn { flex: 1; justify-content: center; }
+
+  /* Grid/list view toggle is redundant on mobile (grid is single-column anyway) */
+  .ai-view-toggle { display: none; }
+
+  /* Sort menu is anchored right:0 to a left-aligned button, so it opened off the
+     left edge on mobile. Anchor it to the button's left edge instead. */
+  .ai-sort-menu { left: 0; right: auto; }
+
+  /* Discovery rails (Most Popular / New Tools / What's New / Top Contributors /
+     Online Now) duplicate the feed and would otherwise sit ~7000px down, below
+     every post. Hide them on mobile for a clean single-column feed. */
+  .ai-updates-sidebar { display: none; }
+}
+@media (max-width: 480px) {
+  .ai-stats-row { gap: 8px; margin: 16px 0 4px; }
+  .ai-stat-card { padding: 10px 12px; gap: 10px; }
+  .ai-stat-icon { width: 36px; height: 36px; }
+  .ai-stat-num { font-size: 1.15rem; }
+  .ai-page-header .ai-subtitle { font-size: 0.85rem; }
+
+  .ai-post-thumb { width: 68px; height: 68px; }
+  .ai-post-inner { gap: 12px; }
+  .ai-post-card { padding: 14px; border-radius: 14px; }
+  .ai-post-card .ai-post-title { font-size: 1rem; }
+  .ai-post-card .ai-post-admin-actions { top: 10px; inset-inline-end: 10px; }
 }
 

@@ -17,6 +17,9 @@ python-multipart==0.0.20
 # Config
 python-dotenv==1.0.1
 
+# Timezone data (guarantees zoneinfo works for Africa/Cairo on slim images)
+tzdata==2024.2
+
 # HTTP
 httpx==0.28.0
 requests==2.32.3
@@ -30,6 +33,9 @@ apscheduler==3.10.4
 
 # Cloud Storage
 boto3==1.35.86
+
+# Image compression / resizing (fast image loading)
+pillow==11.0.0
 
 # WhatsApp (Meta Cloud API - via httpx)
 

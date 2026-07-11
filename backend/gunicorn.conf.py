@@ -32,8 +32,12 @@ keepalive = 5          # Reuse connections for 5 seconds
 graceful_timeout = 30  # Grace period for in-flight requests on shutdown
 
 # ── Process Management ─────────────────────────────────────────
-max_requests = 10000         # Restart worker after N requests (prevents memory leaks)
-max_requests_jitter = 1000   # Randomize restart to avoid thundering herd
+# With a single worker every restart drops ALL WebSocket connections, stalls
+# requests during boot, and risks a DB pool storm on reconnect. At the old
+# 10k threshold the polling traffic restarted the worker every ~7 minutes.
+# Keep a high bound purely as a slow-memory-leak safety net (~hours, not minutes).
+max_requests = 100000        # Restart worker after N requests (prevents memory leaks)
+max_requests_jitter = 10000  # Randomize restart to avoid thundering herd
 preload_app = False          # Must be False with WebSocket singleton manager
 
 # ── Logging ────────────────────────────────────────────────────

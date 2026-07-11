@@ -46,9 +46,18 @@ const i18nDict = {
     newContent:       { ar: 'محتوى جديد بإستمرار',        en: 'Constantly updated content' },
     subscribeNow:     { ar: 'انضم الآن 🚀',               en: 'Join Now 🚀' },
     securePay:        { ar: '🔒 الدفع آمن 100% عبر Kashier', en: '🔒 100% secure payment via Kashier' },
+    // profile-settings.html → Preferences
+    preferences:      { ar: 'التفضيلات',                  en: 'Preferences' },
+    language:         { ar: 'اللغة',                      en: 'Language' },
+    appearance:       { ar: 'المظهر',                     en: 'Appearance' },
+    dark:             { ar: 'داكن',                       en: 'Dark' },
+    light:            { ar: 'فاتح',                       en: 'Light' },
+    // courses.html
+    courses:          { ar: 'الكورسات',                   en: 'Courses' },
+    allCourses:       { ar: 'جميع الكورسات',              en: 'All Courses' },
 };
 
-function applyLanguage(lang) {
+function applyLanguage(lang, persist = true) {
     const config = translations[lang];
     if (!config) return;
     const html = document.getElementById('htmlRoot') || document.documentElement;
@@ -107,18 +116,40 @@ function applyLanguage(lang) {
         el.style.display = '';
     });
 
-    // 8. Save preference — persists across all pages
-    localStorage.setItem('ghawy_lang', lang);
+    // 8. Save preference — only when the user explicitly picks a language,
+    //    never on the automatic page-load apply (so a page's default never
+    //    silently overwrites another area's default).
+    if (persist) localStorage.setItem('ghawy_lang', lang);
+}
+
+// Per-page default language: the public landing page + the auth/payment
+// funnel stay Arabic-first, while the logged-in community pages default to
+// English. An explicit user choice (below) always overrides this.
+function pageDefaultLang() {
+    const page = (location.pathname.split('/').pop() || '').toLowerCase();
+    const arabicFirst = ['', 'index.html', 'login.html', 'register.html', 'payment.html', 'verify-email.html', 'pay.html'];
+    return arabicFirst.includes(page) ? 'ar' : 'en';
+}
+
+// Explicit, user-chosen language. Persists across every page and wins over
+// any per-page default. Called by the Settings → Preferences toggle.
+function setLanguagePref(lang) {
+    if (lang !== 'ar' && lang !== 'en') return;
+    localStorage.setItem('ghawy_lang_pref', lang);
+    applyLanguage(lang, true);
 }
 
 function toggleLanguage() {
-    const current = localStorage.getItem('ghawy_lang') || 'ar';
+    const current = localStorage.getItem('ghawy_lang_pref')
+        || document.documentElement.getAttribute('lang')
+        || pageDefaultLang();
     const next = current === 'ar' ? 'en' : 'ar';
-    applyLanguage(next);
+    setLanguagePref(next);
 }
 
-// On every page load — apply saved preference (default Arabic)
+// On every page load — apply the explicit choice if the user made one,
+// otherwise this page's default. The apply does NOT persist.
 (function () {
-    const saved = localStorage.getItem('ghawy_lang') || 'ar';
-    applyLanguage(saved);
+    const lang = localStorage.getItem('ghawy_lang_pref') || pageDefaultLang();
+    applyLanguage(lang, false);
 })();

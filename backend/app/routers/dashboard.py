@@ -36,18 +36,21 @@ def count_completed_courses(user_id: int, db: Session) -> int:
             completed += 1
     return completed
 
-@router.get("/summary")
-def get_dashboard_summary(current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
-    # 1. User stats
-    # Auto-calculated streak from video watching (server UTC calendar days).
-    # Exposed as both `streak_days` (so the profile card / achievements that
-    # already read this field show it) and `days_streak` (dashboard stat card).
-    video_streak = calculate_video_streak(current_user.id, db)
 
-    # ── Achievement unlock computations (all derived from existing data) ──
+def compute_user_achievements(user_id: int, db: Session, video_streak: int = None) -> dict:
+    """
+    Compute the achievement unlock flags for any user (all derived from
+    existing data). Shared by the dashboard summary (own user) and the
+    public profile endpoint (viewing another member in the community).
+    """
+    from app.services.progress_service import calculate_video_streak, get_top_students_for_course
+
+    if video_streak is None:
+        video_streak = calculate_video_streak(user_id, db)
+
     # 1. First Post in introduce-yourself channel
     introduce_post = db.query(Post).filter(
-        Post.user_id == current_user.id,
+        Post.user_id == user_id,
         Post.category_slug == "introduce-yourself"
     ).first()
     has_first_post = introduce_post is not None
@@ -56,18 +59,17 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
     has_7day_streak = video_streak >= 7
 
     # 3. Top Student — rank #1 in ANY course
-    from app.services.progress_service import get_top_students_for_course
     all_courses = db.query(Course).filter(Course.is_published == True).all()
     is_top_student = False
     for course in all_courses:
-        leaderboard = get_top_students_for_course(course.id, current_user.id, db)
+        leaderboard = get_top_students_for_course(course.id, user_id, db)
         top = leaderboard.get("top_students", [])
-        if top and top[0].get("rank") == 1 and top[0].get("user_id") == current_user.id:
+        if top and top[0].get("rank") == 1 and top[0].get("user_id") == user_id:
             is_top_student = True
             break
 
     # 4. Course Complete — completed at least 1 course
-    courses_done = count_completed_courses(current_user.id, db)
+    courses_done = count_completed_courses(user_id, db)
     has_course_complete = courses_done >= 1
 
     # 5. 100% Progress — completed ALL published courses
@@ -76,6 +78,27 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
 
     # 6. Pro Member — all other achievements unlocked
     has_pro_member = all([has_first_post, has_7day_streak, is_top_student, has_course_complete, has_all_courses])
+
+    return {
+        "has_first_post": has_first_post,
+        "has_7day_streak": has_7day_streak,
+        "is_top_student": is_top_student,
+        "has_course_complete": has_course_complete,
+        "has_all_courses": has_all_courses,
+        "has_pro_member": has_pro_member,
+    }
+
+
+@router.get("/summary")
+def get_dashboard_summary(current_user: User = Depends(get_current_active_member), db: Session = Depends(get_db)):
+    # 1. User stats
+    # Auto-calculated streak from video watching (server UTC calendar days).
+    # Exposed as both `streak_days` (so the profile card / achievements that
+    # already read this field show it) and `days_streak` (dashboard stat card).
+    video_streak = calculate_video_streak(current_user.id, db)
+
+    # ── Achievement unlock flags (shared helper — see compute_user_achievements) ──
+    achievements = compute_user_achievements(current_user.id, db, video_streak=video_streak)
 
     user_data = {
         "full_name": current_user.full_name,
@@ -89,12 +112,7 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
         "courses_completed": count_completed_courses(current_user.id, db),
         "badge": current_user.badge,
         "is_admin": current_user.is_admin,
-        "has_first_post": has_first_post,
-        "has_7day_streak": has_7day_streak,
-        "is_top_student": is_top_student,
-        "has_course_complete": has_course_complete,
-        "has_all_courses": has_all_courses,
-        "has_pro_member": has_pro_member,
+        **achievements,
     }
 
     # 2. Courses (For now, let's just return all published courses with the user's progress)

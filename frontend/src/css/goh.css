@@ -858,3 +858,71 @@
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   LIGHT MODE — Guest of Honors
+   Most texts/cards above are hard-coded for the dark theme
+   (white text, translucent-white glass). Flip them so nothing
+   renders white-on-white in light mode.
+   ══════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] .glass-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .glass-card:hover {
+  background: #ffffff;
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.12), 0 0 16px -4px rgba(63, 143, 249, 0.08);
+}
+
+:root[data-theme="light"] .stat-number,
+:root[data-theme="light"] .guest-name,
+:root[data-theme="light"] .guest-company,
+:root[data-theme="light"] .session-title,
+:root[data-theme="light"] .session-date .day,
+:root[data-theme="light"] .session-host-info .name,
+:root[data-theme="light"] .featured-name,
+:root[data-theme="light"] .featured-company,
+:root[data-theme="light"] .featured-meta strong,
+:root[data-theme="light"] .sidebar-heading,
+:root[data-theme="light"] .impact-value,
+:root[data-theme="light"] .empty-state h3,
+:root[data-theme="light"] .tab.active,
+:root[data-theme="light"] .btn-secondary {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .tab:hover:not(.active) {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05);
+}
+
+:root[data-theme="light"] .category-filter {
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+:root[data-theme="light"] .category-filter option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .goh-scroll-btn {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .btn-reserve {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light"] .session-card:hover .btn-reserve {
+  background: #0f172a;
+  color: #fff;
+}
+
+/* Neon month chip ("JUL") — washed out on light */
+:root[data-theme="light"] .session-date .month {
+  color: #5c8a00;
+}

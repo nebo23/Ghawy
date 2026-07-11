@@ -293,6 +293,52 @@ async def upload_course_thumbnail(
     
     return {"thumbnail_url": course.thumbnail_url, "message": "Thumbnail uploaded successfully"}
 
+# ─── Admin: Upload course certificate template ───────────────
+@router.post("/admin/{course_id}/certificate")
+async def upload_course_certificate(
+    course_id: int,
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_owner_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    allowed = ('.jpg', '.jpeg', '.png', '.webp')
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed:
+        raise HTTPException(status_code=400, detail=f"Only image files are allowed ({', '.join(allowed)})")
+
+    cert_dir = UPLOADS_DIR / "course-certificates"
+    cert_dir.mkdir(exist_ok=True)
+    safe_name = f"course_{course_id}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = cert_dir / safe_name
+
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    course.certificate_url = f"/uploads/course-certificates/{safe_name}"
+    db.commit()
+    db.refresh(course)
+
+    return {"certificate_url": course.certificate_url, "message": "Certificate template uploaded successfully"}
+
+
+@router.delete("/admin/{course_id}/certificate")
+def delete_course_certificate(
+    course_id: int,
+    admin: User = Depends(get_current_owner_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    course.certificate_url = None
+    db.commit()
+    return {"message": "Certificate template removed"}
+
 # ─── Admin: Get lessons for a course ───────────────────────
 @router.get("/admin/{course_id}/lessons", response_model=List[LessonOut])
 def admin_get_lessons(
@@ -332,6 +378,7 @@ def admin_create_lesson(
         bunny_video_url=data.bunny_video_url,
         vdo_video_id=data.vdo_video_id,
         video_status="ready" if (data.bunny_video_url or data.vdo_video_id) else "pending",
+        is_project=data.is_project,
     )
     db.add(lesson)
 

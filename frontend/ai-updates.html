@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Updates — Ghawy</title>
@@ -12,8 +13,8 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
-    <link rel="stylesheet" href="src/css/ai-updates.css?v=5" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+    <link rel="stylesheet" href="src/css/ai-updates.css?v=13" />
     <script>
         (function () {
             var urlParams = new URLSearchParams(window.location.search);
@@ -29,7 +30,8 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
+    <script src="src/js/community-i18n.js?v=6"></script>
 </head>
 
 <body>
@@ -61,6 +63,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -74,6 +77,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -208,7 +212,7 @@
 
             <!-- CONTENT -->
             <div class="dash-content">
-                <div class="page-header">
+                <div class="page-header ai-page-header">
                     <div class="page-breadcrumb">
                         <a href="dashboard.html" class="breadcrumb-home" title="Dashboard">
                             <i data-lucide="sparkles"></i>
@@ -217,15 +221,77 @@
                         <span>AI Updates</span>
                     </div>
                     <h1>AI Updates</h1>
+                    <p class="ai-subtitle" data-i18n="Follow the latest AI news, tools and models from everywhere.">
+                        Follow the latest AI news, tools and models from everywhere.</p>
+
+                    <!-- Weekly stat cards -->
+                    <div class="ai-stats-row" id="aiStatsRow">
+                        <div class="ai-stat-card">
+                            <span class="ai-stat-icon icon-updates"><i data-lucide="zap"></i></span>
+                            <div class="ai-stat-body">
+                                <span class="ai-stat-num" id="statUpdates">—</span>
+                                <span class="ai-stat-label" data-i18n="New this week">New this week</span>
+                            </div>
+                        </div>
+                        <div class="ai-stat-card">
+                            <span class="ai-stat-icon icon-tools"><i data-lucide="wrench"></i></span>
+                            <div class="ai-stat-body">
+                                <span class="ai-stat-num" id="statTools">—</span>
+                                <span class="ai-stat-label" data-i18n="New tools">New tools</span>
+                            </div>
+                        </div>
+                        <div class="ai-stat-card">
+                            <span class="ai-stat-icon icon-models"><i data-lucide="box"></i></span>
+                            <div class="ai-stat-body">
+                                <span class="ai-stat-num" id="statModels">—</span>
+                                <span class="ai-stat-label" data-i18n="New models">New models</span>
+                            </div>
+                        </div>
+                        <div class="ai-stat-card">
+                            <span class="ai-stat-icon icon-disc"><i data-lucide="message-square"></i></span>
+                            <div class="ai-stat-body">
+                                <span class="ai-stat-num" id="statDiscussions">—</span>
+                                <span class="ai-stat-label" data-i18n="Discussions">Discussions</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Filter / sort / view toolbar -->
+                <div class="ai-toolbar">
+                    <div class="ai-filter-tabs" id="aiFilterTabs">
+                        <button class="ai-filter-tab active" data-cat="all" data-i18n="All">All</button>
+                        <button class="ai-filter-tab" data-cat="news" data-i18n="News">News</button>
+                        <button class="ai-filter-tab" data-cat="tools" data-i18n="Tools">Tools</button>
+                        <button class="ai-filter-tab" data-cat="models" data-i18n="Models">Models</button>
+                        <button class="ai-filter-tab" data-cat="updates" data-i18n="Updates">Updates</button>
+                        <button class="ai-filter-tab" data-cat="tutorials" data-i18n="Tutorials">Tutorials</button>
+                        <button class="ai-filter-tab" data-cat="discussions" data-i18n="Discussions">Discussions</button>
+                    </div>
+                    <div class="ai-toolbar-right">
+                        <div class="ai-sort-dropdown" id="aiSortDropdown">
+                            <button class="ai-sort-btn" id="aiSortBtn" type="button">
+                                <i data-lucide="arrow-down-wide-narrow"></i>
+                                <span id="aiSortLabel" data-i18n="Latest">Latest</span>
+                                <i data-lucide="chevron-down" class="chev"></i>
+                            </button>
+                            <div class="ai-sort-menu" id="aiSortMenu">
+                                <button data-sort="latest" class="active" data-i18n="Latest">Latest</button>
+                                <button data-sort="popular" data-i18n="Most Popular">Most Popular</button>
+                            </div>
+                        </div>
+                        <div class="ai-view-toggle" id="aiViewToggle">
+                            <button class="active" data-view="list" title="List view"><i data-lucide="list"></i></button>
+                            <button data-view="grid" title="Grid view"><i data-lucide="layout-grid"></i></button>
+                        </div>
+                        <button id="newPostBtn" class="new-post-btn" style="display:none"><i data-lucide="plus"></i>
+                            <span data-i18n="New Post">New Post</span></button>
+                    </div>
+                </div>
+
                 <div class="ai-updates-layout">
                     <!-- Main Content -->
                     <div class="ai-updates-main">
-                        <div class="ai-updates-header" style="justify-content: flex-end; padding-top: 0; margin-top: -20px;">
-                            <button id="newPostBtn" class="new-post-btn" style="display:none"><i data-lucide="plus"></i>
-                                New Post</button>
-                        </div>
-
                         <div class="ai-feed" id="aiFeed">
                             <!-- Skeletons while loading -->
                             <div class="skeleton-card"></div>
@@ -235,7 +301,51 @@
 
                     <!-- Sidebar -->
                     <aside class="ai-updates-sidebar">
-                        <div class="ai-active-users-card">
+                        <!-- Most Popular -->
+                        <div class="ai-rail-card">
+                            <div class="ai-rail-head">
+                                <h3>🔥 <span data-i18n="Most Popular">Most Popular</span></h3>
+                                <a class="ai-rail-viewall" data-cat-link="all" data-i18n="View All">View All</a>
+                            </div>
+                            <div class="ai-rail-body" id="railMostPopular">
+                                <div class="ai-rail-skeleton"></div>
+                            </div>
+                        </div>
+
+                        <!-- New Tools -->
+                        <div class="ai-rail-card">
+                            <div class="ai-rail-head">
+                                <h3>🛠 <span data-i18n="New Tools">New Tools</span></h3>
+                                <a class="ai-rail-viewall" data-cat-link="tools" data-i18n="View All">View All</a>
+                            </div>
+                            <div class="ai-rail-body" id="railNewTools">
+                                <div class="ai-rail-skeleton"></div>
+                            </div>
+                        </div>
+
+                        <!-- What's New -->
+                        <div class="ai-rail-card">
+                            <div class="ai-rail-head">
+                                <h3>📰 <span data-i18n="What's New">What's New</span></h3>
+                                <a class="ai-rail-viewall" data-cat-link="all" data-i18n="View All">View All</a>
+                            </div>
+                            <div class="ai-rail-body" id="railWhatsNew">
+                                <div class="ai-rail-skeleton"></div>
+                            </div>
+                        </div>
+
+                        <!-- Top Contributors -->
+                        <div class="ai-rail-card">
+                            <div class="ai-rail-head">
+                                <h3>🏆 <span data-i18n="Top Contributors">Top Contributors</span></h3>
+                            </div>
+                            <div class="ai-rail-body" id="railContributors">
+                                <div class="ai-rail-skeleton"></div>
+                            </div>
+                        </div>
+
+                        <!-- Online Now (compact) -->
+                        <div class="ai-active-users-card compact">
                             <div class="ai-sidebar-header">
                                 <i data-lucide="users"></i>
                                 <h3>Online Now</h3>
@@ -285,27 +395,31 @@
             <a id="ppSocialLink" class="pp-social-link pp-hidden" href="#" target="_blank">
                 🔗 <span id="ppSocialText"></span>
             </a>
-            <!-- Stats Row -->
-            <div class="pp-stats">
-                <div class="pp-stat">
-                    <span id="ppLevel" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Level</span>
+            <!-- Streak Chip -->
+            <div class="pp-streak-chip">
+                <span class="pp-streak-fire">🔥</span>
+                <span id="ppStreak" class="pp-streak-num">0</span>
+                <span class="pp-streak-label" data-i18n="Day Streak">Day Streak</span>
+            </div>
+            <!-- Achievements -->
+            <div class="pp-ach-section">
+                <div class="pp-ach-head">
+                    <span data-i18n="Achievements">Achievements</span>
+                    <span id="ppAchCount" class="pp-ach-count"></span>
                 </div>
-                <div class="pp-stat">
-                    <span id="ppXp" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">XP</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppStreak" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Day Streak 🔥</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppPosts" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Post</span>
-                </div>
+                <div id="ppAchGrid" class="pp-ach-grid"></div>
             </div>
             <!-- Joined Date -->
             <p id="ppJoined" class="pp-joined"></p>
+            <!-- Admin Notes (visible to admins only, when viewing another member) -->
+            <div id="ppAdminNotes" style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
+                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:var(--gold, #c1ff11); margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
+                <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..." style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:var(--gold, #c1ff11); color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
+                    <span id="ppNoteStatus" style="font-size:0.78rem;"></span>
+                </div>
+            </div>
             <!-- Loading State -->
             <div id="ppLoading" class="pp-loading">
                 <div class="pp-spinner"></div>
@@ -321,7 +435,7 @@
     <div class="modal-overlay" id="createPostModal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Create AI Update</div>
+                <div class="modal-title" id="modalTitle">Create AI Update</div>
                 <button class="modal-close" onclick="closeCreateModal()"><i data-lucide="x"></i></button>
             </div>
 
@@ -334,6 +448,19 @@
 
             <form id="createPostForm">
                 <input type="hidden" id="postType" value="text">
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="cat-chip-row" id="postCatChips">
+                        <button type="button" class="cat-chip active" data-cat="news">News</button>
+                        <button type="button" class="cat-chip" data-cat="tools">Tools</button>
+                        <button type="button" class="cat-chip" data-cat="models">Models</button>
+                        <button type="button" class="cat-chip" data-cat="updates">Updates</button>
+                        <button type="button" class="cat-chip" data-cat="tutorials">Tutorials</button>
+                        <button type="button" class="cat-chip" data-cat="discussions">Discussions</button>
+                    </div>
+                    <input type="hidden" id="postCategory" value="news">
+                </div>
 
                 <div class="form-group">
                     <label>Title</label>
@@ -367,6 +494,11 @@
                                 onchange="document.getElementById('fileNameDisplay').textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen'">
                             <span id="fileNameDisplay" style="font-size:0.85rem; color:#888;">No file chosen</span>
                         </div>
+                        <div id="postImageCurrent" style="display:none; margin-top:10px;">
+                            <img id="postImageCurrentImg" src="" alt="Current image"
+                                style="max-width:200px; max-height:140px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size:0.78rem; color:#888; margin-top:4px;">Current image — choose a file to replace it</div>
+                        </div>
                     </div>
                 </div>
 
@@ -395,8 +527,8 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="src/js/utils.js?v=10"></script>
-    <script src="src/js/ai-updates.js?v=20260630"></script>
+    <script src="src/js/utils.js?v=1783908000"></script>
+    <script src="src/js/ai-updates.js?v=1783720000"></script>
     <script>lucide.createIcons();</script>
     <script>
         document.getElementById('hamburgerBtn').addEventListener('click', () => {
@@ -408,7 +540,7 @@
             document.getElementById('sidebarOverlay').classList.remove('active');
         });
     </script>
-    <script src="src/js/dashboard-new.js?v=15"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
 </body>
 
 </html>

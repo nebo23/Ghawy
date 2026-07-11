@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc, UniqueConstraint
+from sqlalchemy import desc, func, UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 
 from app.database import get_db
 from app.models import (
     User, AiUpdatePost, AiUpdatePostType, AiUpdatePoll, AiUpdatePollOption,
-    AiUpdatePollVote, AiUpdateReaction, AiUpdateComment
+    AiUpdatePollVote, AiUpdateReaction, AiUpdateComment, AiUpdateRead
 )
 from app.routers.users import get_current_admin_user, get_current_active_member
 
@@ -102,6 +102,7 @@ def build_post_dict(post: AiUpdatePost, current_user_id: int) -> dict:
     return {
         "id": post.id,
         "post_type": post.post_type.value if post.post_type else "text",
+        "category": (post.category or "news"),
         "title": post.title,
         "body": post.body,
         "image_url": post.image_url,
@@ -140,10 +141,16 @@ def build_comment_dict(comment: AiUpdateComment, include_replies: bool = True) -
 #  POSTS
 # ══════════════════════════════════════════════════════════════
 
+# Editorial categories the feed understands. NULL rows behave as "news".
+VALID_CATEGORIES = {"news", "tools", "models", "updates", "tutorials", "discussions"}
+
+
 @router.get("/posts")
 def list_posts(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=50),
+    category: Optional[str] = Query(None),
+    sort: str = Query("latest"),
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
@@ -153,8 +160,23 @@ def list_posts(
         joinedload(AiUpdatePost.poll).joinedload(AiUpdatePoll.options),
         joinedload(AiUpdatePost.poll).joinedload(AiUpdatePoll.votes)
     )
-    
-    q = q.order_by(desc(AiUpdatePost.is_pinned), desc(AiUpdatePost.created_at))
+
+    cat = (category or "").strip().lower()
+    if cat and cat != "all" and cat in VALID_CATEGORIES:
+        if cat == "news":
+            # Legacy rows with NULL category read as news.
+            q = q.filter((AiUpdatePost.category == "news") | (AiUpdatePost.category.is_(None)))
+        else:
+            q = q.filter(AiUpdatePost.category == cat)
+
+    if sort == "popular":
+        q = q.order_by(
+            desc(AiUpdatePost.is_pinned),
+            desc(AiUpdatePost.like_count + AiUpdatePost.comment_count),
+            desc(AiUpdatePost.created_at),
+        )
+    else:
+        q = q.order_by(desc(AiUpdatePost.is_pinned), desc(AiUpdatePost.created_at))
 
     total = q.count()
     pages = max(1, (total + limit - 1) // limit)
@@ -169,6 +191,161 @@ def list_posts(
     }
 
 
+# ─── Unread count (sidebar badge) ─────────────────────────────
+
+@router.get("/unread")
+def get_ai_updates_unread(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db)
+):
+    """Number of AI Update posts published since the user last opened the feed."""
+    read_state = db.query(AiUpdateRead).filter(AiUpdateRead.user_id == current_user.id).first()
+    since = (read_state.last_read_at if read_state else None) or current_user.created_at
+
+    q = db.query(func.count(AiUpdatePost.id)).filter(AiUpdatePost.user_id != current_user.id)
+    if since:
+        q = q.filter(AiUpdatePost.created_at > since)
+
+    return {"unread_count": q.scalar() or 0}
+
+
+@router.put("/read")
+def mark_ai_updates_read(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db)
+):
+    """Mark the AI Updates feed as seen — creates the per-user marker if needed."""
+    read_state = db.query(AiUpdateRead).filter(AiUpdateRead.user_id == current_user.id).first()
+    if not read_state:
+        read_state = AiUpdateRead(user_id=current_user.id)
+        db.add(read_state)
+    read_state.last_read_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+# ─── Overview (stats + sidebar rails) ─────────────────────────
+
+@router.get("/overview")
+def get_overview(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db)
+):
+    """Aggregate data for the AI Updates header stats and right-hand rails."""
+    week_ago = datetime.utcnow() - timedelta(days=7)
+
+    def _cat_expr():
+        # Treat NULL category as "news" so legacy rows are counted.
+        return func.coalesce(AiUpdatePost.category, "news")
+
+    # ── Weekly stat cards ──
+    def _count_since(*cats):
+        qq = db.query(func.count(AiUpdatePost.id)).filter(AiUpdatePost.created_at >= week_ago)
+        if cats:
+            qq = qq.filter(_cat_expr().in_(cats))
+        return qq.scalar() or 0
+
+    stats = {
+        "updates_this_week": _count_since(),  # all posts this week
+        "tools_this_week": _count_since("tools"),
+        "models_this_week": _count_since("models"),
+        "discussions_this_week": _count_since("discussions"),
+    }
+
+    # ── Most popular (by engagement, all time) ──
+    popular_rows = (
+        db.query(AiUpdatePost)
+        .order_by(desc(AiUpdatePost.like_count + AiUpdatePost.comment_count), desc(AiUpdatePost.created_at))
+        .limit(5)
+        .all()
+    )
+    most_popular = [
+        {
+            "id": p.id,
+            "title": p.title,
+            "category": p.category or "news",
+            "engagement": (p.like_count or 0) + (p.comment_count or 0),
+            "like_count": p.like_count or 0,
+            "comment_count": p.comment_count or 0,
+        }
+        for p in popular_rows
+    ]
+
+    # ── New tools ──
+    tool_rows = (
+        db.query(AiUpdatePost)
+        .filter(AiUpdatePost.category == "tools")
+        .order_by(desc(AiUpdatePost.created_at))
+        .limit(5)
+        .all()
+    )
+    new_tools = [
+        {"id": p.id, "title": p.title, "time_ago": time_ago(p.created_at)}
+        for p in tool_rows
+    ]
+
+    # ── What's new (latest posts, any category) ──
+    recent_rows = (
+        db.query(AiUpdatePost)
+        .order_by(desc(AiUpdatePost.created_at))
+        .limit(6)
+        .all()
+    )
+    whats_new = [
+        {
+            "id": p.id,
+            "title": p.title,
+            "category": p.category or "news",
+            "time_ago": time_ago(p.created_at),
+        }
+        for p in recent_rows
+    ]
+
+    # ── Top contributors (members ranked by comments + reactions given) ──
+    comment_counts = dict(
+        db.query(AiUpdateComment.user_id, func.count(AiUpdateComment.id))
+        .group_by(AiUpdateComment.user_id)
+        .all()
+    )
+    reaction_counts = dict(
+        db.query(AiUpdateReaction.user_id, func.count(AiUpdateReaction.id))
+        .group_by(AiUpdateReaction.user_id)
+        .all()
+    )
+    points_by_user = {}
+    for uid, c in comment_counts.items():
+        points_by_user[uid] = points_by_user.get(uid, 0) + c * 3
+    for uid, r in reaction_counts.items():
+        points_by_user[uid] = points_by_user.get(uid, 0) + r * 1
+
+    top_ids = sorted(points_by_user, key=lambda k: points_by_user[k], reverse=True)[:5]
+    top_contributors = []
+    if top_ids:
+        users = {u.id: u for u in db.query(User).filter(User.id.in_(top_ids)).all()}
+        for uid in top_ids:
+            u = users.get(uid)
+            if not u:
+                continue
+            top_contributors.append({
+                "id": u.id,
+                "full_name": u.full_name,
+                "avatar_url": u.avatar_url,
+                "selected_avatar": getattr(u, "selected_avatar", None),
+                "is_admin": u.is_admin,
+                "custom_title": getattr(u, "custom_title", "") or "",
+                "badge": u.badge or "Member",
+                "points": points_by_user[uid],
+            })
+
+    return {
+        "stats": stats,
+        "most_popular": most_popular,
+        "new_tools": new_tools,
+        "whats_new": whats_new,
+        "top_contributors": top_contributors,
+    }
+
+
 class PollOptionCreate(BaseModel):
     text: str
 
@@ -180,9 +357,19 @@ class PostCreate(BaseModel):
     post_type: str
     title: str
     body: str
+    category: Optional[str] = "news"
     image_url: Optional[str] = None
     video_url: Optional[str] = None
     poll: Optional[PollCreate] = None
+
+class PostUpdate(BaseModel):
+    # Every field optional; only the ones sent are applied (exclude_unset).
+    post_type: Optional[str] = None
+    title: Optional[str] = None
+    body: Optional[str] = None
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
 
 
 @router.post("/posts", status_code=201)
@@ -196,9 +383,14 @@ def create_post(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid post type")
 
+    category = (data.category or "news").strip().lower()
+    if category not in VALID_CATEGORIES:
+        category = "news"
+
     post = AiUpdatePost(
         user_id=current_user.id,
         post_type=post_type_enum,
+        category=category,
         title=data.title.strip(),
         body=data.body.strip(),
         image_url=data.image_url,
@@ -263,10 +455,57 @@ def toggle_pin(
     post = db.query(AiUpdatePost).filter(AiUpdatePost.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
     post.is_pinned = not post.is_pinned
     db.commit()
     return {"is_pinned": post.is_pinned}
+
+
+@router.patch("/posts/{post_id}")
+def update_post(
+    post_id: int,
+    data: PostUpdate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    post = db.query(AiUpdatePost).filter(AiUpdatePost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    fields = data.dict(exclude_unset=True)
+
+    if "post_type" in fields and fields["post_type"] is not None:
+        try:
+            post.post_type = AiUpdatePostType(fields["post_type"])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid post type")
+
+    if "category" in fields and fields["category"] is not None:
+        category = (fields["category"] or "news").strip().lower()
+        post.category = category if category in VALID_CATEGORIES else "news"
+
+    if "title" in fields and fields["title"] is not None:
+        post.title = fields["title"].strip()
+
+    if "body" in fields and fields["body"] is not None:
+        post.body = fields["body"].strip()
+
+    # image_url / video_url: presence in the payload replaces the value (None clears it).
+    if "image_url" in fields:
+        post.image_url = fields["image_url"] or None
+    if "video_url" in fields:
+        post.video_url = fields["video_url"] or None
+
+    db.commit()
+
+    post = db.query(AiUpdatePost).options(
+        joinedload(AiUpdatePost.author),
+        joinedload(AiUpdatePost.reactions),
+        joinedload(AiUpdatePost.poll).joinedload(AiUpdatePoll.options),
+        joinedload(AiUpdatePost.poll).joinedload(AiUpdatePoll.votes)
+    ).filter(AiUpdatePost.id == post.id).first()
+
+    return build_post_dict(post, current_user.id)
 
 
 # ══════════════════════════════════════════════════════════════

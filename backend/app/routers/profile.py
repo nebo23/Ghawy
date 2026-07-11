@@ -289,6 +289,16 @@ def get_public_profile(
     # Post count (community posts by this user)
     post_count = db.query(Post).filter(Post.user_id == user_id).count()
 
+    # Live day-streak. The stored `streak_days` column is only refreshed when a
+    # user opens their OWN profile, so for anyone else it is stale/0 — compute it
+    # fresh here so the profile panel's "Day Streak" always reflects reality.
+    from app.services.progress_service import calculate_video_streak
+    streak_days = calculate_video_streak(user_id, db)
+
+    # Achievement unlock flags for the viewed member (shared with dashboard).
+    from app.routers.dashboard import compute_user_achievements
+    achievements = compute_user_achievements(user_id, db)
+
     return {
         "id": user.id,
         "full_name": user.full_name,
@@ -301,12 +311,13 @@ def get_public_profile(
         "level": getattr(user, "level", 1) or 1,
         "xp": getattr(user, "xp", 0) or 0,
         "badge": getattr(user, "badge", "Member") or "Member",
-        "streak_days": getattr(user, "streak_days", 0) or 0,
+        "streak_days": streak_days,
         "joined_at": joined_at,
         "post_count": post_count,
         "is_online": is_online,
         "is_admin": user.is_admin,
         "custom_title": user.custom_title or "",
+        **achievements,
     }
 
 

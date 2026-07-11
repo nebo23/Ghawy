@@ -136,7 +136,7 @@ async def websocket_endpoint(websocket: WebSocket):
             }, exclude_user=user_id)
 
         # Listen for messages — with periodic re-validation
-        CHECK_INTERVAL = 25  # seconds — ping before most proxy 30s idle timeouts
+        CHECK_INTERVAL = 55  # seconds — must be < nginx proxy_read_timeout (60s)
 
         while True:
             try:

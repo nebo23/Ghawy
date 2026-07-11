@@ -3,6 +3,24 @@
    Ghawy Premium Design System
 ═══════════════════════════════════════════ */
 
+/* ═══ LIGHT MODE — darker lime ═══
+   The neon #c1ff11 is unreadable on a light background. On community
+   pages (chat + DMs, the only pages loading this file, after
+   dashboard.css) swap the gold tokens for darker limes so accents,
+   badges and buttons stay visible. */
+:root[data-theme="light"] {
+  --gold: #5c8a00;
+  --gold-light: #79a300;
+  --gold-dark: #4a7000;
+  --gold-glow: rgba(92, 138, 0, 0.2);
+  --gold-border: rgba(92, 138, 0, 0.3);
+  --gold-subtle: rgba(92, 138, 0, 0.08);
+  /* dashboard-new.css token used by the shared shell (sb-badge, …) */
+  --accent-gold: #5c8a00;
+  --accent-gold-dim: rgba(92, 138, 0, 0.12);
+  --accent-gold-border: rgba(92, 138, 0, 0.25);
+}
+
 /* ═══ LAYOUT ═══ */
 .comm-layout {
   display: flex;
@@ -105,14 +123,14 @@
 .comm-item-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .comm-sidebar-item.active .comm-item-name {
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-item-desc {
@@ -125,6 +143,10 @@
 
 .comm-sidebar-item.active .comm-item-desc {
   color: rgba(193, 255, 17, 0.6);
+}
+
+:root[data-theme="light"] .comm-sidebar-item.active .comm-item-desc {
+  color: rgba(74, 112, 0, 0.85);
 }
 
 /* ═══ MAIN FEED ═══ */
@@ -149,7 +171,7 @@
 .comm-feed-title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -170,7 +192,7 @@
 .comm-sort-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 0.82rem;
@@ -218,7 +240,7 @@
 
 .comm-composer-input:hover {
   border-color: rgba(193, 255, 17, 0.2);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-composer-actions {
@@ -244,7 +266,7 @@
 
 .comm-composer-media-btn:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-post-submit-btn {
@@ -333,7 +355,7 @@
 .comm-author-name {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -357,7 +379,7 @@
 
 .comm-badge-member {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-badge-admin {
@@ -384,7 +406,7 @@
 
 .comm-post-menu-btn:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-post-title-row {
@@ -398,7 +420,7 @@
 .comm-post-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   line-height: 1.4;
   margin: 0;
 }
@@ -444,7 +466,7 @@
 
 .comm-post-content {
   font-size: 0.88rem;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   line-height: 1.6;
   margin-bottom: 12px;
   white-space: pre-wrap;
@@ -493,7 +515,7 @@
 
 .comm-action-btn:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-like-btn.liked {
@@ -540,7 +562,7 @@
 .comm-modal-header h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-modal-header button {
@@ -554,7 +576,7 @@
 }
 
 .comm-modal-header button:hover {
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-modal-body {
@@ -570,7 +592,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 12px 16px;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.95rem;
   outline: none;
@@ -588,7 +610,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 12px 16px;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.88rem;
   outline: none;
@@ -619,7 +641,7 @@
 .comm-tag-opt {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   border-radius: 6px;
   padding: 5px 12px;
   font-size: 0.8rem;
@@ -651,7 +673,7 @@
 
 .comm-image-upload-area:hover {
   border-color: rgba(193, 255, 17, 0.3);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-modal-footer {
@@ -665,7 +687,7 @@
 .comm-btn-cancel {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   border-radius: 8px;
   padding: 8px 20px;
   font-family: 'Cairo', sans-serif;
@@ -678,7 +700,7 @@
 }
 
 .comm-btn-post {
-  background: linear-gradient(135deg, var(--gold, #c1ff11), #d4ff4a);
+  background: linear-gradient(135deg, var(--gold, #c1ff11), var(--gold-light, #d4ff4a));
   color: #000;
   border: none;
   border-radius: 8px;
@@ -748,7 +770,7 @@
 .comm-comments-header h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-comments-header button {
@@ -764,7 +786,7 @@
   padding: 12px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 0.85rem;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-comments-list {
@@ -809,7 +831,7 @@
 .comm-comment-author {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -824,7 +846,7 @@
   padding: 1px 6px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-comment-time {
@@ -834,7 +856,7 @@
 
 .comm-comment-content {
   font-size: 0.85rem;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -870,7 +892,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   padding: 8px 12px;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.85rem;
   resize: none;
@@ -883,7 +905,7 @@
 }
 
 .comm-send-comment-btn {
-  background: linear-gradient(135deg, var(--gold, #c1ff11), #d4ff4a);
+  background: linear-gradient(135deg, var(--gold, #c1ff11), var(--gold-light, #d4ff4a));
   color: #000;
   border: none;
   border-radius: 6px;
@@ -937,7 +959,7 @@
 }
 
 .comm-empty-state h3 {
-  color: #fff;
+  color: var(--text-primary, #f1f0ea);
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0 0 8px;
@@ -1041,7 +1063,7 @@
 .shv-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   margin: 0 0 4px;
 }
 
@@ -1104,7 +1126,7 @@
   padding: 16px 20px;
   cursor: pointer;
   font-weight: 600;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1137,7 +1159,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .sh-faq-content {
   padding: 0 20px 16px;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   font-size: 0.95rem;
   line-height: 1.6;
   font-family: 'Cairo', sans-serif;
@@ -1167,7 +1189,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 }
 
 .comm-sort-tab:hover {
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-sort-tab.active {
@@ -1232,7 +1254,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .comm-add-reaction-btn:hover {
   border-color: rgba(193, 255, 17, 0.2);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-emoji-picker {
@@ -1337,7 +1359,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 .comm-ai-like-btn:hover,
 .comm-ai-comment-btn:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-ai-like-btn.active,
@@ -1371,7 +1393,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .comm-comments-toggle:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 /* ═══ INLINE COMMENTS SECTION ═══ */
@@ -1426,7 +1448,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 .comm-inline-comment-author {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
 }
 
 .comm-inline-comment-time {
@@ -1436,7 +1458,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .comm-inline-comment-text {
   font-size: 0.85rem;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -1462,7 +1484,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 }
 
 .comm-inline-comment-actions button:hover {
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-inline-comment-actions button.active {
@@ -1483,7 +1505,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 6px 14px;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.82rem;
   outline: none;
@@ -1535,7 +1557,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 8px 16px;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.85rem;
   outline: none;
@@ -1629,7 +1651,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .comm-active-more {
   font-size: 0.78rem;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   margin-left: 8px;
   font-weight: 600;
 }
@@ -1644,7 +1666,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 }
 
 .comm-topic-name {
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-topic-count {
@@ -1686,7 +1708,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 .comm-pinned-author-name {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-pinned-author-time {
@@ -1745,7 +1767,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
   width: 100%;
   background: none;
   border: none;
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   padding: 8px 16px;
   font-size: 0.82rem;
   text-align: left;
@@ -1795,7 +1817,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 .comm-confirm-card h4 {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   margin: 0 0 8px;
 }
 
@@ -1824,7 +1846,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 
 .comm-confirm-cancel {
   background: rgba(255, 255, 255, 0.06);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
 }
 
 .comm-confirm-cancel:hover {
@@ -1887,7 +1909,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
   background: none;
   border: none;
   outline: none;
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   font-family: 'Cairo', sans-serif;
   font-size: 0.85rem;
   flex: 1;
@@ -1976,7 +1998,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
 .comm-pagination button {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #b8b8b8;
+  color: var(--text-secondary, #b8b8b8);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 0.82rem;
@@ -2009,7 +2031,7 @@ details[open].sh-faq-item .sh-faq-summary::after {
   right: 24px;
   background: #1a1a1a;
   border: 1px solid rgba(193, 255, 17, 0.2);
-  color: #f1f0ea;
+  color: var(--text-primary, #f1f0ea);
   padding: 12px 20px;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -2085,5 +2107,95 @@ details[open].sh-faq-item .sh-faq-summary::after {
   .comm-new-post-btn {
     padding: 6px 12px;
     font-size: 0.82rem;
+  }
+}
+/* ═══════════════════════════════════════════
+   RTL (Arabic) — mirror the community layout
+   Applied when community-i18n.js sets dir="rtl"
+═══════════════════════════════════════════ */
+
+/* Channels sidebar renders on the RIGHT (flex auto-reverses) —
+   its separator border flips to the left side */
+[dir="rtl"] .comm-sidebar {
+  border-right: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Active-channel indicator flips to the right edge */
+[dir="rtl"] .comm-sidebar-item {
+  border-left: none;
+  border-right: 3px solid transparent;
+}
+
+[dir="rtl"] .comm-sidebar-item.active {
+  border-right-color: var(--gold, #c1ff11);
+}
+
+/* Right sidebar renders on the LEFT — flip its separator */
+[dir="rtl"] .comm-right-sidebar {
+  border-left: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Bookmark button pushes to the far LEFT in RTL */
+[dir="rtl"] .comm-bookmark-btn {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Comments panel slides in from the LEFT in RTL */
+[dir="rtl"] .comm-comments-card {
+  right: auto;
+  left: -500px;
+  border-left: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[dir="rtl"] .comm-comments-panel.open .comm-comments-card {
+  right: auto;
+  left: 0;
+}
+
+/* Nested replies indent from the RIGHT */
+[dir="rtl"] .comm-replies-list {
+  margin-left: 0;
+  margin-right: 38px;
+  border-left: none;
+  border-right: 2px solid rgba(255, 255, 255, 0.04);
+  padding-left: 0;
+  padding-right: 12px;
+}
+
+/* Post ⋯ menu opens toward the left side of its trigger */
+[dir="rtl"] .comm-post-dropdown {
+  right: auto;
+  left: 0;
+}
+
+[dir="rtl"] .comm-post-dropdown button {
+  text-align: right;
+}
+
+/* Toast bottom-LEFT in RTL */
+[dir="rtl"] .comm-toast {
+  right: auto;
+  left: 24px;
+}
+
+@media (max-width: 768px) {
+  /* Mobile drawer lives on the RIGHT, slides in from the right */
+  [dir="rtl"] .comm-sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  [dir="rtl"] .comm-sidebar.open {
+    transform: translateX(0);
+  }
+
+  [dir="rtl"] .comm-comments-card {
+    left: -100%;
   }
 }

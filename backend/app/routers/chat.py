@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.services.ws_manager import manager
-from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRole, ChannelType, MessageType
+from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRole, ChannelType, MessageType, Post, PostChannelRead
 from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, ChatMemberOut
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
@@ -371,18 +371,11 @@ async def mark_read(
 
 # ─── GET /chat/online-count ─────────────────────────────────
 @router.get("/online-count")
-def get_online_count(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_member),
-):
-    one_min_ago = datetime.utcnow() - timedelta(seconds=60)
-    count = (
-        db.query(func.count(User.id))
-        .filter(User.last_seen >= one_min_ago)
-        .scalar()
-    )
-    # Current user is always counted as online
-    return {"online_count": max(count or 0, 1)}
+def get_online_count():
+    """Return the number of users currently connected via WebSocket.
+    Uses in-memory WS manager — zero DB queries — to avoid pool pressure
+    from the high polling frequency on this endpoint."""
+    return {"online_count": max(manager.get_online_count(), 1)}
 
 
 # ─── GET /chat/admins ───────────────────────────────────────
@@ -654,6 +647,114 @@ def mark_channel_read(
     membership.last_read_at = datetime.utcnow()
     db.commit()
     return {"message": "Marked as read"}
+
+
+# ─── Community Chat Unread (sidebar badge) ───────────────────
+
+class CommunityReadRequest(BaseModel):
+    channel: str = "general"
+
+
+@router.get("/community/unread")
+def get_community_unread(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """Total unread messages across community (group) channels — for the sidebar badge."""
+    # "start-here" is a legacy chat channel; the UI now renders Start Here as a
+    # static content page, so its old messages can never be read — exclude it.
+    group_channels = (
+        db.query(Channel)
+        .filter(
+            Channel.channel_type == ChannelType.GROUP,
+            Channel.name.notin_(["start-here", "start_here"]),
+        )
+        .all()
+    )
+    memberships = {
+        m.channel_id: m
+        for m in db.query(ChatMember).filter(ChatMember.user_id == current_user.id).all()
+    }
+
+    total = 0
+    per_channel = {}
+    for ch in group_channels:
+        m = memberships.get(ch.id)
+        since = (m.last_read_at or m.joined_at) if m else current_user.created_at
+        q = db.query(func.count(Message.id)).filter(
+            Message.channel_id == ch.id,
+            Message.sender_id != current_user.id,
+            Message.is_deleted == False,
+        )
+        if since:
+            q = q.filter(Message.created_at > since)
+        count = q.scalar() or 0
+        total += count
+        if count:
+            per_channel[ch.name] = per_channel.get(ch.name, 0) + count
+
+    # ── Community post channels (forum categories on the chat page) ──
+    post_slugs = [
+        s for (s,) in db.query(Post.category_slug)
+        .filter(Post.category_slug.isnot(None)).distinct().all()
+    ]
+    post_reads = {
+        r.channel: r
+        for r in db.query(PostChannelRead).filter(PostChannelRead.user_id == current_user.id).all()
+    }
+    for slug in post_slugs:
+        r = post_reads.get(slug)
+        since = (r.last_read_at if r else None) or current_user.created_at
+        q = db.query(func.count(Post.id)).filter(
+            Post.category_slug == slug,
+            Post.user_id != current_user.id,
+        )
+        if since:
+            q = q.filter(Post.created_at > since)
+        count = q.scalar() or 0
+        total += count
+        if count:
+            per_channel[slug] = per_channel.get(slug, 0) + count
+
+    return {"unread_count": total, "channels": per_channel}
+
+
+@router.put("/community/read")
+def mark_community_channel_read(
+    data: CommunityReadRequest,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """Mark a community channel as read by name — chat (group) channel or post channel."""
+    ch = db.query(Channel).filter(
+        Channel.name == data.channel,
+        Channel.channel_type == ChannelType.GROUP,
+    ).first()
+    if ch:
+        membership = db.query(ChatMember).filter(
+            ChatMember.channel_id == ch.id,
+            ChatMember.user_id == current_user.id,
+        ).first()
+        if not membership:
+            membership = ChatMember(channel_id=ch.id, user_id=current_user.id)
+            db.add(membership)
+        membership.last_read_at = datetime.utcnow()
+        db.commit()
+        return {"ok": True}
+
+    # Post channel (forum category) — only track slugs that actually have posts
+    has_posts = db.query(Post.id).filter(Post.category_slug == data.channel).first()
+    if has_posts:
+        read_state = db.query(PostChannelRead).filter(
+            PostChannelRead.user_id == current_user.id,
+            PostChannelRead.channel == data.channel,
+        ).first()
+        if not read_state:
+            read_state = PostChannelRead(user_id=current_user.id, channel=data.channel)
+            db.add(read_state)
+        read_state.last_read_at = datetime.utcnow()
+        db.commit()
+    return {"ok": True}
 
 
 # ─── Channel Members ────────────────────────────────────────

@@ -1030,7 +1030,7 @@ async function init() {
 
     // WebSocket after data is loaded
     connectWebSocket();
-    setInterval(fetchOnlineCount, 30000);
+    setInterval(() => { if (!document.hidden) fetchOnlineCount(); }, 30000);
 }
 
 init().catch(e => console.error('Init error:', e));

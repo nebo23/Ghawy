@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -17,7 +18,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
 
     <script>
         (function () {
@@ -30,7 +31,8 @@
             // Removed auth guard logic to allow public access
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
+    <script src="src/js/community-i18n.js?v=5"></script>
 </head>
 
 <body>
@@ -62,6 +64,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -75,6 +78,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -232,13 +236,13 @@
         </div>
     </div>
     <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open') })</script>
-    <script src="src/js/utils.js?v=10"></script>
-    <script src="src/js/i18n.js"></script>
-    <script src="src/js/courses.js?v=12"></script>
+    <script src="src/js/utils.js?v=1783908000"></script>
+    <script src="src/js/i18n.js?v=4"></script>
+    <script src="src/js/courses.js?v=13"></script>
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=18"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

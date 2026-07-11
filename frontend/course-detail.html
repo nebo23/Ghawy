@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -18,8 +19,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <script src="https://player.vdocipher.com/v2/api.js"></script>
-    <script src="src/js/utils.js?v=10"></script>
-    <link rel="stylesheet" href="src/css/dashboard.css" />
+    <script src="src/js/utils.js?v=1783908000"></script>
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
     <style>
         /* ═══ COURSE DETAIL — BLUE ACCENT OVERRIDES ═══ */
         .cd-grid {
@@ -978,6 +979,134 @@
             font-size: 1.4rem;
             margin-bottom: 10px;
         }
+
+        /* ═══ Exams ═══ */
+        .exams-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+        .exams-title-wrap { display:flex; align-items:center; gap:12px; }
+        .exams-title-icon {
+            width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+            background:rgba(63,143,249,.12); color:#3f8ff9; font-size:1.1rem;
+        }
+        .exams-head h3 { margin:0; font-size:1.05rem; }
+        .exams-head p { margin:2px 0 0; color:var(--text-muted); font-size:.82rem; }
+        .exams-empty {
+            border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025);
+            border-radius: 10px; padding: 24px; text-align: center; color: var(--text-muted);
+        }
+        .exams-empty i { color:#3f8ff9; font-size:1.4rem; margin-bottom:10px; display:block; }
+        .exam-card {
+            display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+            border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02);
+            border-radius:12px; padding:16px 18px; margin-bottom:12px;
+        }
+        .exam-card-info { display:flex; align-items:flex-start; gap:14px; }
+        .exam-card-icon {
+            width:40px; height:40px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+            background:rgba(63,143,249,.12); color:#3f8ff9;
+        }
+        .exam-card-title { font-weight:700; font-size:.98rem; }
+        .exam-card-meta { color:var(--text-muted); font-size:.8rem; margin-top:2px; }
+        .exam-card-desc { color:var(--text-muted); font-size:.82rem; margin-top:6px; max-width:420px; }
+        .exam-card-right { display:flex; align-items:center; gap:12px; }
+        .exam-start-btn { width:auto !important; padding:9px 16px !important; white-space:nowrap; }
+        .exam-badge { font-size:.75rem; font-weight:600; padding:5px 10px; border-radius:20px; white-space:nowrap; }
+        .exam-badge.todo { background:rgba(255,255,255,.06); color:var(--text-muted); }
+        .exam-badge.passed { background:rgba(34,197,94,.14); color:#22c55e; }
+        .exam-badge.failed { background:rgba(234,179,8,.14); color:#eab308; }
+
+        .exam-take-head { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+        .exam-take-head h3 { margin:0; font-size:1.05rem; }
+        .exam-take-head p { margin:2px 0 0; color:var(--text-muted); font-size:.82rem; }
+        .exam-back-btn {
+            background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:var(--text-color, #fff);
+            border-radius:8px; padding:8px 12px; cursor:pointer; font-size:.85rem; white-space:nowrap;
+        }
+        .exam-back-btn:hover { background:rgba(255,255,255,.1); }
+        .exam-take-desc { color:var(--text-muted); font-size:.88rem; margin:6px 0 18px; }
+        .exam-q { border-top:1px solid rgba(255,255,255,.07); padding:18px 0; }
+        .exam-q:first-child { border-top:none; }
+        .exam-q-prompt { font-weight:600; font-size:.95rem; margin-bottom:12px; display:flex; gap:10px; }
+        .exam-q-index {
+            flex-shrink:0; width:24px; height:24px; border-radius:50%; background:rgba(63,143,249,.14); color:#3f8ff9;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700;
+        }
+        .exam-q-options { display:flex; flex-direction:column; gap:8px; padding-inline-start:34px; }
+        .exam-opt {
+            display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:9px; cursor:pointer;
+            border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02); transition:.15s;
+        }
+        .exam-opt:hover { border-color:rgba(63,143,249,.5); }
+        .exam-opt input { display:none; }
+        .exam-opt-marker {
+            width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.28); flex-shrink:0; transition:.15s;
+        }
+        .exam-opt input:checked ~ .exam-opt-marker { border-color:#3f8ff9; background:#3f8ff9; box-shadow:inset 0 0 0 3px #0e0e0e; }
+        .exam-opt.correct { border-color:#22c55e; background:rgba(34,197,94,.1); }
+        .exam-opt.correct .exam-opt-marker { border-color:#22c55e; background:#22c55e; box-shadow:inset 0 0 0 3px #0e0e0e; }
+        .exam-opt.incorrect { border-color:#ef4444; background:rgba(239,68,68,.1); }
+        .exam-opt.incorrect .exam-opt-marker { border-color:#ef4444; background:#ef4444; box-shadow:inset 0 0 0 3px #0e0e0e; }
+        .exam-opt-text { font-size:.9rem; }
+        .exam-result {
+            display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin:18px 0;
+            border-radius:12px; padding:16px 18px;
+        }
+        .exam-result.pass { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); }
+        .exam-result.fail { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.3); }
+        .exam-result-score { font-size:1.8rem; font-weight:800; }
+        .exam-result.pass .exam-result-score { color:#22c55e; }
+        .exam-result.fail .exam-result-score { color:#eab308; }
+        .exam-result-text { display:flex; flex-direction:column; }
+        .exam-result-text span { color:var(--text-muted); font-size:.85rem; margin-top:2px; }
+        .exam-retake-btn { width:auto !important; padding:9px 16px !important; margin-inline-start:auto; white-space:nowrap; }
+
+        /* ═══ Project lesson ═══ */
+        .lesson-project-btn {
+            display:inline-flex; align-items:center; gap:6px; flex-shrink:0;
+            background:rgba(168,85,247,.12); border:1px solid rgba(168,85,247,.35); color:#a855f7;
+            font-size:.72rem; font-weight:700; padding:4px 10px; border-radius:20px;
+            cursor:pointer; white-space:nowrap; transition:.15s; font-family:inherit;
+        }
+        .lesson-project-btn:hover { background:rgba(168,85,247,.25); border-color:#a855f7; }
+        .project-lesson-bar {
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+            margin-top:12px; padding:14px 18px; border-radius:12px;
+            background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.3);
+        }
+        .project-lesson-info { display:flex; align-items:center; gap:12px; }
+        .project-lesson-icon {
+            width:38px; height:38px; border-radius:10px; flex-shrink:0;
+            background:rgba(168,85,247,.15); color:#a855f7;
+            display:flex; align-items:center; justify-content:center; font-size:1rem;
+        }
+        .project-lesson-title { font-weight:700; font-size:.92rem; }
+        .project-lesson-sub { color:var(--text-muted); font-size:.78rem; margin-top:2px; }
+        .project-lesson-btn {
+            display:inline-flex; align-items:center; gap:8px;
+            background:#a855f7; border:none; color:#fff;
+            font-size:.85rem; font-weight:700; padding:10px 18px; border-radius:9px;
+            cursor:pointer; white-space:nowrap; transition:.15s; font-family:inherit;
+        }
+        .project-lesson-btn:hover { background:#9333ea; transform:translateY(-1px); }
+
+        /* Exam rows injected inside the curriculum list */
+        .exam-inline-row {
+            display:flex; align-items:center; gap:16px;
+            padding:14px 20px;
+            border-bottom:1px solid rgba(255,255,255,.03);
+            background:rgba(63,143,249,.05);
+            border-left:3px solid rgba(63,143,249,.6);
+            cursor:pointer; transition:background .15s;
+        }
+        .exam-inline-row:last-child { border-bottom:none; }
+        .exam-inline-row:hover { background:rgba(63,143,249,.1); }
+        .exam-inline-icon {
+            width:24px; height:24px; border-radius:6px; flex-shrink:0;
+            background:rgba(63,143,249,.15); color:#3f8ff9;
+            display:flex; align-items:center; justify-content:center; font-size:.65rem;
+        }
+        .exam-inline-title { flex:1; color:#fff; font-size:.95rem; font-weight:600; }
+        .exam-inline-meta { display:block; color:var(--text-muted); font-size:.75rem; font-weight:500; margin-top:2px; }
+        [dir="rtl"] .exam-inline-row { border-left:none; border-right:3px solid rgba(63,143,249,.6); }
 
         @media(max-width: 768px) {
             .project-upload-grid {
@@ -2105,8 +2234,95 @@
             color: rgba(255, 255, 255, 0.5);
             font-weight: 600;
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           LIGHT MODE — components with hard-coded dark surfaces that would
+           otherwise stay solid black on the light page: the leaderboard
+           modal, the project-upload icon tiles, and the PDF resource cards.
+           Scoped to light so dark mode is untouched.
+           ══════════════════════════════════════════════════════════════ */
+        /* "View Leaderboard" trigger button (was hard-coded near-black) */
+        .lb-view-btn {
+            background: #18181b;
+            border: 1px solid #27272a;
+            color: #a1a1aa;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .lb-view-btn:hover {
+            background: #27272a;
+            color: #fff;
+        }
+        :root[data-theme="light"] .lb-view-btn {
+            background: #f1f5f9;
+            border-color: var(--border);
+            color: #334155;
+        }
+        :root[data-theme="light"] .lb-view-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        /* Leaderboard modal (inline-styled dark card) + rows */
+        :root[data-theme="light"] #leaderboardModal > div {
+            background: #ffffff !important;
+            border-color: var(--border) !important;
+            box-shadow: 0 40px 80px rgba(15, 23, 42, 0.18) !important;
+        }
+        :root[data-theme="light"] .leaderboard-name {
+            color: #0f172a;
+        }
+        :root[data-theme="light"] .leaderboard-item:hover {
+            background: rgba(15, 23, 42, 0.04);
+        }
+
+        /* Project-upload icon tiles */
+        :root[data-theme="light"] .project-drop-icon {
+            background: #e8f0fe;
+            color: #3f8ff9;
+            box-shadow: inset 0 0 0 1px rgba(63, 143, 249, .25);
+        }
+        :root[data-theme="light"] .project-drop-art {
+            background: linear-gradient(160deg, #eaf1fe, #d7e6fd);
+            box-shadow: 0 18px 34px rgba(63, 143, 249, .14), inset 0 0 0 1px rgba(63, 143, 249, .15);
+        }
+        :root[data-theme="light"] .project-drop-copy strong {
+            color: #0f172a;
+        }
+        :root[data-theme="light"] .project-drop-copy p {
+            color: #475569;
+        }
+        :root[data-theme="light"] .project-file-name {
+            color: #0f172a;
+        }
+
+        /* PDF resource cards */
+        :root[data-theme="light"] .resource-item {
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+            border-color: var(--border);
+        }
+        :root[data-theme="light"] .resource-item:hover {
+            box-shadow: 0 14px 32px rgba(15, 23, 42, .12), 0 0 0 1px rgba(63, 143, 249, .06);
+        }
+        :root[data-theme="light"] .resource-item .res-name {
+            color: #0f172a;
+        }
+        :root[data-theme="light"] .resource-item .res-type {
+            color: #64748b;
+        }
+        :root[data-theme="light"] .resources-count {
+            color: #475569;
+            border-color: var(--border);
+            background: rgba(15, 23, 42, .03);
+        }
     </style>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
+    <script src="src/js/community-i18n.js?v=5"></script>
 </head>
 
 <body>
@@ -2137,6 +2353,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -2150,6 +2367,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -2332,6 +2550,19 @@
                                         complete</span>
                                 </div>
                             </div>
+                            <!-- Project lesson bar — shown when the playing lesson has a project -->
+                            <div id="projectLessonBar" class="project-lesson-bar" style="display:none;">
+                                <div class="project-lesson-info">
+                                    <div class="project-lesson-icon"><i class="fa-solid fa-diagram-project"></i></div>
+                                    <div>
+                                        <div class="project-lesson-title">This lesson has a project</div>
+                                        <div class="project-lesson-sub">Apply what you learned — submit your project.</div>
+                                    </div>
+                                </div>
+                                <button class="project-lesson-btn" onclick="goToProjectsTab()">
+                                    <i class="fa-solid fa-rocket"></i> Go to Projects
+                                </button>
+                            </div>
                             <div id="videoLocked"
                                 style="display:none; text-align:center; padding:40px; background:var(--bg-card); border-radius:12px; border:1px solid var(--border);">
                                 <i class="fa-solid fa-lock"
@@ -2346,43 +2577,15 @@
 
                         <!-- Tabs -->
                         <div class="cd-tabs" id="cdTabs">
-                            <div class="cd-tab active" data-tab="overview">Overview</div>
-                            <div class="cd-tab" data-tab="curriculum">Curriculum</div>
+                            <div class="cd-tab active" data-tab="curriculum">Curriculum</div>
+                            <div class="cd-tab" data-tab="exams">Exams</div>
                             <div class="cd-tab" data-tab="projects">Projects</div>
                             <div class="cd-tab" data-tab="resources">Resources</div>
                             <div class="cd-tab" data-tab="reviews">Reviews</div>
                         </div>
 
                         <!-- Tab Content -->
-                        <div id="tabOverview">
-                            <!-- Intro Video -->
-                            <div style="margin-bottom: 24px;">
-                                <div class="video-container" style="border-radius: 12px; overflow: hidden; background: #000;">
-                                    <video
-                                        src="https://atlas-vsl-cdn.b-cdn.net/vsl.mp4"
-                                        controls
-                                        controlsList="nodownload"
-                                        oncontextmenu="return false;"
-                                        style="width:100%; height:100%; display:block; object-fit:cover;"
-                                        preload="metadata"
-                                        poster=""
-                                    ></video>
-                                </div>
-                            </div>
-
-                            <!-- What You'll Learn -->
-                            <div class="cd-side-card">
-                                <div class="side-card-title" style="margin-bottom:14px; font-size: 1rem; font-weight: 700;">What You'll Learn</div>
-                                <ul class="learn-list" id="overviewLearnList">
-                                    <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Build AI automations from scratch</li>
-                                    <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Save 10+ hours every week</li>
-                                    <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Use AI tools like a pro</li>
-                                    <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Integrate APIs and workflows</li>
-                                    <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Create real world AI solutions</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div id="tabCurriculum" style="display:none">
+                        <div id="tabCurriculum">
                             <div class="curriculum-header">
                                 <div style="display:flex;align-items:center;gap:10px">
                                     <h3>Course Curriculum</h3>
@@ -2391,6 +2594,30 @@
                                 <span class="expand-btn" id="expandAllBtn">Expand All</span>
                             </div>
                             <div id="curriculumSections"></div>
+                        </div>
+                        <div id="tabExams" style="display:none">
+                            <!-- Exams list view -->
+                            <div id="examsListView">
+                                <div class="cd-side-card">
+                                    <div class="exams-head">
+                                        <div class="exams-title-wrap">
+                                            <div class="exams-title-icon"><i class="fa-solid fa-file-pen"></i></div>
+                                            <div>
+                                                <h3>Exams</h3>
+                                                <p>Test your knowledge — each exam is multiple choice.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="examsList">
+                                        <div class="exams-empty">
+                                            <i class="fa-regular fa-circle-question"></i>
+                                            <p>No exams available yet.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Exam take view -->
+                            <div id="examTakeView" style="display:none"></div>
                         </div>
                         <div id="tabProjects" style="display:none">
                             <div class="cd-side-card projects-module">
@@ -2567,88 +2794,6 @@
                                 Download Certificate</button>
                         </div>
 
-                        <!-- What You'll Learn -->
-                        <div class="cd-side-card">
-                            <div class="side-card-title" style="margin-bottom:14px">What You'll Learn</div>
-                            <ul class="learn-list" id="learnList">
-                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Build AI
-                                    automations from scratch</li>
-                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Save 10+ hours
-                                    every week</li>
-                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Use AI tools like
-                                    a pro</li>
-                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Integrate APIs and
-                                    workflows</li>
-                                <li><span class="check-icon"><i class="fa-solid fa-check"></i></span> Create real world
-                                    AI solutions</li>
-                            </ul>
-                        </div>
-
-                        <!-- Guest of Honor -->
-                        <div class="cd-side-card" id="gohCard" style="display:none">
-                            <div class="side-card-header">
-                                <span class="side-card-title">Guest of Honor</span>
-                                <span class="side-card-link"
-                                    onclick="window.location.href='guest-of-honors.html?v=2'">View all</span>
-                            </div>
-                            <div class="goh-card">
-                                <div class="goh-avatar" id="gohAvatar"></div>
-                                <div class="goh-info">
-                                    <div class="goh-name" id="gohName"></div>
-                                    <div class="goh-title" id="gohTitle"></div>
-                                    <div class="goh-bio" id="gohBio"></div>
-                                    <button class="btn-outline-sm" id="gohProfileBtn">View Profile</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Top Students -->
-                        <div class="cd-side-card" style="padding: 24px;">
-                            <div class="side-card-header"
-                                style="margin-bottom:20px; display: flex; justify-content: space-between; align-items: center;">
-                                <span class="side-card-title"
-                                    style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;">Top
-                                    Students</span>
-                                <button onclick="openLeaderboardModal()"
-                                    style="background: #18181b; border: 1px solid #27272a; color: #a1a1aa; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;"
-                                    onmouseover="this.style.background='#27272a';this.style.color='#fff'"
-                                    onmouseout="this.style.background='#18181b';this.style.color='#a1a1aa'">View
-                                    Leaderboard</button>
-                            </div>
-                            <div id="leaderboardList">
-                                <div class="skeleton-row"></div>
-                                <div class="skeleton-row"></div>
-                                <div class="skeleton-row"></div>
-                            </div>
-                        </div>
-
-                        <!-- Leaderboard Full Modal -->
-                        <div id="leaderboardModal"
-                            style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-                            <div
-                                style="background:#0d0f14; border:1px solid rgba(255,255,255,0.08); border-radius:20px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 80px rgba(0,0,0,0.7);">
-                                <div
-                                    style="padding:24px 28px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06);">
-                                    <div>
-                                        <div
-                                            style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:-0.5px;">
-                                            🏆 Course Leaderboard</div>
-                                        <div id="lbModalSubtitle" style="font-size:12px; color:#555; margin-top:4px;">
-                                            Top students in this course</div>
-                                    </div>
-                                    <button onclick="closeLeaderboardModal()"
-                                        style="background:rgba(255,255,255,0.06); border:none; color:#aaa; width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">×</button>
-                                </div>
-                                <div id="leaderboardModalList" style="overflow-y:auto; padding:16px 20px; flex:1;">
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                    <div class="skeleton-row"></div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Resources -->
                         <div class="cd-side-card" id="sideResources">
                             <div class="side-card-header">
@@ -2686,6 +2831,68 @@
                                         <div class="res-name">Prompt Library</div>
                                         <div class="res-type"><span>PDF Resource</span><span class="res-action"><i class="fa-solid fa-arrow-down"></i></span></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guest of Honor -->
+                        <div class="cd-side-card" id="gohCard" style="display:none">
+                            <div class="side-card-header">
+                                <span class="side-card-title">Guest of Honor</span>
+                                <span class="side-card-link"
+                                    onclick="window.location.href='guest-of-honors.html?v=2'">View all</span>
+                            </div>
+                            <div class="goh-card">
+                                <div class="goh-avatar" id="gohAvatar"></div>
+                                <div class="goh-info">
+                                    <div class="goh-name" id="gohName"></div>
+                                    <div class="goh-title" id="gohTitle"></div>
+                                    <div class="goh-bio" id="gohBio"></div>
+                                    <button class="btn-outline-sm" id="gohProfileBtn">View Profile</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top Students -->
+                        <div class="cd-side-card" style="padding: 24px;">
+                            <div class="side-card-header"
+                                style="margin-bottom:20px; display: flex; justify-content: space-between; align-items: center;">
+                                <span class="side-card-title"
+                                    style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;">Top
+                                    Students</span>
+                                <button onclick="openLeaderboardModal()" class="lb-view-btn">View
+                                    Leaderboard</button>
+                            </div>
+                            <div id="leaderboardList">
+                                <div class="skeleton-row"></div>
+                                <div class="skeleton-row"></div>
+                                <div class="skeleton-row"></div>
+                            </div>
+                        </div>
+
+                        <!-- Leaderboard Full Modal -->
+                        <div id="leaderboardModal"
+                            style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+                            <div
+                                style="background:#0d0f14; border:1px solid rgba(255,255,255,0.08); border-radius:20px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 40px 80px rgba(0,0,0,0.7);">
+                                <div
+                                    style="padding:24px 28px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06);">
+                                    <div>
+                                        <div
+                                            style="font-size:1.3rem; font-weight:900; color:var(--text-primary,#fff); letter-spacing:-0.5px;">
+                                            🏆 Course Leaderboard</div>
+                                        <div id="lbModalSubtitle" style="font-size:12px; color:#555; margin-top:4px;">
+                                            Top students in this course</div>
+                                    </div>
+                                    <button onclick="closeLeaderboardModal()"
+                                        style="background:rgba(255,255,255,0.06); border:none; color:#aaa; width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">×</button>
+                                </div>
+                                <div id="leaderboardModalList" style="overflow-y:auto; padding:16px 20px; flex:1;">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
                                 </div>
                             </div>
                         </div>
@@ -3216,14 +3423,128 @@
     `);
         }
 
-        function downloadCertificate() {
-            const certSec = document.getElementById('certificateSection');
-            const certId = certSec ? certSec.dataset.certId : null;
-            if (certId) {
-                showCertificateModal(certId);
-            } else {
-                showToast('Certificate not available yet', 'info');
+        async function downloadCertificate() {
+            const course = window.courseData;
+            const tplUrl = course && course.certificate_url
+                ? (course.certificate_url.startsWith('/') ? API + course.certificate_url : course.certificate_url)
+                : null;
+
+            if (!tplUrl) {
+                // No template uploaded for this course — keep the old congratulations modal
+                const certSec = document.getElementById('certificateSection');
+                const certId = certSec ? certSec.dataset.certId : null;
+                if (certId) {
+                    showCertificateModal(certId);
+                } else {
+                    showToast('Certificate not available yet', 'info');
+                }
+                return;
             }
+
+            let memberName = (currentUserData && currentUserData.full_name) || '';
+            if (!memberName) {
+                try { memberName = (JSON.parse(localStorage.getItem('user') || '{}').full_name) || ''; } catch (e) { }
+            }
+            if (!memberName) {
+                showToast('Could not load your name — please refresh and try again', 'error');
+                return;
+            }
+
+            showToast('Preparing your certificate...', 'info');
+            try {
+                const certSec = document.getElementById('certificateSection');
+                let certId = certSec ? (certSec.dataset.certId || '') : '';
+                if (!certId) certId = buildFallbackCertId(course.title);
+                // Course titles are stored with an ordering prefix ("3- Prompt
+                // Engineering"); the certificate should show only the name
+                const displayTitle = (course.title || '').replace(/^\s*\d+\s*[-–.)]*\s*/, '');
+                await generateCertificate(tplUrl, memberName, displayTitle, certId);
+            } catch (e) {
+                console.error('Certificate generation error:', e);
+                showToast('Error generating certificate', 'error');
+            }
+        }
+
+        // Fallback certificate ID when the API hasn't issued one yet,
+        // e.g. GH-AIF-2026-0148 (GH + course initials + year + random digits)
+        function buildFallbackCertId(courseTitle) {
+            const initials = (courseTitle || '')
+                .replace(/[^A-Za-z\s]/g, ' ')
+                .split(/\s+/).filter(Boolean)
+                .map(w => w[0].toUpperCase()).join('').slice(0, 3) || 'CRS';
+            const num = String(Math.floor(1000 + Math.random() * 9000));
+            return `GH-${initials}-${new Date().getFullYear()}-${num}`;
+        }
+
+        // Draw member name, course title and date onto the certificate template
+        // image, then download the result as a PNG.
+        async function generateCertificate(tplUrl, memberName, courseTitle, certId) {
+            // Cairo renders both Arabic and Latin names correctly
+            try {
+                await document.fonts.load('700 60px Cairo');
+                await document.fonts.load('600 40px Cairo');
+            } catch (e) { }
+
+            const img = await new Promise((resolve, reject) => {
+                const im = new Image();
+                im.onload = () => resolve(im);
+                im.onerror = () => reject(new Error('Could not load certificate template'));
+                im.src = tplUrl;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            const W = canvas.width, H = canvas.height;
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+
+            // Positions as fractions of the template size, matched to the Ghawy
+            // certificate design (dark bg, labels on the left) — tune here if the
+            // template changes:
+            //   name   → under "This certifies that"
+            //   course → under "Has Successfuly Completed The Course:"
+            //   date   → under "COMPLETED ON:"
+            //   certId → under "CERTIFICATE ID:"
+            // #c8f910 = the neon lime of the "hawy" logo in the template
+            const layout = {
+                name:   { x: 0.108, y: 0.400, size: 0.056, color: '#c8f910', weight: '700', maxW: 0.62 },
+                course: { x: 0.108, y: 0.566, size: 0.042, color: '#c8f910', weight: '600', maxW: 0.62 },
+                date:   { x: 0.108, y: 0.722, size: 0.023, color: '#c8f910', weight: '600', maxW: 0.13 },
+                certId: { x: 0.258, y: 0.722, size: 0.023, color: '#c8f910', weight: '600', maxW: 0.20 }
+            };
+
+            const drawLine = (text, p) => {
+                let fontSize = Math.round(H * p.size);
+                ctx.font = `${p.weight} ${fontSize}px Cairo, sans-serif`;
+                // shrink to fit the slot width
+                while (ctx.measureText(text).width > W * p.maxW && fontSize > 12) {
+                    fontSize -= 2;
+                    ctx.font = `${p.weight} ${fontSize}px Cairo, sans-serif`;
+                }
+                ctx.fillStyle = p.color;
+                ctx.fillText(text, W * p.x, H * p.y);
+            };
+
+            drawLine(memberName, layout.name);
+            drawLine(courseTitle, layout.course);
+            drawLine(dateStr, layout.date);
+            if (certId) drawLine(String(certId), layout.certId);
+
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            if (!blob) throw new Error('Canvas export failed');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Certificate - ${courseTitle} - ${memberName}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
         }
 
         // ═══════════════════════════════════════════
@@ -3443,6 +3764,239 @@
             }
         }
 
+        // ═══════════════════════════════════════════════
+        //  EXAMS (member take view)
+        // ═══════════════════════════════════════════════
+        let examsCache = [];
+        let currentExam = null;
+
+        function escapeExamHtml(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Direction for exam text: RTL if it contains Arabic characters, otherwise LTR.
+        function examTextDir(str) {
+            return /[؀-ۿݐ-ݿ]/.test(String(str || '')) ? 'rtl' : 'ltr';
+        }
+
+        async function loadExams() {
+            const listEl = document.getElementById('examsList');
+            if (!listEl) return;
+            try {
+                const res = await apiFetch(`/courses/${courseId}/exams`);
+                if (!res.ok) throw new Error('failed');
+                examsCache = await res.json();
+            } catch (e) {
+                examsCache = [];
+            }
+            renderExamsList();
+            injectCurriculumExams();
+        }
+
+        // ═══ Exams inside the curriculum (placed after their anchor lesson) ═══
+        function curriculumExamRowHtml(ex) {
+            let badge;
+            if (ex.best_score === null || ex.best_score === undefined) {
+                badge = '<span class="exam-badge todo">Not attempted</span>';
+            } else if (ex.passed) {
+                badge = `<span class="exam-badge passed"><i class="fa-solid fa-check"></i> Passed · ${ex.best_score}%</span>`;
+            } else {
+                badge = `<span class="exam-badge failed">Best: ${ex.best_score}%</span>`;
+            }
+            return `<div class="exam-inline-row" data-exam-id="${ex.id}" onclick="openExamFromCurriculum(${ex.id})">
+                <div class="exam-inline-icon"><i class="fa-solid fa-file-pen"></i></div>
+                <span class="exam-inline-title" dir="auto">${escapeExamHtml(ex.title)}
+                    <small class="exam-inline-meta">Exam · ${ex.question_count} question${ex.question_count !== 1 ? 's' : ''} · Pass ${ex.pass_percent}%</small>
+                </span>
+                ${badge}
+            </div>`;
+        }
+
+        function injectCurriculumExams() {
+            document.querySelectorAll('.exam-inline-row').forEach(el => el.remove());
+            if (!examsCache.length) return;
+            const lessonsWrap = document.querySelector('#curriculumSections .section-lessons');
+            if (!lessonsWrap) return;
+
+            // Group exams by their anchor lesson, keep backend order (sort_order)
+            const byLesson = {};
+            const unanchored = [];
+            examsCache.forEach(ex => {
+                if (ex.after_lesson_id && lessonsWrap.querySelector(`.lesson-row[data-lesson-id="${ex.after_lesson_id}"]`)) {
+                    (byLesson[ex.after_lesson_id] = byLesson[ex.after_lesson_id] || []).push(ex);
+                } else {
+                    unanchored.push(ex);
+                }
+            });
+
+            Object.keys(byLesson).forEach(lessonId => {
+                const row = lessonsWrap.querySelector(`.lesson-row[data-lesson-id="${lessonId}"]`);
+                row.insertAdjacentHTML('afterend', byLesson[lessonId].map(curriculumExamRowHtml).join(''));
+            });
+            if (unanchored.length) {
+                lessonsWrap.insertAdjacentHTML('beforeend', unanchored.map(curriculumExamRowHtml).join(''));
+            }
+        }
+
+        function openExamFromCurriculum(examId) {
+            document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+            const examsTab = document.querySelector('[data-tab="exams"]');
+            if (examsTab) examsTab.classList.add('active');
+            ['curriculum', 'exams', 'projects', 'resources', 'reviews'].forEach(t => {
+                const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (el) el.style.display = t === 'exams' ? '' : 'none';
+            });
+            const tabsEl = document.getElementById('cdTabs');
+            if (tabsEl) tabsEl.scrollIntoView({ behavior: 'smooth' });
+            openExam(examId);
+        }
+
+        function renderExamsList() {
+            const listEl = document.getElementById('examsList');
+            if (!listEl) return;
+            if (!examsCache.length) {
+                listEl.innerHTML = `<div class="exams-empty"><i class="fa-regular fa-circle-question"></i><p>No exams available yet.</p></div>`;
+                return;
+            }
+            listEl.innerHTML = examsCache.map(ex => {
+                let statusHtml;
+                if (ex.best_score === null || ex.best_score === undefined) {
+                    statusHtml = `<span class="exam-badge todo">Not attempted</span>`;
+                } else if (ex.passed) {
+                    statusHtml = `<span class="exam-badge passed"><i class="fa-solid fa-check"></i> Passed · ${ex.best_score}%</span>`;
+                } else {
+                    statusHtml = `<span class="exam-badge failed">Best: ${ex.best_score}%</span>`;
+                }
+                const btnLabel = (ex.best_score === null || ex.best_score === undefined) ? 'Start Exam' : 'Retake';
+                return `
+                <div class="exam-card">
+                    <div class="exam-card-info">
+                        <div class="exam-card-icon"><i class="fa-solid fa-file-pen"></i></div>
+                        <div>
+                            <div class="exam-card-title" dir="auto">${escapeExamHtml(ex.title)}</div>
+                            <div class="exam-card-meta">${ex.question_count} question${ex.question_count !== 1 ? 's' : ''} · Pass ${ex.pass_percent}%</div>
+                            ${ex.description ? `<div class="exam-card-desc" dir="auto">${escapeExamHtml(ex.description)}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="exam-card-right">
+                        ${statusHtml}
+                        <button class="btn-blue-full exam-start-btn" onclick="openExam(${ex.id})"><i class="fa-solid fa-play"></i> ${btnLabel}</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function openExam(examId) {
+            const takeView = document.getElementById('examTakeView');
+            const listView = document.getElementById('examsListView');
+            takeView.innerHTML = `<div class="cd-side-card" style="text-align:center;padding:40px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading exam...</div>`;
+            listView.style.display = 'none';
+            takeView.style.display = 'block';
+            try {
+                const res = await apiFetch(`/exams/${examId}`);
+                if (!res.ok) throw new Error('failed');
+                currentExam = await res.json();
+                renderExamTake();
+            } catch (e) {
+                takeView.innerHTML = `<div class="cd-side-card" style="text-align:center;padding:40px;color:var(--text-muted)">Could not load this exam. <a href="#" onclick="closeExam();return false;">Go back</a></div>`;
+            }
+        }
+
+        function closeExam() {
+            currentExam = null;
+            document.getElementById('examTakeView').style.display = 'none';
+            document.getElementById('examTakeView').innerHTML = '';
+            document.getElementById('examsListView').style.display = 'block';
+        }
+
+        function renderExamTake() {
+            const ex = currentExam;
+            const takeView = document.getElementById('examTakeView');
+            const questionsHtml = (ex.questions || []).map((q, qi) => `
+                <div class="exam-q" data-qi="${qi}" dir="${examTextDir(q.text)}">
+                    <div class="exam-q-prompt"><span class="exam-q-index">${qi + 1}</span> ${escapeExamHtml(q.text)}</div>
+                    <div class="exam-q-options">
+                        ${(q.options || []).map((opt, oi) => `
+                            <label class="exam-opt" dir="${examTextDir(opt)}">
+                                <input type="radio" name="exam-take-q${qi}" value="${oi}">
+                                <span class="exam-opt-marker"></span>
+                                <span class="exam-opt-text">${escapeExamHtml(opt)}</span>
+                            </label>`).join('')}
+                    </div>
+                </div>`).join('');
+            takeView.innerHTML = `
+                <div class="cd-side-card exam-take-card">
+                    <div class="exam-take-head">
+                        <button class="exam-back-btn" onclick="closeExam()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                        <div>
+                            <h3 dir="auto">${escapeExamHtml(ex.title)}</h3>
+                            <p>${(ex.questions || []).length} questions · Pass mark ${ex.pass_percent}%</p>
+                        </div>
+                    </div>
+                    ${ex.description ? `<p class="exam-take-desc" dir="auto">${escapeExamHtml(ex.description)}</p>` : ''}
+                    <div id="examTakeQuestions">${questionsHtml}</div>
+                    <div id="examResultBox"></div>
+                    <button class="btn-blue-full" id="examSubmitBtn" onclick="submitExamAnswers(${ex.id})"><i class="fa-solid fa-paper-plane"></i> Submit Answers</button>
+                </div>`;
+        }
+
+        async function submitExamAnswers(examId) {
+            const answers = {};
+            (currentExam.questions || []).forEach((q, qi) => {
+                const checked = document.querySelector(`input[name="exam-take-q${qi}"]:checked`);
+                if (checked) answers[String(qi)] = parseInt(checked.value);
+            });
+            const total = (currentExam.questions || []).length;
+            if (Object.keys(answers).length < total) {
+                if (!confirm(`You answered ${Object.keys(answers).length} of ${total} questions. Submit anyway?`)) return;
+            }
+            const btn = document.getElementById('examSubmitBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...'; }
+            try {
+                const res = await apiFetch(`/exams/${examId}/submit`, {
+                    method: 'POST',
+                    body: JSON.stringify({ answers })
+                });
+                if (!res.ok) throw new Error('failed');
+                const result = await res.json();
+                showExamResult(result);
+                loadExams(); // refresh list status in the background
+            } catch (e) {
+                showToast('Error submitting exam', 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Answers'; }
+            }
+        }
+
+        function showExamResult(result) {
+            // Mark each option correct/incorrect and lock inputs
+            (result.results || []).forEach((r, qi) => {
+                const qEl = document.querySelector(`.exam-q[data-qi="${qi}"]`);
+                if (!qEl) return;
+                qEl.querySelectorAll('.exam-opt').forEach((label, oi) => {
+                    const input = label.querySelector('input');
+                    if (input) input.disabled = true;
+                    if (oi === r.correct) label.classList.add('correct');
+                    if (r.selected === oi && !r.is_correct) label.classList.add('incorrect');
+                });
+            });
+            const box = document.getElementById('examResultBox');
+            const passed = result.passed;
+            box.innerHTML = `
+                <div class="exam-result ${passed ? 'pass' : 'fail'}">
+                    <div class="exam-result-score">${result.score}%</div>
+                    <div class="exam-result-text">
+                        <strong>${passed ? 'Passed! 🎉' : 'Not passed yet'}</strong>
+                        <span>${result.correct_count} of ${result.total_questions} correct · Pass mark ${result.pass_percent}%</span>
+                    </div>
+                    <button class="btn-blue-full exam-retake-btn" onclick="openExam(${currentExam.id})"><i class="fa-solid fa-rotate-right"></i> Retake</button>
+                </div>`;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const submitBtn = document.getElementById('examSubmitBtn');
+            if (submitBtn) submitBtn.style.display = 'none';
+        }
+
         function setupProjectUploadUI() {
             const input = document.getElementById('projectJsonInput');
             const dropzone = document.getElementById('projectDropzone');
@@ -3626,6 +4180,7 @@
                 renderCurriculum(course.lessons || []);
                 await new Promise(r => setTimeout(r, 50));
                 await loadProjectSubmissions();
+                loadExams();
 
                 // Render Resources Tab
                 const resourcesTab = document.getElementById('tabResources');
@@ -3663,14 +4218,6 @@
                     }
                 }
 
-                // Update what you'll learn if course has outcomes
-                if (course.outcomes && course.outcomes.length > 0) {
-                    const learnList = document.getElementById('learnList');
-                    learnList.innerHTML = course.outcomes.map(o =>
-                        `<li><span class="check-icon"><i class="fa-solid fa-check"></i></span> ${escapeHtml(o)}</li>`
-                    ).join('');
-                }
-
                 // Load progress
                 const progressData = await loadCourseProgress(courseId) || {};
 
@@ -3688,7 +4235,7 @@
                             playLesson(resumeTarget.id);
                             document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
                             document.querySelector('[data-tab="curriculum"]').classList.add('active');
-                            ['curriculum', 'overview', 'projects', 'resources', 'reviews'].forEach(t => {
+                            ['curriculum', 'exams', 'projects', 'resources', 'reviews'].forEach(t => {
                                 const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                                 if (el) el.style.display = t === 'curriculum' ? '' : 'none';
                             });
@@ -3749,9 +4296,13 @@
                     const s = totalSecs % 60;
                     durStr = `${m}:${s.toString().padStart(2, '0')}`;
                 }
+                const projectBtn = l.is_project
+                    ? `<button class="lesson-project-btn" onclick="event.stopPropagation(); goToProjectsTab();" title="This lesson has a project"><i class="fa-solid fa-diagram-project"></i> Project</button>`
+                    : '';
                 return `<div class="lesson-row" data-lesson-id="${l.id}" data-course-id="${courseId}" data-duration="${mins}">
                     <div class="lesson-icon" onclick="playLesson(${l.id})"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
                     <span class="lesson-title" onclick="playLesson(${l.id})">${idx + 1}. ${escapeHtml(l.title)}</span>
+                    ${projectBtn}
                     <span class="lesson-dur">${durStr}</span>
                     <span class="complete-btn"><i class="fa-solid fa-check"></i></span>
                 </div>`;
@@ -3760,6 +4311,19 @@
             container.innerHTML = `<div class="section-block" style="border-radius:12px;overflow:hidden;">
                 <div class="section-lessons open">${lessonsHtml}</div>
             </div>`;
+        }
+
+        // Switch to the Projects tab (used by project-lesson buttons)
+        function goToProjectsTab() {
+            document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+            const projTab = document.querySelector('.cd-tab[data-tab="projects"]');
+            if (projTab) projTab.classList.add('active');
+            ['curriculum', 'exams', 'projects', 'resources', 'reviews'].forEach(t => {
+                const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (el) el.style.display = t === 'projects' ? '' : 'none';
+            });
+            const tabsEl = document.getElementById('cdTabs');
+            if (tabsEl) tabsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function toggleSection(header) {
@@ -3780,6 +4344,19 @@
         }
 
         // ═══ PLAY LESSON ═══
+        // Sidebar resources: show only the currently playing lesson's PDFs
+        // (the Resources tab keeps the full course list)
+        function updateSideResources(lesson) {
+            const resGrid = document.getElementById('resourcesGrid');
+            if (!resGrid) return;
+            const pdfs = normalizePdfResources(lesson.pdf_url, lesson.title);
+            if (pdfs.length) {
+                resGrid.innerHTML = pdfs.map(buildPdfResourceCard).join('');
+            } else {
+                resGrid.innerHTML = '<p style="color:var(--text-muted); font-size:.85rem; margin:0;">No resources for this lesson.</p>';
+            }
+        }
+
         function playLesson(lessonId) {
             const hero = document.getElementById('cdHero');
             if (hero) hero.style.display = 'none';
@@ -3792,6 +4369,11 @@
 
             currentLessonId = lessonId;
             videoCompletionTriggered = false;
+            updateSideResources(lesson);
+
+            // Show the project bar under the video for project lessons
+            const projBar = document.getElementById('projectLessonBar');
+            if (projBar) projBar.style.display = lesson.is_project ? 'flex' : 'none';
 
             if (lesson.vdo_video_id) {
                 // ── VdoCipher Player ──────────────────────────────────────
@@ -3955,7 +4537,7 @@
                 document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 const tabName = tab.dataset.tab;
-                ['curriculum', 'overview', 'projects', 'resources', 'reviews'].forEach(t => {
+                ['curriculum', 'exams', 'projects', 'resources', 'reviews'].forEach(t => {
                     const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                     if (el) el.style.display = t === tabName ? '' : 'none';
                 });
@@ -3992,7 +4574,7 @@
             document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
             const resTab = document.querySelector('[data-tab="resources"]');
             if (resTab) resTab.classList.add('active');
-            ['curriculum', 'overview', 'projects', 'resources', 'reviews'].forEach(t => {
+            ['curriculum', 'exams', 'projects', 'resources', 'reviews'].forEach(t => {
                 const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (el) el.style.display = t === 'resources' ? '' : 'none';
             });
@@ -4212,7 +4794,7 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=18"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

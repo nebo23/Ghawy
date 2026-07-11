@@ -93,9 +93,10 @@ function initTabs() {
   // 🔒 Hide owner-only tabs from non-owner admins
   // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
   function applyTabVisibility() {
-    // 'users' (Members) is visible to admins too — contact details/delete are
-    // restricted per-row below and enforced server-side. Other tabs stay owner-only.
-    const ownerOnlyTabs = ['payments', 'pending-requests', 'analytics', 'live-sessions', 'guest-of-honors', 'courses'];
+    // 'users' (Members), 'payments', 'pending-requests' and 'analytics' are visible
+    // to admins too — contact details/delete are restricted per-row below and enforced
+    // server-side. The remaining content-management tabs stay owner-only.
+    const ownerOnlyTabs = ['live-sessions', 'guest-of-honors', 'courses'];
     ownerOnlyTabs.forEach(tabId => {
       const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
       if (btn) {
@@ -215,7 +216,7 @@ async function loadUsers() {
     const res = await fetch(API + '/admin/users', { headers });
     if (res.status === 403) {
       showToast('❌ Admin access required', 'error');
-      document.getElementById('users-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:40px">⛔ Admin access required</td></tr>`;
+      document.getElementById('users-tbody').innerHTML = `<tr><td colspan="11" style="text-align:center;color:#ef4444;padding:40px">⛔ Admin access required</td></tr>`;
       return;
     }
     if (!res.ok) { showToast('❌ Failed to load users', 'error'); return; }
@@ -243,7 +244,7 @@ function renderTable() {
   const tbody = document.getElementById('users-tbody');
 
   if (paginated.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:#888;padding:40px">No members found</td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -259,7 +260,7 @@ function renderTable() {
 
       endCell = `
         <div class="charge-info">
-          <div class="charge-date">${endDate.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          <div class="charge-date">${formatDate(user.end_at)}</div>
           <div class="charge-days ${isOverdue ? 'overdue' : isSoon ? 'soon' : ''}">
             ${isOverdue ? '⚠️ Expired' : isSoon ? `⚡ ${days}d left` : `${days}d`}
           </div>
@@ -282,6 +283,7 @@ function renderTable() {
       <td class="text-secondary">${currentUserIsOwner ? (user.phone || '—') : '<span style="color:#666" title="Owners only">🔒</span>'}</td>
       <td class="text-secondary">${user.country || '—'}</td>
       <td class="text-secondary">${escapeHtml(user.governorate || '—')}</td>
+      <td class="text-secondary">${formatBirthDate(user.birth_date)}</td>
       <td>
         <div style="font-size:13px">${formatDate(user.created_at)}</div>
         ${user.subscription_start ?
@@ -294,6 +296,7 @@ function renderTable() {
           <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleActive(${user.id}, this)"/>
           <span class="t-slider"></span>
         </label>
+        ${user.winback_sent_at ? `<div style="font-size:10px;color:#f59e0b;margin-top:3px;white-space:nowrap;" title="Winback email sent ${formatDate(user.winback_sent_at)}">💌 Emailed</div>` : ''}
       </td>
       <td>
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
@@ -581,15 +584,33 @@ async function submitDelete() {
 }
 
 // ── Pagination ────────────────────────────────────────
+// Windowed pager: prev/next arrows + a compact window of page numbers with
+// ellipses, so the control never overflows no matter how many pages there are.
+function buildPager(el, current, total, goFn) {
+  if (!el) return;
+  if (total <= 1) { el.innerHTML = ''; return; }
+
+  const items = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) items.push('…');
+  for (let i = start; i <= end; i++) items.push(i);
+  if (end < total - 1) items.push('…');
+  if (total > 1) items.push(total);
+
+  let html = `<button class="page-btn page-arrow" ${current <= 1 ? 'disabled' : ''} onclick="${goFn}(${current - 1})" aria-label="Previous page">‹</button>`;
+  html += items.map(p =>
+    p === '…'
+      ? `<span class="page-ellipsis">…</span>`
+      : `<button class="page-btn ${p === current ? 'active' : ''}" onclick="${goFn}(${p})">${p}</button>`
+  ).join('');
+  html += `<button class="page-btn page-arrow" ${current >= total ? 'disabled' : ''} onclick="${goFn}(${current + 1})" aria-label="Next page">›</button>`;
+  el.innerHTML = html;
+}
+
 function renderPagination() {
   const total = Math.ceil(filteredUsers.length / LIMIT);
-  const el = document.getElementById('pagination');
-  if (total <= 1) { el.innerHTML = ''; return; }
-  let html = '';
-  for (let i = 1; i <= total; i++) {
-    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
-  }
-  el.innerHTML = html;
+  buildPager(document.getElementById('pagination'), currentPage, total, 'goToPage');
 }
 
 function goToPage(page) {
@@ -602,9 +623,39 @@ function goToPage(page) {
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+// Backend sends naive UTC (no tz marker). Mark it UTC, then render in Egypt time
+// (Africa/Cairo handles DST +2/+3) so dates aren't shown ~3h early.
+function toEgyptDate(dateStr) {
+  let s = String(dateStr);
+  if (!/([zZ]|[+-]\d{2}:?\d{2})$/.test(s)) s += 'Z';
+  return new Date(s);
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' });
+  const d = toEgyptDate(dateStr);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en', { timeZone: 'Africa/Cairo', year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// Payment timestamps: date + time, in Egypt time.
+function formatDateTime(dateStr) {
+  if (!dateStr) return '—';
+  const d = toEgyptDate(dateStr);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('en-GB', { timeZone: 'Africa/Cairo', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Birth date cell: "12 Mar 2001" plus the member's current age.
+function formatBirthDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return '—';
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+  const dateTxt = d.toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' });
+  return `<div style="font-size:13px">${dateTxt}</div><div style="font-size:11px;color:#888">${age} yrs</div>`;
 }
 
 function escapeHtml(str) {
@@ -613,7 +664,7 @@ function escapeHtml(str) {
 }
 
 function showTableLoading() {
-  document.getElementById('users-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:40px">Loading...</td></tr>`;
+  document.getElementById('users-tbody').innerHTML = `<tr><td colspan="11" style="text-align:center;color:#888;padding:40px">Loading...</td></tr>`;
 }
 
 // Close modal on overlay click
@@ -705,7 +756,7 @@ async function loadPayments() {
     }
 
     tbody.innerHTML = data.payments.map(p => {
-      const dateFormatted = p.date ? new Date(p.date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+      const dateFormatted = formatDateTime(p.date);
       const statusClass = p.status || 'pending';
       const statusLabel = (p.status || 'pending').charAt(0).toUpperCase() + (p.status || 'pending').slice(1);
       const methodLabel = (p.method || '').charAt(0).toUpperCase() + (p.method || '').slice(1);
@@ -751,13 +802,7 @@ async function loadPayments() {
 }
 
 function renderPaymentsPagination(current, total) {
-  const el = document.getElementById('payments-pagination');
-  if (total <= 1) { el.innerHTML = ''; return; }
-  let html = '';
-  for (let i = 1; i <= total; i++) {
-    html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="goToPayPage(${i})">${i}</button>`;
-  }
-  el.innerHTML = html;
+  buildPager(document.getElementById('payments-pagination'), current, total, 'goToPayPage');
 }
 
 function goToPayPage(page) {
@@ -807,7 +852,7 @@ function exportMembersCSV() {
 
   const showContact = currentUserIsOwner;
   const headers = ['ID', 'Name', 'Role', ...(showContact ? ['Email', 'Phone'] : []),
-    'Country', 'Governorate', 'Joined', 'Subscription Start', 'End Date', 'Status'];
+    'Country', 'Governorate', 'Birth Date', 'Joined', 'Subscription Start', 'End Date', 'Status'];
 
   const cell = (v) => {
     const s = (v === null || v === undefined) ? '' : String(v);
@@ -820,7 +865,7 @@ function exportMembersCSV() {
   rows.forEach(u => {
     const row = [u.id, u.full_name, roleOf(u),
       ...(showContact ? [u.email || '', u.phone || ''] : []),
-      u.country || '', u.governorate || '', dateOf(u.created_at),
+      u.country || '', u.governorate || '', u.birth_date || '', dateOf(u.created_at),
       dateOf(u.subscription_start), dateOf(u.end_at), u.is_active ? 'Active' : 'Inactive'];
     lines.push(row.map(cell).join(','));
   });
@@ -897,7 +942,8 @@ async function refreshAnalytics() {
   await Promise.all([
     loadKPIs(),
     loadMembersChart(),
-    loadRevenueChart()
+    loadRevenueChart(),
+    loadSubsChart()
   ]);
 }
 
@@ -997,17 +1043,17 @@ async function loadSubsChart() {
     const res = await fetch(`${API}/admin/analytics/subscription-breakdown`, { headers });
     if (!res.ok) return;
     const data = await res.json();
-    const total = (data.monthly || 0) + (data.yearly || 0) + (data.none || 0);
+    const total = (data.monthly || 0) + (data.quarterly || 0) + (data.yearly || 0) + (data.none || 0);
 
     if (chartSubs) chartSubs.destroy();
     const ctx = document.getElementById('chart-subs').getContext('2d');
     chartSubs = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Monthly', 'Yearly', 'None'],
+        labels: ['Monthly (600)', 'Quarterly (1200)', 'Yearly (4000)', 'None'],
         datasets: [{
-          data: [data.monthly || 0, data.yearly || 0, data.none || 0],
-          backgroundColor: ['#3f8ff9', '#f59e0b', '#333'],
+          data: [data.monthly || 0, data.quarterly || 0, data.yearly || 0, data.none || 0],
+          backgroundColor: ['#3f8ff9', '#22c55e', '#f59e0b', '#333'],
           borderWidth: 0,
           hoverOffset: 8,
         }]
@@ -1121,8 +1167,14 @@ function renderMprCards(requests, container) {
   container.innerHTML = '';
 
   requests.forEach(req => {
-    const d = new Date(req.created_at);
-    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Backend sends naive UTC timestamps — mark as UTC then render in Egypt time.
+    const rawTs = req.created_at || '';
+    const d = new Date(/Z|[+-]\d{2}:?\d{2}$/.test(rawTs) ? rawTs : rawTs + 'Z');
+    const dateStr = isNaN(d) ? '—' : d.toLocaleString('en-GB', {
+      timeZone: 'Africa/Cairo',
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
 
     let statusClass = 'pending';
     if (req.status === 'approved') statusClass = 'approved';
@@ -1669,6 +1721,8 @@ function renderCourses() {
         <button class="btn-action" onclick="moveCourse(${c.id}, 'up')" title="Move up" ${idx === 0 ? 'disabled' : ''} style="margin-right:4px;${idx === 0 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-up"></i></button>
         <button class="btn-action" onclick="moveCourse(${c.id}, 'down')" title="Move down" ${idx === coursesCache.length - 1 ? 'disabled' : ''} style="margin-right:8px;${idx === coursesCache.length - 1 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-down"></i></button>
         <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="showExamsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-file-pen"></i> Exams</button>
+        <button class="btn-action" onclick="openCertificateModal(${c.id})" style="margin-right:8px;" title="Certificate template"><i class="fa-solid fa-graduation-cap"></i> Certificate</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
       </td>
@@ -1870,6 +1924,8 @@ function renderCourses() {
         <button class="btn-action" onclick="moveCourse(${c.id}, 'up')" title="Move up" ${idx === 0 ? 'disabled' : ''} style="margin-right:4px;${idx === 0 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-up"></i></button>
         <button class="btn-action" onclick="moveCourse(${c.id}, 'down')" title="Move down" ${idx === coursesCache.length - 1 ? 'disabled' : ''} style="margin-right:8px;${idx === coursesCache.length - 1 ? 'opacity:.35;cursor:not-allowed;' : ''}"><i class="fa-solid fa-arrow-down"></i></button>
         <button class="btn-action" onclick="showLessonsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-list"></i> Lessons</button>
+        <button class="btn-action" onclick="showExamsManager(${c.id}, '${escapeHtml(c.title).replace(/'/g, "\\\\'")}')" style="margin-right:8px;"><i class="fa-solid fa-file-pen"></i> Exams</button>
+        <button class="btn-action" onclick="openCertificateModal(${c.id})" style="margin-right:8px;" title="Certificate template"><i class="fa-solid fa-graduation-cap"></i> Certificate</button>
         <button class="btn-action" onclick="openEditCourseModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-action" onclick="openDeleteCourseModal(${c.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
       </td>
@@ -2124,6 +2180,8 @@ function showCoursesList() {
   currentCourseId = null;
   document.getElementById('courses-list-view').style.display = 'block';
   document.getElementById('lessons-manager-view').style.display = 'none';
+  const ev = document.getElementById('exams-manager-view');
+  if (ev) ev.style.display = 'none';
   if (uploadPollInterval) { clearInterval(uploadPollInterval); uploadPollInterval = null; }
   loadCoursesTab();
 }
@@ -2132,6 +2190,8 @@ async function showLessonsManager(courseId, title) {
   currentCourseId = courseId;
   document.getElementById('courses-list-view').style.display = 'none';
   document.getElementById('lessons-manager-view').style.display = 'block';
+  const ev = document.getElementById('exams-manager-view');
+  if (ev) ev.style.display = 'none';
   document.getElementById('lm-course-title').textContent = title + ' - Lessons';
   await loadLessons();
   startLessonStatusPolling();
@@ -2213,8 +2273,8 @@ function renderLessons() {
       html += `
       <tr>
         <td style="color:#888;padding-left:28px;">${l.order}</td>
-        <td><strong>${escapeHtml(l.title)}</strong></td>
-        <td>${l.duration_minutes} min</td>
+        <td><strong>${escapeHtml(l.title)}</strong>${l.is_project ? ' <span style="font-size:10px;font-weight:700;color:#a855f7;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.35);padding:2px 7px;border-radius:10px;white-space:nowrap;">📋 Project</span>' : ''}</td>
+        <td id="dur-cell-${l.id}" onclick="startEditDuration(${l.id})" style="cursor:pointer;" title="Click to edit duration">${l.duration_minutes} min <i class="fa-solid fa-pen" style="font-size:9px;color:#555;margin-left:4px;"></i></td>
         <td id="status-cell-${l.id}">${statHtml}</td>
         <td>
           <div style="display:flex;align-items:center;gap:6px;">
@@ -2232,6 +2292,52 @@ function renderLessons() {
   });
 
   tbody.innerHTML = html;
+}
+
+// -- Inline duration editing (click the "X min" cell in the lessons table) --
+function startEditDuration(id) {
+  const cell = document.getElementById(`dur-cell-${id}`);
+  if (!cell || cell.querySelector('input')) return; // already editing
+  const l = lessonsCache.find(x => x.id === id);
+  if (!l) return;
+
+  cell.innerHTML = `<input type="number" min="0" value="${l.duration_minutes || 0}"
+    style="width:64px;background:#111;border:1px solid #3f8ff9;border-radius:6px;color:#fff;padding:4px 6px;font-size:13px;" /> min`;
+  const input = cell.querySelector('input');
+  input.focus();
+  input.select();
+
+  let done = false;
+  const finish = (save) => {
+    if (done) return;
+    done = true;
+    const val = parseInt(input.value) || 0;
+    if (!save || val === (l.duration_minutes || 0)) { renderLessons(); return; }
+    saveDuration(id, val);
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') input.blur();
+    else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
+async function saveDuration(id, minutes) {
+  try {
+    const res = await fetch(API + `/courses/admin/lessons/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ duration_minutes: minutes })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Update failed');
+    }
+    const l = lessonsCache.find(x => x.id === id);
+    if (l) l.duration_minutes = minutes;
+    showToast('Duration updated ✅', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+  renderLessons();
 }
 
 // -- Polling CF Stream --
@@ -2594,6 +2700,10 @@ function buildLessonEntry(index, defaultOrder) {
           <small style="font-size:11px;color:#555;margin-top:4px;display:block;">الـ iframe embed URL من Bunny Stream</small>
         </div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#ccc;margin-top:4px;">
+        <input type="checkbox" id="lesson-is-project-${index}" style="accent-color:#3f8ff9;width:16px;height:16px;" />
+        📋 Project — الدرس ده ليه project (هيظهر زرار في صفحة الكورس يودّي على الـ Projects)
+      </label>
       <div style="margin-top:8px;padding:8px 10px;background:rgba(63,143,249,0.06);border:1px solid rgba(63,143,249,0.2);border-radius:6px;">
         <p style="font-size:11px;color:#888;margin:0;">
           📎 <strong style="color:#3f8ff9;">Resources (PDFs):</strong>
@@ -2712,7 +2822,8 @@ async function submitAddLesson() {
 
     if (!title) return showToast('كل lesson لازم يكون ليه عنوان', 'error');
 
-    const lessonData = { title, section_title: sectionTitle, order };
+    const isProject = document.getElementById(`lesson-is-project-${idx}`)?.checked || false;
+    const lessonData = { title, section_title: sectionTitle, order, is_project: isProject };
 
     if (providerSelected === 'bunny') {
       if (!bunnyUrl) return showToast(`Lesson "${title}": Bunny URL مطلوب`, 'error');
@@ -2785,6 +2896,9 @@ function openEditLessonModal(id) {
   }
   toggleEditVideoProvider(); // Apply visibility
   document.getElementById('edit-lesson-order').value = l.order || 0;
+  document.getElementById('edit-lesson-duration').value = l.duration_minutes || 0;
+  const projChk = document.getElementById('edit-lesson-is-project');
+  if (projChk) projChk.checked = !!l.is_project;
 
   // Render existing PDFs
   renderLessonPdfs(l.pdf_url);
@@ -2943,7 +3057,9 @@ async function submitEditLesson() {
     title: document.getElementById('edit-lesson-title').value,
     section_title: document.getElementById('edit-lesson-section').value,
     video_status: status,
-    order: parseInt(document.getElementById('edit-lesson-order').value) || 0
+    order: parseInt(document.getElementById('edit-lesson-order').value) || 0,
+    duration_minutes: parseInt(document.getElementById('edit-lesson-duration').value) || 0,
+    is_project: document.getElementById('edit-lesson-is-project')?.checked || false
   };
 
   if (providerSelected === 'bunny') {
@@ -3338,5 +3454,295 @@ async function deleteGuestSession(id) {
     if (!res.ok) throw new Error('Delete failed');
     showToast('Session deleted!', 'success');
     loadGohTab();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COURSE CERTIFICATE TEMPLATE
+// ═══════════════════════════════════════════════════════════════
+function openCertificateModal(courseId) {
+  const c = coursesCache.find(x => x.id === courseId);
+  if (!c) return;
+  document.getElementById('cert-course-id').value = courseId;
+  document.getElementById('cert-modal-title').textContent = 'Certificate — ' + c.title;
+  const preview = document.getElementById('cert-preview');
+  const removeBtn = document.getElementById('cert-remove-btn');
+  if (c.certificate_url) {
+    preview.innerHTML = `<img src="${API + c.certificate_url}?t=${Date.now()}" style="max-width:100%;border-radius:8px;border:1px solid #262626;" alt="Certificate template">`;
+    removeBtn.style.display = '';
+  } else {
+    preview.innerHTML = `<div style="padding:30px;text-align:center;color:#666;border:1px dashed #333;border-radius:8px;">No certificate template uploaded yet.<br><small>Upload the certificate image — the member's name, course name and date are added automatically on download.</small></div>`;
+    removeBtn.style.display = 'none';
+  }
+  document.getElementById('cert-file-input').value = '';
+  document.getElementById('certificate-modal').style.display = 'flex';
+}
+
+async function uploadCertificate() {
+  const courseId = document.getElementById('cert-course-id').value;
+  const input = document.getElementById('cert-file-input');
+  if (!input.files || !input.files[0]) return showToast('Choose an image file first', 'error');
+  const file = input.files[0];
+  if (!file.type.startsWith('image/')) return showToast('Must be an image file', 'error');
+
+  const btn = document.getElementById('cert-upload-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(API + `/courses/admin/${courseId}/certificate`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Upload failed');
+    }
+    const data = await res.json();
+    const c = coursesCache.find(x => x.id == courseId);
+    if (c) c.certificate_url = data.certificate_url;
+    showToast('Certificate template uploaded!', 'success');
+    openCertificateModal(parseInt(courseId)); // refresh the preview
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload';
+}
+
+async function removeCertificate() {
+  const courseId = document.getElementById('cert-course-id').value;
+  if (!confirm('Remove the certificate template for this course?')) return;
+  try {
+    const res = await fetch(API + `/courses/admin/${courseId}/certificate`, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed');
+    const c = coursesCache.find(x => x.id == courseId);
+    if (c) c.certificate_url = null;
+    showToast('Certificate template removed', 'info');
+    openCertificateModal(parseInt(courseId));
+  } catch (e) {
+    showToast('Error removing certificate', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXAMS MANAGER (per course)
+// ═══════════════════════════════════════════════════════════════
+let examsCache = [];
+let examBuilderQCount = 0;
+let examLessonsCache = []; // lessons of the current course, for the placement dropdown
+
+async function loadExamLessons() {
+  try {
+    const res = await fetch(API + `/courses/admin/${currentCourseId}/lessons`, { headers });
+    examLessonsCache = res.ok ? await res.json() : [];
+  } catch (e) { examLessonsCache = []; }
+}
+
+function examPlacementLabel(ex) {
+  if (!ex.after_lesson_id) return '<span style="color:#888;">End of course</span>';
+  const idx = examLessonsCache.findIndex(l => l.id === ex.after_lesson_id);
+  if (idx === -1) return '<span style="color:#888;">End of course</span>';
+  return `After ${idx + 1}. ${escapeHtml(examLessonsCache[idx].title)}`;
+}
+
+function populateExamLessonSelect(selectedId) {
+  const sel = document.getElementById('exam-builder-lesson');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">End of course (not tied to a lesson)</option>' +
+    examLessonsCache.map((l, i) =>
+      `<option value="${l.id}" ${selectedId === l.id ? 'selected' : ''}>After ${i + 1}. ${escapeHtml(l.title)}</option>`
+    ).join('');
+}
+
+async function showExamsManager(courseId, title) {
+  currentCourseId = courseId;
+  document.getElementById('courses-list-view').style.display = 'none';
+  document.getElementById('lessons-manager-view').style.display = 'none';
+  document.getElementById('exams-manager-view').style.display = 'block';
+  document.getElementById('em-course-title').textContent = title + ' - Exams';
+  if (uploadPollInterval) { clearInterval(uploadPollInterval); uploadPollInterval = null; }
+  await loadExams();
+}
+
+async function loadExams() {
+  const tbody = document.getElementById('exams-body');
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#555;">Loading...</td></tr>`;
+  try {
+    const [res] = await Promise.all([
+      fetch(API + `/admin/courses/${currentCourseId}/exams`, { headers }),
+      loadExamLessons()
+    ]);
+    if (!res.ok) throw new Error('Failed');
+    examsCache = await res.json();
+    renderExams();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:red;">Error loading exams.</td></tr>`;
+  }
+}
+
+function renderExams() {
+  const tbody = document.getElementById('exams-body');
+  if (!examsCache.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#555;">No exams yet. Add one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = examsCache.map((ex, idx) => `
+    <tr>
+      <td style="color:#888;">${idx + 1}</td>
+      <td><strong>${escapeHtml(ex.title)}</strong>${ex.description ? `<br><small style="color:#888;">${escapeHtml((ex.description || '').substring(0, 50))}</small>` : ''}</td>
+      <td>${ex.question_count} question${ex.question_count !== 1 ? 's' : ''}</td>
+      <td style="font-size:12.5px;">${examPlacementLabel(ex)}</td>
+      <td>${ex.pass_percent}%</td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${ex.is_published ? 'checked' : ''} onchange="toggleExamPublish(${ex.id}, this)">
+          <span class="slider round"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn-action" onclick="openExamBuilder(${ex.id})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action" onclick="deleteExam(${ex.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+async function toggleExamPublish(examId, checkbox) {
+  const isPub = checkbox.checked;
+  try {
+    const res = await fetch(API + `/admin/exams/${examId}`, {
+      method: 'PATCH', headers, body: JSON.stringify({ is_published: isPub })
+    });
+    if (!res.ok) throw new Error('Failed');
+    const ex = examsCache.find(e => e.id === examId);
+    if (ex) ex.is_published = isPub;
+    showToast(`Exam ${isPub ? 'published' : 'hidden'}`, 'success');
+  } catch (e) {
+    checkbox.checked = !isPub;
+    showToast('Error updating exam', 'error');
+  }
+}
+
+async function deleteExam(examId) {
+  if (!confirm('Delete this exam and all its attempts? This cannot be undone.')) return;
+  try {
+    const res = await fetch(API + `/admin/exams/${examId}`, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Exam deleted', 'info');
+    loadExams();
+  } catch (e) { showToast('Error deleting exam', 'error'); }
+}
+
+// -- Exam Builder Modal --
+function examQuestionCard(q, idx) {
+  const opts = (q && q.options) || ['', '', '', ''];
+  while (opts.length < 4) opts.push('');
+  const correct = (q && typeof q.correct === 'number') ? q.correct : 0;
+  const optionsHtml = opts.slice(0, 4).map((o, oi) => `
+    <div class="exam-opt-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <input type="radio" name="exam-q-correct-${idx}" class="exam-q-correct" value="${oi}" ${oi === correct ? 'checked' : ''} title="Mark as correct answer" style="width:18px;height:18px;accent-color:#22c55e;cursor:pointer;">
+      <input type="text" class="exam-q-opt" value="${escapeHtml(o)}" placeholder="Option ${oi + 1}" style="flex:1;padding:8px 10px;background:#0d0d0d;border:1px solid #262626;border-radius:6px;color:#fff;">
+    </div>`).join('');
+  return `
+    <div class="exam-q-card" data-qidx="${idx}" style="background:#141414;border:1px solid #262626;border-radius:10px;padding:16px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="color:#3f8ff9;font-weight:700;font-size:13px;">Q<span class="exam-q-num">${idx + 1}</span></span>
+        <input type="text" class="exam-q-text" value="${q ? escapeHtml(q.text || '') : ''}" placeholder="Question text..." style="flex:1;padding:9px 12px;background:#0d0d0d;border:1px solid #262626;border-radius:6px;color:#fff;">
+        <button type="button" class="btn-action" onclick="removeExamQuestion(this)" style="color:#ef4444;" title="Remove question"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div style="font-size:11px;color:#666;margin-bottom:8px;"><i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Select the radio next to the correct answer</div>
+      ${optionsHtml}
+    </div>`;
+}
+
+function addExamQuestion(q) {
+  const container = document.getElementById('exam-questions-container');
+  const idx = examBuilderQCount++;
+  container.insertAdjacentHTML('beforeend', examQuestionCard(q, idx));
+}
+
+function removeExamQuestion(btn) {
+  const card = btn.closest('.exam-q-card');
+  if (card) card.remove();
+  // renumber
+  document.querySelectorAll('#exam-questions-container .exam-q-card').forEach((c, i) => {
+    const num = c.querySelector('.exam-q-num');
+    if (num) num.textContent = i + 1;
+  });
+}
+
+function openExamBuilder(examId) {
+  examBuilderQCount = 0;
+  document.getElementById('exam-questions-container').innerHTML = '';
+  document.getElementById('exam-builder-id').value = '';
+  document.getElementById('exam-builder-title').value = '';
+  document.getElementById('exam-builder-desc').value = '';
+  document.getElementById('exam-builder-pass').value = '70';
+  document.getElementById('exam-builder-published').checked = false;
+  populateExamLessonSelect(null);
+
+  if (examId) {
+    const ex = examsCache.find(e => e.id === examId);
+    document.getElementById('exam-builder-heading').textContent = 'Edit Exam';
+    // Fetch full exam (with correct answers) since the list summary omits questions
+    fetch(API + `/admin/exams/${examId}`, { headers })
+      .then(r => r.json())
+      .then(full => {
+        document.getElementById('exam-builder-id').value = full.id;
+        document.getElementById('exam-builder-title').value = full.title || '';
+        document.getElementById('exam-builder-desc').value = full.description || '';
+        document.getElementById('exam-builder-pass').value = full.pass_percent ?? 70;
+        document.getElementById('exam-builder-published').checked = !!full.is_published;
+        populateExamLessonSelect(full.after_lesson_id || null);
+        (full.questions || []).forEach(q => addExamQuestion(q));
+        if (!(full.questions || []).length) addExamQuestion();
+      })
+      .catch(() => showToast('Error loading exam', 'error'));
+  } else {
+    document.getElementById('exam-builder-heading').textContent = 'Add Exam';
+    addExamQuestion();
+  }
+  document.getElementById('exam-builder-modal').style.display = 'flex';
+}
+
+function collectExamData() {
+  const questions = [];
+  document.querySelectorAll('#exam-questions-container .exam-q-card').forEach(card => {
+    const text = card.querySelector('.exam-q-text').value.trim();
+    const options = Array.from(card.querySelectorAll('.exam-q-opt')).map(i => i.value.trim());
+    const checked = card.querySelector('.exam-q-correct:checked');
+    const correct = checked ? parseInt(checked.value) : 0;
+    questions.push({ text, options, correct });
+  });
+  const lessonSel = document.getElementById('exam-builder-lesson');
+  return {
+    title: document.getElementById('exam-builder-title').value.trim(),
+    description: document.getElementById('exam-builder-desc').value.trim() || null,
+    pass_percent: parseInt(document.getElementById('exam-builder-pass').value) || 0,
+    is_published: document.getElementById('exam-builder-published').checked,
+    after_lesson_id: lessonSel && lessonSel.value ? parseInt(lessonSel.value) : null,
+    questions
+  };
+}
+
+async function submitExam() {
+  const data = collectExamData();
+  if (!data.title) return showToast('Exam title is required', 'error');
+  // client-side validation to avoid silently dropped questions
+  const valid = data.questions.filter(q => q.text && q.options.filter(o => o).length >= 2);
+  if (!valid.length) return showToast('Add at least one question with a prompt and 2+ options', 'error');
+
+  const examId = document.getElementById('exam-builder-id').value;
+  try {
+    const url = examId ? API + `/admin/exams/${examId}` : API + `/admin/courses/${currentCourseId}/exams`;
+    const method = examId ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Save failed');
+    }
+    closeModal('exam-builder-modal');
+    showToast(examId ? 'Exam updated!' : 'Exam created!', 'success');
+    loadExams();
   } catch (e) { showToast(e.message, 'error'); }
 }

@@ -10,6 +10,7 @@ OTP store is an in-memory dict (acceptable for 10-minute codes).
 """
 
 import random
+import threading
 import time
 import logging
 from datetime import datetime, timedelta, timezone
@@ -86,11 +87,13 @@ def send_otp(data: SendOTPRequest, db: Session = Depends(get_db)):
     }
     logger.info("Legacy OTP generated for %s: %s", email, code)
 
-    # 4. Send email
-    try:
-        send_legacy_otp_email(email, code)
-    except Exception as exc:
-        logger.warning("Failed to send legacy OTP email to %s: %s", email, exc)
+    # 4. Send email — في thread عشان الـ request ميستناش SMTP بطيء وهو ماسك DB connection
+    def _send():
+        try:
+            send_legacy_otp_email(email, code)
+        except Exception as exc:
+            logger.warning("Failed to send legacy OTP email to %s: %s", email, exc)
+    threading.Thread(target=_send, daemon=True).start()
 
     return {"message": "تم إرسال كود التحقق على بريدك الإلكتروني"}
 

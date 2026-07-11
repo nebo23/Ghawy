@@ -494,6 +494,31 @@
   padding: 24px 0;
 }
 
+/* ── Windowed pager (arrows + numbers + ellipsis) ── */
+.pagination,
+.payments-pagination {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.page-btn.page-arrow {
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 12px;
+  font-weight: 700;
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: #666;
+  padding: 8px 4px;
+  user-select: none;
+}
+
 /* ── Analytics Tab ───────────────────────── */
 .analytics-range {
   display: flex;

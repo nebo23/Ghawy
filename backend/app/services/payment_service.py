@@ -8,7 +8,8 @@ no matter which signal arrives first.
 """
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import httpx
 from sqlalchemy.orm import Session
@@ -16,6 +17,22 @@ from sqlalchemy.orm import Session
 from app.models import Payment, PaymentStatus, User
 
 logger = logging.getLogger(__name__)
+
+# Egypt timezone — handles DST automatically (UTC+2 winter / UTC+3 summer)
+CAIRO_TZ = ZoneInfo("Africa/Cairo")
+
+
+def to_cairo_iso(dt):
+    """Convert a naive-UTC datetime to an Egypt-local ISO 8601 string (with offset).
+
+    The backend stores naive UTC timestamps; the n8n automation expects Egypt
+    wall-clock time, so we attach UTC then shift to Africa/Cairo.
+    """
+    if not dt:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(CAIRO_TZ).isoformat()
 
 
 def plan_duration(plan_key: str):
@@ -55,7 +72,7 @@ def _build_n8n_payload(user, payment: Payment, duration_type: str, transaction_i
         "transaction_id": transaction_id or "",
         "payment_status": "success",
         "payment_method": "kashier",
-        "paid_at": payment.confirmed_at.isoformat() if payment.confirmed_at else datetime.utcnow().isoformat(),
+        "paid_at": to_cairo_iso(payment.confirmed_at or datetime.utcnow()),
         "subscription_duration": duration_type,
     }
 

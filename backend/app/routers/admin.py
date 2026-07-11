@@ -24,8 +24,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ── Helper ────────────────────────────────────────────────────
 def require_admin(current_user: User):
-    """Raise 403 if the current user is not an admin."""
-    if not current_user.is_admin:
+    """Raise 403 if the current user is neither an admin nor an owner."""
+    if not (getattr(current_user, 'is_admin', False) or getattr(current_user, 'is_owner', False)):
         raise HTTPException(status_code=403, detail="Admins only")
 
 
@@ -110,6 +110,7 @@ def list_users(
             "email": u.email if viewer_is_owner else None,
             "phone": u.phone if viewer_is_owner else None,
             "country": u.country,
+            "birth_date": u.birth_date.isoformat() if u.birth_date else None,
             "is_active": u.is_active,
             "is_verified": u.is_verified,
             "is_admin": u.is_admin,
@@ -122,6 +123,7 @@ def list_users(
             "governorate": u.governorate,
             "social_media_url": u.social_media_url if viewer_is_owner else None,
             "is_owner": getattr(u, 'is_owner', False),
+            "winback_sent_at": u.winback_email_sent_at.isoformat() if u.winback_email_sent_at else None,
         })
 
     return result
@@ -441,7 +443,7 @@ def list_payments(
     db: Session = Depends(get_db),
 ):
     """List payments with pagination, search and filters."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -494,7 +496,7 @@ def payment_stats(
     db: Session = Depends(get_db),
 ):
     """Aggregate payment statistics."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -533,7 +535,7 @@ def export_payments_csv(
     db: Session = Depends(get_db),
 ):
     """Export filtered payments as CSV."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -587,7 +589,7 @@ def retry_payment(
     db: Session = Depends(get_db),
 ):
     """Retry a failed payment."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -608,7 +610,7 @@ def refund_payment(
     db: Session = Depends(get_db),
 ):
     """Mark a paid payment as refunded."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -647,7 +649,7 @@ def analytics_kpis(
     db: Session = Depends(get_db),
 ):
     """KPI metrics for the analytics dashboard."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     now = datetime.utcnow()
     start = _parse_range(range)
@@ -696,7 +698,7 @@ def members_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily new member signups for the given range."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -726,7 +728,7 @@ def revenue_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily revenue from confirmed payments for the given range."""
-    require_owner(current_user)  # 🔒 owner-only tab
+    require_admin(current_user)  # 🔒 admins + owners
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -750,5 +752,52 @@ def revenue_over_time(
                 amounts[day] += float(p.amount) if p.amount else 0
 
     return [{"date": date, "amount": round(amt, 2)} for date, amt in sorted(amounts.items())]
+
+
+@router.get("/analytics/subscription-breakdown")
+def subscription_breakdown(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Distribution of current subscription types across members (monthly / yearly / none)."""
+    require_admin(current_user)  # 🔒 admins + owners
+
+    from app.models import ManualPaymentRequest
+
+    now = datetime.utcnow()
+
+    # Latest confirmed payment plan per user (kashier + backfilled manual payments).
+    # Ordered ascending so the last write wins = the most recent plan.
+    plan_by_user = {}
+    for pay in db.query(Payment).filter(
+        Payment.status == PaymentStatus.CONFIRMED
+    ).order_by(Payment.created_at.asc()).all():
+        if pay.plan_key:
+            plan_by_user[pay.user_id] = pay.plan_key
+
+    # Fallback: plan chosen on approved manual payment requests (keyed by email).
+    plan_by_email = {}
+    for req in db.query(ManualPaymentRequest).filter(
+        ManualPaymentRequest.status == "approved"
+    ).order_by(ManualPaymentRequest.created_at.asc()).all():
+        if req.plan:
+            plan_by_email[req.email] = req.plan
+
+    monthly = quarterly = yearly = none = 0
+    for u in db.query(User).all():
+        # A member counts as subscribed only while their access is still active.
+        active = bool(u.is_active) and (u.end_at is None or u.end_at > now)
+        if not active:
+            none += 1
+            continue
+        plan = (plan_by_user.get(u.id) or plan_by_email.get(u.email) or "").lower()
+        if "year" in plan:
+            yearly += 1
+        elif "quarter" in plan:
+            quarterly += 1
+        else:
+            monthly += 1
+
+    return {"monthly": monthly, "quarterly": quarterly, "yearly": yearly, "none": none}
 
 

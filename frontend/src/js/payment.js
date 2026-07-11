@@ -28,17 +28,6 @@ const PLANS = {
 let selectedPlan = 'monthly_egp'; // default
 let currentLang = localStorage.getItem('ghawy_lang') || 'ar';
 
-// ─── Detect User Region via IP ───────────────────────────────
-async function detectUserRegion() {
-  try {
-    const res = await fetch('https://ipapi.co/json/');
-    const data = await res.json();
-    return data.country_code === 'EG' ? 'EGP' : 'USD';
-  } catch {
-    return 'EGP';
-  }
-}
-
 // ─── Render All 3 Plans for the Region ──────────────────────
 function renderPlans(region) {
   const container = document.getElementById('plans-container');
@@ -86,16 +75,10 @@ function selectPlan(key) {
 }
 
 // ─── Setup Payment UI ────────────────────────────────────────
-async function setupPaymentUI() {
-  const container = document.getElementById('plans-container');
-  // Show skeleton while detecting region
-  container.innerHTML = `
-    <div class="plan-card skeleton-card"></div>
-    <div class="plan-card skeleton-card"></div>
-    <div class="plan-card skeleton-card"></div>`;
-
-  const region = await detectUserRegion();
-  renderPlans(region);
+// كل الاشتراكات بتتدفع بالجنيه المصري (Kashier بيسوّي كل حاجة بالمصري).
+// اللي برا مصر بيدفع نفس السعر بالمصري — مفيش عرض بالدولار.
+function setupPaymentUI() {
+  renderPlans('EGP');
 }
 
 setupPaymentUI();

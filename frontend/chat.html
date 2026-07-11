@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -16,9 +17,9 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
-    <link rel="stylesheet" href="src/css/community.css?v=3" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
+    <link rel="stylesheet" href="src/css/community.css?v=6" />
     <style>
         .chat-layout {
             display: flex;
@@ -261,7 +262,7 @@
 
         .msg-txt {
             font-size: .9rem;
-            color: #ffffff;
+            color: var(--text-primary, #ffffff);
             line-height: 1.6;
             white-space: pre-wrap;
             word-wrap: break-word
@@ -430,27 +431,106 @@
             transform: scale(1.02);
         }
 
-        /* Voice message */
-        .msg-voice {
+        /* Voice message — custom community player */
+        .voice-player {
             display: flex;
             align-items: center;
             gap: 10px;
             background: var(--bg-hover);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 8px 16px;
+            border-radius: 22px;
+            padding: 7px 14px 7px 7px;
             margin-top: 6px;
-            max-width: 320px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
         }
 
-        .msg-voice audio {
-            height: 32px;
+        .msg.msg-own .voice-player {
+            margin-left: auto;
+        }
+
+        .voice-play {
+            flex-shrink: 0;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gold, #c1ff11);
+            color: #0a0a0a;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .voice-play:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 14px rgba(193, 255, 17, 0.35);
+        }
+
+        .voice-play:active {
+            transform: scale(0.95);
+        }
+
+        .voice-track {
+            position: relative;
             flex: 1;
             min-width: 0;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
         }
 
-        .msg-voice audio::-webkit-media-controls-panel {
-            background: transparent;
+        .voice-bars {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .voice-bars span {
+            flex: 1 1 0;
+            min-width: 2px;
+            max-width: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.24);
+            transition: background .1s linear;
+        }
+
+        .voice-bars span.played {
+            background: var(--gold, #c1ff11);
+        }
+
+        .voice-dur {
+            flex-shrink: 0;
+            font-size: 0.72rem;
+            color: var(--text-secondary, #9a9a9a);
+            font-variant-numeric: tabular-nums;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .voice-player {
+                max-width: 260px;
+                gap: 8px;
+                padding: 6px 12px 6px 6px;
+            }
+
+            .voice-play {
+                width: 34px;
+                height: 34px;
+                font-size: 0.82rem;
+            }
+
+            .voice-track {
+                height: 26px;
+            }
         }
 
         /* Delete button removed from here, now in msg-actions */
@@ -661,8 +741,10 @@
             }
 
             [dir="rtl"] .chat-channels {
-                left: 0;
-                right: auto;
+                left: auto;
+                right: 0;
+                transform: translateX(100%);
+                box-shadow: -2px 0 28px rgba(0, 0, 0, .55);
             }
 
             .chat-channels.mobile-open {
@@ -735,6 +817,53 @@
                 word-break: break-word;
             }
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           LIGHT MODE — community chat channels & announcements
+           The feed header, channel names and titles are otherwise
+           hard-coded for the dark theme (gold "#", white text on a dark
+           translucent header). In light mode that renders as low-contrast
+           text on a light page, so force the hash, headings and channel
+           names to solid black over a light header.
+           ══════════════════════════════════════════════════════════════ */
+        :root[data-theme="light"] .chat-feed-header {
+            background: rgba(255, 255, 255, 0.75);
+            border-bottom: 1px solid var(--border);
+        }
+
+        :root[data-theme="light"] .chat-feed-header .ch-hash-lg,
+        :root[data-theme="light"] .chat-feed-header h3 {
+            color: #0f172a;
+        }
+
+        /* Channel names in the sidebar (# start_here, # announcements …) */
+        :root[data-theme="light"] .comm-item-name {
+            color: #0f172a;
+        }
+
+        /* Online pill — inline-styled with a dark rgba(0,0,0,.5) background
+           that stayed black on the light page; use a light green tint. */
+        :root[data-theme="light"] .online-pill {
+            background: rgba(34, 197, 94, 0.12) !important;
+        }
+
+        /* Neon translucent subtitle ("Real-time chat") — unreadable on the
+           light page; darken it. */
+        :root[data-theme="light"] .ch-item .ch-preview[style*="193,255,17"] {
+            color: rgba(74, 112, 0, 0.85) !important;
+        }
+
+        /* Introduce-yourself welcome modal — inline-styled dark card; the
+           forced-dark .dash-content h2 made its title unreadable on it. */
+        :root[data-theme="light"] #introduceWelcomeCard {
+            background: #ffffff !important;
+            border-color: rgba(92, 138, 0, 0.35) !important;
+            box-shadow: 0 0 60px rgba(92, 138, 0, 0.10), 0 20px 60px rgba(15, 23, 42, 0.25) !important;
+        }
+
+        :root[data-theme="light"] #introduceWelcomeCard h2 {
+            color: #0f172a !important;
+        }
     </style>
 
     <script>
@@ -761,6 +890,7 @@
             } catch (e) { }
         })();
     </script>
+    <script src="src/js/community-i18n.js?v=5"></script>
 </head>
 
 <body>
@@ -791,6 +921,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -804,6 +935,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -947,11 +1079,12 @@
                         <span style="font-size:1rem; margin-top:2px;"><i data-lucide="message-square"
                                 class="nav-icon"></i></span>
                         <div class="ch-info" style="display:flex; flex-direction:column; gap:1px;">
-                            <div class="ch-name" style="font-size:0.85rem; font-weight:600; color:#f1f0ea;">General Chat
+                            <div class="ch-name" style="font-size:0.85rem; font-weight:600; color:var(--text-primary,#f1f0ea);">General Chat
                             </div>
                             <div class="ch-preview" style="font-size:0.72rem; color:rgba(193,255,17,0.6);">Real-time
                                 chat</div>
                         </div>
+                        <span class="dm-badge" data-unread-channel="general" style="display:none"></span>
                     </div>
 
 
@@ -974,6 +1107,7 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># announcements</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="announcements" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="introduce-yourself"
                             onclick="selectChannel('introduce-yourself')">
@@ -981,12 +1115,14 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># introduce-yourself</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="introduce-yourself" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="wins" onclick="selectChannel('wins')">
                             <span class="comm-item-emoji"><i data-lucide="crown" style="color: #eab308;"></i></span>
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># wins</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="wins" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="workflows-help"
                             onclick="selectChannel('workflows-help')">
@@ -995,6 +1131,7 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># workflows-help</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="workflows-help" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="share-your-build"
                             onclick="selectChannel('share-your-build')">
@@ -1002,6 +1139,7 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># share-your-build</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="share-your-build" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="general-questions"
                             onclick="selectChannel('general-questions')">
@@ -1010,6 +1148,7 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># general-questions</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="general-questions" style="display:none"></span>
                         </div>
                         <div class="comm-sidebar-item" data-category="hiring-opportunities"
                             onclick="selectChannel('hiring-opportunities')">
@@ -1017,6 +1156,7 @@
                             <div class="comm-item-text">
                                 <span class="comm-item-name"># hiring-opportunities</span>
                             </div>
+                            <span class="dm-badge" data-unread-channel="hiring-opportunities" style="display:none"></span>
                         </div>
                     </div>
                 </div>
@@ -1026,11 +1166,16 @@
                         <button class="chat-channels-toggle" type="button" aria-label="Open channels"
                             onclick="toggleChatChannels()"><i class="fa-solid fa-bars"></i></button>
                         <span class="ch-hash-lg" id="channelHashIcon">#</span>
+                        <span id="dmBackBtn" class="dm-back-btn" style="display:none;"
+                            onclick="selectChannel('messages')" title="Back to Messages"><i
+                                class="fa-solid fa-arrow-left"></i></span>
                         <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
                         <div style="flex:1; min-width:0;">
                             <h3 id="currentChannelName" style="margin:0;">general</h3>
                             <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
                         </div>
+                        <button id="dmCloseBtn" class="dm-close-btn" style="display:none;" title="Close chat"
+                            onclick="selectChannel('messages')"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div class="chat-feed-messages" id="chatMessages">
                         <div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i>
@@ -1068,8 +1213,8 @@
                     </div>
                     <div class="chat-input-bar" id="chatInputBar">
                         <div class="chat-media-btns">
-                            <button class="chat-media-btn" id="attachBtn" title="Send image"><i
-                                    class="fa-solid fa-image"></i></button>
+                            <button class="chat-media-btn" id="attachBtn" title="Attach file or image"><i
+                                    class="fa-solid fa-paperclip"></i></button>
                             <button class="chat-media-btn" id="voiceBtn" title="Record voice"><i
                                     class="fa-solid fa-microphone"></i></button>
                         </div>
@@ -1077,7 +1222,7 @@
                             dir="auto"></textarea>
                         <button class="chat-send-btn" id="sendBtn"><i data-lucide="send" size="18"></i></button>
                     </div>
-                    <input type="file" id="fileInput" accept="image/*" style="display:none" />
+                    <input type="file" id="fileInput" style="display:none" />
                 </div>
                 <!-- Right Sidebar (shown only in posts mode) -->
                 <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
@@ -1222,7 +1367,7 @@
             <button id="introduceWelcomeBtn" onclick="closeIntroWelcomeAndPost()" style="
                 width: 100%;
                 padding: 14px;
-                background: linear-gradient(135deg, #c1ff11 0%, #a8e010 100%);
+                background: linear-gradient(135deg, var(--gold, #c1ff11) 0%, var(--gold-dark, #a8e010) 100%);
                 color: #0a0a0a;
                 border: none;
                 border-radius: 12px;
@@ -1278,33 +1423,28 @@
             <a id="ppSocialLink" class="pp-social-link pp-hidden" href="#" target="_blank">
                 🔗 <span id="ppSocialText"></span>
             </a>
-            <!-- Stats Row -->
-            <div class="pp-stats">
-                <div class="pp-stat">
-                    <span id="ppLevel" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Level</span>
+            <!-- Streak Chip -->
+            <div class="pp-streak-chip">
+                <span class="pp-streak-fire">🔥</span>
+                <span id="ppStreak" class="pp-streak-num">0</span>
+                <span class="pp-streak-label" data-i18n="Day Streak">Day Streak</span>
+            </div>
+            <!-- Achievements -->
+            <div class="pp-ach-section">
+                <div class="pp-ach-head">
+                    <span data-i18n="Achievements">Achievements</span>
+                    <span id="ppAchCount" class="pp-ach-count"></span>
                 </div>
-                <div class="pp-stat">
-                    <span id="ppXp" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">XP</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppStreak" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Day Streak 🔥</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppPosts" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Posts</span>
-                </div>
+                <div id="ppAchGrid" class="pp-ach-grid"></div>
             </div>
             <!-- Joined Date -->
             <p id="ppJoined" class="pp-joined"></p>
             <!-- Admin Notes (visible to admins only, when viewing another member) -->
             <div id="ppAdminNotes" style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
-                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:#c1ff11; margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
+                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:var(--gold, #c1ff11); margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
                 <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..." style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
                 <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
-                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:#c1ff11; color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
+                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:var(--gold, #c1ff11); color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
                     <span id="ppNoteStatus" style="font-size:0.78rem;"></span>
                 </div>
             </div>
@@ -1357,7 +1497,7 @@
     <div class="custom-modal-overlay" id="newDmModal">
         <div class="new-dm-modal">
             <div class="new-dm-modal-header">
-                <h3>✏️ رسالة جديدة</h3>
+                <h3>✏️ New Message</h3>
                 <button class="close-members-btn" onclick="closeNewMessageModal()"><i data-lucide="x"
                         size="16"></i></button>
             </div>
@@ -1368,7 +1508,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1781976772"></script>
+    <script src="src/js/utils.js?v=1783908000"></script>
 
     <style>
         /* Custom Modal */
@@ -1633,7 +1773,7 @@
         .member-details .m-name {
             font-size: 0.95rem;
             font-weight: 600;
-            color: #f1f0ea;
+            color: var(--text-primary, #f1f0ea);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1701,7 +1841,7 @@
 
         .dm-sidebar-item.active {
             background: rgba(193, 255, 17, 0.08);
-            border-left: 3px solid #c1ff11;
+            border-left: 3px solid var(--gold, #c1ff11);
         }
 
         .dm-av {
@@ -1905,7 +2045,7 @@
         .notif-item-name {
             font-size: 0.85rem;
             font-weight: 600;
-            color: #f1f0ea;
+            color: var(--text-primary, #f1f0ea);
         }
 
         .notif-item-text {
@@ -2202,7 +2342,7 @@
 
         .dm-item.active {
             background: rgba(193, 255, 17, 0.08);
-            border-left: 3px solid #c1ff11;
+            border-left: 3px solid var(--gold, #c1ff11);
         }
 
         .dm-avatar-wrap {
@@ -2237,7 +2377,7 @@
         .dm-info-col .dm-name-text {
             font-size: 0.82rem;
             font-weight: 600;
-            color: #f1f0ea;
+            color: var(--text-primary, #f1f0ea);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -2381,7 +2521,7 @@
         .new-dm-member-name {
             font-size: 0.9rem;
             font-weight: 600;
-            color: #f1f0ea;
+            color: var(--text-primary, #f1f0ea);
         }
 
         .new-dm-member-badge {
@@ -2445,7 +2585,64 @@
         }
 
         .dm-back-btn:hover {
-            color: #c1ff11;
+            color: var(--gold, #c1ff11);
+        }
+
+        /* DM Close (exit chat) Button */
+        .dm-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .dm-close-btn:hover {
+            background: rgba(255, 77, 77, 0.12);
+            border-color: rgba(255, 77, 77, 0.4);
+            color: #ff4d4d;
+        }
+
+        /* Typing indicator */
+        .dm-header-status.typing {
+            color: var(--gold, #c1ff11);
+            font-style: italic;
+        }
+
+        .typing-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px 16px 16px 4px;
+            padding: 12px 16px;
+            margin: 6px 16px 10px;
+            width: fit-content;
+        }
+
+        .typing-bubble .typing-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #999;
+            animation: typingBlink 1.2s infinite ease-in-out;
+        }
+
+        .typing-bubble .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-bubble .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBlink {
+            0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-3px); }
         }
 
         /* DM Inbox */
@@ -2476,7 +2673,7 @@
             align-items: center;
             gap: 6px;
             background: rgba(193, 255, 17, 0.1);
-            color: #c1ff11;
+            color: var(--gold, #c1ff11);
             border: 1px solid rgba(193, 255, 17, 0.2);
             border-radius: 8px;
             padding: 8px 16px;
@@ -2548,7 +2745,7 @@
         .dm-inbox-name {
             font-size: 0.92rem;
             font-weight: 600;
-            color: #f1f0ea;
+            color: var(--text-primary, #f1f0ea);
             margin-bottom: 3px;
         }
 
@@ -2608,10 +2805,145 @@
         let audioChunks = [];
         let isRecording = false;
         let ws = null;
+
+        // ── Typing indicator state (DMs) ──
+        let currentDmChannelId = null;   // numeric channel id of the open DM
+        let typingHideTimer = null;
+        let lastTypingSentAt = 0;
+
         const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
         // Normalize emoji before sending (strip variation selector U+FE0F for backend match)
         const normalizeEmoji = (e) => e.replace(/\ufe0f/g, '');
         const messageReactionsCache = {};
+
+        // ── File attachment rendering (download card for non-image files) ──
+        function formatFileSize(bytes) {
+            if (!bytes || bytes < 0) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function fileIconClass(name) {
+            const ext = (name || '').split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-file-pdf';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word';
+            if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-file-excel';
+            if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint';
+            if (['zip', 'rar', '7z'].includes(ext)) return 'fa-file-zipper';
+            if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) return 'fa-file-video';
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'fa-file-audio';
+            return 'fa-file-arrow-down';
+        }
+
+        function renderFileAttachment(fileUrl, fileName, fileSize) {
+            const fname = escHtml(fileName || 'file');
+            const fsize = formatFileSize(fileSize);
+            const icon = fileIconClass(fileName);
+            return `<a class="msg-file-card" href="${API}${fileUrl}" target="_blank" rel="noopener" download="${fname}"
+                style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;color:inherit;max-width:280px;">
+                <i class="fa-solid ${icon}" style="font-size:1.5rem;color:var(--gold,#c1ff11);flex-shrink:0;"></i>
+                <span style="display:flex;flex-direction:column;overflow:hidden;">
+                    <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fname}</span>
+                    <span style="font-size:0.72rem;color:#999;">${fsize ? fsize + ' · ' : ''}Download</span>
+                </span>
+            </a>`;
+        }
+
+        // ── Voice message — custom community player ──
+        function voiceBarsHtml(seed) {
+            const n = 30;
+            let s = (Math.abs(parseInt(seed, 10)) || 1) % 233280 || 1;
+            let html = '';
+            for (let i = 0; i < n; i++) {
+                s = (s * 9301 + 49297) % 233280;
+                const h = 22 + Math.round((s / 233280) * 68); // 22%..90%
+                html += `<span style="height:${h}%"></span>`;
+            }
+            return html;
+        }
+
+        function renderVoicePlayer(fileUrl, msgId) {
+            return `<div class="voice-player">
+                <button type="button" class="voice-play" aria-label="Play voice message" onclick="toggleVoice(this)"><i class="fa-solid fa-play"></i></button>
+                <div class="voice-track" onclick="voiceSeek(event)"><div class="voice-bars">${voiceBarsHtml(msgId)}</div></div>
+                <span class="voice-dur">0:00</span>
+                <audio preload="metadata" src="${API}${fileUrl}" onloadedmetadata="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
+            </div>`;
+        }
+
+        function fmtVoiceTime(s) {
+            if (!isFinite(s) || s < 0) s = 0;
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return m + ':' + String(sec).padStart(2, '0');
+        }
+
+        function toggleVoice(btn) {
+            const player = btn.closest('.voice-player');
+            if (!player) return;
+            const audio = player.querySelector('audio');
+            if (!audio) return;
+            document.querySelectorAll('.voice-player audio').forEach(a => { if (a !== audio) a.pause(); });
+            if (audio.paused) { audio.play().catch(() => { }); } else { audio.pause(); }
+        }
+
+        function voiceMeta(audio) {
+            // Fix Infinity duration for MediaRecorder webm blobs
+            if (audio.duration === Infinity) {
+                const onFix = () => {
+                    audio.removeEventListener('timeupdate', onFix);
+                    audio.currentTime = 0;
+                    const p = audio.closest('.voice-player');
+                    const dur = p && p.querySelector('.voice-dur');
+                    if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+                };
+                audio.addEventListener('timeupdate', onFix);
+                audio.currentTime = 1e101;
+                return;
+            }
+            const p = audio.closest('.voice-player');
+            const dur = p && p.querySelector('.voice-dur');
+            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+        }
+
+        function voiceProgress(audio) {
+            if (!audio.duration || !isFinite(audio.duration)) return;
+            const p = audio.closest('.voice-player');
+            if (!p) return;
+            const bars = p.querySelectorAll('.voice-bars span');
+            const cut = Math.round((audio.currentTime / audio.duration) * bars.length);
+            bars.forEach((b, i) => b.classList.toggle('played', i < cut));
+            const dur = p.querySelector('.voice-dur');
+            if (dur) dur.textContent = fmtVoiceTime(audio.paused && audio.currentTime === 0 ? audio.duration : audio.currentTime);
+        }
+
+        function voiceState(audio, playing) {
+            const p = audio.closest('.voice-player');
+            const icon = p && p.querySelector('.voice-play i');
+            if (icon) icon.className = playing ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+        }
+
+        function voiceEnded(audio) {
+            voiceState(audio, false);
+            audio.currentTime = 0;
+            const p = audio.closest('.voice-player');
+            if (!p) return;
+            p.querySelectorAll('.voice-bars span').forEach(b => b.classList.remove('played'));
+            const dur = p.querySelector('.voice-dur');
+            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+        }
+
+        function voiceSeek(e) {
+            const track = e.currentTarget;
+            const p = track.closest('.voice-player');
+            const audio = p && p.querySelector('audio');
+            if (!audio || !audio.duration || !isFinite(audio.duration)) return;
+            const rect = track.getBoundingClientRect();
+            const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+            audio.currentTime = ratio * audio.duration;
+            voiceProgress(audio);
+        }
 
         // ── Post-mode state ──
         const POST_CHANNELS = ['announcements', 'introduce-yourself', 'wins', 'workflows-help', 'share-your-build', 'general-questions', 'hiring-opportunities'];
@@ -2646,8 +2978,11 @@
                 try {
                     const msg = JSON.parse(e.data);
                     if (msg.event === 'new_message') {
+                        clearTypingIndicator();
                         loadMessages();
                         loadDmList();
+                    } else if (msg.event === 'typing') {
+                        handleTypingEvent(msg.data);
                     } else if (msg.event === 'message_read') {
                         // Refresh to show updated read receipts
                         loadMessages();
@@ -2672,6 +3007,7 @@
                         // Prepend new post to feed if we're viewing that channel
                         if (msg.data && msg.data.channel === currentChannel && msg.data.author && msg.data.author.id !== currentUserId) {
                             prependPostCard(msg.data);
+                            markCommunityRead();
                         }
                     } else if (msg.event === 'new_comment' && postMode) {
                         // Refresh inline comments if open for that post
@@ -2707,6 +3043,62 @@
             };
 
             ws.onerror = (err) => console.error('WebSocket Error', err);
+        }
+
+        // ── Typing indicator (DMs, WhatsApp-style) ──
+        function handleTypingEvent(data) {
+            if (!data || !currentDmChannelId || data.channel_id !== currentDmChannelId) return;
+            if (!currentChannel.startsWith('dm_')) return;
+
+            const st = document.getElementById('dmHeaderStatus');
+            if (st) {
+                st.textContent = 'typing…';
+                st.classList.add('typing');
+                st.classList.remove('offline');
+                st.style.display = '';
+            }
+            showTypingBubble();
+
+            clearTimeout(typingHideTimer);
+            typingHideTimer = setTimeout(clearTypingIndicator, 3000);
+        }
+
+        function clearTypingIndicator() {
+            clearTimeout(typingHideTimer);
+            removeTypingBubble();
+            const st = document.getElementById('dmHeaderStatus');
+            if (st && st.classList.contains('typing')) {
+                st.classList.remove('typing');
+                if (currentChannel.startsWith('dm_')) updateDmHeader(currentChannel);
+            }
+        }
+
+        function showTypingBubble() {
+            const wrap = document.getElementById('chatMessages');
+            if (!wrap) return;
+            let b = document.getElementById('typingBubble');
+            if (!b) {
+                b = document.createElement('div');
+                b.id = 'typingBubble';
+                b.className = 'typing-bubble';
+                b.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            }
+            wrap.appendChild(b); // (re)append so it stays at the bottom
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        function removeTypingBubble() {
+            const b = document.getElementById('typingBubble');
+            if (b) b.remove();
+        }
+
+        function sendTypingSignal() {
+            if (!currentChannel.startsWith('dm_') || !currentDmChannelId) return;
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            const now = Date.now();
+            if (now - lastTypingSentAt < 2000) return; // throttle
+            lastTypingSentAt = now;
+            ws.send(JSON.stringify({ action: 'typing', channel_id: currentDmChannelId }));
         }
 
         // ── Sidebar toggle — global function for onclick ──
@@ -2857,6 +3249,17 @@
             const dmHeaderStatus = document.getElementById('dmHeaderStatus');
             const rightSidebar = document.getElementById('commRightSidebar');
 
+            // Reset typing indicator state when switching chats
+            clearTimeout(typingHideTimer);
+            removeTypingBubble();
+            currentDmChannelId = isDm
+                ? ((window._cachedDmList || []).find(d => d.channel_name === name) || {}).channel_id || null
+                : null;
+            const dmCloseBtn = document.getElementById('dmCloseBtn');
+            if (dmCloseBtn) dmCloseBtn.style.display = isDm ? '' : 'none';
+            const dmBackBtn = document.getElementById('dmBackBtn');
+            if (dmBackBtn) dmBackBtn.style.display = isDm ? '' : 'none';
+
             // Determine post mode
             postMode = isPostChannel;
 
@@ -2872,7 +3275,7 @@
                 if (dmHeaderStatus) dmHeaderStatus.style.display = 'none';
             } else if (isDm) {
                 headerHash.style.display = 'none';
-                headerName.innerHTML = `<span class="dm-back-btn" onclick="selectChannel('messages')" title="Back to Messages"><i class="fa-solid fa-arrow-left"></i></span> ${escHtml(activeDmUserName || 'Direct Message')}`;
+                headerName.innerHTML = `${escHtml(activeDmUserName || 'Direct Message')}`;
                 updateDmHeader(name);
             } else {
                 headerHash.textContent = '#'; headerHash.style.fontSize = ''; headerHash.style.display = '';
@@ -2892,10 +3295,15 @@
 
             if (name === 'messages' || isDm) {
                 if (chatChannelsEl) chatChannelsEl.style.display = 'none';
-                if (chatFeedHeader) chatFeedHeader.style.display = 'none';
+                // DM chats get a WhatsApp-style header (avatar + name + status + close)
+                if (chatFeedHeader) chatFeedHeader.style.display = isDm ? 'flex' : 'none';
+                const channelsToggle = chatFeedHeader ? chatFeedHeader.querySelector('.chat-channels-toggle') : null;
+                if (channelsToggle) channelsToggle.style.display = 'none';
             } else {
                 if (chatChannelsEl) chatChannelsEl.style.display = 'flex';
                 if (chatFeedHeader) chatFeedHeader.style.display = 'flex';
+                const channelsToggle = chatFeedHeader ? chatFeedHeader.querySelector('.chat-channels-toggle') : null;
+                if (channelsToggle) channelsToggle.style.display = '';
             }
 
             // Clear all active states
@@ -2911,13 +3319,13 @@
             if (activeCh) {
                 activeCh.classList.add('active');
                 activeCh.style.background = 'rgba(193,255,17,0.08)';
-                activeCh.style.borderLeft = '3px solid #c1ff11';
+                activeCh.style.borderLeft = '3px solid var(--gold, #c1ff11)';
             } else {
                 const activeComm = document.querySelector(`.comm-sidebar-item[data-category="${name}"]`);
                 if (activeComm) {
                     activeComm.classList.add('active');
                     activeComm.style.background = 'rgba(193,255,17,0.08)';
-                    activeComm.style.borderLeft = '3px solid #c1ff11';
+                    activeComm.style.borderLeft = '3px solid var(--gold, #c1ff11)';
                 }
             }
 
@@ -3070,9 +3478,21 @@
                     const dotHtml = u.is_online ? '<span class="dm-hdr-dot"></span>' : '';
                     dmHeaderAvatar.innerHTML = `<img src="${av}" alt=""/>${dotHtml}`;
                     dmHeaderAvatar.style.display = '';
-                    dmHeaderStatus.textContent = u.is_online ? 'Active now' : 'Offline';
-                    dmHeaderStatus.className = 'dm-header-status' + (u.is_online ? '' : ' offline');
+                    // Don't overwrite the "typing…" indicator while it's showing
+                    if (!dmHeaderStatus.classList.contains('typing')) {
+                        dmHeaderStatus.textContent = u.is_online ? 'Active now' : 'Offline';
+                        dmHeaderStatus.className = 'dm-header-status' + (u.is_online ? '' : ' offline');
+                    }
                     dmHeaderStatus.style.display = '';
+                    // Keep the header name accurate (covers DMs opened directly via URL)
+                    activeDmUserName = u.full_name;
+                    const headerNameEl = document.getElementById('currentChannelName');
+                    if (headerNameEl) {
+                        const verifiedIcon = u.is_admin ? '<i class="fa-solid fa-circle-check" style="color:var(--gold); font-size:1rem; margin-left:8px;" title="Verified Admin"></i>' : '';
+                        headerNameEl.innerHTML = `${escHtml(u.full_name)}${verifiedIcon}`;
+                    }
+                    const inputEl = document.getElementById('chatInput');
+                    if (inputEl) inputEl.placeholder = `Message ${u.full_name}...`;
                     return;
                 }
             }
@@ -3196,7 +3616,7 @@
             const isAdminSender = m.sender_is_admin == true || m.sender_is_admin === 1 || (m.author_badge && m.author_badge.toLowerCase().includes('admin'));
             console.log('[DEBUG BADGE]', m.author_name, 'sender_is_admin:', m.sender_is_admin, typeof m.sender_is_admin, 'author_badge:', m.author_badge, 'isAdminSender:', isAdminSender);
             if (isAdminSender) {
-                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:#c1ff11;">Admin <i class="fa-solid fa-circle-check" style="color: #c1ff11;"></i></span>`;
+                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:var(--gold, #c1ff11);">Admin <i class="fa-solid fa-circle-check" style="color: var(--gold, #c1ff11);"></i></span>`;
             } else if (m.author_badge && (m.author_badge.toLowerCase().includes('pro') || m.author_badge.toLowerCase().includes('gold'))) {
                 badgeHtml = `<span class="msg-badge pro">${m.author_badge}</span>`;
             } else {
@@ -3227,10 +3647,13 @@
             const safeContent = actualContent ? (window.formatAdminMentions ? window.formatAdminMentions(escHtml(actualContent)) : escHtml(actualContent)) : '';
 
             if (msgType === 'image' && m.file_url) {
-                contentInnerHtml = `<img class="msg-image" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
+                contentInnerHtml = `<img class="msg-image" loading="lazy" decoding="async" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
                 if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${safeContent}</div>`;
             } else if (msgType === 'voice' && m.file_url) {
-                contentInnerHtml = `<div class="msg-voice"><i class="fa-solid fa-waveform-lines" style="color:var(--gold);font-size:.9rem;"></i><audio controls preload="metadata" src="${API}${m.file_url}"></audio></div>`;
+                contentInnerHtml = renderVoicePlayer(m.file_url, m.id);
+            } else if (msgType === 'file' && m.file_url) {
+                contentInnerHtml = renderFileAttachment(m.file_url, m.file_name, m.file_size);
+                if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${safeContent}</div>`;
             } else {
                 contentInnerHtml = `<div class="msg-txt" dir="auto">${safeContent}</div>`;
             }
@@ -3319,11 +3742,30 @@
             } catch (e) { console.error('Failed to mark read', e); }
         }
 
+        // ── Community channel read marker (clears sidebar badge) ──
+        async function markCommunityRead() {
+            if (!currentChannel || currentChannel.startsWith('dm_') || currentChannel === 'messages' || currentChannel === 'start_here') return;
+            if (document.visibilityState !== 'visible') return;
+            try {
+                await apiFetch('/chat/community/read', {
+                    method: 'PUT',
+                    body: JSON.stringify({ channel: currentChannel })
+                });
+            } catch (e) { }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') markCommunityRead();
+        });
+
         async function loadMessages() {
             if (currentChannel === 'messages' || currentChannel === 'start_here') return;
+            // Post channels are rendered by loadPostsFeed — never overwrite them here
+            // (WS events like new_message/message_read call loadMessages blindly).
+            if (postMode || POST_CHANNELS.includes(currentChannel)) return;
             try {
                 const res = await apiFetch(`/chat/messages?channel=${currentChannel}&limit=50`);
                 const msgs = await res.json();
+                if (!currentChannel.startsWith('dm_')) markCommunityRead();
                 const el = document.getElementById('chatMessages');
 
                 // Track scroll position
@@ -3442,21 +3884,37 @@
             } catch (e) { console.error(e); }
         }
 
-        // ── Image Upload ──
+        // ── File / Image Upload ──
         document.getElementById('attachBtn').addEventListener('click', () => document.getElementById('fileInput').click());
         document.getElementById('fileInput').addEventListener('change', function () {
             const file = this.files[0]; if (!file) return;
+            showFilePreview(file);
+        });
+        document.getElementById('previewRemove').addEventListener('click', clearFilePreview);
+
+        function showFilePreview(file) {
             pendingFile = file;
             const previewBar = document.getElementById('chatPreviewBar');
-            document.getElementById('previewImg').src = URL.createObjectURL(file);
-            document.getElementById('previewName').textContent = file.name;
+            const previewImg = document.getElementById('previewImg');
+            if (file.type && file.type.startsWith('image/')) {
+                previewImg.src = URL.createObjectURL(file);
+                previewImg.style.display = '';
+            } else {
+                previewImg.removeAttribute('src');
+                previewImg.style.display = 'none';
+            }
+            document.getElementById('previewName').textContent = file.name || 'pasted-image';
             previewBar.style.display = 'flex';
-        });
-        document.getElementById('previewRemove').addEventListener('click', () => {
+        }
+
+        function clearFilePreview() {
             pendingFile = null;
+            const previewImg = document.getElementById('previewImg');
+            previewImg.removeAttribute('src');
+            previewImg.style.display = '';
             document.getElementById('chatPreviewBar').style.display = 'none';
             document.getElementById('fileInput').value = '';
-        });
+        }
 
         async function sendImageMessage(caption) {
             if (!pendingFile) return;
@@ -3464,18 +3922,36 @@
             formData.append('file', pendingFile);
             try {
                 const uploadRes = await fetch(API + '/chat/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+                if (!uploadRes.ok) throw new Error('upload failed');
                 const uploadData = await uploadRes.json();
                 await apiFetch('/chat/messages', {
                     method: 'POST',
-                    body: JSON.stringify({ channel: currentChannel, content: caption || null, message_type: 'image', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
+                    body: JSON.stringify({ channel: currentChannel, content: caption || null, message_type: uploadData.message_type || 'file', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
                 });
-                pendingFile = null;
-                document.getElementById('chatPreviewBar').style.display = 'none';
-                document.getElementById('fileInput').value = '';
+                clearFilePreview();
                 document.getElementById('chatInput').value = '';
                 setTimeout(loadMessages, 300);
-            } catch (e) { console.error(e); notifyToast('Failed to upload image', 'error'); }
+            } catch (e) { console.error(e); notifyToast('Failed to upload file', 'error'); }
         }
+
+        // ── Paste image from clipboard ──
+        document.getElementById('chatInput').addEventListener('paste', (e) => {
+            const items = (e.clipboardData || window.clipboardData)?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        const named = file.name && file.name !== 'image.png'
+                            ? file
+                            : new File([file], `pasted-${Date.now()}.${(item.type.split('/')[1] || 'png')}`, { type: item.type });
+                        showFilePreview(named);
+                    }
+                    break;
+                }
+            }
+        });
 
         // ── Voice Recording (WhatsApp-style preview) ──
         let pendingVoiceBlob = null;
@@ -3596,6 +4072,7 @@
         // ── Event Listeners ──
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
         document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        document.getElementById('chatInput').addEventListener('input', sendTypingSignal);
         document.getElementById('chatInput').addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
 
 
@@ -3606,9 +4083,9 @@
             fetchOnlineCount();
             loadDmList();
             loadNotifications();
-            setInterval(fetchOnlineCount, 30000);
-            setInterval(loadDmList, 30000);
-            setInterval(loadNotifications, 30000);
+            setInterval(() => { if (!document.hidden) fetchOnlineCount(); }, 30000);
+            setInterval(() => { if (!document.hidden) loadDmList(); }, 30000);
+            setInterval(() => { if (!document.hidden) loadNotifications(); }, 30000);
             const urlParams = new URLSearchParams(window.location.search);
             const channelParam = urlParams.get('channel');
             if (channelParam) selectChannel(channelParam);
@@ -3667,7 +4144,7 @@
             // Online dot
             const dot = document.getElementById('ppOnlineDot');
             dot.className = 'pp-online-dot' + (p.is_online ? ' online' : '');
-            dot.title = p.is_online ? 'أونلاين الآن' : 'غير متاح';
+            dot.title = p.is_online ? 'Online Now' : 'Offline';
 
             // Name
             document.getElementById('ppName').textContent = p.full_name;
@@ -3694,9 +4171,9 @@
 
             // Bio
             const bioEl = document.getElementById('ppBio');
-            bioEl.textContent = p.bio || 'لا توجد نبذة شخصية بعد';
+            bioEl.textContent = p.bio || 'No bio yet';
             bioEl.style.fontStyle = p.bio ? 'normal' : 'italic';
-            bioEl.style.color = p.bio ? '#b8b8b8' : '#5a5648';
+            bioEl.style.color = p.bio ? 'var(--text-secondary)' : 'var(--text-muted)';
 
             // Social media
             const socialLink = document.getElementById('ppSocialLink');
@@ -3714,11 +4191,11 @@
                 socialLink.classList.add('pp-hidden');
             }
 
-            // Stats
-            document.getElementById('ppLevel').textContent = p.level;
-            document.getElementById('ppXp').textContent = (p.xp || 0).toLocaleString();
-            document.getElementById('ppStreak').textContent = p.streak_days;
-            document.getElementById('ppPosts').textContent = p.post_count;
+            // Streak
+            document.getElementById('ppStreak').textContent = p.streak_days || 0;
+
+            // Achievements
+            renderPanelAchievements(p);
 
             // Joined
             document.getElementById('ppJoined').innerHTML = `📅 ${p.joined_at}`;
@@ -3735,6 +4212,39 @@
                 if (notesBox) notesBox.style.display = 'none';
                 if (noteText) noteText.value = '';
             }
+        }
+
+        // ── Profile panel achievements (same set as the dashboard) ──
+        const PP_ACHIEVEMENTS = [
+            { flag: null,                icon: 'rocket',          name: 'First Login',     tier: 'bronze'  },
+            { flag: 'has_first_post',    icon: 'pen-square',      name: 'First Post',      tier: 'silver'  },
+            { flag: 'has_7day_streak',   icon: 'flame',           name: '7-Day Streak',    tier: 'gold'    },
+            { flag: 'is_top_student',    icon: 'trophy',          name: 'Top Student',     tier: 'gold'    },
+            { flag: 'has_course_complete', icon: 'graduation-cap', name: 'Course Complete', tier: 'gold'   },
+            { flag: 'has_all_courses',   icon: 'target',          name: '100% Progress',   tier: 'diamond' },
+            { flag: 'has_pro_member',    icon: 'gem',             name: 'Pro Member',      tier: 'diamond' },
+        ];
+
+        function renderPanelAchievements(p) {
+            const grid = document.getElementById('ppAchGrid');
+            const countEl = document.getElementById('ppAchCount');
+            if (!grid) return;
+
+            let unlockedCount = 0;
+            grid.innerHTML = PP_ACHIEVEMENTS.map(a => {
+                const unlocked = a.flag === null ? true : !!p[a.flag];
+                if (unlocked) unlockedCount++;
+                // Plain English text — the community-i18n MutationObserver
+                // auto-translates these labels to Arabic when in AR mode.
+                return `
+                    <div class="pp-ach tier-${a.tier}${unlocked ? '' : ' locked'}" title="${a.name}">
+                        <div class="pp-ach-ic"><i data-lucide="${unlocked ? a.icon : 'lock'}"></i></div>
+                        <span class="pp-ach-name">${a.name}</span>
+                    </div>`;
+            }).join('');
+
+            if (countEl) countEl.textContent = `${unlockedCount} / ${PP_ACHIEVEMENTS.length}`;
+            setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
         }
 
         // ── Admin Notes (private, admins only) ──
@@ -3763,7 +4273,7 @@
                     body: JSON.stringify({ note: ta ? ta.value : '' })
                 });
                 if (res.ok) {
-                    if (status) { status.textContent = '✓ Note saved'; status.style.color = '#c1ff11'; }
+                    if (status) { status.textContent = '✓ Note saved'; status.style.color = 'var(--gold, #c1ff11)'; }
                 } else {
                     if (status) { status.textContent = 'Failed to save'; status.style.color = '#ff6b6b'; }
                 }
@@ -3777,13 +4287,15 @@
         function showProfileLoading(show) {
             document.getElementById('ppLoading').style.display = show ? 'flex' : 'none';
             const ppInfo = document.querySelector('.pp-info');
-            const ppStats = document.querySelector('.pp-stats');
+            const ppStreak = document.querySelector('.pp-streak-chip');
+            const ppAch = document.querySelector('.pp-ach-section');
             const ppBadge = document.getElementById('ppBadge');
             const ppBio = document.getElementById('ppBio');
             const ppJoined = document.getElementById('ppJoined');
             const ppAvatarWrap = document.querySelector('.pp-avatar-wrap');
             if (ppInfo) ppInfo.style.visibility = show ? 'hidden' : 'visible';
-            if (ppStats) ppStats.style.visibility = show ? 'hidden' : 'visible';
+            if (ppStreak) ppStreak.style.visibility = show ? 'hidden' : 'visible';
+            if (ppAch) ppAch.style.visibility = show ? 'hidden' : 'visible';
             if (ppBadge) ppBadge.style.visibility = show ? 'hidden' : 'visible';
             if (ppBio) ppBio.style.visibility = show ? 'hidden' : 'visible';
             if (ppJoined) ppJoined.style.visibility = show ? 'hidden' : 'visible';
@@ -3876,7 +4388,7 @@
                 const dotClass = isOnline ? 'online' : 'offline';
                 // Always show "Admin" for admins regardless of stored badge value; honour display_role overrides
                 const badge = m.custom_title || (m.is_admin ? 'Admin' : (m.badge || 'Member'));
-                const badgeColor = m.is_admin ? '#c1ff11' : (badge.toLowerCase().includes('pro') ? '#ffd700' : '#888');
+                const badgeColor = m.is_admin ? 'var(--gold, #c1ff11)' : (badge.toLowerCase().includes('pro') ? '#ffd700' : '#888');
 
                 return `
                 <div class="member-item">
@@ -3914,6 +4426,7 @@
                 activeDmUserName = data.target_user.full_name;
                 await loadDmList();
                 selectChannel(data.channel_name);
+                if (data.channel_id) currentDmChannelId = data.channel_id;
             } catch (e) { console.error(e); }
         }
 
@@ -4019,6 +4532,10 @@
                 // Update DM header if currently viewing a DM
                 if (currentChannel.startsWith('dm_')) {
                     updateDmHeader(currentChannel);
+                    // Late-resolve the numeric channel id (page may open a DM before this list loads)
+                    if (!currentDmChannelId) {
+                        currentDmChannelId = ((dms || []).find(d => d.channel_name === currentChannel) || {}).channel_id || null;
+                    }
                 }
             } catch (e) { console.error(e); }
         }
@@ -4026,7 +4543,7 @@
         // ── DM Inbox (WhatsApp-like) ──
         async function loadDmInbox() {
             const el = document.getElementById('chatMessages');
-            el.innerHTML = '<div class="dm-inbox"><div class="dm-inbox-header"><h2>Messages</h2><button class="dm-inbox-new-btn" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> رسالة جديدة</button></div><div class="dm-inbox-list" id="dmInboxList"><div style="text-align:center; padding:40px; color:#555;">Loading...</div></div></div>';
+            el.innerHTML = '<div class="dm-inbox"><div class="dm-inbox-header"><h2>Messages</h2><button class="dm-inbox-new-btn" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> New Message</button></div><div class="dm-inbox-list" id="dmInboxList"><div style="text-align:center; padding:40px; color:#555;">Loading...</div></div></div>';
 
             // Fetch fresh data
             try {
@@ -4180,6 +4697,7 @@
                 const res = await apiFetch(`/posts/${currentChannel}?sort=${postSort}&page=${postPage}&limit=20`);
                 const data = await res.json();
                 postTotalPages = data.pages || 1;
+                markCommunityRead();
 
                 // Build sort tabs + post cards
                 let html = `<div class="comm-sort-tabs">
@@ -4196,7 +4714,7 @@
                 } else {
                     html += `<div class="comm-empty-state">
                         <div class="empty-icon-container">
-                            <i data-lucide="message-square" style="width:32px;height:32px;stroke:#c1ff11;"></i>
+                            <i data-lucide="message-square" style="width:32px;height:32px;stroke:var(--gold, #c1ff11);"></i>
                         </div>
                         <h3>No posts yet in this channel</h3>
                         <p>Be the first to introduce yourself and start a great conversation!</p>
@@ -4248,7 +4766,7 @@
             const isAdminAuthor = a.is_admin == true || a.is_admin === 1 || (a.badge && a.badge.toLowerCase().includes('admin'));
             let badgeHtml = '';
             if (isAdminAuthor) {
-                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:#c1ff11;">Admin <i class="fa-solid fa-circle-check" style="color: #c1ff11;"></i></span>`;
+                badgeHtml = `<span class="msg-badge admin" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; background:rgba(193, 255, 17, 0.1); color:var(--gold, #c1ff11);">Admin <i class="fa-solid fa-circle-check" style="color: var(--gold, #c1ff11);"></i></span>`;
             } else if (a.badge && (a.badge.toLowerCase().includes('pro') || a.badge.toLowerCase().includes('gold'))) {
                 badgeHtml = `<span class="msg-badge pro" style="font-size:0.6rem;">${escHtml(a.badge)}</span>`;
             } else {
@@ -4298,12 +4816,12 @@
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${pinnedBadge}
-                            <span onclick="openUserProfile(${a.id})" style="font-weight:700;font-size:0.88rem;color:#f1f0ea;cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
+                            <span onclick="openUserProfile(${a.id})" style="font-weight:700;font-size:0.88rem;color:var(--text-primary,#f1f0ea);cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
                             ${badgeHtml}
                             <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
                         </div>
-                        <h4 dir="auto" style="font-size:1rem;font-weight:700;color:#f1f0ea;margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
-                        <div class="${bodyClass}" dir="auto" style="font-size:0.88rem;color:#b8b8b8;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
+                        <h4 dir="auto" style="font-size:1rem;font-weight:700;color:var(--text-primary,#f1f0ea);margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
+                        <div class="${bodyClass}" dir="auto" style="font-size:0.88rem;color:var(--text-secondary,#b8b8b8);line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
                         ${seeMoreBtn}
                         ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${tagsHtml}</div>` : ''}
                         ${imageHtml}
@@ -4996,7 +5514,7 @@
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=15"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

@@ -314,6 +314,7 @@ class LessonOut(BaseModel):
     vdo_video_id: Optional[str] = None
     video_status: str = "pending"
     is_free_preview: bool = False
+    is_project: bool = False
     pdf_url: Optional[str] = None
     created_at: datetime
 
@@ -326,6 +327,7 @@ class CourseOut(BaseModel):
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
     pdf_url: Optional[str] = None
+    certificate_url: Optional[str] = None
     total_lessons: int
     course_time: Optional[str] = None
     is_published: bool
@@ -368,6 +370,7 @@ class AdminLessonCreate(BaseModel):
     duration_minutes: int = 0
     bunny_video_url: Optional[str] = None
     vdo_video_id: Optional[str] = None
+    is_project: bool = False
 
 class LessonUpdate(BaseModel):
     title: Optional[str] = None
@@ -380,6 +383,7 @@ class LessonUpdate(BaseModel):
     order: Optional[int] = None
     duration_minutes: Optional[int] = None
     is_free_preview: Optional[bool] = None
+    is_project: Optional[bool] = None
 
 class CourseCreate(BaseModel):
     title: str
@@ -429,6 +433,37 @@ class AdminProjectSubmissionOut(ProjectSubmissionOut):
 
 class ProjectNotesUpdate(BaseModel):
     notes: str = ""
+
+# ─── Exam Schemas ────────────────────────────────────────────
+
+class ExamQuestionIn(BaseModel):
+    text: str
+    options: List[str]
+    correct: int  # index of the correct option
+
+
+class ExamCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    pass_percent: int = 70
+    questions: List[ExamQuestionIn] = []
+    is_published: bool = False
+    after_lesson_id: Optional[int] = None  # place exam after this lesson in the curriculum
+
+
+class ExamUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    pass_percent: Optional[int] = None
+    questions: Optional[List[ExamQuestionIn]] = None
+    is_published: Optional[bool] = None
+    sort_order: Optional[int] = None
+    after_lesson_id: Optional[int] = None
+
+
+class ExamSubmit(BaseModel):
+    # {"<question_index>": <selected_option_index>}
+    answers: Dict[str, int] = {}
 
 # ─── Live Session Schemas ────────────────────────────────────
 

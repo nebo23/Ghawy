@@ -2,9 +2,16 @@
 APScheduler daily jobs:
  - Check for expired subscriptions and deactivate users
  - Send renewal reminders 2 days before expiration
+ - Send one-time winback email to users stuck at the last step for 24h+
+
+⚠️ كل شغل الداتابيز والـ SMTP هنا لازم يحصل جوه asyncio.to_thread —
+الـ jobs بتشتغل على نفس الـ event loop بتاع السيرفر كله، وأي انتظار
+synchronous (زي pool checkout وقت الزحمة أو SMTP بطيء) بيجمّد الموقع بالكامل.
 """
+import asyncio
 import logging
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.database import SessionLocal
 from app.models import User, Payment, PaymentStatus
@@ -15,11 +22,8 @@ scheduler = AsyncIOScheduler(timezone="Africa/Cairo")
 
 
 # ─── Deactivate Expired Subscriptions ──────────────────────
-# @scheduler.scheduled_job("cron", hour=9, minute=0)
-@scheduler.scheduled_job("interval", minutes=2)
-async def daily_subscription_check_job():
-    """Runs every day at 9:00 AM Cairo time."""
-    logger.info("⏰ Scheduler: Starting daily subscription check...")
+def _deactivate_expired_users() -> list[int]:
+    """Sync body — runs in a thread. Returns deactivated user ids."""
     db = SessionLocal()
     try:
         now = datetime.utcnow()
@@ -28,17 +32,25 @@ async def daily_subscription_check_job():
             User.end_at.isnot(None),
             User.end_at <= now
         ).all()
-        
-        count = 0
+
         deactivated_ids = []
         for user in expired_users:
             user.is_active = False
             deactivated_ids.append(user.id)
-            count += 1
             logger.info("🚫 Deactivated user_id=%s due to expired subscription", user.id)
-            
+
         db.commit()
-        logger.info("⏰ Scheduler done: deactivated %s users", count)
+        return deactivated_ids
+    finally:
+        db.close()
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=0)
+async def daily_subscription_check_job():
+    logger.info("⏰ Scheduler: Starting daily subscription check...")
+    try:
+        deactivated_ids = await asyncio.to_thread(_deactivate_expired_users)
+        logger.info("⏰ Scheduler done: deactivated %s users", len(deactivated_ids))
 
         # Force-disconnect deactivated users from WebSocket in real-time
         if deactivated_ids:
@@ -48,27 +60,18 @@ async def daily_subscription_check_job():
                 logger.info("⚡ Force-disconnected WS for user_id=%s", uid)
     except Exception as e:
         logger.error("💥 Scheduler error: %s", e)
-    finally:
-        db.close()
 
 
 # ─── Renewal Reminder (2 days before expiry) ──────────────
-# @scheduler.scheduled_job("cron", hour=9, minute=0, id="renewal_reminder")
-@scheduler.scheduled_job("interval", minutes=2, id="renewal_reminder")
-async def check_expiring_subscriptions():
-    """
-    بيدور على المستخدمين اللي اشتراكهم هينتهي خلال يومين ويبعتلهم إيميل
-    """
+def _send_renewal_reminders() -> None:
+    """Sync body — runs in a thread (DB + SMTP)."""
     from app.services.email_service import send_renewal_reminder_email
 
-    logger.info("📧 Scheduler: Checking for expiring subscriptions...")
     db = SessionLocal()
     try:
         now = datetime.utcnow()
-        # TESTING: Check for users expiring in the next 3 minutes
-        target_date = now + timedelta(minutes=3)
-
-        # بحث عن المستخدمين اللي end_at بتاعهم في خلال 3 دقايق
+        # Check for users expiring in the next 2 days
+        target_date = now + timedelta(days=2)
 
         expiring_users = db.query(User).filter(
             User.is_active == True,
@@ -101,8 +104,87 @@ async def check_expiring_subscriptions():
 
             except Exception as e:
                 logger.error("❌ Failed to send reminder to %s: %s", user.email, e)
-
-    except Exception as e:
-        logger.error("💥 Renewal reminder error: %s", e)
     finally:
         db.close()
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=0, id="renewal_reminder")
+async def check_expiring_subscriptions():
+    """
+    بيدور على المستخدمين اللي اشتراكهم هينتهي خلال يومين ويبعتلهم إيميل
+    """
+    logger.info("📧 Scheduler: Checking for expiring subscriptions...")
+    try:
+        await asyncio.to_thread(_send_renewal_reminders)
+    except Exception as e:
+        logger.error("💥 Renewal reminder error: %s", e)
+
+
+# ─── Winback Email (registered but never activated, 24h+) ──
+# اللي اتعمل قبل الحد ده عمره ما هيوصله الإيميل (قرار الإطلاق: آخر 5 أيام بس)
+WINBACK_MIN_CREATED_AT = datetime(2026, 7, 3)
+# دفعة صغيرة عشان Gmail بيقفل الاتصال لو بعتنا كتير ورا بعض
+WINBACK_BATCH_SIZE = 30
+
+
+def _send_winback_batch() -> None:
+    """Sync body — runs in a thread (DB + SMTP)."""
+    from app.services.email_service import send_winback_email
+
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        cutoff_24h = now - timedelta(hours=24)
+
+        paid_user_ids = db.query(Payment.user_id).filter(
+            Payment.status == PaymentStatus.CONFIRMED
+        )
+
+        candidates = db.query(User).filter(
+            User.is_active == False,
+            User.winback_email_sent_at.is_(None),
+            User.email.isnot(None),
+            User.created_at <= cutoff_24h,
+            User.created_at >= WINBACK_MIN_CREATED_AT,
+            ~User.id.in_(paid_user_ids),
+        ).order_by(User.created_at.asc()).limit(WINBACK_BATCH_SIZE).all()
+
+        if not candidates:
+            return
+
+        logger.info("💌 Found %s winback candidates", len(candidates))
+        sent = 0
+        for user in candidates:
+            try:
+                send_winback_email(user.email, user.full_name, user.governorate)
+                user.winback_email_sent_at = datetime.utcnow()
+                db.commit()  # commit لكل واحد عشان لو حصل crash ميتبعتش تاني
+                sent += 1
+                time.sleep(0.5)  # مهلة صغيرة بين الإيميلات عشان Gmail
+            except Exception as e:
+                db.rollback()
+                logger.error("❌ Winback email failed for %s: %s", user.email, e)
+
+        logger.info("💌 Winback done: sent %s/%s emails", sent, len(candidates))
+    finally:
+        db.close()
+
+
+# gunicorn بيعمل restart للـ worker كل شوية (max_requests) فالعدّاد بيتصفّر —
+# لازم أول تشغيلة تبقى قريبة من الإقلاع وإلا الـ job عمرها ما هتشتغل
+@scheduler.scheduled_job(
+    "interval",
+    minutes=10,
+    id="winback_email",
+    next_run_time=datetime.now(timezone.utc) + timedelta(seconds=120),
+)
+async def send_winback_emails():
+    """
+    بيدور على اللي سجلوا وعدّى عليهم 24 ساعة من غير ما يتفعلوا (مدفعوش)
+    ويبعتلهم إيميل شخصي من محمد — مرة واحدة بس لكل شخص.
+    """
+    logger.info("💌 Scheduler: Checking for winback candidates...")
+    try:
+        await asyncio.to_thread(_send_winback_batch)
+    except Exception as e:
+        logger.error("💥 Winback scheduler error: %s", e)

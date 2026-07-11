@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -16,8 +17,8 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=12" />
-    <link rel="stylesheet" href="src/css/community.css?v=3" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+    <link rel="stylesheet" href="src/css/community.css?v=6" />
     <style>
         .chat-layout {
             display: flex;
@@ -243,7 +244,7 @@
 
         .msg-badge.admin {
             background: rgba(193, 255, 17, 0.1);
-            color: #c1ff11;
+            color: var(--gold, #c1ff11);
             border: 1px solid rgba(193, 255, 17, 0.25)
         }
 
@@ -405,27 +406,106 @@
             transform: scale(1.02);
         }
 
-        /* Voice message */
-        .msg-voice {
+        /* Voice message — custom community player */
+        .voice-player {
             display: flex;
             align-items: center;
             gap: 10px;
             background: var(--bg-hover);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 8px 16px;
+            border-radius: 22px;
+            padding: 7px 14px 7px 7px;
             margin-top: 6px;
-            max-width: 320px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
         }
 
-        .msg-voice audio {
-            height: 32px;
+        .msg.msg-own .voice-player {
+            margin-left: auto;
+        }
+
+        .voice-play {
+            flex-shrink: 0;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gold, #c1ff11);
+            color: #0a0a0a;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .voice-play:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 14px rgba(193, 255, 17, 0.35);
+        }
+
+        .voice-play:active {
+            transform: scale(0.95);
+        }
+
+        .voice-track {
+            position: relative;
             flex: 1;
             min-width: 0;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
         }
 
-        .msg-voice audio::-webkit-media-controls-panel {
-            background: transparent;
+        .voice-bars {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .voice-bars span {
+            flex: 1 1 0;
+            min-width: 2px;
+            max-width: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.24);
+            transition: background .1s linear;
+        }
+
+        .voice-bars span.played {
+            background: var(--gold, #c1ff11);
+        }
+
+        .voice-dur {
+            flex-shrink: 0;
+            font-size: 0.72rem;
+            color: var(--text-secondary, #9a9a9a);
+            font-variant-numeric: tabular-nums;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .voice-player {
+                max-width: 260px;
+                gap: 8px;
+                padding: 6px 12px 6px 6px;
+            }
+
+            .voice-play {
+                width: 34px;
+                height: 34px;
+                font-size: 0.82rem;
+            }
+
+            .voice-track {
+                height: 26px;
+            }
         }
 
         /* Delete button removed from here, now in msg-actions */
@@ -636,8 +716,10 @@
             }
 
             [dir="rtl"] .chat-channels {
-                left: 0;
-                right: auto;
+                left: auto;
+                right: 0;
+                transform: translateX(100%);
+                box-shadow: -2px 0 28px rgba(0, 0, 0, .55);
             }
 
             .chat-channels.mobile-open {
@@ -736,7 +818,8 @@
             } catch (e) { }
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=13" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
+    <script src="src/js/community-i18n.js?v=5"></script>
 </head>
 
 <body>
@@ -767,6 +850,7 @@
                         <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>Community Chat</span>
+                    <span id="communityTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="direct-messages.html" class="nav-item active" id="nav-dm">
                     <span class="nav-icon-wrap nav-icon-gray">
@@ -780,6 +864,7 @@
                         <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
                     </span>
                     <span>AI Updates</span>
+                    <span id="aiUpdatesTotalBadge" class="dm-badge" style="display:none"></span>
                 </a>
                 <a href="build-with-me.html" class="nav-item" id="nav-bwm">
                     <span class="nav-icon-wrap nav-icon-green">
@@ -1002,11 +1087,16 @@
                         <button class="chat-channels-toggle" type="button" aria-label="Open channels"
                             onclick="toggleChatChannels()"><i class="fa-solid fa-bars"></i></button>
                         <span class="ch-hash-lg" id="channelHashIcon">#</span>
+                        <span id="dmBackBtn" class="dm-back-btn" style="display:none;"
+                            onclick="selectChannel('messages')" title="Back to Messages"><i
+                                class="fa-solid fa-arrow-left"></i></span>
                         <div id="dmHeaderAvatar" class="dm-header-avatar" style="display:none;"></div>
                         <div style="flex:1; min-width:0;">
                             <h3 id="currentChannelName" style="margin:0;">general</h3>
                             <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
                         </div>
+                        <button id="dmCloseBtn" class="dm-close-btn" style="display:none;" title="Close chat"
+                            onclick="selectChannel('messages')"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div class="chat-feed-messages" id="chatMessages">
                         <div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i>
@@ -1030,10 +1120,22 @@
                         <button onclick="cancelReply()"
                             style="background:none; border:none; color:#888; cursor:pointer; font-size:1.2rem; padding:0 8px;">✕</button>
                     </div>
+                    <!-- Voice Preview Bar (WhatsApp-style) — review before sending -->
+                    <div class="chat-input-bar voice-preview-bar" id="voicePreviewBar"
+                        style="display:none; align-items:center; gap:10px; padding:10px 14px;">
+                        <button id="voiceCancelBtn" title="Cancel"
+                            style="background:none;border:none;color:#ff4d4d;font-size:1.1rem;cursor:pointer;flex-shrink:0;"><i
+                                class="fa-solid fa-trash"></i></button>
+                        <audio id="voicePreviewPlayer" controls
+                            style="flex:1; height:36px; border-radius:20px;"></audio>
+                        <button id="voiceSendBtn" title="Send"
+                            style="background:var(--gold,#c1ff11);border:none;color:#000;font-size:0.85rem;font-weight:700;border-radius:20px;padding:7px 18px;cursor:pointer;flex-shrink:0;"><i
+                                class="fa-solid fa-paper-plane"></i> Send</button>
+                    </div>
                     <div class="chat-input-bar" id="chatInputBar">
                         <div class="chat-media-btns">
-                            <button class="chat-media-btn" id="attachBtn" title="Send image"><i
-                                    class="fa-solid fa-image"></i></button>
+                            <button class="chat-media-btn" id="attachBtn" title="Attach file or image"><i
+                                    class="fa-solid fa-paperclip"></i></button>
                             <button class="chat-media-btn" id="voiceBtn" title="Record voice"><i
                                     class="fa-solid fa-microphone"></i></button>
                         </div>
@@ -1041,7 +1143,7 @@
                             dir="auto"></textarea>
                         <button class="chat-send-btn" id="sendBtn"><i data-lucide="send" size="18"></i></button>
                     </div>
-                    <input type="file" id="fileInput" accept="image/*" style="display:none" />
+                    <input type="file" id="fileInput" style="display:none" />
                 </div>
                 <!-- Right Sidebar (shown only in posts mode) -->
                 <div class="comm-right-sidebar" id="commRightSidebar" style="display:none">
@@ -1180,27 +1282,31 @@
             <a id="ppSocialLink" class="pp-social-link pp-hidden" href="#" target="_blank">
                 🔗 <span id="ppSocialText"></span>
             </a>
-            <!-- Stats Row -->
-            <div class="pp-stats">
-                <div class="pp-stat">
-                    <span id="ppLevel" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Level</span>
+            <!-- Streak Chip -->
+            <div class="pp-streak-chip">
+                <span class="pp-streak-fire">🔥</span>
+                <span id="ppStreak" class="pp-streak-num">0</span>
+                <span class="pp-streak-label" data-i18n="Day Streak">Day Streak</span>
+            </div>
+            <!-- Achievements -->
+            <div class="pp-ach-section">
+                <div class="pp-ach-head">
+                    <span data-i18n="Achievements">Achievements</span>
+                    <span id="ppAchCount" class="pp-ach-count"></span>
                 </div>
-                <div class="pp-stat">
-                    <span id="ppXp" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">XP</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppStreak" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Day Streak 🔥</span>
-                </div>
-                <div class="pp-stat">
-                    <span id="ppPosts" class="pp-stat-value"></span>
-                    <span class="pp-stat-label">Posts</span>
-                </div>
+                <div id="ppAchGrid" class="pp-ach-grid"></div>
             </div>
             <!-- Joined Date -->
             <p id="ppJoined" class="pp-joined"></p>
+            <!-- Admin Notes (visible to admins only, when viewing another member) -->
+            <div id="ppAdminNotes" style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
+                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:var(--gold, #c1ff11); margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
+                <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..." style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:var(--gold, #c1ff11); color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
+                    <span id="ppNoteStatus" style="font-size:0.78rem;"></span>
+                </div>
+            </div>
             <!-- Loading State -->
             <div id="ppLoading" class="pp-loading">
                 <div class="pp-spinner"></div>
@@ -1250,7 +1356,7 @@
     <div class="custom-modal-overlay" id="newDmModal">
         <div class="new-dm-modal">
             <div class="new-dm-modal-header">
-                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--gold); margin-right: 8px;"></i> رسالة جديدة</h3>
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--gold); margin-right: 8px;"></i> New Message</h3>
                 <button class="close-members-btn" onclick="closeNewMessageModal()"><i data-lucide="x"
                         size="16"></i></button>
             </div>
@@ -1261,7 +1367,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1781976772"></script>
+    <script src="src/js/utils.js?v=1783908000"></script>
 
     <style>
         /* Custom Modal */
@@ -1594,7 +1700,7 @@
 
         .dm-sidebar-item.active {
             background: rgba(193, 255, 17, 0.08);
-            border-left: 3px solid #c1ff11;
+            border-left: 3px solid var(--gold, #c1ff11);
         }
 
         .dm-av {
@@ -1850,10 +1956,143 @@
             display: none;
             align-items: center;
             gap: 4px;
+            position: relative;
         }
 
         .msg:hover .msg-actions {
             display: flex;
+        }
+
+        /* ── Message Reactions (ported from general chat) ── */
+        .msg-reaction-popover {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 5px;
+            border-radius: 999px;
+            background: rgba(12, 12, 12, 0.96);
+            border: 1px solid rgba(193, 255, 17, 0.22);
+            box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(193, 255, 17, 0.12);
+            backdrop-filter: blur(12px);
+            z-index: 60;
+            white-space: nowrap;
+        }
+
+        .msg-reaction-popover.open {
+            display: flex;
+            animation: reactionBarIn 0.14s ease-out forwards;
+        }
+
+        @keyframes reactionBarIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(8px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        .msg-reaction-option {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.12rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.14s ease, background 0.14s ease;
+        }
+
+        .msg-reaction-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px) scale(1.12);
+        }
+
+        .msg-reactions-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            min-height: 0;
+            margin-top: 5px;
+        }
+
+        .msg.msg-own .msg-reactions-wrap {
+            justify-content: flex-end;
+        }
+
+        .msg-reactions-wrap:empty {
+            display: none;
+        }
+
+        .msg-reaction-badge {
+            height: 24px;
+            min-width: 34px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.045);
+            color: #d8d8d8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.16s ease;
+        }
+
+        .msg-reaction-badge:hover {
+            border-color: rgba(193, 255, 17, 0.25);
+            background: rgba(255, 255, 255, 0.075);
+        }
+
+        .msg-reaction-badge.user-reacted {
+            color: var(--gold, #c1ff11);
+            border-color: rgba(193, 255, 17, 0.44);
+            background: rgba(193, 255, 17, 0.12);
+            box-shadow: 0 0 16px rgba(193, 255, 17, 0.08);
+        }
+
+        @media(max-width:768px) {
+            .msg-actions {
+                display: flex;
+            }
+
+            .msg-reaction-popover {
+                left: auto;
+                right: 0;
+                transform: translateY(4px);
+            }
+
+            .msg-reaction-popover.open {
+                animation: reactionBarInMobile 0.14s ease-out forwards;
+            }
+
+            @keyframes reactionBarInMobile {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px) scale(0.96);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
         }
 
         .msg-action-btn {
@@ -1963,7 +2202,7 @@
 
         .dm-item.active {
             background: rgba(193, 255, 17, 0.08);
-            border-left: 3px solid #c1ff11;
+            border-left: 3px solid var(--gold, #c1ff11);
         }
 
         .dm-avatar-wrap {
@@ -2182,13 +2421,13 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #3f8ff9;
+            background: var(--gold, #c1ff11);
             border: 2px solid rgba(0, 0, 0, 0.5);
         }
 
         .dm-header-status {
             font-size: 0.72rem;
-            color: #3f8ff9;
+            color: var(--gold, #c1ff11);
             margin-top: 1px;
         }
 
@@ -2206,7 +2445,64 @@
         }
 
         .dm-back-btn:hover {
-            color: #c1ff11;
+            color: var(--gold, #c1ff11);
+        }
+
+        /* DM Close (exit chat) Button */
+        .dm-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .dm-close-btn:hover {
+            background: rgba(255, 77, 77, 0.12);
+            border-color: rgba(255, 77, 77, 0.4);
+            color: #ff4d4d;
+        }
+
+        /* Typing indicator */
+        .dm-header-status.typing {
+            color: var(--gold, #c1ff11);
+            font-style: italic;
+        }
+
+        .typing-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px 16px 16px 4px;
+            padding: 12px 16px;
+            margin: 6px 16px 10px;
+            width: fit-content;
+        }
+
+        .typing-bubble .typing-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--gold, #c1ff11);
+            animation: typingBlink 1.2s infinite ease-in-out;
+        }
+
+        .typing-bubble .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-bubble .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBlink {
+            0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-3px); }
         }
 
         /* DM Inbox */
@@ -2237,7 +2533,7 @@
             align-items: center;
             gap: 6px;
             background: rgba(193, 255, 17, 0.1);
-            color: #c1ff11;
+            color: var(--gold, #c1ff11);
             border: 1px solid rgba(193, 255, 17, 0.2);
             border-radius: 8px;
             padding: 8px 16px;
@@ -2470,6 +2766,89 @@
             width: fit-content;
             margin: 0 auto;
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           LIGHT MODE — New Message modal + inbox text
+           The modal panel and several inbox texts are hard-coded for the
+           dark theme (dark panel, white names); flip them for light.
+           ══════════════════════════════════════════════════════════════ */
+        :root[data-theme="light"] .new-dm-modal {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        :root[data-theme="light"] .new-dm-modal-header {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        :root[data-theme="light"] .new-dm-modal-header h3 {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .new-dm-modal input {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .new-dm-modal input::placeholder {
+            color: #64748b;
+        }
+
+        :root[data-theme="light"] .new-dm-member-item:hover {
+            background: rgba(15, 23, 42, 0.05);
+        }
+
+        :root[data-theme="light"] .new-dm-member-name {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .new-dm-member-av,
+        :root[data-theme="light"] .dm-inbox-av img {
+            border-color: #e2e8f0;
+        }
+
+        :root[data-theme="light"] .close-members-btn {
+            color: #64748b;
+        }
+
+        /* Inbox / team texts hard-coded white or near-white */
+        :root[data-theme="light"] .dm-team-name,
+        :root[data-theme="light"] .dm-inbox-name,
+        :root[data-theme="light"] .dm-inbox-subheader h3,
+        :root[data-theme="light"] .dm-search-bar input {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .dm-inbox-preview {
+            color: #64748b;
+        }
+
+        :root[data-theme="light"] .dm-inbox-time {
+            color: #64748b;
+        }
+
+        :root[data-theme="light"] .dm-inbox-item:hover {
+            background: rgba(15, 23, 42, 0.05);
+        }
+
+        :root[data-theme="light"] .dm-inbox-header h2 {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .dm-team-title {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .dm-inbox-empty i {
+            color: #94a3b8;
+        }
+
+        /* Neon translucent subtitle — unreadable on the light page */
+        :root[data-theme="light"] .ch-item .ch-preview[style*="193,255,17"] {
+            color: rgba(74, 112, 0, 0.85) !important;
+        }
     </style>
     <script>
         const token = getToken();
@@ -2483,6 +2862,11 @@
         let audioChunks = [];
         let isRecording = false;
         let ws = null;
+
+        // ── Typing indicator state (DMs) ──
+        let currentDmChannelId = null;   // numeric channel id of the open DM
+        let typingHideTimer = null;
+        let lastTypingSentAt = 0;
 
         // ── Post-mode state ──
         const POST_CHANNELS = ['announcements', 'introduce-yourself', 'wins', 'workflows-help', 'share-your-build', 'general-questions', 'hiring-opportunities'];
@@ -2517,11 +2901,21 @@
                 try {
                     const msg = JSON.parse(e.data);
                     if (msg.event === 'new_message') {
+                        clearTypingIndicator();
                         loadMessages();
                         loadDmList();
                     } else if (msg.event === 'message_read') {
                         // Refresh to show updated read receipts
                         loadMessages();
+                    } else if (msg.event === 'reaction_updated' || msg.type === 'reaction_updated') {
+                        if (msg.data) applyReactionUpdate(msg.data.message_id, msg.data.reactions_summary || []);
+                    } else if (msg.event === 'reaction_error') {
+                        const errMsg = msg.data?.message || 'Reaction could not be saved';
+                        console.warn('Reaction error from server:', errMsg);
+                        showToast('❗ ' + errMsg, 'error');
+                        loadMessages();
+                    } else if (msg.event === 'typing') {
+                        handleTypingEvent(msg.data);
                     } else if (msg.event === 'connected') {
                         document.getElementById('onlineCount').textContent = msg.data.online_count + ' online';
                     } else if (msg.event === 'user_online' || msg.event === 'user_offline') {
@@ -2570,6 +2964,62 @@
             };
 
             ws.onerror = (err) => console.error('WebSocket Error', err);
+        }
+
+        // ── Typing indicator (DMs, WhatsApp-style) ──
+        function handleTypingEvent(data) {
+            if (!data || !currentDmChannelId || data.channel_id !== currentDmChannelId) return;
+            if (!currentChannel.startsWith('dm_')) return;
+
+            const st = document.getElementById('dmHeaderStatus');
+            if (st) {
+                st.textContent = 'typing…';
+                st.classList.add('typing');
+                st.classList.remove('offline');
+                st.style.display = '';
+            }
+            showTypingBubble();
+
+            clearTimeout(typingHideTimer);
+            typingHideTimer = setTimeout(clearTypingIndicator, 3000);
+        }
+
+        function clearTypingIndicator() {
+            clearTimeout(typingHideTimer);
+            removeTypingBubble();
+            const st = document.getElementById('dmHeaderStatus');
+            if (st && st.classList.contains('typing')) {
+                st.classList.remove('typing');
+                if (currentChannel.startsWith('dm_')) updateDmHeader(currentChannel);
+            }
+        }
+
+        function showTypingBubble() {
+            const wrap = document.getElementById('chatMessages');
+            if (!wrap) return;
+            let b = document.getElementById('typingBubble');
+            if (!b) {
+                b = document.createElement('div');
+                b.id = 'typingBubble';
+                b.className = 'typing-bubble';
+                b.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            }
+            wrap.appendChild(b); // (re)append so it stays at the bottom
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        function removeTypingBubble() {
+            const b = document.getElementById('typingBubble');
+            if (b) b.remove();
+        }
+
+        function sendTypingSignal() {
+            if (!currentChannel.startsWith('dm_') || !currentDmChannelId) return;
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            const now = Date.now();
+            if (now - lastTypingSentAt < 2000) return; // throttle
+            lastTypingSentAt = now;
+            ws.send(JSON.stringify({ action: 'typing', channel_id: currentDmChannelId }));
         }
 
         // ── Sidebar toggle — global function for onclick ──
@@ -2681,6 +3131,17 @@
             const dmHeaderStatus = document.getElementById('dmHeaderStatus');
             const rightSidebar = document.getElementById('commRightSidebar');
 
+            // Reset typing indicator state when switching chats
+            clearTimeout(typingHideTimer);
+            removeTypingBubble();
+            currentDmChannelId = isDm
+                ? ((window._cachedDmList || []).find(d => d.channel_name === name) || {}).channel_id || null
+                : null;
+            const dmCloseBtn = document.getElementById('dmCloseBtn');
+            if (dmCloseBtn) dmCloseBtn.style.display = isDm ? '' : 'none';
+            const dmBackBtn = document.getElementById('dmBackBtn');
+            if (dmBackBtn) dmBackBtn.style.display = isDm ? '' : 'none';
+
             // Determine post mode
             postMode = isPostChannel;
 
@@ -2697,7 +3158,7 @@
             } else if (isDm) {
                 headerHash.style.display = 'none';
                 const verifiedIcon = activeDmUserVerified ? '<i class="fa-solid fa-circle-check" style="color:var(--gold); font-size:1rem; margin-left:8px;" title="Verified Admin"></i>' : '';
-                headerName.innerHTML = `<span class="dm-back-btn" onclick="selectChannel('messages')" title="Back to Messages"><i class="fa-solid fa-arrow-left"></i></span> ${escHtml(activeDmUserName || 'Direct Message')}${verifiedIcon}`;
+                headerName.innerHTML = `${escHtml(activeDmUserName || 'Direct Message')}${verifiedIcon}`;
                 updateDmHeader(name);
             } else {
                 headerHash.textContent = '#'; headerHash.style.fontSize = ''; headerHash.style.display = '';
@@ -2717,10 +3178,15 @@
 
             if (name === 'messages' || isDm) {
                 if (chatChannelsEl) chatChannelsEl.style.display = 'none';
-                if (chatFeedHeader) chatFeedHeader.style.display = 'none';
+                // DM chats get a WhatsApp-style header (avatar + name + status + close)
+                if (chatFeedHeader) chatFeedHeader.style.display = isDm ? 'flex' : 'none';
+                const channelsToggle = chatFeedHeader ? chatFeedHeader.querySelector('.chat-channels-toggle') : null;
+                if (channelsToggle) channelsToggle.style.display = 'none';
             } else {
                 if (chatChannelsEl) chatChannelsEl.style.display = 'flex';
                 if (chatFeedHeader) chatFeedHeader.style.display = 'flex';
+                const channelsToggle = chatFeedHeader ? chatFeedHeader.querySelector('.chat-channels-toggle') : null;
+                if (channelsToggle) channelsToggle.style.display = '';
             }
 
             // Clear all active states
@@ -2736,13 +3202,13 @@
             if (activeCh) {
                 activeCh.classList.add('active');
                 activeCh.style.background = 'rgba(193,255,17,0.08)';
-                activeCh.style.borderLeft = '3px solid #c1ff11';
+                activeCh.style.borderLeft = '3px solid var(--gold, #c1ff11)';
             } else {
                 const activeComm = document.querySelector(`.comm-sidebar-item[data-category="${name}"]`);
                 if (activeComm) {
                     activeComm.classList.add('active');
                     activeComm.style.background = 'rgba(193,255,17,0.08)';
-                    activeComm.style.borderLeft = '3px solid #c1ff11';
+                    activeComm.style.borderLeft = '3px solid var(--gold, #c1ff11)';
                 }
             }
 
@@ -2953,9 +3419,21 @@
                     const dotHtml = u.is_online ? '<span class="dm-hdr-dot"></span>' : '';
                     dmHeaderAvatar.innerHTML = `<img src="${av}" alt=""/>${dotHtml}`;
                     dmHeaderAvatar.style.display = '';
-                    dmHeaderStatus.textContent = u.is_online ? 'Active now' : 'Offline';
-                    dmHeaderStatus.className = 'dm-header-status' + (u.is_online ? '' : ' offline');
+                    // Don't overwrite the "typing…" indicator while it's showing
+                    if (!dmHeaderStatus.classList.contains('typing')) {
+                        dmHeaderStatus.textContent = u.is_online ? 'Active now' : 'Offline';
+                        dmHeaderStatus.className = 'dm-header-status' + (u.is_online ? '' : ' offline');
+                    }
                     dmHeaderStatus.style.display = '';
+                    // Keep the header name accurate (covers DMs opened directly via URL)
+                    activeDmUserName = u.full_name;
+                    const headerNameEl = document.getElementById('currentChannelName');
+                    if (headerNameEl) {
+                        const verifiedIcon = u.is_admin ? '<i class="fa-solid fa-circle-check" style="color:var(--gold); font-size:1rem; margin-left:8px;" title="Verified Admin"></i>' : '';
+                        headerNameEl.innerHTML = `${escHtml(u.full_name)}${verifiedIcon}`;
+                    }
+                    const inputEl = document.getElementById('chatInput');
+                    if (inputEl) inputEl.placeholder = `Message ${u.full_name}...`;
                     return;
                 }
             }
@@ -2973,6 +3451,228 @@
         }
 
         // ── Render Message ──
+        // ── File attachment rendering (download card for non-image files) ──
+        function formatFileSize(bytes) {
+            if (!bytes || bytes < 0) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function fileIconClass(name) {
+            const ext = (name || '').split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-file-pdf';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word';
+            if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-file-excel';
+            if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint';
+            if (['zip', 'rar', '7z'].includes(ext)) return 'fa-file-zipper';
+            if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) return 'fa-file-video';
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'fa-file-audio';
+            return 'fa-file-arrow-down';
+        }
+
+        function renderFileAttachment(fileUrl, fileName, fileSize) {
+            const fname = escHtml(fileName || 'file');
+            const fsize = formatFileSize(fileSize);
+            const icon = fileIconClass(fileName);
+            return `<a class="msg-file-card" href="${API}${fileUrl}" target="_blank" rel="noopener" download="${fname}"
+                style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;color:inherit;max-width:280px;">
+                <i class="fa-solid ${icon}" style="font-size:1.5rem;color:var(--gold,#c1ff11);flex-shrink:0;"></i>
+                <span style="display:flex;flex-direction:column;overflow:hidden;">
+                    <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fname}</span>
+                    <span style="font-size:0.72rem;color:#999;">${fsize ? fsize + ' · ' : ''}Download</span>
+                </span>
+            </a>`;
+        }
+
+        // ── Voice message — custom community player ──
+        function voiceBarsHtml(seed) {
+            const n = 30;
+            let s = (Math.abs(parseInt(seed, 10)) || 1) % 233280 || 1;
+            let html = '';
+            for (let i = 0; i < n; i++) {
+                s = (s * 9301 + 49297) % 233280;
+                const h = 22 + Math.round((s / 233280) * 68); // 22%..90%
+                html += `<span style="height:${h}%"></span>`;
+            }
+            return html;
+        }
+
+        function renderVoicePlayer(fileUrl, msgId) {
+            return `<div class="voice-player">
+                <button type="button" class="voice-play" aria-label="Play voice message" onclick="toggleVoice(this)"><i class="fa-solid fa-play"></i></button>
+                <div class="voice-track" onclick="voiceSeek(event)"><div class="voice-bars">${voiceBarsHtml(msgId)}</div></div>
+                <span class="voice-dur">0:00</span>
+                <audio preload="metadata" src="${API}${fileUrl}" onloadedmetadata="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
+            </div>`;
+        }
+
+        function fmtVoiceTime(s) {
+            if (!isFinite(s) || s < 0) s = 0;
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return m + ':' + String(sec).padStart(2, '0');
+        }
+
+        function toggleVoice(btn) {
+            const player = btn.closest('.voice-player');
+            if (!player) return;
+            const audio = player.querySelector('audio');
+            if (!audio) return;
+            document.querySelectorAll('.voice-player audio').forEach(a => { if (a !== audio) a.pause(); });
+            if (audio.paused) { audio.play().catch(() => { }); } else { audio.pause(); }
+        }
+
+        function voiceMeta(audio) {
+            // Fix Infinity duration for MediaRecorder webm blobs
+            if (audio.duration === Infinity) {
+                const onFix = () => {
+                    audio.removeEventListener('timeupdate', onFix);
+                    audio.currentTime = 0;
+                    const p = audio.closest('.voice-player');
+                    const dur = p && p.querySelector('.voice-dur');
+                    if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+                };
+                audio.addEventListener('timeupdate', onFix);
+                audio.currentTime = 1e101;
+                return;
+            }
+            const p = audio.closest('.voice-player');
+            const dur = p && p.querySelector('.voice-dur');
+            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+        }
+
+        function voiceProgress(audio) {
+            if (!audio.duration || !isFinite(audio.duration)) return;
+            const p = audio.closest('.voice-player');
+            if (!p) return;
+            const bars = p.querySelectorAll('.voice-bars span');
+            const cut = Math.round((audio.currentTime / audio.duration) * bars.length);
+            bars.forEach((b, i) => b.classList.toggle('played', i < cut));
+            const dur = p.querySelector('.voice-dur');
+            if (dur) dur.textContent = fmtVoiceTime(audio.paused && audio.currentTime === 0 ? audio.duration : audio.currentTime);
+        }
+
+        function voiceState(audio, playing) {
+            const p = audio.closest('.voice-player');
+            const icon = p && p.querySelector('.voice-play i');
+            if (icon) icon.className = playing ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+        }
+
+        function voiceEnded(audio) {
+            voiceState(audio, false);
+            audio.currentTime = 0;
+            const p = audio.closest('.voice-player');
+            if (!p) return;
+            p.querySelectorAll('.voice-bars span').forEach(b => b.classList.remove('played'));
+            const dur = p.querySelector('.voice-dur');
+            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+        }
+
+        function voiceSeek(e) {
+            const track = e.currentTarget;
+            const p = track.closest('.voice-player');
+            const audio = p && p.querySelector('audio');
+            if (!audio || !audio.duration || !isFinite(audio.duration)) return;
+            const rect = track.getBoundingClientRect();
+            const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+            audio.currentTime = ratio * audio.duration;
+            voiceProgress(audio);
+        }
+
+        // ── Message Reactions (ported from general chat) ──
+        const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+        const messageReactionsCache = {};
+        const normalizeEmoji = (e) => e.replace(/\ufe0f/g, '');
+
+        function renderMessageReactionPopover(messageId) {
+            return `<div class="msg-reaction-popover" id="reaction-popover-${messageId}">
+                ${MESSAGE_REACTION_EMOJIS.map(emoji => `
+                    <button class="msg-reaction-option" type="button" aria-label="React ${emoji}" onclick="toggleMessageReaction(${messageId}, '${emoji}')">${emoji}</button>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderMessageReactions(messageId, summary = []) {
+            messageReactionsCache[messageId] = summary;
+            return summary
+                .filter(item => Number(item.count) > 0)
+                .map(item => `
+                    <button class="msg-reaction-badge ${item.user_reacted ? 'user-reacted' : ''}" type="button" onclick="toggleMessageReaction(${messageId}, '${item.emoji}')">
+                        <span>${item.emoji}</span><span>${item.count}</span>
+                    </button>
+                `).join('');
+        }
+
+        function applyReactionUpdate(messageId, summary) {
+            if (!messageId) return;
+            messageReactionsCache[messageId] = summary || [];
+            const wrap = document.getElementById(`msg-reactions-${messageId}`);
+            if (wrap) wrap.innerHTML = renderMessageReactions(messageId, messageReactionsCache[messageId]);
+        }
+
+        function getOptimisticReactionSummary(messageId, emoji, action) {
+            const current = (messageReactionsCache[messageId] || []).map(item => ({ ...item }));
+            let item = current.find(r => r.emoji === emoji);
+            if (!item) {
+                item = { emoji, count: 0, user_reacted: false };
+                current.push(item);
+            }
+
+            if (action === 'add' && !item.user_reacted) {
+                current.forEach(reaction => {
+                    if (reaction.emoji !== emoji && reaction.user_reacted) {
+                        reaction.count = Math.max(reaction.count - 1, 0);
+                        reaction.user_reacted = false;
+                    }
+                });
+                item.count += 1;
+                item.user_reacted = true;
+            } else if (action === 'remove' && item.user_reacted) {
+                item.count = Math.max(item.count - 1, 0);
+                item.user_reacted = false;
+            }
+
+            return MESSAGE_REACTION_EMOJIS
+                .map(allowed => current.find(r => r.emoji === allowed))
+                .filter(item => item && (item.count > 0 || item.user_reacted));
+        }
+
+        function toggleMessageReaction(messageId, emoji) {
+            const summary = messageReactionsCache[messageId] || [];
+            const existing = summary.find(item => item.emoji === emoji);
+            const action = existing && existing.user_reacted ? 'remove' : 'add';
+
+            applyReactionUpdate(messageId, getOptimisticReactionSummary(messageId, emoji, action));
+            document.querySelectorAll('.msg-reaction-popover.open').forEach(el => el.classList.remove('open'));
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showToast('Reconnecting. Reaction will sync after the socket is back.', 'error');
+                loadMessages();
+                return;
+            }
+
+            ws.send(JSON.stringify({
+                event: 'message_reaction',
+                data: { message_id: messageId, emoji: normalizeEmoji(emoji), action }
+            }));
+        }
+
+        function toggleReactionBar(messageId) {
+            const popover = document.getElementById(`reaction-popover-${messageId}`);
+            if (!popover) return;
+            document.querySelectorAll('.msg-reaction-popover.open').forEach(el => {
+                if (el !== popover) el.classList.remove('open');
+            });
+            popover.classList.toggle('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.msg-actions') && !e.target.closest('.msg-reaction-badge')) {
+                document.querySelectorAll('.msg-reaction-popover.open').forEach(el => el.classList.remove('open'));
+            }
+        });
+
         function renderMsg(m) {
             const safeName = m.author_name || m.sender_name || '?';
             const initials = safeName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -3004,10 +3704,13 @@
             let contentInnerHtml = '';
             const msgType = m.message_type || 'text';
             if (msgType === 'image' && m.file_url) {
-                contentInnerHtml = `<img class="msg-image" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
+                contentInnerHtml = `<img class="msg-image" loading="lazy" decoding="async" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
                 if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${escHtml(actualContent)}</div>`;
             } else if (msgType === 'voice' && m.file_url) {
-                contentInnerHtml = `<div class="msg-voice"><i class="fa-solid fa-waveform-lines" style="color:var(--gold);font-size:.9rem;"></i><audio controls preload="metadata" src="${API}${m.file_url}"></audio></div>`;
+                contentInnerHtml = renderVoicePlayer(m.file_url, m.id);
+            } else if (msgType === 'file' && m.file_url) {
+                contentInnerHtml = renderFileAttachment(m.file_url, m.file_name, m.file_size);
+                if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${escHtml(actualContent)}</div>`;
             } else {
                 contentInnerHtml = `<div class="msg-txt" dir="auto">${escHtml(actualContent)}</div>`;
             }
@@ -3032,12 +3735,15 @@
             const rawText = actualContent.replace(/'/g, "\\'").replace(/\n/g, " ");
             const actionsHtml = `
                 <div class="msg-actions">
+                    ${renderMessageReactionPopover(m.id)}
+                    <button class="msg-action-btn" title="React" onclick="toggleReactionBar(${m.id})"><i class="fa-regular fa-face-smile"></i></button>
                     <button class="msg-action-btn" title="Reply" onclick="replyToMsg(${m.id}, '${escHtml(m.author_name).replace(/'/g, "\\'")}', '${m.author_avatar_url || ''}', '${rawText}')"><i class="fa-solid fa-reply"></i></button>
                     ${deleteBtn}
                 </div>
             `;
+            const reactionsHtml = renderMessageReactions(m.id, m.reactions_summary || []);
 
-            return `<div class="${msgClass}" id="msg-${m.id}" ${msgDataAttr}>
+            return `<div class="${msgClass}" id="msg-${m.id}" data-message-id="${m.id}" ${msgDataAttr}>
                 <div class="msg-avatar-wrap msg-user-trigger" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})">
                     <div class="msg-av">${avatarHtml}</div>
                 </div>
@@ -3046,7 +3752,7 @@
                     <div class="msg-top">
                         <span class="msg-name msg-author-clickable" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})" style="display:inline-flex;align-items:center;gap:4px;">
                             ${escHtml(m.author_name || 'Unknown')}
-                            ${(m.sender_is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:#c1ff11; font-size:0.75rem;" title="Verified Admin"></i>' : ''}
+                            ${(m.sender_is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:var(--gold, #c1ff11); font-size:0.75rem;" title="Verified Admin"></i>' : ''}
                         </span>
                         <span class="msg-badge ${badgeCls}">${escHtml(resolvedBadge)}</span>
                         <span class="msg-ts">${formatTime(m.created_at)}</span>
@@ -3055,6 +3761,7 @@
                         ${contentHtml}
                         ${actionsHtml}
                     </div>
+                    <div class="msg-reactions-wrap" id="msg-reactions-${m.id}">${reactionsHtml}</div>
                     <div class="msg-read" onclick="var t=this.querySelector('.read-tooltip');if(t)t.classList.toggle('visible')"><i class="fa-solid fa-eye"></i> Read by ${readCount}${readTooltipHtml}</div>
                 </div>
             </div>`;
@@ -3218,21 +3925,37 @@
             } catch (e) { console.error(e); }
         }
 
-        // ── Image Upload ──
+        // ── File / Image Upload ──
         document.getElementById('attachBtn').addEventListener('click', () => document.getElementById('fileInput').click());
         document.getElementById('fileInput').addEventListener('change', function () {
             const file = this.files[0]; if (!file) return;
+            showFilePreview(file);
+        });
+        document.getElementById('previewRemove').addEventListener('click', clearFilePreview);
+
+        function showFilePreview(file) {
             pendingFile = file;
             const previewBar = document.getElementById('chatPreviewBar');
-            document.getElementById('previewImg').src = URL.createObjectURL(file);
-            document.getElementById('previewName').textContent = file.name;
+            const previewImg = document.getElementById('previewImg');
+            if (file.type && file.type.startsWith('image/')) {
+                previewImg.src = URL.createObjectURL(file);
+                previewImg.style.display = '';
+            } else {
+                previewImg.removeAttribute('src');
+                previewImg.style.display = 'none';
+            }
+            document.getElementById('previewName').textContent = file.name || 'pasted-image';
             previewBar.style.display = 'flex';
-        });
-        document.getElementById('previewRemove').addEventListener('click', () => {
+        }
+
+        function clearFilePreview() {
             pendingFile = null;
+            const previewImg = document.getElementById('previewImg');
+            previewImg.removeAttribute('src');
+            previewImg.style.display = '';
             document.getElementById('chatPreviewBar').style.display = 'none';
             document.getElementById('fileInput').value = '';
-        });
+        }
 
         async function sendImageMessage(caption) {
             if (!pendingFile) return;
@@ -3240,27 +3963,100 @@
             formData.append('file', pendingFile);
             try {
                 const uploadRes = await fetch(API + '/chat/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+                if (!uploadRes.ok) throw new Error('upload failed');
                 const uploadData = await uploadRes.json();
                 await apiFetch('/chat/messages', {
                     method: 'POST',
-                    body: JSON.stringify({ channel: currentChannel, content: caption || null, message_type: 'image', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
+                    body: JSON.stringify({ channel: currentChannel, content: caption || null, message_type: uploadData.message_type || 'file', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
                 });
-                pendingFile = null;
-                document.getElementById('chatPreviewBar').style.display = 'none';
-                document.getElementById('fileInput').value = '';
+                clearFilePreview();
                 document.getElementById('chatInput').value = '';
                 setTimeout(loadMessages, 300);
-            } catch (e) { console.error(e); showToast('Failed to upload image', 'error'); }
+            } catch (e) { console.error(e); showToast('Failed to upload file', 'error'); }
         }
 
-        // ── Voice Recording ──
+        // ── Paste image from clipboard ──
+        document.getElementById('chatInput').addEventListener('paste', (e) => {
+            const items = (e.clipboardData || window.clipboardData)?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        const named = file.name && file.name !== 'image.png'
+                            ? file
+                            : new File([file], `pasted-${Date.now()}.${(item.type.split('/')[1] || 'png')}`, { type: item.type });
+                        showFilePreview(named);
+                    }
+                    break;
+                }
+            }
+        });
+
+        // ── Voice Recording (WhatsApp-style preview — review before sending) ──
+        let pendingVoiceBlob = null;
+        let recordingTimerInterval = null;
+
         document.getElementById('voiceBtn').addEventListener('click', toggleRecording);
+
+        document.getElementById('voiceCancelBtn').addEventListener('click', () => {
+            pendingVoiceBlob = null;
+            const player = document.getElementById('voicePreviewPlayer');
+            player.pause();
+            player.src = '';
+            document.getElementById('voicePreviewBar').style.display = 'none';
+            document.getElementById('chatInputBar').style.display = '';
+        });
+
+        document.getElementById('voiceSendBtn').addEventListener('click', async () => {
+            if (!pendingVoiceBlob) return;
+            const sendBtn = document.getElementById('voiceSendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                const file = new File([pendingVoiceBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadRes = await fetch(API + '/chat/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (!uploadRes.ok) throw new Error('upload failed');
+                const uploadData = await uploadRes.json();
+                await apiFetch('/chat/messages', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        channel: currentChannel, content: null,
+                        message_type: 'voice',
+                        file_url: uploadData.file_url,
+                        file_name: uploadData.file_name,
+                        file_size: uploadData.file_size
+                    })
+                });
+                pendingVoiceBlob = null;
+                const player = document.getElementById('voicePreviewPlayer');
+                player.pause(); player.src = '';
+                document.getElementById('voicePreviewBar').style.display = 'none';
+                document.getElementById('chatInputBar').style.display = '';
+                setTimeout(loadMessages, 300);
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to send voice message', 'error');
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
+            }
+        });
+
         async function toggleRecording() {
             const btn = document.getElementById('voiceBtn');
             if (isRecording) {
-                mediaRecorder.stop(); isRecording = false;
+                mediaRecorder.stop();
+                isRecording = false;
                 btn.classList.remove('recording');
                 btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                clearInterval(recordingTimerInterval);
                 return;
             }
             try {
@@ -3268,24 +4064,29 @@
                 mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 audioChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-                mediaRecorder.onstop = async () => {
+                mediaRecorder.onstop = () => {
                     stream.getTracks().forEach(t => t.stop());
                     const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
-                    const formData = new FormData(); formData.append('file', file);
-                    try {
-                        const uploadRes = await fetch(API + '/chat/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-                        const uploadData = await uploadRes.json();
-                        await apiFetch('/chat/messages', {
-                            method: 'POST',
-                            body: JSON.stringify({ channel: currentChannel, content: null, message_type: 'voice', file_url: uploadData.file_url, file_name: uploadData.file_name, file_size: uploadData.file_size })
-                        });
-                        setTimeout(loadMessages, 300);
-                    } catch (e) { console.error(e); }
+                    pendingVoiceBlob = blob;
+                    const player = document.getElementById('voicePreviewPlayer');
+                    player.src = URL.createObjectURL(blob);
+                    document.getElementById('chatInputBar').style.display = 'none';
+                    document.getElementById('voicePreviewBar').style.display = 'flex';
+                    const sb = document.getElementById('voiceSendBtn');
+                    sb.disabled = false;
+                    sb.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
                 };
-                mediaRecorder.start(); isRecording = true;
+                mediaRecorder.start();
+                isRecording = true;
+                let secs = 0;
                 btn.classList.add('recording');
-                btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+                btn.innerHTML = '<i class="fa-solid fa-stop"></i> 00:00';
+                recordingTimerInterval = setInterval(() => {
+                    secs++;
+                    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+                    const s = String(secs % 60).padStart(2, '0');
+                    btn.innerHTML = `<i class="fa-solid fa-stop"></i> ${m}:${s}`;
+                }, 1000);
             } catch (e) { showToast('Microphone access denied', 'error'); }
         }
 
@@ -3305,6 +4106,7 @@
         // ── Event Listeners ──
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
         document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        document.getElementById('chatInput').addEventListener('input', sendTypingSignal);
         document.getElementById('chatInput').addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
 
 
@@ -3314,8 +4116,8 @@
             connectWS();
             fetchOnlineCount();
             loadDmList();
-            setInterval(fetchOnlineCount, 30000);
-            setInterval(loadDmList, 30000);
+            setInterval(() => { if (!document.hidden) fetchOnlineCount(); }, 30000);
+            setInterval(() => { if (!document.hidden) loadDmList(); }, 30000);
             const urlParams = new URLSearchParams(window.location.search);
             const channelParam = urlParams.get('channel');
             if (channelParam) selectChannel(channelParam);
@@ -3333,6 +4135,8 @@
             // Reset state
             showProfileLoading(true);
             document.getElementById('ppError').style.display = 'none';
+            const _notesBox = document.getElementById('ppAdminNotes');
+            if (_notesBox) _notesBox.style.display = 'none';
 
             try {
                 const res = await apiFetch(`/profile/${userId}/public`);
@@ -3372,7 +4176,7 @@
             // Online dot
             const dot = document.getElementById('ppOnlineDot');
             dot.className = 'pp-online-dot' + (p.is_online ? ' online' : '');
-            dot.title = p.is_online ? 'أونلاين الآن' : 'غير متاح';
+            dot.title = p.is_online ? 'Online Now' : 'Offline';
 
             // Name
             document.getElementById('ppName').textContent = p.full_name;
@@ -3399,9 +4203,9 @@
 
             // Bio
             const bioEl = document.getElementById('ppBio');
-            bioEl.textContent = p.bio || 'لا توجد نبذة شخصية بعد';
+            bioEl.textContent = p.bio || 'No bio yet';
             bioEl.style.fontStyle = p.bio ? 'normal' : 'italic';
-            bioEl.style.color = p.bio ? '#b8b8b8' : '#5a5648';
+            bioEl.style.color = p.bio ? 'var(--text-secondary)' : 'var(--text-muted)';
 
             // Social media
             const socialLink = document.getElementById('ppSocialLink');
@@ -3419,26 +4223,111 @@
                 socialLink.classList.add('pp-hidden');
             }
 
-            // Stats
-            document.getElementById('ppLevel').textContent = p.level;
-            document.getElementById('ppXp').textContent = (p.xp || 0).toLocaleString();
-            document.getElementById('ppStreak').textContent = p.streak_days;
-            document.getElementById('ppPosts').textContent = p.post_count;
+            // Streak
+            document.getElementById('ppStreak').textContent = p.streak_days || 0;
+
+            // Achievements
+            renderPanelAchievements(p);
 
             // Joined
             document.getElementById('ppJoined').innerHTML = `📅 ${p.joined_at}`;
+
+            // Admin Notes — only for admins viewing another member's profile
+            const notesBox = document.getElementById('ppAdminNotes');
+            const noteText = document.getElementById('ppAdminNoteText');
+            const noteStatus = document.getElementById('ppNoteStatus');
+            if (noteStatus) noteStatus.textContent = '';
+            if (currentUserIsAdmin && p.id !== currentUserId) {
+                if (notesBox) notesBox.style.display = 'block';
+                loadAdminNote(p.id);
+            } else {
+                if (notesBox) notesBox.style.display = 'none';
+                if (noteText) noteText.value = '';
+            }
+        }
+
+        // ── Profile panel achievements (same set as the dashboard) ──
+        const PP_ACHIEVEMENTS = [
+            { flag: null,                icon: 'rocket',          name: 'First Login',     tier: 'bronze'  },
+            { flag: 'has_first_post',    icon: 'pen-square',      name: 'First Post',      tier: 'silver'  },
+            { flag: 'has_7day_streak',   icon: 'flame',           name: '7-Day Streak',    tier: 'gold'    },
+            { flag: 'is_top_student',    icon: 'trophy',          name: 'Top Student',     tier: 'gold'    },
+            { flag: 'has_course_complete', icon: 'graduation-cap', name: 'Course Complete', tier: 'gold'   },
+            { flag: 'has_all_courses',   icon: 'target',          name: '100% Progress',   tier: 'diamond' },
+            { flag: 'has_pro_member',    icon: 'gem',             name: 'Pro Member',      tier: 'diamond' },
+        ];
+
+        function renderPanelAchievements(p) {
+            const grid = document.getElementById('ppAchGrid');
+            const countEl = document.getElementById('ppAchCount');
+            if (!grid) return;
+
+            let unlockedCount = 0;
+            grid.innerHTML = PP_ACHIEVEMENTS.map(a => {
+                const unlocked = a.flag === null ? true : !!p[a.flag];
+                if (unlocked) unlockedCount++;
+                // Plain English text — the community-i18n MutationObserver
+                // auto-translates these labels to Arabic when in AR mode.
+                return `
+                    <div class="pp-ach tier-${a.tier}${unlocked ? '' : ' locked'}" title="${a.name}">
+                        <div class="pp-ach-ic"><i data-lucide="${unlocked ? a.icon : 'lock'}"></i></div>
+                        <span class="pp-ach-name">${a.name}</span>
+                    </div>`;
+            }).join('');
+
+            if (countEl) countEl.textContent = `${unlockedCount} / ${PP_ACHIEVEMENTS.length}`;
+            setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+        }
+
+        // ── Admin Notes (private, admins only) ──
+        async function loadAdminNote(userId) {
+            const ta = document.getElementById('ppAdminNoteText');
+            if (ta) { ta.value = ''; ta.disabled = true; }
+            try {
+                const res = await apiFetch(`/admin/notes/${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (ta) ta.value = data.note || '';
+                }
+            } catch (e) { /* ignore */ }
+            if (ta) ta.disabled = false;
+        }
+
+        async function saveAdminNote() {
+            if (!currentProfileUserId) return;
+            const ta = document.getElementById('ppAdminNoteText');
+            const btn = document.getElementById('ppSaveNoteBtn');
+            const status = document.getElementById('ppNoteStatus');
+            if (btn) btn.disabled = true;
+            try {
+                const res = await apiFetch(`/admin/notes/${currentProfileUserId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ note: ta ? ta.value : '' })
+                });
+                if (res.ok) {
+                    if (status) { status.textContent = '✓ Note saved'; status.style.color = 'var(--gold, #c1ff11)'; }
+                } else {
+                    if (status) { status.textContent = 'Failed to save'; status.style.color = '#ff6b6b'; }
+                }
+            } catch (e) {
+                if (status) { status.textContent = 'Failed to save'; status.style.color = '#ff6b6b'; }
+            }
+            if (btn) btn.disabled = false;
+            setTimeout(() => { if (status) status.textContent = ''; }, 3000);
         }
 
         function showProfileLoading(show) {
             document.getElementById('ppLoading').style.display = show ? 'flex' : 'none';
             const ppInfo = document.querySelector('.pp-info');
-            const ppStats = document.querySelector('.pp-stats');
+            const ppStreak = document.querySelector('.pp-streak-chip');
+            const ppAch = document.querySelector('.pp-ach-section');
             const ppBadge = document.getElementById('ppBadge');
             const ppBio = document.getElementById('ppBio');
             const ppJoined = document.getElementById('ppJoined');
             const ppAvatarWrap = document.querySelector('.pp-avatar-wrap');
             if (ppInfo) ppInfo.style.visibility = show ? 'hidden' : 'visible';
-            if (ppStats) ppStats.style.visibility = show ? 'hidden' : 'visible';
+            if (ppStreak) ppStreak.style.visibility = show ? 'hidden' : 'visible';
+            if (ppAch) ppAch.style.visibility = show ? 'hidden' : 'visible';
             if (ppBadge) ppBadge.style.visibility = show ? 'hidden' : 'visible';
             if (ppBio) ppBio.style.visibility = show ? 'hidden' : 'visible';
             if (ppJoined) ppJoined.style.visibility = show ? 'hidden' : 'visible';
@@ -3532,9 +4421,9 @@
                 const dotClass = isOnline ? 'online' : 'offline';
 
                 const resolvedBadgeInbox = m.custom_title || (m.is_admin ? 'Admin' : (m.badge || 'Member'));
-                const badgeColor = m.is_admin ? '#c1ff11' : (resolvedBadgeInbox.toLowerCase().includes('pro') ? '#ffd700' : '#888');
+                const badgeColor = m.is_admin ? 'var(--gold, #c1ff11)' : (resolvedBadgeInbox.toLowerCase().includes('pro') ? '#ffd700' : '#888');
                 const badgeCls = getBadgeClass(resolvedBadgeInbox);
-                const adminCheck = (m.is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:#c1ff11; font-size:0.75rem; margin-left:4px;" title="Verified Admin"></i>' : '';
+                const adminCheck = (m.is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:var(--gold, #c1ff11); font-size:0.75rem; margin-left:4px;" title="Verified Admin"></i>' : '';
 
                 return `
                 <div class="member-item">
@@ -3572,6 +4461,7 @@
                 activeDmUserName = data.target_user.full_name;
                 await loadDmList();
                 selectChannel(data.channel_name);
+                if (data.channel_id) currentDmChannelId = data.channel_id;
             } catch (e) { console.error(e); }
         }
 
@@ -3619,6 +4509,10 @@
                 // Update DM header if currently viewing a DM
                 if (currentChannel.startsWith('dm_')) {
                     updateDmHeader(currentChannel);
+                    // Late-resolve the numeric channel id (page may open a DM before this list loads)
+                    if (!currentDmChannelId) {
+                        currentDmChannelId = ((dms || []).find(d => d.channel_name === currentChannel) || {}).channel_id || null;
+                    }
                 }
             } catch (e) { console.error(e); }
         }
@@ -3646,10 +4540,10 @@
                         const nameLower = m.full_name.toLowerCase();
                         if (nameLower.includes('mohamed salah')) {
                             role = 'CEO';
-                            roleColor = 'color:#c1ff11;';
+                            roleColor = 'color:var(--gold, #c1ff11);';
                         } else if (nameLower.includes('nabil')) {
                             role = 'CTO';
-                            roleColor = 'color:#c1ff11;';
+                            roleColor = 'color:var(--gold, #c1ff11);';
                         }
                         if (m.custom_title) role = m.custom_title;
                         
@@ -3736,6 +4630,16 @@
         function renderInboxList(dms) {
             const container = document.getElementById('dmInboxList');
             if (!container) return;
+
+            // Admins live in the "Team" strip at the top of the inbox — never list
+            // them among Messages, even when there's chat history. (Single choke
+            // point, so both loadDmInbox and the 30s loadDmList refresh stay in sync.)
+            if (dms) {
+                dms = dms.filter(dm => {
+                    const u = dm.user || {};
+                    return !(u.is_admin || getBadgeClass(u.badge) === 'admin');
+                });
+            }
 
             if (!dms || dms.length === 0) {
                 container.innerHTML = `
@@ -3824,7 +4728,7 @@
                 const onlineDot = m.is_online ? '<div class="new-dm-member-online"></div>' : '';
                 const resolvedBadgeNew = m.is_admin ? 'Admin' : (m.badge || 'Member');
                 const badgeCls = getBadgeClass(resolvedBadgeNew);
-                const adminCheck = (m.is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:#c1ff11; font-size:0.75rem; margin-left:4px;" title="Verified Admin"></i>' : '';
+                const adminCheck = (m.is_admin || badgeCls === 'admin') ? '<i class="fa-solid fa-circle-check" style="color:var(--gold, #c1ff11); font-size:0.75rem; margin-left:4px;" title="Verified Admin"></i>' : '';
                 return `
                 <div class="new-dm-member-item" onclick="startNewDm(${m.id}, '${escHtml(m.full_name).replace(/'/g, "\\'")}')">
                     <img src="${av}" alt="" class="new-dm-member-av"/>
@@ -4609,7 +5513,7 @@
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=15"></script>
+    <script src="src/js/dashboard-new.js?v=1783908000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>
