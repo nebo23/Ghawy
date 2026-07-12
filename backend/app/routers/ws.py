@@ -203,20 +203,31 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info(f"WS disconnect: user {user_id if user_id else '?'}")
+    except RuntimeError as e:
+        # Gracefully handle "Unexpected ASGI message 'websocket.close'"
+        # This happens when a client drops the connection abruptly and
+        # the server tries to close an already-closed socket — harmless.
+        if "websocket.close" in str(e) or "already completed" in str(e):
+            logger.debug(f"WS already closed for user {user_id}: {e}")
+        else:
+            logger.error(f"WS runtime error for user {user_id}: {e}")
     except Exception as e:
-        logger.error(f"WS error: {e}")
+        logger.error(f"WS error for user {user_id}: {e}")
     finally:
         if user_id:
             manager.disconnect(websocket, user_id)
             # Broadcast offline status
-            with db_session() as db:
-                memberships = db.query(ChatMember).filter(ChatMember.user_id == user_id).all()
-                offline_channel_ids = [m.channel_id for m in memberships]
-            for ch_id in offline_channel_ids:
-                await manager.broadcast_to_channel(ch_id, {
-                    "event": "user_offline",
-                    "data": {"user_id": user_id, "user_name": user_name}
-                })
+            try:
+                with db_session() as db:
+                    memberships = db.query(ChatMember).filter(ChatMember.user_id == user_id).all()
+                    offline_channel_ids = [m.channel_id for m in memberships]
+                for ch_id in offline_channel_ids:
+                    await manager.broadcast_to_channel(ch_id, {
+                        "event": "user_offline",
+                        "data": {"user_id": user_id, "user_name": user_name}
+                    })
+            except Exception as cleanup_err:
+                logger.debug(f"WS cleanup error for user {user_id}: {cleanup_err}")
 
 
 async def handle_send_message(user_id: int, data: dict):

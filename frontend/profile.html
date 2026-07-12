@@ -456,21 +456,21 @@
                             </div>
                             <div class="stat-card-footer">
                                 <span class="pct-text" id="pctExams">0%</span>
-                                <span class="meta-text" id="motExams">Best Score: 85%</span>
+                                <span class="meta-text" id="motExams">No exams taken yet</span>
                             </div>
                         </div>
                         <!-- Average Score -->
                         <div class="stat-card-premium">
                             <div class="stat-card-header">
                                 <span class="stat-card-title">Average Score</span>
-                                <span class="stat-card-value">--</span>
+                                <span class="stat-card-value" id="avgScoreVal">--</span>
                             </div>
                             <div class="stat-progress-bg">
                                 <div class="stat-progress-fill purple" id="barLevel" style="width: 0%"></div>
                             </div>
                             <div class="stat-card-footer">
                                 <span class="pct-text" id="pctLevel">0%</span>
-                                <span class="meta-text" id="motLevel">Community Avg: 72%</span>
+                                <span class="meta-text" id="motLevel">Community Avg: --</span>
                             </div>
                         </div>
                     </div>
@@ -478,13 +478,13 @@
             </div>
         </div>
     </div>
-    <script src="src/js/utils.js?v=1783908000"></script>
+    <script src="src/js/utils.js?v=1783960000"></script>
     <script src="src/js/i18n.js?v=4"></script>
-    <script src="src/js/profile.js?v=4"></script>
+    <script src="src/js/profile.js?v=5"></script>
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=1783908000"></script>
+    <script src="src/js/dashboard-new.js?v=1783972000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>
@@ -519,6 +519,8 @@
             else window.addEventListener('load', wire);
         })();
     </script>
+    <!-- What's New popup (shared across sections, shown once per version) -->
+    <script src="src/js/whats-new.js?v=1783908004"></script>
 </body>
 
 </html>

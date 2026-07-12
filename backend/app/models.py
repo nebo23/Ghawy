@@ -686,6 +686,9 @@ class AiUpdatePost(Base):
     body = Column(Text, nullable=False)
     image_url = Column(String, nullable=True)
     video_url = Column(String, nullable=True)
+    # Multi-media support: list of {"type": "image"|"video", "url": str}.
+    # image_url / video_url are kept in sync with the first item for legacy readers.
+    media = Column(JSON, nullable=True)
     is_pinned = Column(Boolean, default=False)
     
     # Denormalized counts
@@ -721,6 +724,7 @@ class AiUpdatePollOption(Base):
     id = Column(Integer, primary_key=True, index=True)
     poll_id = Column(Integer, ForeignKey("ai_update_polls.id", ondelete="CASCADE"), nullable=False)
     text = Column(String, nullable=False)
+    image_url = Column(String, nullable=True)
     votes_count = Column(Integer, default=0)
 
     poll = relationship("AiUpdatePoll", back_populates="options")

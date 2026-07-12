@@ -440,6 +440,16 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
 
   let html = '';
 
+  // Quick "mark all read" action when there are unread bell notifications
+  const unreadNotifCount = notifs.filter(n => !n.is_read).length;
+  if (unreadNotifCount > 0) {
+    html += `
+        <div class="notif-item" style="cursor:pointer; justify-content:center; text-align:center;" onclick="window.markAllNotifsRead(event)">
+            <div class="notif-item-text" style="color:var(--gold, #c1ff11); font-weight:700; width:100%;">✓ Mark all as read (${unreadNotifCount})</div>
+        </div>
+    `;
+  }
+
   if (communityUnread > 0) {
     const commCount = communityUnread > 10 ? '+10' : communityUnread;
     html += `
@@ -518,7 +528,24 @@ window.markNotifRead = async function(id, link) {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
     } catch(e) {}
-    if(link && link !== '#') window.location.href = link;
+    if (link && link !== '#' && link !== 'null') {
+        window.location.href = link;
+    } else {
+        // No destination — refresh the panel/badges immediately so the item
+        // doesn't look "stuck" until the next 30s poll.
+        fetchGlobalNotifications();
+    }
+}
+
+window.markAllNotifsRead = async function(e) {
+    if (e) e.stopPropagation();
+    try {
+        await fetch(`${API}/notifications/read-all`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+    } catch(e2) {}
+    fetchGlobalNotifications();
 }
 
 function toggleNotifPanel() {

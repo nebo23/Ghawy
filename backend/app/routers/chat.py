@@ -3,7 +3,7 @@ Chat Router — Channels, Messages (REST), File Uploads, Read Receipts, Delete
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, text as sqltext
 from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
@@ -395,59 +395,52 @@ def list_channels(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    channels = db.query(Channel).order_by(Channel.created_at).all()
-    result = []
+    # Only expose group channels plus the user's own DM channels — DM names
+    # and last messages of other members must not leak to everyone.
+    my_channel_ids = {
+        cid for (cid,) in db.query(ChatMember.channel_id)
+        .filter(ChatMember.user_id == current_user.id).all()
+    }
+    channels = [
+        ch for ch in db.query(Channel).order_by(Channel.created_at).all()
+        if ch.channel_type != ChannelType.DM or ch.id in my_channel_ids
+    ]
 
-    for ch in channels:
-        # Get member count
-        member_count = db.query(ChatMember).filter(ChatMember.channel_id == ch.id).count()
+    # Aggregate lookups — constant query count (was 4 queries per channel,
+    # ~2300 total with 575 DM channels; took ~1.8s per request)
+    member_counts = dict(
+        db.query(ChatMember.channel_id, func.count(ChatMember.user_id))
+        .group_by(ChatMember.channel_id).all()
+    )
+    last_msgs = {
+        row.channel_id: row for row in db.execute(sqltext(
+            "SELECT DISTINCT ON (channel_id) channel_id, content, created_at "
+            "FROM messages WHERE is_deleted = false "
+            "ORDER BY channel_id, created_at DESC"
+        ))
+    }
+    unread_counts = dict(db.execute(sqltext(
+        "SELECT m.channel_id, COUNT(*) FROM messages m "
+        "JOIN chat_members cm ON cm.channel_id = m.channel_id AND cm.user_id = :uid "
+        "WHERE m.is_deleted = false AND m.sender_id != :uid "
+        "AND (cm.last_read_at IS NULL OR m.created_at > cm.last_read_at) "
+        "GROUP BY m.channel_id"
+    ), {"uid": current_user.id}).fetchall())
 
-        # Get last message
-        last_msg = (
-            db.query(Message)
-            .filter(Message.channel_id == ch.id, Message.is_deleted == False)
-            .order_by(desc(Message.created_at))
-            .first()
-        )
-
-        # Get unread count for this user
-        membership = (
-            db.query(ChatMember)
-            .filter(ChatMember.channel_id == ch.id, ChatMember.user_id == current_user.id)
-            .first()
-        )
-        unread = 0
-        if membership and membership.last_read_at:
-            unread = (
-                db.query(Message)
-                .filter(
-                    Message.channel_id == ch.id,
-                    Message.created_at > membership.last_read_at,
-                    Message.sender_id != current_user.id,
-                    Message.is_deleted == False,
-                )
-                .count()
-            )
-        elif membership:
-            unread = db.query(Message).filter(
-                Message.channel_id == ch.id,
-                Message.sender_id != current_user.id,
-                Message.is_deleted == False,
-            ).count()
-
-        result.append(ChannelOut(
+    return [
+        ChannelOut(
             id=ch.id,
             name=ch.name,
             channel_type=ch.channel_type,
             description=ch.description,
             created_at=ch.created_at,
-            member_count=member_count,
-            unread_count=unread,
-            last_message=last_msg.content if last_msg else None,
-            last_message_at=last_msg.created_at if last_msg else None,
-        ))
-
-    return result
+            member_count=member_counts.get(ch.id, 0),
+            unread_count=unread_counts.get(ch.id, 0),
+            last_message=last_msgs[ch.id].content if ch.id in last_msgs else None,
+            last_message_at=last_msgs[ch.id].created_at if ch.id in last_msgs else None,
+        )
+        for ch in channels
+    ]
 
 
 @router.post("/channels", response_model=ChannelOut, status_code=201)
@@ -647,6 +640,65 @@ def mark_channel_read(
     membership.last_read_at = datetime.utcnow()
     db.commit()
     return {"message": "Marked as read"}
+
+
+# ─── DM full-channel read (clears the DM unread badge) ───────
+
+@router.put("/dm/read")
+async def mark_dm_channel_read(
+    channel: str,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """Mark EVERY message in a DM channel as read for the current user.
+
+    DM unread counts are per-message (MessageRead rows). The on-screen
+    IntersectionObserver only marks messages that become visible, so opening
+    a conversation left older messages unread and the badge never cleared.
+    This bulk-marks the whole channel when the user opens it.
+    """
+    ch = db.query(Channel).filter(
+        Channel.name == channel,
+        Channel.channel_type == ChannelType.DM,
+    ).first()
+    if not ch:
+        return {"ok": True, "marked": 0}
+
+    # Only participants may mark the channel read
+    is_member = db.query(ChatMember).filter(
+        ChatMember.channel_id == ch.id,
+        ChatMember.user_id == current_user.id,
+    ).first()
+    if not is_member:
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+
+    already_read = set(
+        mid for (mid,) in db.query(MessageRead.message_id)
+        .join(Message, Message.id == MessageRead.message_id)
+        .filter(MessageRead.user_id == current_user.id, Message.channel_id == ch.id)
+        .all()
+    )
+    unread_q = db.query(Message).filter(
+        Message.channel_id == ch.id,
+        Message.sender_id != current_user.id,
+        Message.is_deleted == False,
+    )
+    if already_read:
+        unread_q = unread_q.filter(~Message.id.in_(already_read))
+    unread = unread_q.all()
+
+    for msg in unread:
+        db.add(MessageRead(message_id=msg.id, user_id=current_user.id))
+        msg.read_count = (msg.read_count or 0) + 1
+    db.commit()
+
+    if unread:
+        await manager.broadcast_to_channel(ch.id, {
+            "event": "message_read",
+            "data": {"channel_id": ch.id, "user_id": current_user.id}
+        })
+
+    return {"ok": True, "marked": len(unread)}
 
 
 # ─── Community Chat Unread (sidebar badge) ───────────────────

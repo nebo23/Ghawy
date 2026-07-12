@@ -430,9 +430,10 @@ async function loadProgressStats() {
         const totalV = document.getElementById('totalVideos');
         if (totalV) totalV.textContent = totalLessons;
 
-        // Exams
-        const totalExams = courses.length * 5;
-        const completedExams = 0;
+        // Exams — real numbers from /dashboard/summary (published exams + best attempts)
+        const ex = data.exams || {};
+        const totalExams = ex.total || 0;
+        const completedExams = ex.completed || 0;
         const examPct = totalExams > 0 ? Math.round((completedExams / totalExams) * 100) : 0;
         setBar('barExams', examPct);
         const pctE = document.getElementById('pctExams');
@@ -441,16 +442,18 @@ async function loadProgressStats() {
         if (countE) countE.textContent = completedExams;
         const totalE = document.getElementById('totalExams');
         if (totalE) totalE.textContent = totalExams;
+        const motE = document.getElementById('motExams');
+        if (motE) motE.textContent = completedExams > 0 ? `Best Score: ${ex.best_score || 0}%` : 'No exams taken yet';
 
-        // Overall level
-        let avgPct = 0;
-        if (courses.length > 0) {
-            const sum = courses.reduce((s, c) => s + (c.percent || 0), 0);
-            avgPct = Math.round(sum / courses.length);
-        }
-        setBar('barLevel', avgPct);
+        // Average Score — mean of the user's best score per exam
+        const avgScore = ex.average_score || 0;
+        const avgVal = document.getElementById('avgScoreVal');
+        if (avgVal) avgVal.textContent = completedExams > 0 ? avgScore + '%' : '--';
+        setBar('barLevel', completedExams > 0 ? avgScore : 0);
         const pctL = document.getElementById('pctLevel');
-        if (pctL) pctL.textContent = avgPct + '%';
+        if (pctL) pctL.textContent = (completedExams > 0 ? avgScore : 0) + '%';
+        const motL = document.getElementById('motLevel');
+        if (motL) motL.textContent = `Community Avg: ${ex.community_average || 0}%`;
 
         // ── Achievement Unlock Logic ──
         const u = data.user;

@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-    <link rel="stylesheet" href="src/css/ai-updates.css?v=13" />
+    <link rel="stylesheet" href="src/css/ai-updates.css?v=15" />
     <script>
         (function () {
             var urlParams = new URLSearchParams(window.location.search);
@@ -469,36 +469,43 @@
 
                 <div class="form-group">
                     <label>Body</label>
+                    <div class="fmt-toolbar" id="fmtToolbar">
+                        <button type="button" class="fmt-btn" data-wrap="**" title="Bold (**text**)"><b>B</b></button>
+                        <button type="button" class="fmt-btn" data-wrap="*" title="Italic (*text*)"><i>I</i></button>
+                        <button type="button" class="fmt-btn" data-wrap="__" title="Underline (__text__)"><u>U</u></button>
+                    </div>
                     <textarea id="postBody" class="form-control" placeholder="What's new in AI?..." required></textarea>
                 </div>
 
                 <!-- Video Fields -->
                 <div id="videoFields" style="display:none;">
                     <div class="form-group">
-                        <label>Bunny.net Video URL</label>
-                        <input type="url" id="postVideoUrl" class="form-control"
-                            placeholder="https://iframe.mediadelivery.net/embed/...">
+                        <label>Bunny.net Video URLs</label>
+                        <div id="videoUrlsContainer">
+                            <div class="video-url-wrapper">
+                                <input type="url" class="form-control video-url-input"
+                                    placeholder="https://iframe.mediadelivery.net/embed/...">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add-option" id="addVideoUrlBtn"><i data-lucide="plus"></i>
+                            Add Another Video</button>
                     </div>
                 </div>
 
                 <!-- Photo Fields -->
                 <div id="photoFields" style="display:none;">
                     <div class="form-group">
-                        <label>Upload Image</label>
+                        <label>Upload Images</label>
                         <div style="display:flex; align-items:center; gap:10px;">
                             <label for="postImageFile" class="btn-secondary"
                                 style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.85rem; transition: all 0.2s;">
-                                <i data-lucide="upload" style="width:16px;height:16px;"></i> Choose File
+                                <i data-lucide="upload" style="width:16px;height:16px;"></i> Choose Files
                             </label>
-                            <input type="file" id="postImageFile" accept="image/*" style="display:none;"
-                                onchange="document.getElementById('fileNameDisplay').textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen'">
-                            <span id="fileNameDisplay" style="font-size:0.85rem; color:#888;">No file chosen</span>
+                            <input type="file" id="postImageFile" accept="image/*" multiple style="display:none;"
+                                onchange="addPickedImages(this)">
+                            <span id="fileNameDisplay" style="font-size:0.85rem; color:#888;">No files chosen</span>
                         </div>
-                        <div id="postImageCurrent" style="display:none; margin-top:10px;">
-                            <img id="postImageCurrentImg" src="" alt="Current image"
-                                style="max-width:200px; max-height:140px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size:0.78rem; color:#888; margin-top:4px;">Current image — choose a file to replace it</div>
-                        </div>
+                        <div id="mediaPreviewList" class="media-preview-list"></div>
                     </div>
                 </div>
 
@@ -509,13 +516,7 @@
                         <input type="text" id="pollQuestion" class="form-control" placeholder="Ask a question...">
                     </div>
                     <div class="form-group" id="pollOptionsContainer">
-                        <label>Options (2-4)</label>
-                        <div class="poll-option-wrapper">
-                            <input type="text" class="form-control poll-option-input" placeholder="Option 1">
-                        </div>
-                        <div class="poll-option-wrapper">
-                            <input type="text" class="form-control poll-option-input" placeholder="Option 2">
-                        </div>
+                        <label>Options (2-4) — each option can have an image</label>
                     </div>
                     <button type="button" class="btn-add-option" id="addPollOptionBtn"><i data-lucide="plus"></i> Add
                         Option</button>
@@ -527,8 +528,8 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="src/js/utils.js?v=1783908000"></script>
-    <script src="src/js/ai-updates.js?v=1783720000"></script>
+    <script src="src/js/utils.js?v=1783960000"></script>
+    <script src="src/js/ai-updates.js?v=1783960000"></script>
     <script>lucide.createIcons();</script>
     <script>
         document.getElementById('hamburgerBtn').addEventListener('click', () => {
@@ -540,7 +541,9 @@
             document.getElementById('sidebarOverlay').classList.remove('active');
         });
     </script>
-    <script src="src/js/dashboard-new.js?v=1783908000"></script>
+    <script src="src/js/dashboard-new.js?v=1783972000"></script>
+    <!-- What's New popup (shared across sections, shown once per version) -->
+    <script src="src/js/whats-new.js?v=1783908004"></script>
 </body>
 
 </html>

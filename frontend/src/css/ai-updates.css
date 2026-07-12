@@ -363,9 +363,14 @@
 }
 
 .ai-post-media img {
-  width: 100%;
+  /* Facebook-style: keep the image's natural aspect ratio — scale down to fit
+     the card width, never stretch or crop. Narrow images stay centered. */
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 0 auto 16px;
   border-radius: var(--radius-sm);
-  margin-bottom: 16px;
 }
 
 .ai-post-media iframe {
@@ -1438,7 +1443,7 @@ textarea.form-control {
 
 /* Inline media inside the post body */
 .ai-post-main .ai-post-media { margin-top: 12px; }
-.ai-post-main .ai-post-media img { margin-bottom: 0; max-height: 520px; object-fit: cover; }
+.ai-post-main .ai-post-media img { margin-bottom: 0; }
 .ai-post-main .ai-post-media iframe { margin-bottom: 0; }
 
 /* Prevent long unbreakable tokens / URLs from overflowing the card */
@@ -1689,3 +1694,155 @@ textarea.form-control {
   .ai-post-card .ai-post-admin-actions { top: 10px; inset-inline-end: 10px; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   Multi-media posts, poll option images & formatting toolbar
+   ═══════════════════════════════════════════════════════════ */
+
+/* Image gallery grid (2+ images) */
+.ai-post-media.ai-media-grid {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.ai-media-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.ai-media-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.ai-media-grid img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin: 0;
+  border-radius: var(--radius-sm);
+}
+.ai-post-media img { cursor: zoom-in; }
+
+/* Fullscreen lightbox */
+.ai-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+.ai-lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: 8px;
+}
+
+/* Poll option image (feed) */
+.poll-option-img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Formatting toolbar (create/edit modal) */
+.fmt-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.fmt-btn {
+  width: 34px;
+  height: 30px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.fmt-btn:hover {
+  border-color: #3f8ff9;
+  color: #3f8ff9;
+}
+
+/* Selected-images preview strip (modal) */
+.media-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.media-preview-item {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.media-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.media-preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.media-preview-remove:hover { background: #ef4444; }
+
+/* Multiple video URL rows (modal) */
+.video-url-wrapper {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+/* Poll option rows: image button + thumb (modal) */
+.poll-option-wrapper { align-items: center; }
+.poll-opt-img-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poll-opt-img-btn:hover {
+  border-color: #3f8ff9;
+  color: #3f8ff9;
+}
+.poll-opt-img-btn svg { width: 16px; height: 16px; }
+.poll-opt-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+}

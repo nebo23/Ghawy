@@ -539,13 +539,13 @@ function startCountdown(targetDate) {
 // 10. WEBSOCKET — COMMUNITY CHAT
 // ═══════════════════════════════════════════════════════
 
-let ws = null;
+let dnWs = null;
 let wsReconnectTimer = null;
 let chatMessages = []; // local cache
 let _currentUser = null; // populated after profile load
 
 function connectWebSocket() {
-    if (ws && ws.readyState <= 1) return; // Already connected/connecting
+    if (dnWs && dnWs.readyState <= 1) return; // Already connected/connecting
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     // If API is a relative path (e.g. '/api' in production), use window.location.host
@@ -554,29 +554,29 @@ function connectWebSocket() {
     const wsUrl = `${protocol}//${host}/ws`;
 
     try {
-        ws = new WebSocket(wsUrl);
+        dnWs = new WebSocket(wsUrl);
 
-        ws.onopen = () => {
+        dnWs.onopen = () => {
             console.log('[WS] Connected to community chat');
             // 🔒 Send token as first message — keeps it out of the URL/logs
-            ws.send(JSON.stringify({ token: localStorage.getItem('token') }));
+            dnWs.send(JSON.stringify({ token: localStorage.getItem('token') }));
             clearTimeout(wsReconnectTimer);
             const statusEl = document.querySelector('.chat-connecting');
             if (statusEl) statusEl.remove();
         };
 
-        ws.onmessage = (event) => {
+        dnWs.onmessage = (event) => {
             try {
                 const payload = JSON.parse(event.data);
                 handleWsMessage(payload);
             } catch (e) { }
         };
 
-        ws.onerror = (e) => {
+        dnWs.onerror = (e) => {
             console.warn('[WS] Error', e);
         };
 
-        ws.onclose = (event) => {
+        dnWs.onclose = (event) => {
             // code 4003 = Account deactivated (server-forced disconnect)
             if (event.code === 4003) {
                 console.warn('[WS] Account deactivated — redirecting to login');
@@ -644,7 +644,7 @@ function handleWsMessage(payload) {
         const msgId = payload.data?.message_id;
         if (msgId) {
             chatMessages = chatMessages.filter(m => m.id !== msgId);
-            renderChatMessages();
+            renderChatMessages(chatMessages);
         }
     }
 }
@@ -700,6 +700,9 @@ function notifyToast(msg, type = 'info') {
 }
 
 function renderChatMessages(messages) {
+    // Dashboard-only widget: chat.html / direct-messages.html reuse the
+    // #chatMessages id for the full conversation view — never touch it there.
+    if (!document.getElementById('dashChatInput')) return;
     const container = document.getElementById('chatMessages');
     if (!container) return;
 
@@ -780,9 +783,9 @@ async function sendChatMessage() {
     appendChatMessage(optimisticMsg);
 
     // Try WebSocket first
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (dnWs && dnWs.readyState === WebSocket.OPEN) {
         const generalChannelId = window.__generalChannelId || 1;
-        ws.send(JSON.stringify({
+        dnWs.send(JSON.stringify({
             action: 'send_message',
             channel_id: generalChannelId,
             content: content
@@ -930,7 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════════════
 
 function logout() {
-    if (ws) { try { ws.close(); } catch (e) { } }
+    if (dnWs) { try { dnWs.close(); } catch (e) { } }
     localStorage.removeItem('token');
     localStorage.removeItem('user'); window.location.href = '/login';
 }
@@ -964,6 +967,10 @@ function getBadgeLabel(badge) {
 
 /** Fetch the real ID of the 'general' channel from the API */
 async function fetchGeneralChannelId() {
+    // The id never changes — cache it so every page load doesn't re-fetch
+    // the full channel list just for this one number.
+    const cached = parseInt(localStorage.getItem('general_channel_id') || '', 10);
+    if (cached) { window.__generalChannelId = cached; return; }
     try {
         const res = await api('/chat/channels');
         if (!res.ok) return;
@@ -971,6 +978,7 @@ async function fetchGeneralChannelId() {
         const general = channels.find(c => c.name === 'general');
         if (general && general.id) {
             window.__generalChannelId = general.id;
+            localStorage.setItem('general_channel_id', String(general.id));
             console.log('[Chat] General channel ID:', general.id);
         }
     } catch (e) {
@@ -980,6 +988,8 @@ async function fetchGeneralChannelId() {
 
 /** Load latest messages from the general channel */
 async function loadGeneralMessages() {
+    // Only the dashboard has the general-chat widget
+    if (!document.getElementById('dashChatInput')) return;
     try {
         const res = await api('/chat/messages?channel=general&limit=15&_t=' + Date.now());
         if (!res.ok) return;

@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
-    <script>/* early theme init — prevents light-mode flash (FOUC) */(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='system'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function () { try { var t = localStorage.getItem('theme') || 'dark'; if (t === 'system') { t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { } })();</script>
     <!-- CACHE BUSTER -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -643,8 +643,8 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             color: #fff;
             font-size: 20px;
@@ -657,7 +657,9 @@
             backdrop-filter: blur(4px);
         }
 
-        .lightbox-close-btn:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-close-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
 
         /* Fix white flash / scrollbar */
         * {
@@ -942,8 +944,9 @@
                             class="fa-solid fa-users"></i></button>
                     <div class="notif-wrapper" id="notifWrapper">
                         <button class="topbar-icon" id="notifBellBtn" onclick="toggleNotifPanel()"><i data-lucide="bell"
-                                style="width: 18px; height: 18px;"></i><span class="notif-dot" id="notifDot" style="display:none;"></span><span
-                                class="notif-badge" id="notifBadge" style="display:none;">0</span></button>
+                                style="width: 18px; height: 18px;"></i><span class="notif-dot" id="notifDot"
+                                style="display:none;"></span><span class="notif-badge" id="notifBadge"
+                                style="display:none;">0</span></button>
                         <div class="notif-panel" id="notifPanel">
                             <div class="notif-panel-header">
                                 <h4>Notifications</h4>
@@ -1275,7 +1278,8 @@
             <div id="ppBadge" class="pp-badge"></div>
             <!-- User ID (admins/owners only) -->
             <p id="ppUserId" class="pp-userid"
-                style="display:none; margin:6px 0 0; font-size:12px; font-weight:700; letter-spacing:0.3px; color:#888;"></p>
+                style="display:none; margin:6px 0 0; font-size:12px; font-weight:700; letter-spacing:0.3px; color:#888;">
+            </p>
             <!-- Bio -->
             <p id="ppBio" class="pp-bio"></p>
             <!-- Social Media Link -->
@@ -1299,11 +1303,18 @@
             <!-- Joined Date -->
             <p id="ppJoined" class="pp-joined"></p>
             <!-- Admin Notes (visible to admins only, when viewing another member) -->
-            <div id="ppAdminNotes" style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
-                <label style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:var(--gold, #c1ff11); margin-bottom:6px;">🔒 ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins only)</span></label>
-                <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..." style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
+            <div id="ppAdminNotes"
+                style="display:none; margin:14px 16px 4px; padding:12px; border:1px solid rgba(193,255,17,0.25); border-radius:10px; background:rgba(193,255,17,0.04); text-align:left;">
+                <label
+                    style="display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; color:var(--gold, #c1ff11); margin-bottom:6px;">🔒
+                    ADMIN NOTES <span style="color:#7a7a7a; font-weight:500; text-transform:none;">(private — admins
+                        only)</span></label>
+                <textarea id="ppAdminNoteText" rows="4" placeholder="Write a private note about this member..."
+                    style="width:100%; box-sizing:border-box; resize:vertical; background:#1a1a17; border:1px solid #333; border-radius:8px; color:#e8e8e8; font-size:0.85rem; padding:8px 10px; font-family:inherit;"></textarea>
                 <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
-                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()" style="background:var(--gold, #c1ff11); color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save Note</button>
+                    <button id="ppSaveNoteBtn" onclick="saveAdminNote()"
+                        style="background:var(--gold, #c1ff11); color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">Save
+                        Note</button>
                     <span id="ppNoteStatus" style="font-size:0.78rem;"></span>
                 </div>
             </div>
@@ -1356,7 +1367,8 @@
     <div class="custom-modal-overlay" id="newDmModal">
         <div class="new-dm-modal">
             <div class="new-dm-modal-header">
-                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--gold); margin-right: 8px;"></i> New Message</h3>
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--gold); margin-right: 8px;"></i> New Message
+                </h3>
                 <button class="close-members-btn" onclick="closeNewMessageModal()"><i data-lucide="x"
                         size="16"></i></button>
             </div>
@@ -1367,7 +1379,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1783908000"></script>
+    <script src="src/js/utils.js?v=1783960000"></script>
 
     <style>
         /* Custom Modal */
@@ -2497,12 +2509,27 @@
             animation: typingBlink 1.2s infinite ease-in-out;
         }
 
-        .typing-bubble .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-bubble .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-bubble .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-bubble .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes typingBlink {
-            0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-3px); }
+
+            0%,
+            60%,
+            100% {
+                opacity: 0.25;
+                transform: translateY(0);
+            }
+
+            30% {
+                opacity: 1;
+                transform: translateY(-3px);
+            }
         }
 
         /* DM Inbox */
@@ -2937,7 +2964,7 @@
                     } else if (msg.event === 'message_deleted') {
                         const el = document.getElementById(`msg-${msg.data.message_id}`);
                         if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
-                    } else if (msg.event === 'new_notification') {
+                    } else if (msg.event === 'new_notification' || msg.event === 'notification') {
                         // 🔔 DM or mention notification — update DM list unread counts
                         loadDmList();
                         // Brief toast notification (use the existing toast function)
@@ -3801,11 +3828,39 @@
             } catch (e) { console.error('Failed to mark read', e); }
         }
 
+        // ── DM full-channel read marker (clears the DM badge on open) ──
+        // The IntersectionObserver only marks messages that become visible, so
+        // older unread messages above the viewport kept the badge stuck.
+        let _badgeRefreshTimer = null;
+        function refreshBadgesSoon() {
+            if (_badgeRefreshTimer) return;
+            _badgeRefreshTimer = setTimeout(() => {
+                _badgeRefreshTimer = null;
+                if (typeof fetchGlobalNotifications === 'function') fetchGlobalNotifications();
+            }, 400);
+        }
+
+        async function markDmRead() {
+            if (!currentChannel || !currentChannel.startsWith('dm_')) return;
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const res = await apiFetch('/chat/dm/read?channel=' + encodeURIComponent(currentChannel), { method: 'PUT' });
+                if (res.ok) {
+                    const d = await res.json();
+                    if (d.marked > 0) {
+                        if (typeof loadDmList === 'function') loadDmList();
+                        refreshBadgesSoon();
+                    }
+                }
+            } catch (e) { }
+        }
+
         async function loadMessages() {
             if (currentChannel === 'messages' || currentChannel === 'start_here') return;
             try {
                 const res = await apiFetch(`/chat/messages?channel=${currentChannel}&limit=50`);
                 const msgs = await res.json();
+                if (currentChannel.startsWith('dm_')) markDmRead();
                 const el = document.getElementById('chatMessages');
 
                 // Track scroll position
@@ -4095,10 +4150,10 @@
             document.getElementById('lightboxImg').src = src;
             document.getElementById('lightbox').classList.add('open');
         }
-        document.getElementById('lightbox').addEventListener('click', function(e) {
+        document.getElementById('lightbox').addEventListener('click', function (e) {
             if (e.target === this) this.classList.remove('open');
         });
-        document.getElementById('lightboxCloseBtn').addEventListener('click', function(e) {
+        document.getElementById('lightboxCloseBtn').addEventListener('click', function (e) {
             e.stopPropagation();
             document.getElementById('lightbox').classList.remove('open');
         });
@@ -4248,13 +4303,13 @@
 
         // ── Profile panel achievements (same set as the dashboard) ──
         const PP_ACHIEVEMENTS = [
-            { flag: null,                icon: 'rocket',          name: 'First Login',     tier: 'bronze'  },
-            { flag: 'has_first_post',    icon: 'pen-square',      name: 'First Post',      tier: 'silver'  },
-            { flag: 'has_7day_streak',   icon: 'flame',           name: '7-Day Streak',    tier: 'gold'    },
-            { flag: 'is_top_student',    icon: 'trophy',          name: 'Top Student',     tier: 'gold'    },
-            { flag: 'has_course_complete', icon: 'graduation-cap', name: 'Course Complete', tier: 'gold'   },
-            { flag: 'has_all_courses',   icon: 'target',          name: '100% Progress',   tier: 'diamond' },
-            { flag: 'has_pro_member',    icon: 'gem',             name: 'Pro Member',      tier: 'diamond' },
+            { flag: null, icon: 'rocket', name: 'First Login', tier: 'bronze' },
+            { flag: 'has_first_post', icon: 'pen-square', name: 'First Post', tier: 'silver' },
+            { flag: 'has_7day_streak', icon: 'flame', name: '7-Day Streak', tier: 'gold' },
+            { flag: 'is_top_student', icon: 'trophy', name: 'Top Student', tier: 'gold' },
+            { flag: 'has_course_complete', icon: 'graduation-cap', name: 'Course Complete', tier: 'gold' },
+            { flag: 'has_all_courses', icon: 'target', name: '100% Progress', tier: 'diamond' },
+            { flag: 'has_pro_member', icon: 'gem', name: 'Pro Member', tier: 'diamond' },
         ];
 
         function renderPanelAchievements(p) {
@@ -4546,7 +4601,7 @@
                             roleColor = 'color:var(--gold, #c1ff11);';
                         }
                         if (m.custom_title) role = m.custom_title;
-                        
+
                         return `
             <div class="dm-team-member" onclick="activeDmUserName='${escHtml(m.full_name).replace(/'/g, "\\\\'")}'; activeDmUserVerified=true; openDmChannel(${m.id})">
                 <div class="dm-team-av">
@@ -5513,7 +5568,7 @@
 
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=1783908000"></script>
+    <script src="src/js/dashboard-new.js?v=1783972000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>
@@ -5553,6 +5608,8 @@
             else window.addEventListener('load', wire);
         })();
     </script>
+    <!-- What's New popup (shared across sections, shown once per version) -->
+    <script src="src/js/whats-new.js?v=1783908004"></script>
 </body>
 
 </html>

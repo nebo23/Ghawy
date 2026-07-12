@@ -39,3 +39,4 @@ Thumbs.db
 
 # Node (if any frontend tooling)
 node_modules/
+backups/

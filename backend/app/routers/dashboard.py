@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Post, Message, AiUpdatePost
+from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Post, Message, AiUpdatePost, Exam, ExamAttempt
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.progress_service import calculate_video_streak
 
@@ -139,6 +139,44 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
             "percent": float(percent)
         })
 
+    # 2b. Exam stats — real numbers from published exams + the user's attempts.
+    #     "completed" = distinct exams attempted; scores use the BEST attempt per exam.
+    total_exams = (
+        db.query(func.count(Exam.id))
+        .join(Course, Course.id == Exam.course_id)
+        .filter(Exam.is_published == True, Course.is_published == True)
+        .scalar()
+    ) or 0
+
+    best_by_exam = dict(
+        db.query(ExamAttempt.exam_id, func.max(ExamAttempt.score))
+        .filter(ExamAttempt.user_id == current_user.id)
+        .group_by(ExamAttempt.exam_id)
+        .all()
+    )
+    exams_completed = len(best_by_exam)
+    best_scores = list(best_by_exam.values())
+    average_score = round(sum(best_scores) / len(best_scores)) if best_scores else 0
+    best_score = max(best_scores) if best_scores else 0
+    exams_passed = (
+        db.query(func.count(func.distinct(ExamAttempt.exam_id)))
+        .filter(ExamAttempt.user_id == current_user.id, ExamAttempt.passed == True)
+        .scalar()
+    ) or 0
+
+    # Community-wide average score across all attempts (for the comparison line)
+    community_average = db.query(func.avg(ExamAttempt.score)).scalar()
+    community_average = round(community_average) if community_average is not None else 0
+
+    exams_data = {
+        "total": total_exams,
+        "completed": exams_completed,
+        "passed": exams_passed,
+        "average_score": average_score,
+        "best_score": best_score,
+        "community_average": community_average,
+    }
+
     # 3. Recent AI Update Posts (limit 4)
     ai_posts_query = db.query(AiUpdatePost).order_by(AiUpdatePost.created_at.desc()).limit(4).all()
     recent_posts = []
@@ -177,6 +215,7 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
     return {
         "user": user_data,
         "courses": courses_data,
+        "exams": exams_data,
         "recent_posts": recent_posts,
         "recent_messages": recent_messages
     }

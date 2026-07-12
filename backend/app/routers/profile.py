@@ -138,6 +138,32 @@ def update_my_profile(
     return current_user
 
 
+# ─── Avatar image optimization ─────────────────────────────
+AVATAR_MAX_DIM = 512
+
+def optimize_avatar(filepath: str) -> None:
+    """Downscale + recompress an uploaded avatar in place.
+
+    Avatars render at ≤80px but users upload multi-MB camera photos; a raw
+    2.5MB PNG was being shipped to every chat/member-list viewer.
+    Best-effort: on any failure the original file is kept as-is.
+    """
+    try:
+        from PIL import Image, ImageOps
+        with Image.open(filepath) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((AVATAR_MAX_DIM, AVATAR_MAX_DIM), Image.LANCZOS)
+            fmt = (img.format or "").upper()
+            if filepath.lower().endswith((".jpg", ".jpeg")):
+                img.convert("RGB").save(filepath, "JPEG", quality=85, optimize=True)
+            elif filepath.lower().endswith(".webp"):
+                img.save(filepath, "WEBP", quality=85)
+            else:
+                img.save(filepath, optimize=True)
+    except Exception:
+        pass
+
+
 # ─── Upload Avatar ─────────────────────────────────────────
 @router.post("/avatar")
 def upload_avatar(
@@ -159,6 +185,7 @@ def upload_avatar(
 
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    optimize_avatar(filepath)
 
     avatar_url = f"/uploads/avatars/{filename}"
     current_user.avatar_url = avatar_url
@@ -251,6 +278,7 @@ def upload_avatar_onboarding(
 
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    optimize_avatar(filepath)
 
     avatar_url = f"/static/avatars/{filename}"
     current_user.avatar_url = avatar_url

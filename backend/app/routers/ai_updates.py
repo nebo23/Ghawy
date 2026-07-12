@@ -85,6 +85,7 @@ def build_poll_dict(poll: AiUpdatePoll, current_user_id: int) -> dict:
         options.append({
             "id": opt.id,
             "text": opt.text,
+            "image_url": opt.image_url,
             "votes_count": opt.votes_count,
             "percentage": pct
         })
@@ -107,6 +108,7 @@ def build_post_dict(post: AiUpdatePost, current_user_id: int) -> dict:
         "body": post.body,
         "image_url": post.image_url,
         "video_url": post.video_url,
+        "media": post.media or [],
         "is_pinned": post.is_pinned,
         "like_count": post.like_count or 0,
         "comment_count": post.comment_count or 0,
@@ -348,10 +350,15 @@ def get_overview(
 
 class PollOptionCreate(BaseModel):
     text: str
+    image_url: Optional[str] = None
 
 class PollCreate(BaseModel):
     question: str
     options: List[PollOptionCreate]
+
+class MediaItem(BaseModel):
+    type: str   # "image" | "video"
+    url: str
 
 class PostCreate(BaseModel):
     post_type: str
@@ -360,6 +367,7 @@ class PostCreate(BaseModel):
     category: Optional[str] = "news"
     image_url: Optional[str] = None
     video_url: Optional[str] = None
+    media: Optional[List[MediaItem]] = None
     poll: Optional[PollCreate] = None
 
 class PostUpdate(BaseModel):
@@ -370,6 +378,20 @@ class PostUpdate(BaseModel):
     category: Optional[str] = None
     image_url: Optional[str] = None
     video_url: Optional[str] = None
+    media: Optional[List[MediaItem]] = None
+
+
+MAX_MEDIA_ITEMS = 10
+
+def normalize_media(items) -> list:
+    """Validate/clean a media list into [{"type": "image"|"video", "url": str}, ...]."""
+    out = []
+    for m in (items or []):
+        t = (m.type or "").strip().lower()
+        u = (m.url or "").strip()
+        if t in ("image", "video") and u:
+            out.append({"type": t, "url": u})
+    return out[:MAX_MEDIA_ITEMS]
 
 
 @router.post("/posts", status_code=201)
@@ -387,14 +409,20 @@ def create_post(
     if category not in VALID_CATEGORIES:
         category = "news"
 
+    media = normalize_media(data.media)
+    # Keep legacy single-media columns in sync with the first media item.
+    image_url = data.image_url or next((m["url"] for m in media if m["type"] == "image"), None)
+    video_url = data.video_url or next((m["url"] for m in media if m["type"] == "video"), None)
+
     post = AiUpdatePost(
         user_id=current_user.id,
         post_type=post_type_enum,
         category=category,
         title=data.title.strip(),
         body=data.body.strip(),
-        image_url=data.image_url,
-        video_url=data.video_url,
+        image_url=image_url,
+        video_url=video_url,
+        media=media or None,
     )
     db.add(post)
     db.commit()
@@ -415,7 +443,8 @@ def create_post(
         for opt in data.poll.options:
             poll_option = AiUpdatePollOption(
                 poll_id=poll.id,
-                text=opt.text.strip()
+                text=opt.text.strip(),
+                image_url=(opt.image_url or "").strip() or None
             )
             db.add(poll_option)
         db.commit()
@@ -495,6 +524,13 @@ def update_post(
         post.image_url = fields["image_url"] or None
     if "video_url" in fields:
         post.video_url = fields["video_url"] or None
+
+    # media: presence in the payload replaces the whole list; keep legacy columns in sync.
+    if "media" in fields:
+        media = normalize_media(data.media)
+        post.media = media or None
+        post.image_url = next((m["url"] for m in media if m["type"] == "image"), None)
+        post.video_url = next((m["url"] for m in media if m["type"] == "video"), None)
 
     db.commit()
 

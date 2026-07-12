@@ -118,6 +118,8 @@ async function markAiUpdatesRead() {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
+        // Refresh sidebar + bell badges now instead of waiting for the 30s poll
+        if (typeof fetchGlobalNotifications === 'function') fetchGlobalNotifications();
     } catch (e) { }
 }
 document.addEventListener('visibilitychange', () => {
@@ -190,21 +192,59 @@ async function loadFeed(page = 1) {
 const EXCERPT_LEN = 160;
 
 function postHasMedia(post) {
-    return (post.post_type === 'photo' && post.image_url) || (post.post_type === 'video' && post.video_url);
+    return postMediaList(post).length > 0;
+}
+
+// Normalized media list: new `media` array, falling back to legacy single columns.
+function postMediaList(post) {
+    if (Array.isArray(post.media) && post.media.length) return post.media;
+    const list = [];
+    if (post.image_url) list.push({ type: 'image', url: post.image_url });
+    if (post.video_url) list.push({ type: 'video', url: post.video_url });
+    return list;
 }
 
 // Full-width media rendered inline inside the post body (always visible).
+// Multiple images render as a grid; multiple videos stack.
 function postMediaHtml(post) {
-    if (post.post_type === 'photo' && post.image_url) {
-        const url = post.image_url.startsWith('http') ? post.image_url : API + post.image_url;
-        return `<div class="ai-post-media"><img src="${url}" alt="Post Image"></div>`;
+    const items = postMediaList(post);
+    if (!items.length) return '';
+
+    const images = items.filter(m => m.type === 'image');
+    const videos = items.filter(m => m.type === 'video');
+    let html = '';
+
+    if (images.length) {
+        const cols = (images.length === 2 || images.length === 4) ? 2 : 3;
+        const gridCls = images.length > 1 ? ` ai-media-grid cols-${cols}` : '';
+        html += `<div class="ai-post-media${gridCls}">` + images.map(m => {
+            const url = m.url.startsWith('http') ? m.url : API + m.url;
+            return `<img src="${escapeHtml(url)}" alt="Post Image" loading="lazy" onclick="openLightbox(this.src)">`;
+        }).join('') + `</div>`;
     }
-    if (post.post_type === 'video' && post.video_url) {
-        return `<div class="ai-post-media">
-            <iframe src="${post.video_url}" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
+
+    videos.forEach(m => {
+        html += `<div class="ai-post-media">
+            <iframe src="${escapeHtml(m.url)}" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
         </div>`;
+    });
+
+    return html;
+}
+
+// Fullscreen image viewer for post galleries.
+function openLightbox(src) {
+    let lb = document.getElementById('aiLightbox');
+    if (!lb) {
+        lb = document.createElement('div');
+        lb.id = 'aiLightbox';
+        lb.className = 'ai-lightbox';
+        lb.innerHTML = `<img id="aiLightboxImg" src="" alt="">`;
+        lb.addEventListener('click', () => { lb.style.display = 'none'; });
+        document.body.appendChild(lb);
     }
-    return '';
+    document.getElementById('aiLightboxImg').src = src;
+    lb.style.display = 'flex';
 }
 
 function createPostElement(post) {
@@ -241,15 +281,21 @@ function createPostElement(post) {
     badgesHtml += '</div>';
 
     // Excerpt / read-more (controls the TEXT body only; media stays inline & visible).
-    // URLs stay INLINE in the text, rendered as buttons in place (see linkifyHtml).
+    // URLs stay INLINE in the text, rendered as buttons in place (see renderRich).
+    // Full body renders **bold** / *italic* / __underline__; excerpt uses plain text
+    // (markers stripped) so a cut never lands mid-marker.
     const body = post.body || '';
-    const needsExpand = body.length > EXCERPT_LEN;
-    const excerpt = needsExpand ? body.slice(0, EXCERPT_LEN).trim() + '…' : body;
+    const plain = stripMd(body);
+    const needsExpand = plain.length > EXCERPT_LEN;
 
-    let bodyBlock = `<div class="ai-post-excerpt" dir="auto">${linkifyHtml(excerpt)}</div>`;
+    let bodyBlock;
     if (needsExpand) {
-        bodyBlock += `<div class="ai-post-full" dir="auto" style="display:none;">${linkifyHtml(body)}</div>`;
+        const excerpt = plain.slice(0, EXCERPT_LEN).trim() + '…';
+        bodyBlock = `<div class="ai-post-excerpt" dir="auto">${linkifyHtml(excerpt)}</div>`;
+        bodyBlock += `<div class="ai-post-full" dir="auto" style="display:none;">${renderRich(body)}</div>`;
         bodyBlock += `<button class="read-more-btn" onclick="toggleReadMore(${post.id}, this)">Read More <i data-lucide="chevron-down"></i></button>`;
+    } else {
+        bodyBlock = `<div class="ai-post-excerpt" dir="auto">${renderRich(body)}</div>`;
     }
 
     // Media (photo/video) rendered inline in the body, always visible
@@ -525,6 +571,11 @@ function renderPollHtml(poll) {
     `;
 
     poll.options.forEach(opt => {
+        let thumbHtml = '';
+        if (opt.image_url) {
+            const src = opt.image_url.startsWith('http') ? opt.image_url : API + opt.image_url;
+            thumbHtml = `<img src="${escapeHtml(src)}" class="poll-option-img" alt="" loading="lazy" onclick="event.preventDefault(); event.stopPropagation(); openLightbox(this.src)">`;
+        }
         if (hasVoted) {
             const isUserChoice = (opt.id === poll.user_voted_option_id);
             const customIcon = isUserChoice
@@ -536,6 +587,7 @@ function renderPollHtml(poll) {
                     <div class="poll-progress" style="width: ${opt.percentage}%"></div>
                     <div style="display:flex; align-items:center; gap:12px; position:relative; z-index:1;">
                         ${customIcon}
+                        ${thumbHtml}
                         <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                     </div>
                     <span class="poll-option-pct">${opt.percentage}%</span>
@@ -546,6 +598,7 @@ function renderPollHtml(poll) {
                 <label class="ai-poll-option unvoted">
                     <input type="radio" name="poll-${poll.id}" value="${opt.id}" onchange="submitVote(${poll.id}, ${opt.id})">
                     <span class="radio-custom"></span>
+                    ${thumbHtml}
                     <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                 </label>
             `;
@@ -883,17 +936,21 @@ function setupAdminControls() {
                 showToast("Maximum 4 options allowed", "error");
                 return;
             }
-            
-            const div = document.createElement('div');
-            div.className = 'poll-option-wrapper';
-            div.innerHTML = `
-                <input type="text" class="form-control poll-option-input" placeholder="Option ${currentCount + 1}">
-                <button type="button" class="btn-remove-opt" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;"><i data-lucide="x"></i></button>
-            `;
-            container.appendChild(div);
-            lucide.createIcons();
+            addPollOptionRow(true);
         });
     }
+    resetPollOptions();
+
+    // Add another video URL
+    const addVidBtn = document.getElementById('addVideoUrlBtn');
+    if (addVidBtn) {
+        addVidBtn.addEventListener('click', () => addVideoUrlRow('', true));
+    }
+
+    // Formatting toolbar (B / I / U) for the body textarea
+    document.querySelectorAll('#fmtToolbar .fmt-btn').forEach(b => {
+        b.addEventListener('click', () => wrapSelection('postBody', b.dataset.wrap));
+    });
 
     // Submit form
     const form = document.getElementById('createPostForm');
@@ -907,54 +964,63 @@ function setupAdminControls() {
             const title = document.getElementById('postTitle').value.trim();
             const body = document.getElementById('postBody').value.trim();
             const currentPostType = document.getElementById('postType').value;
-            
-            let imageUrl = '';
-            if (currentPostType === 'photo') {
-                const fileInput = document.getElementById('postImageFile');
-                if (fileInput.files.length > 0) {
-                    const formData = new FormData();
-                    formData.append('file', fileInput.files[0]);
-                    try {
-                        const uploadRes = await fetch(API + '/chat/upload', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                            body: formData
-                        });
-                        if (uploadRes.ok) {
-                            const uploadData = await uploadRes.json();
-                            imageUrl = uploadData.file_url;
-                        } else {
-                            throw new Error('upload failed');
-                        }
-                    } catch (e) {
-                        console.error('Image upload failed:', e);
-                        showToast('Image upload failed', 'error');
-                        btn.disabled = false;
-                        btn.textContent = editingPostId ? 'Save Changes' : 'Post Update';
-                        return;
+
+            // Build the media list (photo → kept + newly uploaded images; video → all URL rows)
+            let media = [];
+            try {
+                if (currentPostType === 'photo') {
+                    media = modalExistingMedia.filter(m => m.type === 'image').slice();
+                    for (const item of modalNewFiles) {
+                        const url = await uploadImageFile(item.file);
+                        media.push({ type: 'image', url });
                     }
-                } else if (editingPostId && postCache[editingPostId]) {
-                    // Editing without picking a new file → keep the current image.
-                    imageUrl = postCache[editingPostId].image_url || '';
+                } else if (currentPostType === 'video') {
+                    document.querySelectorAll('#videoUrlsContainer .video-url-input').forEach(i => {
+                        const u = i.value.trim();
+                        if (u) media.push({ type: 'video', url: u });
+                    });
                 }
+            } catch (e) {
+                console.error('Image upload failed:', e);
+                showToast('Image upload failed', 'error');
+                btn.disabled = false;
+                btn.textContent = editingPostId ? 'Save Changes' : 'Post Update';
+                return;
             }
-            
+
             const payload = {
                 post_type: currentPostType,
                 category: document.getElementById('postCategory')?.value || 'news',
                 title: title,
                 body: body,
-                video_url: document.getElementById('postVideoUrl')?.value || null,
-                image_url: imageUrl || null,
+                media: media,
+                image_url: media.find(m => m.type === 'image')?.url || null,
+                video_url: media.find(m => m.type === 'video')?.url || null,
             };
 
-            if (payload.post_type === 'poll') {
+            // Poll options only apply on create (the API doesn't support editing a poll).
+            if (payload.post_type === 'poll' && !editingPostId) {
                 const question = document.getElementById('pollQuestion').value;
-                const optInputs = document.querySelectorAll('.poll-option-input');
+                const rows = document.querySelectorAll('#pollOptionsContainer .poll-option-wrapper');
                 const options = [];
-                optInputs.forEach(i => {
-                    if (i.value.trim()) options.push({ text: i.value.trim() });
-                });
+                try {
+                    for (const row of rows) {
+                        const text = row.querySelector('.poll-option-input')?.value.trim();
+                        if (!text) continue;
+                        let imgUrl = null;
+                        const fileInput = row.querySelector('.poll-opt-file');
+                        if (fileInput && fileInput.files.length > 0) {
+                            imgUrl = await uploadImageFile(fileInput.files[0]);
+                        }
+                        options.push({ text: text, image_url: imgUrl });
+                    }
+                } catch (e) {
+                    console.error('Poll image upload failed:', e);
+                    showToast('Poll image upload failed', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Post Update';
+                    return;
+                }
 
                 if (!question || options.length < 2) {
                     showToast("Poll requires a question and at least 2 options", "error");
@@ -962,7 +1028,7 @@ function setupAdminControls() {
                     btn.textContent = 'Post Update';
                     return;
                 }
-                
+
                 payload.poll = {
                     question: question,
                     options: options
@@ -992,12 +1058,9 @@ function setupAdminControls() {
                 // Reset category chips to default
                 document.querySelectorAll('#postCatChips .cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'news'));
                 document.getElementById('postCategory').value = 'news';
-                // Reset options to 2
-                document.getElementById('pollOptionsContainer').innerHTML = `
-                    <label>Options (2-4)</label>
-                    <div class="poll-option-wrapper"><input type="text" class="form-control poll-option-input" placeholder="Option 1"></div>
-                    <div class="poll-option-wrapper"><input type="text" class="form-control poll-option-input" placeholder="Option 2"></div>
-                `;
+                resetModalMedia();
+                resetVideoUrls();
+                resetPollOptions();
 
                 await loadFeed(1);
                 loadOverview();
@@ -1027,6 +1090,182 @@ function selectCategoryChip(cat) {
     document.getElementById('postCategory').value = cat;
 }
 
+// ── Modal media state (photo posts) ───────────────────────
+let modalExistingMedia = [];   // [{type:'image', url}] kept from the post being edited
+let modalNewFiles = [];        // [{file, previewUrl}] picked in this session
+
+function resetModalMedia() {
+    modalNewFiles.forEach(item => { try { URL.revokeObjectURL(item.previewUrl); } catch (e) {} });
+    modalExistingMedia = [];
+    modalNewFiles = [];
+    renderMediaPreviews();
+}
+
+// Called by the file input (multiple) — accumulates picks across several chooses.
+function addPickedImages(input) {
+    const room = 10 - (modalExistingMedia.length + modalNewFiles.length);
+    const files = Array.from(input.files || []).slice(0, Math.max(room, 0));
+    if (Array.from(input.files || []).length > files.length) {
+        showToast('Maximum 10 images per post', 'error');
+    }
+    files.forEach(f => modalNewFiles.push({ file: f, previewUrl: URL.createObjectURL(f) }));
+    input.value = '';   // allow re-picking the same file later
+    renderMediaPreviews();
+}
+
+function removeExistingMedia(i) {
+    modalExistingMedia.splice(i, 1);
+    renderMediaPreviews();
+}
+
+function removeNewFile(i) {
+    const item = modalNewFiles.splice(i, 1)[0];
+    if (item) { try { URL.revokeObjectURL(item.previewUrl); } catch (e) {} }
+    renderMediaPreviews();
+}
+
+function renderMediaPreviews() {
+    const box = document.getElementById('mediaPreviewList');
+    if (!box) return;
+    let html = '';
+    modalExistingMedia.forEach((m, i) => {
+        const src = m.url.startsWith('http') ? m.url : API + m.url;
+        html += `<div class="media-preview-item"><img src="${escapeHtml(src)}" alt=""><button type="button" class="media-preview-remove" onclick="removeExistingMedia(${i})" title="Remove">&times;</button></div>`;
+    });
+    modalNewFiles.forEach((item, i) => {
+        html += `<div class="media-preview-item"><img src="${item.previewUrl}" alt=""><button type="button" class="media-preview-remove" onclick="removeNewFile(${i})" title="Remove">&times;</button></div>`;
+    });
+    box.innerHTML = html;
+
+    const disp = document.getElementById('fileNameDisplay');
+    const total = modalExistingMedia.length + modalNewFiles.length;
+    if (disp) disp.textContent = total ? `${total} image${total > 1 ? 's' : ''} selected` : 'No files chosen';
+}
+
+// Upload one image via the shared chat upload endpoint; returns its URL.
+async function uploadImageFile(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(API + '/chat/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: fd
+    });
+    if (!res.ok) throw new Error('upload failed');
+    const data = await res.json();
+    return data.file_url;
+}
+
+// ── Video URL rows ────────────────────────────────────────
+function addVideoUrlRow(value = '', removable = true) {
+    const container = document.getElementById('videoUrlsContainer');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = 'video-url-wrapper';
+    div.innerHTML = `
+        <input type="url" class="form-control video-url-input" placeholder="https://iframe.mediadelivery.net/embed/...">
+        ${removable ? `<button type="button" class="btn-remove-opt" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;"><i data-lucide="x"></i></button>` : ''}
+    `;
+    div.querySelector('input').value = value;
+    container.appendChild(div);
+    if (window.lucide) lucide.createIcons();
+}
+
+function resetVideoUrls(urls) {
+    const container = document.getElementById('videoUrlsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    const list = (urls && urls.length) ? urls : [''];
+    list.forEach((u, i) => addVideoUrlRow(u, i > 0));
+}
+
+// ── Poll option rows (text + optional image) ──────────────
+function addPollOptionRow(removable = false, opt = null) {
+    const container = document.getElementById('pollOptionsContainer');
+    if (!container) return;
+    const n = container.querySelectorAll('.poll-option-wrapper').length + 1;
+    const readOnly = !!opt;   // prefilled rows (edit mode) are not editable
+
+    const div = document.createElement('div');
+    div.className = 'poll-option-wrapper';
+    div.innerHTML = `
+        <input type="text" class="form-control poll-option-input" placeholder="Option ${n}" ${readOnly ? 'disabled' : ''}>
+        <input type="file" class="poll-opt-file" accept="image/*" style="display:none;" onchange="pollOptFileChanged(this)">
+        <img class="poll-opt-thumb" style="display:none;" alt="" title="Remove image" onclick="clearPollOptImage(this)">
+        ${readOnly ? '' : `<button type="button" class="poll-opt-img-btn" title="Add image" onclick="this.parentElement.querySelector('.poll-opt-file').click()"><i data-lucide="image"></i></button>`}
+        ${removable && !readOnly ? `<button type="button" class="btn-remove-opt" onclick="this.parentElement.remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;"><i data-lucide="x"></i></button>` : ''}
+    `;
+    if (opt) {
+        div.querySelector('.poll-option-input').value = opt.text || '';
+        if (opt.image_url) {
+            const thumb = div.querySelector('.poll-opt-thumb');
+            thumb.src = opt.image_url.startsWith('http') ? opt.image_url : API + opt.image_url;
+            thumb.style.display = 'block';
+            thumb.onclick = null;
+        }
+    }
+    container.appendChild(div);
+    if (window.lucide) lucide.createIcons();
+}
+
+// options: existing poll options (edit mode, read-only) or nothing (fresh 2 rows).
+function resetPollOptions(options) {
+    const container = document.getElementById('pollOptionsContainer');
+    if (!container) return;
+    container.querySelectorAll('.poll-option-wrapper').forEach(el => el.remove());
+    const addBtn = document.getElementById('addPollOptionBtn');
+    if (options && options.length) {
+        options.forEach(o => addPollOptionRow(false, o));
+        if (addBtn) addBtn.style.display = 'none';
+    } else {
+        addPollOptionRow(false);
+        addPollOptionRow(false);
+        if (addBtn) addBtn.style.display = '';
+    }
+}
+
+function pollOptFileChanged(input) {
+    const thumb = input.parentElement.querySelector('.poll-opt-thumb');
+    if (!thumb) return;
+    if (input.files.length > 0) {
+        thumb.src = URL.createObjectURL(input.files[0]);
+        thumb.style.display = 'block';
+    } else {
+        thumb.style.display = 'none';
+    }
+}
+
+function clearPollOptImage(thumb) {
+    const fileInput = thumb.parentElement.querySelector('.poll-opt-file');
+    if (fileInput) fileInput.value = '';
+    thumb.style.display = 'none';
+}
+
+// ── Formatting toolbar (B / I / U on the body textarea) ───
+function wrapSelection(textareaId, marker) {
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const val = ta.value;
+    const sel = val.slice(start, end);
+    const before = val.slice(0, start), after = val.slice(end);
+
+    if (sel.startsWith(marker) && sel.endsWith(marker) && sel.length >= marker.length * 2) {
+        // Selection includes the markers → unwrap
+        const inner = sel.slice(marker.length, sel.length - marker.length);
+        ta.value = before + inner + after;
+        ta.setSelectionRange(start, start + inner.length);
+    } else if (before.endsWith(marker) && after.startsWith(marker)) {
+        // Markers sit just outside the selection → unwrap
+        ta.value = before.slice(0, -marker.length) + sel + after.slice(marker.length);
+        ta.setSelectionRange(start - marker.length, end - marker.length);
+    } else {
+        ta.value = before + marker + sel + marker + after;
+        ta.setSelectionRange(start + marker.length, end + marker.length);
+    }
+    ta.focus();
+}
+
 // Reset the modal to a clean "create" state and open it.
 function openCreateModal() {
     editingPostId = null;
@@ -1036,9 +1275,11 @@ function openCreateModal() {
     document.getElementById('submitPostBtn').textContent = 'Post Update';
     selectCategoryChip('news');
     selectPostType('text');
-    document.getElementById('fileNameDisplay').textContent = 'No file chosen';
-    hideCurrentImage();
+    resetModalMedia();
+    resetVideoUrls();
+    resetPollOptions();
     document.getElementById('createPostModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
 }
 
 // Open the modal pre-filled with an existing post's data (edit mode).
@@ -1055,35 +1296,33 @@ function openEditModal(postId) {
     document.getElementById('postBody').value = post.body || '';
     selectCategoryChip(post.category || 'news');
     selectPostType(post.post_type || 'text');
-    document.getElementById('fileNameDisplay').textContent = 'No file chosen';
 
-    document.getElementById('postVideoUrl').value = post.video_url || '';
-    if (post.post_type === 'photo' && post.image_url) {
-        showCurrentImage(post.image_url);
+    const media = postMediaList(post);
+    resetModalMedia();
+    modalExistingMedia = media.filter(m => m.type === 'image');
+    renderMediaPreviews();
+    resetVideoUrls(media.filter(m => m.type === 'video').map(m => m.url));
+
+    // Poll content can't be edited via the API — show it read-only.
+    if (post.post_type === 'poll' && post.poll) {
+        document.getElementById('pollQuestion').value = post.poll.question || '';
+        document.getElementById('pollQuestion').disabled = true;
+        resetPollOptions(post.poll.options || []);
     } else {
-        hideCurrentImage();
+        document.getElementById('pollQuestion').disabled = false;
+        resetPollOptions();
     }
 
     document.getElementById('createPostModal').style.display = 'flex';
     if (window.lucide) lucide.createIcons();
 }
 
-function showCurrentImage(url) {
-    const box = document.getElementById('postImageCurrent');
-    if (!box) return;
-    const src = url.startsWith('http') ? url : API + url;
-    document.getElementById('postImageCurrentImg').src = src;
-    box.style.display = 'block';
-}
-function hideCurrentImage() {
-    const box = document.getElementById('postImageCurrent');
-    if (box) box.style.display = 'none';
-}
-
 function closeCreateModal() {
     document.getElementById('createPostModal').style.display = 'none';
     editingPostId = null;
-    hideCurrentImage();
+    const pq = document.getElementById('pollQuestion');
+    if (pq) pq.disabled = false;
+    resetModalMedia();
 }
 
 async function deletePost(postId) {
@@ -1135,20 +1374,47 @@ function prettyDomain(href) {
     catch (e) { return 'Visit Link'; }
 }
 
+// Turn one (already-escaped) URL match into a lime pill button labelled with the domain.
+function urlButtonHtml(match) {
+    // Keep trailing punctuation out of the link.
+    let url = match;
+    let trail = '';
+    const t = url.match(/[.,!?;:)\]}'"]+$/);
+    if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+    const href = url.startsWith('www.') ? 'https://' + url : url;
+    const label = prettyDomain(href);
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="ai-post-link-btn" dir="ltr"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${escapeHtml(label)}</span></a>${trail}`;
+}
+
 // Escape first (XSS-safe), then turn each URL — in place, inline — into a button
-// (a lime pill labelled with the domain) that opens the link in a new tab.
+// that opens the link in a new tab.
 function linkifyHtml(text) {
     const escaped = escapeHtml(text || '');
-    return escaped.replace(URL_RE, (match) => {
-        // Keep trailing punctuation out of the link.
-        let url = match;
-        let trail = '';
-        const t = url.match(/[.,!?;:)\]}'"]+$/);
-        if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
-        const href = url.startsWith('www.') ? 'https://' + url : url;
-        const label = prettyDomain(href);
-        return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="ai-post-link-btn" dir="ltr"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${escapeHtml(label)}</span></a>${trail}`;
-    });
+    return escaped.replace(URL_RE, urlButtonHtml);
+}
+
+// Lightweight formatting on escaped text: **bold**, *italic*, __underline__.
+function mdFormat(escaped) {
+    return escaped
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<u>$1</u>')
+        .replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+}
+
+// Remove formatting markers (matched pairs only) — used for plain-text excerpts.
+function stripMd(text) {
+    return (text || '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/__([^_]+)__/g, '$1')
+        .replace(/\*([^*\n]+)\*/g, '$1');
+}
+
+// Rich post body: escape → linkify URLs → markdown-format the text between them.
+// URLs are handled separately so markers inside a URL (e.g. underscores) stay intact.
+function renderRich(text) {
+    const escaped = escapeHtml(text || '');
+    const parts = escaped.split(URL_RE);   // capture group keeps URLs at odd indices
+    return parts.map((part, i) => i % 2 === 1 ? urlButtonHtml(part) : mdFormat(part)).join('');
 }
 
 // ── Active Users Sidebar ──────────────────────────────────

@@ -457,7 +457,7 @@ async def react_to_post(
             title="New Reaction",
             body=f"{current_user.full_name} reacted {data.emoji} to your post.",
             type="reaction",
-            link=f"/community/{channel_name}/{post_id}"
+            link=f"chat.html?channel={channel_name}&post={post_id}"
         )
         db.add(notif)
         db.commit()
@@ -569,7 +569,7 @@ async def add_comment(
             title="New Comment",
             body=f"{current_user.full_name} commented on your post.",
             type="comment",
-            link=f"/community/{channel_name_for_link}/{post_id}"
+            link=f"chat.html?channel={channel_name_for_link}&post={post_id}"
         )
         db.add(notif)
         db.commit()
@@ -596,7 +596,7 @@ async def add_comment(
                 title="New Reply",
                 body=f"{current_user.full_name} replied to your comment.",
                 type="reply",
-                link=f"/community/{channel_name}/{post_id}" if channel_name else f"/community/general/{post_id}"
+                link=f"chat.html?channel={channel_name or 'general'}&post={post_id}"
             )
             db.add(notif)
             db.commit()
@@ -734,7 +734,7 @@ async def react_to_comment(
             title="New Like",
             body=f"{current_user.full_name} liked your comment.",
             type="like",
-            link=f"/community/{channel_name_for_link}/{comment.post_id}"
+            link=f"chat.html?channel={channel_name_for_link}&post={comment.post_id}"
         )
         db.add(notif)
         db.commit()
