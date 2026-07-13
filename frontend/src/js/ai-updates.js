@@ -149,8 +149,8 @@ async function loadFeed(page = 1) {
             feed.innerHTML = `
                 <div class="ai-empty-state">
                     <i data-lucide="sparkles"></i>
-                    <h3>${isFiltered ? 'Nothing here yet' : 'No AI Updates Yet'}</h3>
-                    <p>${isFiltered ? 'No posts in this category. Try another filter.' : 'Check back later for the latest news and polls.'}</p>
+                    <h3>${isFiltered ? 'Nothing here yet' : 'No updates this week yet'}</h3>
+                    <p>${isFiltered ? 'No posts in this category this week. Try another filter.' : 'The feed shows each week\'s new updates — check back soon.'}</p>
                 </div>
             `;
             lucide.createIcons();
@@ -565,17 +565,31 @@ function emptyRail(msg) {
 
 function renderPollHtml(poll) {
     const hasVoted = poll.user_voted_option_id !== null;
+
+    // Option images render full-width (like post media) ABOVE the poll,
+    // each captioned with its option text; the poll itself goes below.
+    const optImages = poll.options.filter(o => o.image_url);
+    let galleryHtml = '';
+    if (optImages.length) {
+        const cols = optImages.length === 1 ? 1 : ((optImages.length === 2 || optImages.length === 4) ? 2 : 3);
+        const gridCls = optImages.length > 1 ? ` ai-media-grid cols-${cols}` : '';
+        galleryHtml = `<div class="ai-post-media${gridCls} poll-media-gallery">` + optImages.map(o => {
+            const src = o.image_url.startsWith('http') ? o.image_url : API + o.image_url;
+            return `<div class="poll-media-item">
+                <img src="${escapeHtml(src)}" alt="" loading="lazy" onclick="openLightbox(this.src)">
+                <div class="poll-media-cap" dir="auto">${escapeHtml(o.text)}</div>
+            </div>`;
+        }).join('') + `</div>`;
+    }
+
     let html = `
+        <div class="ai-poll-wrap" id="poll-wrap-${poll.id}">
+        ${galleryHtml}
         <div class="ai-poll-container" id="poll-${poll.id}">
             <div class="ai-poll-question" dir="auto">${escapeHtml(poll.question)}</div>
     `;
 
     poll.options.forEach(opt => {
-        let thumbHtml = '';
-        if (opt.image_url) {
-            const src = opt.image_url.startsWith('http') ? opt.image_url : API + opt.image_url;
-            thumbHtml = `<img src="${escapeHtml(src)}" class="poll-option-img" alt="" loading="lazy" onclick="event.preventDefault(); event.stopPropagation(); openLightbox(this.src)">`;
-        }
         if (hasVoted) {
             const isUserChoice = (opt.id === poll.user_voted_option_id);
             const customIcon = isUserChoice
@@ -587,7 +601,6 @@ function renderPollHtml(poll) {
                     <div class="poll-progress" style="width: ${opt.percentage}%"></div>
                     <div style="display:flex; align-items:center; gap:12px; position:relative; z-index:1;">
                         ${customIcon}
-                        ${thumbHtml}
                         <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                     </div>
                     <span class="poll-option-pct">${opt.percentage}%</span>
@@ -598,14 +611,13 @@ function renderPollHtml(poll) {
                 <label class="ai-poll-option unvoted">
                     <input type="radio" name="poll-${poll.id}" value="${opt.id}" onchange="submitVote(${poll.id}, ${opt.id})">
                     <span class="radio-custom"></span>
-                    ${thumbHtml}
                     <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
                 </label>
             `;
         }
     });
 
-    html += `<div class="ai-poll-total">${poll.total_votes} votes</div></div>`;
+    html += `<div class="ai-poll-total">${poll.total_votes} votes</div></div></div>`;
     return html;
 }
 
@@ -664,9 +676,11 @@ async function submitVote(pollId, optionId) {
         }
         
         const poll = await res.json();
-        
-        const container = document.getElementById(`poll-${pollId}`);
+
+        // Replace the whole wrapper (gallery + poll) so the gallery isn't duplicated
+        const container = document.getElementById(`poll-wrap-${pollId}`) || document.getElementById(`poll-${pollId}`);
         container.outerHTML = renderPollHtml(poll);
+        if (window.lucide) lucide.createIcons();
         
     } catch (err) {
         showToast(err.message, "error");
@@ -965,16 +979,17 @@ function setupAdminControls() {
             const body = document.getElementById('postBody').value.trim();
             const currentPostType = document.getElementById('postType').value;
 
-            // Build the media list (photo → kept + newly uploaded images; video → all URL rows)
+            // Build the media list (photo/poll → kept + newly uploaded images; video/poll → all URL rows)
             let media = [];
             try {
-                if (currentPostType === 'photo') {
+                if (currentPostType === 'photo' || currentPostType === 'poll') {
                     media = modalExistingMedia.filter(m => m.type === 'image').slice();
                     for (const item of modalNewFiles) {
                         const url = await uploadImageFile(item.file);
                         media.push({ type: 'image', url });
                     }
-                } else if (currentPostType === 'video') {
+                }
+                if (currentPostType === 'video' || currentPostType === 'poll') {
                     document.querySelectorAll('#videoUrlsContainer .video-url-input').forEach(i => {
                         const u = i.value.trim();
                         if (u) media.push({ type: 'video', url: u });
@@ -1079,8 +1094,9 @@ function setupAdminControls() {
 function selectPostType(type) {
     document.querySelectorAll('.post-type-tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
     document.getElementById('postType').value = type;
-    document.getElementById('videoFields').style.display = type === 'video' ? 'block' : 'none';
-    document.getElementById('photoFields').style.display = type === 'photo' ? 'block' : 'none';
+    // Polls can also attach images + videos (rendered full-width above the poll)
+    document.getElementById('videoFields').style.display = (type === 'video' || type === 'poll') ? 'block' : 'none';
+    document.getElementById('photoFields').style.display = (type === 'photo' || type === 'poll') ? 'block' : 'none';
     document.getElementById('pollFields').style.display = type === 'poll' ? 'block' : 'none';
 }
 

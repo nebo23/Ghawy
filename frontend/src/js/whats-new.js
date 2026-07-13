@@ -6,7 +6,7 @@
      updates list into #wnWidgetList when present.
    ═══════════════════════════════════════════ */
 (function () {
-    var KEY = 'ghawy_whatsnew_seen', VER = 'v6';
+    var KEY = 'ghawy_whatsnew_seen', VER = 'v7';
     var seen = true;
     try { seen = localStorage.getItem(KEY) === VER; } catch (e) { }
 
@@ -114,6 +114,15 @@
 
     // The updates list — rendered inside both the popup and the dashboard widget.
     var LIST =
+        item(null, '', '', 'lime', 'fa-square-poll-vertical',
+            'Polls with Photos &amp; Videos', 'NEW',
+            'AI Update polls can now include photos and videos — images show full-size like regular posts, with the poll right below.') +
+        item(null, '', '', 'green', 'fa-microphone-lines',
+            'Faster Voice Messages', 'IMPROVED',
+            'Voice notes now load instantly — even on mobile — and keep playing while you scroll.') +
+        item(null, '', '', 'blue', 'fa-calendar-week',
+            'Weekly AI Updates Feed', 'IMPROVED',
+            'The AI Updates feed now spotlights each week\'s fresh updates so you never miss what\'s new.') +
         item('/assets/whats-new/whats-new-ai-updates.png', 'AI Updates — New Experience', '', 'lime', 'fa-bolt',
             'AI Updates — New Experience', 'NEW',
             'A completely new design for AI Updates. Stay ahead with the latest news, tools, models &amp; more.') +
@@ -143,7 +152,7 @@
 
         '<div class="wn-left">' +
         '<div class="wn-brand"><img src="/imgs/g-icon-logo.png" alt="Ghawy" /><span>Ghawy</span></div>' +
-        '<div class="wn-headline"><span>What\'s New</span><br /><span class="wn-accent">in Ghawy</span><span class="wn-ver" data-no-i18n>V1.1</span></div>' +
+        '<div class="wn-headline"><span>What\'s New</span><br /><span class="wn-accent">in Ghawy</span><span class="wn-ver" data-no-i18n>V1.3</span></div>' +
         '<p class="wn-sub">We\'ve been working hard to bring you a better, faster and smarter learning experience. Check out what\'s new!</p>' +
         '<div class="wn-art"><svg viewBox="0 0 200 150" fill="none">' +
         '<rect class="wn-art-card" x="55" y="30" width="42" height="54" rx="5" stroke-width="1.5" transform="rotate(-12 76 57)" />' +

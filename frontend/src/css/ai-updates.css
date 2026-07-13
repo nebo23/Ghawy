@@ -1846,3 +1846,36 @@ textarea.form-control {
   cursor: pointer;
   flex-shrink: 0;
 }
+
+/* ═══ Poll option images — full-width gallery above the poll ═══ */
+.poll-media-gallery { margin-bottom: 12px; }
+.poll-media-item {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.poll-media-gallery .poll-media-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  cursor: zoom-in;
+}
+.poll-media-gallery.ai-media-grid .poll-media-item img { aspect-ratio: 4 / 3; }
+.poll-media-gallery:not(.ai-media-grid) .poll-media-item img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.poll-media-cap {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 18px 10px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  pointer-events: none;
+}

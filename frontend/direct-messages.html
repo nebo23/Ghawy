@@ -15,6 +15,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
@@ -821,7 +823,7 @@
         })();
     </script>
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=15" />
-    <script src="src/js/community-i18n.js?v=5"></script>
+    <script src="src/js/community-i18n.js?v=1784332800"></script>
 </head>
 
 <body>
@@ -1541,13 +1543,17 @@
             position: relative;
         }
 
-        .members-search i {
+        .members-search i,
+        .members-search svg {
             position: absolute;
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
             color: #888;
             font-size: 0.9rem;
+            pointer-events: none;
         }
 
         .members-search input {
@@ -3530,7 +3536,7 @@
                 <button type="button" class="voice-play" aria-label="Play voice message" onclick="toggleVoice(this)"><i class="fa-solid fa-play"></i></button>
                 <div class="voice-track" onclick="voiceSeek(event)"><div class="voice-bars">${voiceBarsHtml(msgId)}</div></div>
                 <span class="voice-dur">0:00</span>
-                <audio preload="metadata" src="${API}${fileUrl}" onloadedmetadata="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
+                <audio preload="none" src="${API}${fileUrl}" onloadedmetadata="voiceMeta(this)" ondurationchange="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
             </div>`;
         }
 
@@ -3550,34 +3556,35 @@
             if (audio.paused) { audio.play().catch(() => { }); } else { audio.pause(); }
         }
 
+        // Effective duration: MediaRecorder webm reports Infinity until fully
+        // buffered — fall back to the seekable range so progress still works.
+        // (No more currentTime=1e101 hack: it forced a FULL download of every
+        //  voice note on page load, which crushed mobile connections.)
+        function voiceDurOf(audio) {
+            if (isFinite(audio.duration) && audio.duration > 0) return audio.duration;
+            try {
+                const s = audio.seekable;
+                if (s && s.length) return s.end(s.length - 1);
+            } catch (e) { }
+            return 0;
+        }
+
         function voiceMeta(audio) {
-            // Fix Infinity duration for MediaRecorder webm blobs
-            if (audio.duration === Infinity) {
-                const onFix = () => {
-                    audio.removeEventListener('timeupdate', onFix);
-                    audio.currentTime = 0;
-                    const p = audio.closest('.voice-player');
-                    const dur = p && p.querySelector('.voice-dur');
-                    if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
-                };
-                audio.addEventListener('timeupdate', onFix);
-                audio.currentTime = 1e101;
-                return;
-            }
             const p = audio.closest('.voice-player');
             const dur = p && p.querySelector('.voice-dur');
-            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+            if (dur && isFinite(audio.duration) && audio.duration > 0) dur.textContent = fmtVoiceTime(audio.duration);
         }
 
         function voiceProgress(audio) {
-            if (!audio.duration || !isFinite(audio.duration)) return;
+            const total = voiceDurOf(audio);
+            if (!total) return;
             const p = audio.closest('.voice-player');
             if (!p) return;
             const bars = p.querySelectorAll('.voice-bars span');
-            const cut = Math.round((audio.currentTime / audio.duration) * bars.length);
+            const cut = Math.round((audio.currentTime / total) * bars.length);
             bars.forEach((b, i) => b.classList.toggle('played', i < cut));
             const dur = p.querySelector('.voice-dur');
-            if (dur) dur.textContent = fmtVoiceTime(audio.paused && audio.currentTime === 0 ? audio.duration : audio.currentTime);
+            if (dur) dur.textContent = fmtVoiceTime(audio.paused && audio.currentTime === 0 ? total : audio.currentTime);
         }
 
         function voiceState(audio, playing) {
@@ -3593,17 +3600,20 @@
             if (!p) return;
             p.querySelectorAll('.voice-bars span').forEach(b => b.classList.remove('played'));
             const dur = p.querySelector('.voice-dur');
-            if (dur && isFinite(audio.duration)) dur.textContent = fmtVoiceTime(audio.duration);
+            const total = voiceDurOf(audio);
+            if (dur && total) dur.textContent = fmtVoiceTime(total);
         }
 
         function voiceSeek(e) {
             const track = e.currentTarget;
             const p = track.closest('.voice-player');
             const audio = p && p.querySelector('audio');
-            if (!audio || !audio.duration || !isFinite(audio.duration)) return;
+            if (!audio) return;
+            const total = voiceDurOf(audio);
+            if (!total) return;
             const rect = track.getBoundingClientRect();
             const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
-            audio.currentTime = ratio * audio.duration;
+            audio.currentTime = ratio * total;
             voiceProgress(audio);
         }
 
@@ -3870,7 +3880,19 @@
                     el.innerHTML = '<div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i><p>No messages yet. Start the conversation!</p></div>';
                     return;
                 }
-                el.innerHTML = msgs.map(renderMsg).join('');
+
+                // A voice note is playing: a full innerHTML re-render would destroy
+                // the <audio> element and cut it off (scroll → read receipts → WS
+                // message_read → loadMessages). Append only the new messages instead.
+                const voicePlaying = [...el.querySelectorAll('.voice-player audio')].some(a => !a.paused && !a.ended);
+                if (voicePlaying) {
+                    const known = new Set([...el.querySelectorAll('[id^="msg-"]')].map(n => n.id));
+                    msgs.forEach(m => {
+                        if (!known.has('msg-' + m.id)) el.insertAdjacentHTML('beforeend', renderMsg(m));
+                    });
+                } else {
+                    el.innerHTML = msgs.map(renderMsg).join('');
+                }
 
                 // Attach observer
                 document.querySelectorAll('.msg-observe-target').forEach(node => {
@@ -5609,7 +5631,7 @@
         })();
     </script>
     <!-- What's New popup (shared across sections, shown once per version) -->
-    <script src="src/js/whats-new.js?v=1783908004"></script>
+    <script src="src/js/whats-new.js?v=1784332800"></script>
 </body>
 
 </html>

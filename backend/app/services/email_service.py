@@ -101,7 +101,7 @@ def send_admin_payment_notification(
 ) -> None:
     """Notify admin team about a new manual payment submission."""
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@ghawy.com")
+    admin_email = os.getenv("ADMIN_EMAIL", "mosalah@ghawy.ai")
 
     body_text = (
         f"🔔 New payment request — {full_name}\n\n"
