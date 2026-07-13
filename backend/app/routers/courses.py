@@ -556,7 +556,9 @@ async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: 
     update_data = data.model_dump(exclude_unset=True)
     if "bunny_video_url" in update_data and update_data["bunny_video_url"] != lesson.bunny_video_url:
         from app.services.bunny_stream import get_video_duration_minutes
-        new_duration = get_video_duration_minutes(update_data["bunny_video_url"])
+        from fastapi.concurrency import run_in_threadpool
+        # sync requests call (up to 10s) — keep it off the event loop
+        new_duration = await run_in_threadpool(get_video_duration_minutes, update_data["bunny_video_url"])
         if new_duration > 0 or update_data.get("duration_minutes", 0) == 0:
             update_data["duration_minutes"] = new_duration
 
@@ -582,7 +584,9 @@ async def create_lesson(course_id: int, data: LessonCreate, db: Session = Depend
     lesson_data = data.model_dump()
     if lesson_data.get("bunny_video_url") and not lesson_data.get("duration_minutes"):
         from app.services.bunny_stream import get_video_duration_minutes
-        lesson_data["duration_minutes"] = get_video_duration_minutes(lesson_data["bunny_video_url"])
+        from fastapi.concurrency import run_in_threadpool
+        # sync requests call (up to 10s) — keep it off the event loop
+        lesson_data["duration_minutes"] = await run_in_threadpool(get_video_duration_minutes, lesson_data["bunny_video_url"])
 
     lesson = Lesson(course_id=course_id, **lesson_data)
     db.add(lesson)
@@ -644,8 +648,12 @@ async def get_vdo_otp(
         raise HTTPException(404, "No VdoCipher video associated with this lesson")
 
     from app.services.vdocipher import generate_otp
+    from fastapi.concurrency import run_in_threadpool
     try:
-        otp_data = generate_otp(
+        # generate_otp does a blocking requests.post (up to 10s) — run it in a
+        # thread so it can't freeze the single-worker event loop
+        otp_data = await run_in_threadpool(
+            generate_otp,
             video_id=lesson.vdo_video_id,
             user_id=current_user.id,
             user_name=current_user.full_name,

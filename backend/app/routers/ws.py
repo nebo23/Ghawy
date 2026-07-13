@@ -155,7 +155,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     return
                 # 🏓 Send ping — keeps connection alive through proxies and detects silent drops
                 try:
-                    await websocket.send_text('{"event":"ping"}')
+                    await asyncio.wait_for(websocket.send_text('{"event":"ping"}'), timeout=5.0)
                 except Exception:
                     # Connection is dead — exit so onclose fires and client reconnects
                     logger.info(f"WS ping failed for user {user_id}, treating as disconnect")

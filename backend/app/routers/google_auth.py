@@ -48,32 +48,35 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         else:
             ip = request.client.host if request.client else ""
             
-        country = ""
-        governorate = ""
-        
-        try:
-            url = f"https://ipapi.co/{ip}/json/" if ip and ip not in ["127.0.0.1", "localhost", "::1"] else "https://ipapi.co/json/"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=3.0) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
-                    country = data.get("country_name", "")
-                    governorate = data.get("city", "") or data.get("region", "")
-        except Exception:
-            pass
-
-        # Fallback to ip-api.com if first API fails or returns empty
-        if not country:
+        # Geo-lookup uses blocking urlopen (up to 2×3s) — run it in a thread so
+        # it can't stall the single-worker event loop
+        def _geo_lookup(ip_addr: str):
+            c, g = "", ""
             try:
-                url_fb = f"http://ip-api.com/json/{ip}" if ip and ip not in ["127.0.0.1", "localhost", "::1"] else "http://ip-api.com/json/"
-                req_fb = urllib.request.Request(url_fb, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req_fb, timeout=3.0) as response:
+                url = f"https://ipapi.co/{ip_addr}/json/" if ip_addr and ip_addr not in ["127.0.0.1", "localhost", "::1"] else "https://ipapi.co/json/"
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=3.0) as response:
                     if response.status == 200:
-                        data_fb = json.loads(response.read().decode())
-                        country = data_fb.get("country", "")
-                        governorate = data_fb.get("city", "") or data_fb.get("regionName", "")
+                        data = json.loads(response.read().decode())
+                        c = data.get("country_name", "")
+                        g = data.get("city", "") or data.get("region", "")
             except Exception:
                 pass
+            if not c:
+                try:
+                    url_fb = f"http://ip-api.com/json/{ip_addr}" if ip_addr and ip_addr not in ["127.0.0.1", "localhost", "::1"] else "http://ip-api.com/json/"
+                    req_fb = urllib.request.Request(url_fb, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req_fb, timeout=3.0) as response:
+                        if response.status == 200:
+                            data_fb = json.loads(response.read().decode())
+                            c = data_fb.get("country", "")
+                            g = data_fb.get("city", "") or data_fb.get("regionName", "")
+                except Exception:
+                    pass
+            return c, g
+
+        from fastapi.concurrency import run_in_threadpool
+        country, governorate = await run_in_threadpool(_geo_lookup, ip)
 
         # Ultimate fallback
         if not country:

@@ -2,12 +2,20 @@
 WebSocket Connection Manager
 Handles real-time connections for chat messaging.
 """
+import asyncio
 import json
 import logging
 from typing import Dict, Set
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
+
+# A stalled client socket (open TCP, not reading — backgrounded phone, dead
+# proxy hop) makes a bare `await ws.send_text()` hang FOREVER. Callers like
+# POST /chat/messages broadcast while holding a DB session, so one stalled
+# socket pins one pooled connection per send until the pool is exhausted and
+# the whole site 502s. Every send goes through this bounded wrapper instead.
+WS_SEND_TIMEOUT = 5.0
 
 
 class ConnectionManager:
@@ -71,15 +79,22 @@ class ConnectionManager:
                 self.channel_subscriptions[ch_id] = set()
             self.channel_subscriptions[ch_id].add(user_id)
 
+    async def _send_bounded(self, ws: WebSocket, user_id: int, message_text: str):
+        """Send with a timeout; drop the socket from the manager if it stalls."""
+        try:
+            await asyncio.wait_for(ws.send_text(message_text), timeout=WS_SEND_TIMEOUT)
+        except asyncio.TimeoutError:
+            logger.warning(f"WS send timed out for user {user_id} — dropping stalled socket")
+            self.disconnect(ws, user_id)
+        except Exception:
+            self.disconnect(ws, user_id)
+
     async def send_personal(self, user_id: int, data: dict):
         """Send a message to a specific user (all their tabs)."""
         websockets = list(self.active_connections.get(user_id, set()))
         message_text = json.dumps(data, default=str)
         for ws in websockets:
-            try:
-                await ws.send_text(message_text)
-            except Exception:
-                self.disconnect(ws, user_id)
+            await self._send_bounded(ws, user_id, message_text)
 
     async def broadcast_to_channel(self, channel_id: int, data: dict, exclude_user: int = None):
         """Broadcast a message to all users subscribed to a channel."""
@@ -91,10 +106,7 @@ class ConnectionManager:
                 continue
             websockets = list(self.active_connections.get(uid, set()))
             for ws in websockets:
-                try:
-                    await ws.send_text(message_text)
-                except Exception:
-                    self.disconnect(ws, uid)
+                await self._send_bounded(ws, uid, message_text)
 
     async def broadcast_to_all(self, data: dict, exclude_user: int = None):
         """Broadcast a message to every connected user (all their tabs).
@@ -108,10 +120,7 @@ class ConnectionManager:
             if uid == exclude_user:
                 continue
             for ws in list(self.active_connections.get(uid, set())):
-                try:
-                    await ws.send_text(message_text)
-                except Exception:
-                    self.disconnect(ws, uid)
+                await self._send_bounded(ws, uid, message_text)
 
     def get_online_count(self) -> int:
         return len(self.active_connections)

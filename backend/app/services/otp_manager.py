@@ -139,8 +139,10 @@ async def send_otp(phone: str, db: Session = None, user_id: int = None) -> bool:
     otp_code = _generate_otp()
     dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
 
-    # إرسال عبر WhatsApp
-    sent, is_template_error = _send_whatsapp_otp(phone_normalized, otp_code)
+    # إرسال عبر WhatsApp — sync httpx (up to 15s) so run it in a thread,
+    # otherwise it blocks the single-worker event loop for the whole site
+    from fastapi.concurrency import run_in_threadpool
+    sent, is_template_error = await run_in_threadpool(_send_whatsapp_otp, phone_normalized, otp_code)
 
     # لو DEV_MODE أو template error: خزّن وطبع الكود في الـ logs
     if dev_mode or is_template_error:
