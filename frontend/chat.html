@@ -1182,8 +1182,6 @@
                             <h3 id="currentChannelName" style="margin:0;">general</h3>
                             <div id="dmHeaderStatus" class="dm-header-status" style="display:none;"></div>
                         </div>
-                        <button id="dmCloseBtn" class="dm-close-btn" style="display:none;" title="Close chat"
-                            onclick="selectChannel('messages')"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div class="chat-feed-messages" id="chatMessages">
                         <div class="chat-empty"><i data-lucide="message-circle" class="nav-icon"></i>
@@ -2899,11 +2897,16 @@
         }
 
         function renderVoicePlayer(fileUrl, msgId) {
+            // Duration is embedded by the sender as a #d=<seconds> fragment on the
+            // file_url — lets us show it immediately without downloading the audio.
+            const dm = /#d=(\d+)/.exec(fileUrl || '');
+            const preDur = dm ? parseInt(dm[1], 10) : 0;
+            const src = (fileUrl || '').replace(/#d=\d+/, '');
             return `<div class="voice-player">
                 <button type="button" class="voice-play" aria-label="Play voice message" onclick="toggleVoice(this)"><i class="fa-solid fa-play"></i></button>
                 <div class="voice-track" onclick="voiceSeek(event)"><div class="voice-bars">${voiceBarsHtml(msgId)}</div></div>
-                <span class="voice-dur">0:00</span>
-                <audio preload="none" src="${API}${fileUrl}" onloadedmetadata="voiceMeta(this)" ondurationchange="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
+                <span class="voice-dur">${fmtVoiceTime(preDur)}</span>
+                <audio preload="none" src="${API}${src}" data-dur="${preDur}" onloadedmetadata="voiceMeta(this)" ondurationchange="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
             </div>`;
         }
 
@@ -2929,6 +2932,8 @@
         //  voice note on page load, which crushed mobile connections.)
         function voiceDurOf(audio) {
             if (isFinite(audio.duration) && audio.duration > 0) return audio.duration;
+            const known = parseInt(audio.dataset.dur || '0', 10);
+            if (known > 0) return known;
             try {
                 const s = audio.seekable;
                 if (s && s.length) return s.end(s.length - 1);
@@ -3294,8 +3299,6 @@
             currentDmChannelId = isDm
                 ? ((window._cachedDmList || []).find(d => d.channel_name === name) || {}).channel_id || null
                 : null;
-            const dmCloseBtn = document.getElementById('dmCloseBtn');
-            if (dmCloseBtn) dmCloseBtn.style.display = isDm ? '' : 'none';
             const dmBackBtn = document.getElementById('dmBackBtn');
             if (dmBackBtn) dmBackBtn.style.display = isDm ? '' : 'none';
 
@@ -4042,6 +4045,8 @@
 
         // ── Voice Recording (WhatsApp-style preview) ──
         let pendingVoiceBlob = null;
+        let pendingVoiceDuration = 0;
+        let recStartTs = 0;
         let recordingTimerInterval = null;
 
         document.getElementById('voiceBtn').addEventListener('click', toggleRecording);
@@ -4075,7 +4080,8 @@
                     body: JSON.stringify({
                         channel: currentChannel, content: null,
                         message_type: 'voice',
-                        file_url: uploadData.file_url,
+                        // #d=<seconds> lets receivers show the duration without downloading the audio
+                        file_url: uploadData.file_url + '#d=' + pendingVoiceDuration,
                         file_name: uploadData.file_name,
                         file_size: uploadData.file_size
                     })
@@ -4115,6 +4121,7 @@
                     stream.getTracks().forEach(t => t.stop());
                     const blob = new Blob(audioChunks, { type: 'audio/webm' });
                     pendingVoiceBlob = blob;
+                    pendingVoiceDuration = Math.max(1, Math.round((Date.now() - recStartTs) / 1000));
                     const player = document.getElementById('voicePreviewPlayer');
                     player.src = URL.createObjectURL(blob);
                     document.getElementById('chatInputBar').style.display = 'none';
@@ -4127,6 +4134,7 @@
 
                 mediaRecorder.start();
                 isRecording = true;
+                recStartTs = Date.now();
                 let secs = 0;
                 btn.classList.add('recording');
                 btn.innerHTML = '<i class="fa-solid fa-stop"></i> 00:00';
