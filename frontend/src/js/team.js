@@ -21,6 +21,7 @@ let currentUserIsOwner = false;
 // ═══ TAB SWITCHING ═══
 let paymentsLoaded = false;
 let analyticsLoaded = false;
+let studentsProgressLoaded = false;
 
 function initTabs() {
   const tabs = document.querySelectorAll('.team-section-btn');
@@ -30,6 +31,7 @@ function initTabs() {
 
   const titleMap = {
     'users': 'Team Dashboard',
+    'students-progress': 'Students Progress',
     'payments': 'Payments & Subscriptions',
     'analytics': 'Platform Analytics',
     'pending-requests': 'Pending Requests',
@@ -60,6 +62,10 @@ function initTabs() {
       if (target === 'payments' && !paymentsLoaded) {
         loadPaymentsTab();
         paymentsLoaded = true;
+      }
+      if (target === 'students-progress' && !studentsProgressLoaded) {
+        loadStudentsProgressTab();
+        studentsProgressLoaded = true;
       }
       if (target === 'analytics' && !analyticsLoaded) {
         loadAnalyticsTab();
@@ -903,6 +909,306 @@ function exportPaymentsCSV() {
     URL.revokeObjectURL(blobUrl);
     showToast('⬇ CSV exported', 'success');
   }).catch(() => showToast('❌ Export failed', 'error'));
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  STUDENTS PROGRESS TAB
+// ══════════════════════════════════════════════════════════
+
+let spData = null;          // full API response
+let spFiltered = [];        // students after search/filter/sort
+let spPage = 1;
+const SP_LIMIT = 20;
+let spExpanded = new Set(); // expanded student rows
+let spListenersBound = false;
+
+async function loadStudentsProgressTab() {
+  const tbody = document.getElementById('sp-tbody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:40px">Loading...</td></tr>`;
+  try {
+    const res = await fetch(`${API}/admin/students-progress`, { headers });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    spData = await res.json();
+  } catch (e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:40px">Failed to load students progress — try Refresh</td></tr>`;
+    return;
+  }
+
+  // Course filter options (published courses first, then unpublished marked)
+  const sel = document.getElementById('sp-course-filter');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="all">All Courses</option>' +
+      spData.courses.filter(c => c.total_lessons > 0).map(c =>
+        `<option value="${c.id}">${escapeHtml(c.title)}${c.is_published ? '' : ' (unpublished)'}</option>`
+      ).join('');
+    if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  }
+
+  if (!spListenersBound) {
+    spListenersBound = true;
+    let t;
+    document.getElementById('sp-search')?.addEventListener('input', () => {
+      clearTimeout(t); t = setTimeout(() => { spPage = 1; applySpFilters(); }, 300);
+    });
+    ['sp-course-filter', 'sp-status-filter', 'sp-sort'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', () => { spPage = 1; applySpFilters(); });
+    });
+  }
+
+  spPage = 1;
+  spExpanded = new Set();
+  applySpFilters();
+}
+
+function reloadStudentsProgress() {
+  studentsProgressLoaded = true;
+  loadStudentsProgressTab();
+}
+
+// Progress numbers for a student in the currently-selected scope
+// (overall, or one course when the course filter is set).
+function spScopeOf(s, courseId) {
+  if (courseId === 'all') {
+    return { percent: s.overall_percent, done: s.overall_completed, total: s.overall_total, started: s.courses_started > 0 };
+  }
+  const c = (s.courses || []).find(x => x.course_id === Number(courseId));
+  if (c) return { percent: c.percent, done: c.completed_lessons, total: c.total_lessons, started: true };
+  const meta = (spData.courses || []).find(x => x.id === Number(courseId));
+  return { percent: 0, done: 0, total: meta ? meta.total_lessons : 0, started: false };
+}
+
+function applySpFilters() {
+  if (!spData) return;
+  const search = (document.getElementById('sp-search')?.value || '').trim().toLowerCase();
+  const courseId = document.getElementById('sp-course-filter')?.value || 'all';
+  const status = document.getElementById('sp-status-filter')?.value || 'started';
+  const sort = document.getElementById('sp-sort')?.value || 'progress-desc';
+
+  spFiltered = spData.students.filter(s => {
+    if (search && !s.full_name.toLowerCase().includes(search) && String(s.id) !== search) return false;
+    const scope = spScopeOf(s, courseId);
+    if (status === 'started' && !scope.started) return false;
+    if (status === 'not-started' && scope.started) return false;
+    if (status === 'completed') {
+      if (courseId === 'all' ? s.courses_completed === 0 : scope.percent < 100) return false;
+    }
+    return true;
+  });
+
+  spFiltered.sort((a, b) => {
+    const pa = spScopeOf(a, courseId), pb = spScopeOf(b, courseId);
+    if (sort === 'progress-desc') return pb.percent - pa.percent || pb.done - pa.done;
+    if (sort === 'progress-asc') return pa.percent - pb.percent || pa.done - pb.done;
+    if (sort === 'recent') return new Date(b.last_activity || 0) - new Date(a.last_activity || 0);
+    return a.full_name.localeCompare(b.full_name);
+  });
+
+  // Header label follows the selected scope
+  const th = document.getElementById('sp-progress-th');
+  if (th) {
+    const meta = courseId === 'all' ? null : (spData.courses || []).find(c => c.id === Number(courseId));
+    th.textContent = meta ? `Progress — ${meta.title}` : 'Overall Progress';
+  }
+
+  renderSpStats();
+  renderSpTable();
+}
+
+function renderSpStats() {
+  const students = spData.students;
+  const learners = students.filter(s => s.courses_started > 0);
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const active7d = learners.filter(s => s.last_activity && new Date(s.last_activity + 'Z').getTime() >= weekAgo).length;
+  const avg = learners.length ? Math.round(learners.reduce((sum, s) => sum + s.overall_percent, 0) / learners.length) : 0;
+  const completions = students.reduce((sum, s) => sum + s.courses_completed, 0);
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('sp-stat-students', learners.length);
+  set('sp-stat-active7d', active7d);
+  set('sp-stat-avg', avg + '%');
+  set('sp-stat-completions', completions);
+}
+
+function spBarColor(p) {
+  return p >= 100 ? '#22c55e' : p >= 60 ? '#3f8ff9' : p >= 25 ? '#f59e0b' : '#ef4444';
+}
+
+function spProgressBar(percent, done, total) {
+  const p = Math.max(0, Math.min(100, percent || 0));
+  return `
+    <div class="sp-bar-wrap">
+      <div class="sp-bar-top"><span class="sp-bar-pct" style="color:${spBarColor(p)}">${p}%</span>
+        <span class="sp-bar-count">${done} / ${total} lessons</span></div>
+      <div class="sp-bar"><div class="sp-bar-fill" style="width:${p}%;background:${spBarColor(p)}"></div></div>
+    </div>`;
+}
+
+function renderSpTable() {
+  const tbody = document.getElementById('sp-tbody');
+  if (!tbody) return;
+  const courseId = document.getElementById('sp-course-filter')?.value || 'all';
+
+  if (!spFiltered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#888;padding:40px">No students match the current filters</td></tr>`;
+    document.getElementById('sp-pagination').innerHTML = '';
+    return;
+  }
+
+  const start = (spPage - 1) * SP_LIMIT;
+  const rows = spFiltered.slice(start, start + SP_LIMIT);
+
+  tbody.innerHTML = rows.map(s => {
+    const scope = spScopeOf(s, courseId);
+    const role = s.is_owner ? '<span class="role-badge owner" style="font-size:10px;padding:1px 6px;">Owner</span>'
+      : s.is_admin ? '<span class="role-badge admin" style="font-size:10px;padding:1px 6px;">Admin</span>' : '';
+    const expanded = spExpanded.has(s.id);
+    const main = `
+    <tr class="sp-row ${expanded ? 'sp-row-open' : ''}" onclick="toggleSpDetail(${s.id})" style="cursor:pointer">
+      <td>
+        <div class="member-cell">
+          <img src="${s.avatar_url || '/static/avatars/default.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
+          <div>
+            <div class="member-name">${escapeHtml(s.full_name)} ${role}</div>
+            <div class="member-id" style="font-size:11px;color:#888;font-weight:600;">🆔 ID: ${s.id} ${s.is_active ? '' : '· <span style="color:#ef4444">inactive</span>'}</div>
+          </div>
+        </div>
+      </td>
+      <td>${spProgressBar(scope.percent, scope.done, scope.total)}</td>
+      <td class="text-secondary">${s.courses_started} started${s.courses_completed ? ` · <span style="color:#22c55e">${s.courses_completed} done</span>` : ''}</td>
+      <td class="text-secondary">${s.overall_completed} / ${s.overall_total}</td>
+      <td class="text-secondary">${s.exams_passed || '—'}</td>
+      <td class="text-secondary">${s.certificates ? `🏆 ${s.certificates}` : '—'}</td>
+      <td class="text-secondary" style="white-space:nowrap">${s.last_activity ? formatDateTime(s.last_activity) : '<span style="color:#666">never</span>'}</td>
+      <td style="text-align:center"><i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" style="width:16px;height:16px;stroke:#888"></i></td>
+    </tr>`;
+    return main + (expanded ? spDetailRow(s) : '');
+  }).join('');
+
+  renderSpPagination();
+  setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+}
+
+function spDetailRow(s) {
+  if (!s.courses.length) {
+    return `<tr class="sp-detail-row"><td colspan="8"><div style="padding:16px;color:#888;text-align:center">This member hasn't started any course yet.</div></td></tr>`;
+  }
+  const cards = s.courses.map(c => `
+    <div class="sp-course-card">
+      <div class="sp-course-head">
+        <div class="sp-course-title">${escapeHtml(c.title)}${c.is_published ? '' : ' <span style="color:#f59e0b;font-size:10px">(unpublished)</span>'}</div>
+        ${c.has_certificate ? '<span class="sp-cert-badge" title="Certificate earned">🏆 Certified</span>' : ''}
+      </div>
+      ${spProgressBar(c.percent, c.completed_lessons, c.total_lessons)}
+      <div class="sp-course-meta">
+        <span title="Last activity in this course">🕐 ${c.last_activity ? formatDateTime(c.last_activity) : 'never'}</span>
+        ${c.exams_total ? `<span title="Exams passed">📝 ${c.exams_passed}/${c.exams_total} exams${c.best_exam_score != null ? ` · best ${c.best_exam_score}%` : ''}</span>` : ''}
+        <button class="sp-lessons-btn" onclick="event.stopPropagation(); openSpLessons(${s.id}, ${c.course_id}, '${escapeHtml(s.full_name).replace(/'/g, "\\'")}')">
+          View Lessons
+        </button>
+      </div>
+    </div>`).join('');
+  return `<tr class="sp-detail-row"><td colspan="8"><div class="sp-detail-grid">${cards}</div></td></tr>`;
+}
+
+function toggleSpDetail(userId) {
+  if (spExpanded.has(userId)) spExpanded.delete(userId); else spExpanded.add(userId);
+  renderSpTable();
+}
+
+function renderSpPagination() {
+  const el = document.getElementById('sp-pagination');
+  if (!el) return;
+  const pages = Math.max(1, Math.ceil(spFiltered.length / SP_LIMIT));
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${spPage === 1 ? 'disabled' : ''} onclick="spGoPage(${spPage - 1})">‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - spPage) <= 2) {
+      html += `<button class="page-btn ${i === spPage ? 'active' : ''}" onclick="spGoPage(${i})">${i}</button>`;
+    } else if (Math.abs(i - spPage) === 3) {
+      html += `<span style="color:#666;padding:0 4px">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" ${spPage === pages ? 'disabled' : ''} onclick="spGoPage(${spPage + 1})">›</button>`;
+  el.innerHTML = html;
+}
+
+function spGoPage(p) {
+  spPage = p;
+  renderSpTable();
+}
+
+async function openSpLessons(userId, courseId, studentName) {
+  const body = document.getElementById('sp-lessons-body');
+  const title = document.getElementById('sp-lessons-title');
+  if (title) title.textContent = `📚 ${studentName || 'Student'} — Lessons`;
+  if (body) body.innerHTML = '<div style="text-align:center;color:#888;padding:30px">Loading...</div>';
+  openModal('sp-lessons-modal');
+  try {
+    const res = await fetch(`${API}/admin/students-progress/${userId}/courses/${courseId}/lessons`, { headers });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if (title) title.textContent = `📚 ${d.student.full_name} — ${d.course.title}`;
+    if (!d.lessons.length) {
+      body.innerHTML = '<div style="text-align:center;color:#888;padding:30px">This course has no lessons yet.</div>';
+      return;
+    }
+    const doneCount = d.lessons.filter(l => l.completed).length;
+    let lastSection = null;
+    let html = `<div style="color:#888;font-size:13px;margin-bottom:12px">${doneCount} of ${d.lessons.length} lessons completed</div>`;
+    d.lessons.forEach(l => {
+      if (l.section_title && l.section_title !== lastSection) {
+        lastSection = l.section_title;
+        html += `<div class="sp-lesson-section">${escapeHtml(l.section_title)}</div>`;
+      }
+      html += `
+        <div class="sp-lesson-row ${l.completed ? 'done' : ''}">
+          <span class="sp-lesson-check">${l.completed ? '✅' : '⭕'}</span>
+          <span class="sp-lesson-title">${escapeHtml(l.title)}</span>
+          <span class="sp-lesson-when">${l.completed ? formatDateTime(l.completed_at) : (l.video_status !== 'ready' ? '<span style="color:#f59e0b">not ready</span>' : '')}</span>
+        </div>`;
+    });
+    body.innerHTML = html;
+  } catch (e) {
+    if (body) body.innerHTML = '<div style="text-align:center;color:#ef4444;padding:30px">Failed to load lessons</div>';
+  }
+}
+
+function exportStudentsProgressCSV() {
+  if (!spData || !spFiltered.length) { showToast('No students to export', 'error'); return; }
+
+  const cell = (v) => {
+    const s = (v === null || v === undefined) ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const publishedCourses = spData.courses.filter(c => c.is_published && c.total_lessons > 0);
+  const headers = ['ID', 'Name', 'Overall %', 'Lessons Done', 'Lessons Total', 'Courses Started',
+    'Courses Completed', 'Exams Passed', 'Certificates', 'Last Activity',
+    ...publishedCourses.map(c => `${c.title} %`)];
+
+  const lines = [headers.map(cell).join(',')];
+  spFiltered.forEach(s => {
+    const perCourse = publishedCourses.map(pc => {
+      const c = (s.courses || []).find(x => x.course_id === pc.id);
+      return c ? c.percent : 0;
+    });
+    lines.push([s.id, s.full_name, s.overall_percent, s.overall_completed, s.overall_total,
+      s.courses_started, s.courses_completed, s.exams_passed, s.certificates,
+      s.last_activity ? new Date(s.last_activity + 'Z').toISOString() : '',
+      ...perCourse].map(cell).join(','));
+  });
+
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = `ghawy_students_progress_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+  showToast('⬇ CSV exported', 'success');
 }
 
 

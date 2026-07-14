@@ -13,7 +13,10 @@ import csv
 import io
 
 from app.database import get_db
-from app.models import User, Payment, PaymentStatus, PaymentMethod, AdminMemberNote
+from app.models import (
+    User, Payment, PaymentStatus, PaymentMethod, AdminMemberNote,
+    Course, Lesson, UserProgress, UserCourseProgress, Certificate, Exam, ExamAttempt,
+)
 from app.routers.users import get_current_user
 
 
@@ -799,5 +802,238 @@ def subscription_breakdown(
             monthly += 1
 
     return {"monthly": monthly, "quarterly": quarterly, "yearly": yearly, "none": none}
+
+
+# ══════════════════════════════════════════════════════════════
+#  STUDENTS PROGRESS ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+def _effective_lesson_totals(db: Session, courses):
+    """Effective lesson count per course — mirrors the student-facing rule in
+    courses.get_course_progress: count only 'ready' lessons, fall back to all
+    lessons when the course has none ready."""
+    all_counts = dict(
+        db.query(Lesson.course_id, sql_func.count(Lesson.id))
+        .group_by(Lesson.course_id).all()
+    )
+    ready_counts = dict(
+        db.query(Lesson.course_id, sql_func.count(Lesson.id))
+        .filter(Lesson.video_status == "ready")
+        .group_by(Lesson.course_id).all()
+    )
+    totals = {c.id: (ready_counts.get(c.id) or all_counts.get(c.id, 0)) for c in courses}
+    return totals, ready_counts
+
+
+@router.get("/students-progress")
+def students_progress(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Course progress for every member across all courses (admins + owners).
+
+    Aggregate queries only (no N+1): grouped completed-lesson counts, exam
+    bests and certificates are each fetched once and joined in Python.
+    """
+    require_admin(current_user)
+
+    courses = db.query(Course).order_by(Course.sort_order.asc(), Course.id.asc()).all()
+    course_total, ready_counts = _effective_lesson_totals(db, courses)
+
+    # Completed lessons per (user, course) — same ready/fallback rule as totals
+    ready_done = {}
+    for uid, cid, cnt in (
+        db.query(UserProgress.user_id, UserProgress.course_id, sql_func.count(UserProgress.id))
+        .join(Lesson, Lesson.id == UserProgress.lesson_id)
+        .filter(Lesson.video_status == "ready")
+        .group_by(UserProgress.user_id, UserProgress.course_id).all()
+    ):
+        ready_done[(uid, cid)] = cnt
+
+    all_done = {}
+    last_completed = {}
+    for uid, cid, cnt, last in (
+        db.query(
+            UserProgress.user_id, UserProgress.course_id,
+            sql_func.count(UserProgress.id), sql_func.max(UserProgress.completed_at),
+        )
+        .group_by(UserProgress.user_id, UserProgress.course_id).all()
+    ):
+        all_done[(uid, cid)] = cnt
+        last_completed[(uid, cid)] = last
+
+    # Last time the student opened each course (set even before completing anything)
+    last_access = {
+        (uid, cid): accessed
+        for uid, cid, accessed in db.query(
+            UserCourseProgress.user_id, UserCourseProgress.course_id, UserCourseProgress.last_accessed
+        ).all()
+    }
+
+    cert_pairs = {
+        (uid, cid) for uid, cid in db.query(Certificate.user_id, Certificate.course_id).all()
+    }
+
+    exam_counts = dict(
+        db.query(Exam.course_id, sql_func.count(Exam.id))
+        .filter(Exam.is_published == True)
+        .group_by(Exam.course_id).all()
+    )
+    best_score = {
+        (uid, cid): best
+        for uid, cid, best in db.query(
+            ExamAttempt.user_id, ExamAttempt.course_id, sql_func.max(ExamAttempt.score)
+        ).group_by(ExamAttempt.user_id, ExamAttempt.course_id).all()
+    }
+    exams_passed = {
+        (uid, cid): cnt
+        for uid, cid, cnt in db.query(
+            ExamAttempt.user_id, ExamAttempt.course_id,
+            sql_func.count(sql_func.distinct(ExamAttempt.exam_id)),
+        ).filter(ExamAttempt.passed == True)
+        .group_by(ExamAttempt.user_id, ExamAttempt.course_id).all()
+    }
+
+    # Group every touched course per user (progress, course opened, or exam attempt)
+    touched_by_user = {}
+    for uid, cid in set(all_done) | set(last_access) | set(best_score):
+        touched_by_user.setdefault(uid, set()).add(cid)
+
+    course_by_id = {c.id: c for c in courses}
+    course_order = {c.id: i for i, c in enumerate(courses)}
+    # Overall denominator = published courses that actually have lessons
+    published_ids = [c.id for c in courses if c.is_published and course_total.get(c.id, 0) > 0]
+    overall_total = sum(course_total[cid] for cid in published_ids)
+
+    def done_for(uid, cid):
+        """Completed count for a (user, course) honoring the ready/fallback rule, capped at the course total."""
+        if ready_counts.get(cid, 0) > 0:
+            done = ready_done.get((uid, cid), 0)
+        else:
+            done = all_done.get((uid, cid), 0)
+        return min(done, course_total.get(cid, 0))
+
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    students = []
+    for u in users:
+        touched = touched_by_user.get(u.id, set())
+        course_entries = []
+        courses_completed = 0
+        user_last_activity = None
+
+        for cid in sorted(touched, key=lambda c: course_order.get(c, 10**9)):
+            course = course_by_id.get(cid)
+            if not course:
+                continue  # progress rows pointing at a deleted course
+            total = course_total.get(cid, 0)
+            done = done_for(u.id, cid)
+            percent = round(done / total * 100) if total > 0 else 0
+            if percent >= 100 and total > 0:
+                courses_completed += 1
+
+            lc = last_completed.get((u.id, cid))
+            la = last_access.get((u.id, cid))
+            activity = max([d for d in (lc, la) if d is not None], default=None)
+            if activity and (user_last_activity is None or activity > user_last_activity):
+                user_last_activity = activity
+
+            course_entries.append({
+                "course_id": cid,
+                "title": course.title,
+                "is_published": bool(course.is_published),
+                "completed_lessons": done,
+                "total_lessons": total,
+                "percent": percent,
+                "last_activity": activity.isoformat() if activity else None,
+                "exams_total": exam_counts.get(cid, 0),
+                "exams_passed": exams_passed.get((u.id, cid), 0),
+                "best_exam_score": best_score.get((u.id, cid)),
+                "has_certificate": (u.id, cid) in cert_pairs,
+            })
+
+        overall_done = sum(done_for(u.id, cid) for cid in published_ids)
+        students.append({
+            "id": u.id,
+            "full_name": u.full_name,
+            "avatar_url": u.avatar_url,
+            "is_active": bool(u.is_active),
+            "is_admin": bool(u.is_admin),
+            "is_owner": bool(getattr(u, "is_owner", False)),
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "last_seen": u.last_seen.isoformat() if u.last_seen else None,
+            "overall_completed": overall_done,
+            "overall_total": overall_total,
+            "overall_percent": round(overall_done / overall_total * 100) if overall_total > 0 else 0,
+            "courses_started": len(course_entries),
+            "courses_completed": courses_completed,
+            "certificates": sum(1 for (uid, _cid) in cert_pairs if uid == u.id),
+            "exams_passed": sum(cnt for (uid, _cid), cnt in exams_passed.items() if uid == u.id),
+            "last_activity": user_last_activity.isoformat() if user_last_activity else None,
+            "courses": course_entries,
+        })
+
+    return {
+        "overall_total_lessons": overall_total,
+        "courses": [
+            {
+                "id": c.id,
+                "title": c.title,
+                "is_published": bool(c.is_published),
+                "total_lessons": course_total.get(c.id, 0),
+                "exams_total": exam_counts.get(c.id, 0),
+            }
+            for c in courses
+        ],
+        "students": students,
+    }
+
+
+@router.get("/students-progress/{user_id}/courses/{course_id}/lessons")
+def student_course_lessons(
+    user_id: int,
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lesson-by-lesson completion for one student in one course (admins + owners)."""
+    require_admin(current_user)
+
+    student = db.query(User).filter(User.id == user_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="User not found")
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    lessons = (
+        db.query(Lesson)
+        .filter(Lesson.course_id == course_id)
+        .order_by(Lesson.order.asc(), Lesson.id.asc())
+        .all()
+    )
+    completed_at = {
+        r.lesson_id: r.completed_at
+        for r in db.query(UserProgress).filter(
+            UserProgress.user_id == user_id,
+            UserProgress.course_id == course_id,
+        ).all()
+    }
+
+    return {
+        "student": {"id": student.id, "full_name": student.full_name, "avatar_url": student.avatar_url},
+        "course": {"id": course.id, "title": course.title},
+        "lessons": [
+            {
+                "id": l.id,
+                "title": l.title,
+                "section_title": l.section_title,
+                "duration_minutes": l.duration_minutes or 0,
+                "video_status": l.video_status,
+                "completed": l.id in completed_at,
+                "completed_at": completed_at[l.id].isoformat() if l.id in completed_at else None,
+            }
+            for l in lessons
+        ],
+    }
 
 

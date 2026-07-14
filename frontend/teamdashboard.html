@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=6" />
+  <link rel="stylesheet" href="src/css/team.css?v=7" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -861,6 +861,10 @@
               <i data-lucide="users" style="width:18px;height:18px;"></i>
               <span class="tab-label">Members</span>
             </button>
+            <button class="team-section-btn" data-tab="students-progress">
+              <i data-lucide="graduation-cap" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Students Progress</span>
+            </button>
             <button class="team-section-btn" data-tab="payments">
               <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
               <span class="tab-label">Payments</span>
@@ -984,6 +988,95 @@
                 </table>
               </div>
               <div class="pagination" id="pagination"></div>
+            </div>
+
+            <!-- Tab Content: Students Progress -->
+            <div id="tab-students-progress" class="tab-panel" style="display:none;">
+
+              <!-- Stats -->
+              <div class="team-stats sp-stats">
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="graduation-cap"
+                      style="width:36px; height:36px; stroke:#3f8ff9; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="sp-stat-students">0</div>
+                    <div class="stat-label">Students Learning</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="activity"
+                      style="width:36px; height:36px; stroke:#22c55e; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="sp-stat-active7d">0</div>
+                    <div class="stat-label">Active Last 7 Days</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="gauge"
+                      style="width:36px; height:36px; stroke:#f59e0b; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="sp-stat-avg">0%</div>
+                    <div class="stat-label">Avg Completion (learners)</div>
+                  </div>
+                </div>
+                <div class="stat-card"><span class="stat-icon"><i data-lucide="award"
+                      style="width:36px; height:36px; stroke:#a855f7; stroke-width:1.5px;"></i></span>
+                  <div class="stat-info">
+                    <div class="stat-number" id="sp-stat-completions">0</div>
+                    <div class="stat-label">Courses Completed</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Toolbar -->
+              <div class="team-toolbar sp-toolbar">
+                <div class="search-wrap">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="sp-search" placeholder="Search student name..." />
+                </div>
+                <select id="sp-course-filter" title="Filter by course">
+                  <option value="all">All Courses</option>
+                </select>
+                <select id="sp-status-filter" title="Filter students">
+                  <option value="started">Started Learning</option>
+                  <option value="all">All Members</option>
+                  <option value="not-started">Not Started</option>
+                  <option value="completed">Completed a Course</option>
+                </select>
+                <select id="sp-sort" title="Sort">
+                  <option value="progress-desc">Progress: High → Low</option>
+                  <option value="progress-asc">Progress: Low → High</option>
+                  <option value="recent">Recent Activity</option>
+                  <option value="name">Name A–Z</option>
+                </select>
+                <button class="btn-export" onclick="exportStudentsProgressCSV()">
+                  <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
+                </button>
+                <button class="btn-export" onclick="reloadStudentsProgress()" title="Refresh">
+                  <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
+
+              <!-- Table -->
+              <div class="team-table-wrap" style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+                <table class="team-table sp-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th id="sp-progress-th" style="min-width:220px">Overall Progress</th>
+                      <th>Courses</th>
+                      <th>Lessons</th>
+                      <th>Exams Passed</th>
+                      <th>Certificates</th>
+                      <th>Last Activity</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="sp-tbody">
+                    <tr>
+                      <td colspan="8" style="text-align:center;color:#888;padding:40px">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination" id="sp-pagination"></div>
             </div>
 
             <!-- Tab Content: Payments -->
@@ -1503,6 +1596,21 @@
   </div>
 
   <!-- Add Guest Modal -->
+  <!-- Student Lessons Detail Modal -->
+  <div class="modal-overlay-team" id="sp-lessons-modal" style="display:none">
+    <div class="modal-box-team" style="max-width:640px;width:92%;">
+      <div class="modal-header-team">
+        <h3 id="sp-lessons-title">📚 Lessons</h3><button class="modal-close-team" onclick="closeModal('sp-lessons-modal')">✕</button>
+      </div>
+      <div class="modal-body-team" id="sp-lessons-body" style="max-height:60vh;overflow-y:auto;">
+        <div style="text-align:center;color:#888;padding:30px">Loading...</div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('sp-lessons-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay-team" id="add-guest-modal" style="display:none">
     <div class="modal-box-team">
       <div class="modal-header-team">
@@ -2117,7 +2225,7 @@
   <script src="src/js/utils.js?v=1783960000"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1783627998"></script>
+  <script src="src/js/team.js?v=1784052010"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
