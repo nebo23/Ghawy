@@ -4080,6 +4080,19 @@
         let recStartTs = 0;
         let recordingTimerInterval = null;
 
+        // Wall-clock duration drifts from the real audio length (encoder start
+        // lag, tab throttling) — decode the blob for the exact duration.
+        async function refineVoiceDuration(blob) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+                ctx.close();
+                if (blob === pendingVoiceBlob && isFinite(decoded.duration) && decoded.duration > 0) {
+                    pendingVoiceDuration = Math.max(1, Math.round(decoded.duration));
+                }
+            } catch (e) { /* keep wall-clock fallback */ }
+        }
+
         document.getElementById('voiceBtn').addEventListener('click', toggleRecording);
 
         document.getElementById('voiceCancelBtn').addEventListener('click', () => {
@@ -4152,6 +4165,7 @@
                     const blob = new Blob(audioChunks, { type: 'audio/webm' });
                     pendingVoiceBlob = blob;
                     pendingVoiceDuration = Math.max(1, Math.round((Date.now() - recStartTs) / 1000));
+                    refineVoiceDuration(blob);
                     const player = document.getElementById('voicePreviewPlayer');
                     player.src = URL.createObjectURL(blob);
                     document.getElementById('chatInputBar').style.display = 'none';
