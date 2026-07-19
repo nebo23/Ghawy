@@ -1,5 +1,5 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt
@@ -16,6 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email
 from app.services.disposable_emails import is_disposable_email
+from app.services.turnstile import verify_turnstile
 from jose import JWTError
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,17 @@ def send_verification_email_bg(email: str, code: str) -> None:
 
 # ─── Register ────────────────────────────────────────────────
 @router.post("/register", response_model=UserOut, status_code=201)
-def register(data: UserRegister, db: Session = Depends(get_db)):
+def register(data: UserRegister, request: Request, db: Session = Depends(get_db)):
+    # "I'm not a robot" check (Cloudflare Turnstile). No-op until the secret key
+    # is configured; once it is, a missing/invalid token is rejected here.
+    client_ip = (request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+                 or (request.client.host if request.client else None))
+    if not verify_turnstile(data.turnstile_token, client_ip):
+        raise HTTPException(
+            status_code=403,
+            detail="Please complete the 'I'm not a robot' verification and try again.",
+        )
+
     # Block throwaway / temporary mailboxes: real members use real inboxes, and
     # disposable providers are what the account-flood swarm registers through.
     if is_disposable_email(data.email):

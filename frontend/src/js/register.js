@@ -284,7 +284,19 @@ async function submitRegister() {
         btn.disabled = false;
       }
     } else {
-      // Normal flow submit
+      // Normal flow submit — require the "I'm not a robot" check to be solved.
+      const captchaToken = (window.turnstile && typeof turnstile.getResponse === 'function')
+        ? (turnstile.getResponse() || '')
+        : (document.querySelector('[name="cf-turnstile-response"]')?.value || '');
+      const captchaPresent = !!document.querySelector('.cf-turnstile');
+      if (captchaPresent && !captchaToken) {
+        showFormMessage("Please complete the 'I'm not a robot' verification.", 'error');
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.classList.remove('opacity-0');
+        return;
+      }
+
       const res = await fetch(`${apiBase}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -293,7 +305,8 @@ async function submitRegister() {
           email,
           password,
           country,
-          governorate
+          governorate,
+          turnstile_token: captchaToken
         })
       });
 
@@ -306,17 +319,28 @@ async function submitRegister() {
       } else {
         showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
         btn.disabled = false;
+        // Turnstile tokens are single-use — reset so the user can retry.
+        if (window.turnstile && typeof turnstile.reset === 'function') turnstile.reset();
       }
     }
 
   } catch (e) {
     showFormMessage('No connection to the server.', 'error');
     btn.disabled = false;
+    if (window.turnstile && typeof turnstile.reset === 'function') turnstile.reset();
   } finally {
     spinner.classList.add('hidden');
     btnText.classList.remove('opacity-0');
   }
 }
+
+// Turnstile widget callbacks (referenced from register.html). The real gating
+// happens at submit time; these just clear any stale error message.
+function onTurnstileSuccess() {
+  const alertBox = document.getElementById('formAlert');
+  if (alertBox && alertBox.textContent.includes('robot')) alertBox.classList.add('hidden');
+}
+function onTurnstileExpired() { /* token auto-cleared by the widget; submit will re-prompt */ }
 
 function googleSignIn() {
   // Trigger google sign in flow

@@ -101,6 +101,7 @@
     }
   </style>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body>
@@ -209,6 +210,19 @@
         </div>
       </div>
 
+      <!-- "I'm not a robot" — Cloudflare Turnstile.
+           TODO: replace the test data-sitekey below with your real SITE key from
+           the Cloudflare dashboard (Turnstile → your widget). The matching
+           SECRET key goes in backend/.env.production as TURNSTILE_SECRET_KEY. -->
+      <div class="mb-4 flex justify-center">
+        <div class="cf-turnstile"
+             data-sitekey="1x00000000000000000000AA"
+             data-theme="dark"
+             data-callback="onTurnstileSuccess"
+             data-expired-callback="onTurnstileExpired"
+             data-error-callback="onTurnstileExpired"></div>
+      </div>
+
       <!-- Submit Button -->
       <button type="submit" id="submitRegBtn"
         class="w-full bg-brand hover:bg-[#99e600] text-black font-bold py-3 rounded-full transition-colors flex justify-center items-center relative disabled:opacity-70 disabled:cursor-not-allowed"
@@ -269,7 +283,7 @@
       localStorage.setItem = _orig;
     })();
   </script>
-  <script src="src/js/register.js"></script>
+  <script src="src/js/register.js?v=20260719"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => lucide.createIcons());

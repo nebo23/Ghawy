@@ -11,6 +11,7 @@ class UserRegister(BaseModel):
     password: str
     country: Optional[str] = None
     governorate: str
+    turnstile_token: Optional[str] = None
 
 class SendPhoneOTP(BaseModel):
     phone: str
