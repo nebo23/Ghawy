@@ -52,6 +52,23 @@ RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_RECEIPT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 MAX_RECEIPT_SIZE = 5 * 1024 * 1024  # 5 MB
 
+
+def _sniff_receipt_type(content: bytes) -> Optional[str]:
+    """Return a safe extension based on the file's actual magic bytes, or None
+    if the bytes are not a genuine allowed image/PDF. The browser-supplied
+    Content-Type and the original filename are NEVER trusted for what we store:
+    an SVG/HTML/script renamed to .png or given a fake MIME must be rejected
+    here so it can never land on disk with an executable extension."""
+    if content[:3] == b"\xff\xd8\xff":
+        return ".jpg"
+    if content[:8] == b"\x89PNG\r\n\x1a\n":
+        return ".png"
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return ".webp"
+    if content[:5] == b"%PDF-":
+        return ".pdf"
+    return None
+
 # Subscription length granted on approval, per plan.
 PLAN_DURATION_DAYS = {"monthly": 30, "quarterly": 90, "yearly": 365}
 DEFAULT_PLAN = "monthly"
@@ -153,7 +170,9 @@ async def submit_payment_request(
             detail="A pending payment request already exists for this email. Please wait for approval.",
         )
 
-    # Validate receipt file
+    # Validate receipt file. The declared Content-Type is a first cheap gate,
+    # but it is client-supplied and trivially spoofed, so the real check is the
+    # magic-byte sniff below — that is what decides the stored extension.
     content_type = receipt.content_type or ""
     if content_type not in ALLOWED_RECEIPT_TYPES:
         raise HTTPException(status_code=422, detail="Receipt must be JPG, PNG, WebP or PDF")
@@ -162,9 +181,15 @@ async def submit_payment_request(
     if len(content) > MAX_RECEIPT_SIZE:
         raise HTTPException(status_code=422, detail="Receipt file too large. Max 5MB.")
 
-    # Save receipt
-    ext = Path(receipt.filename or "receipt").suffix or ".jpg"
-    unique_name = f"{uuid.uuid4().hex}_{receipt.filename or 'receipt'}"
+    ext = _sniff_receipt_type(content)
+    if ext is None:
+        raise HTTPException(status_code=422, detail="Receipt must be a real JPG, PNG, WebP or PDF")
+
+    # Save receipt under a fully server-generated name. The attacker-controlled
+    # original filename is discarded entirely so a disguised extension such as
+    # evil.svg or x.php.jpg can never reach disk or be served back as active
+    # content.
+    unique_name = f"{uuid.uuid4().hex}{ext}"
     file_path = RECEIPTS_DIR / unique_name
     async with aiofiles.open(file_path, "wb") as f:
         await f.write(content)

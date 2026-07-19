@@ -15,6 +15,7 @@ import threading
 from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email
+from app.services.disposable_emails import is_disposable_email
 from jose import JWTError
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,14 @@ def send_verification_email_bg(email: str, code: str) -> None:
 # ─── Register ────────────────────────────────────────────────
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(data: UserRegister, db: Session = Depends(get_db)):
+    # Block throwaway / temporary mailboxes: real members use real inboxes, and
+    # disposable providers are what the account-flood swarm registers through.
+    if is_disposable_email(data.email):
+        raise HTTPException(
+            status_code=422,
+            detail="Please sign up with a permanent email address (temporary/disposable emails are not allowed).",
+        )
+
     existing_user = db.query(User).filter(User.email == data.email).first()
 
     verification_code = generate_verification_code()

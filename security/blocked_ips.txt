@@ -1,0 +1,10 @@
+# Blocked source IPs — one per line. Lines starting with # are ignored.
+# Applied to iptables DOCKER-USER + INPUT chains by apply_blocklist.sh
+# (run by the ghawy-ipblock.service on boot / after Docker starts).
+#
+# To add an IP: add the line here, then run:  /opt/ghawy/security/apply_blocklist.sh
+# To remove: delete the line, then flush+reapply (see script header).
+
+# 2026-07-19: automated attack swarm (Python-urllib / ghawy-im-rce),
+# ~700 register + manual-payment probe requests, tempmail flood + upload XSS/RCE attempts.
+197.54.103.231
