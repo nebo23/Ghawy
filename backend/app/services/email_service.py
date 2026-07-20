@@ -516,3 +516,175 @@ def send_winback_email(to_email: str, full_name: str, governorate: str = None) -
         body_text=body_text,
         body_html=body_html,
     )
+
+
+# ═══════════════════════════════════════════════════════
+#  AUTOMATED LIFECYCLE EMAILS — shared branded base template
+#  (نفس الـ Header/Logo/السوشيال/زرار واتساب/الفوتر لكل الإيميلات؛
+#   المتغيّر الوحيد هو المحتوى: العنوان + الجسم + نص زرار الـ CTA)
+# ═══════════════════════════════════════════════════════
+
+# روابط ثابتة لا تتغير
+_SOCIAL_INSTAGRAM = "https://www.instagram.com/ghawy.ai/"
+_SOCIAL_FACEBOOK = "https://www.facebook.com/profile.php?id=61591378479904"
+_SOCIAL_TIKTOK = "https://www.tiktok.com/@ghawy.ai"
+_SOCIAL_WHATSAPP = "https://wa.me/201033903334"
+_LINK_PRIVACY = "https://ghawy.ai/privacy"
+_LINK_TERMS = "https://ghawy.ai/terms"
+
+
+def _first_name(full_name: str) -> str:
+    name = (full_name or "").strip()
+    return name.split()[0] if name else "صديقنا"
+
+
+def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
+                      cta_url: str, pre_footer: str = "") -> str:
+    """القالب الأساسي الموحّد لكل الإيميلات التلقائية (RTL)."""
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    logo = f"{frontend_url}/imgs/ghawy-new-logo-transparent.png"
+    icon = lambda n: f"{frontend_url}/imgs/email/{n}.png"
+
+    paragraphs_html = "".join(
+        f'<p style="margin:0 0 18px;">{p}</p>' for p in body_paragraphs
+    )
+
+    pre_footer_block = ""
+    if pre_footer:
+        pre_footer_block = (
+            '<div style="color:#9a9aa6;font-size:14px;line-height:1.9;text-align:right;'
+            'margin-top:8px;border-top:1px solid #1e1e2a;padding-top:16px;">'
+            f'{pre_footer}</div>'
+        )
+
+    return f"""\
+<div style="background:#05050a;padding:24px 0;margin:0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#05050a;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" dir="rtl" style="max-width:600px;width:100%;background:#0d0d14;border:1px solid #1e1e2a;border-radius:16px;overflow:hidden;font-family:Tahoma,Arial,sans-serif;">
+        <tr><td align="center" style="background:linear-gradient(135deg,#12121c,#0a0a12);padding:28px 24px;border-bottom:1px solid #1e1e2a;">
+          <img src="{logo}" alt="Ghawy" width="130" style="display:block;max-width:130px;height:auto;margin:0 auto;">
+        </td></tr>
+        <tr><td style="padding:32px 32px 8px;">
+          <h1 style="color:#ffffff;font-size:22px;font-weight:800;margin:0 0 18px;text-align:right;line-height:1.5;">{heading}</h1>
+          <div style="color:#c7c7d1;font-size:16px;line-height:2;text-align:right;">{paragraphs_html}</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px auto;"><tr>
+            <td align="center" bgcolor="#3f8ff9" style="border-radius:10px;">
+              <a href="{cta_url}" style="display:inline-block;padding:15px 34px;color:#04122b;font-size:16px;font-weight:800;text-decoration:none;">{cta_text}</a>
+            </td></tr></table>
+          {pre_footer_block}
+        </td></tr>
+        <tr><td align="center" style="padding:14px 24px 4px;">
+          <p style="color:#8a8a99;font-size:13px;margin:0 0 12px;">تابعنا على السوشيال ميديا</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+            <td style="padding:0 6px;"><a href="{_SOCIAL_INSTAGRAM}"><img src="{icon('instagram')}" width="40" height="40" alt="Instagram" style="display:block;border-radius:50%;"></a></td>
+            <td style="padding:0 6px;"><a href="{_SOCIAL_TIKTOK}"><img src="{icon('tiktok')}" width="40" height="40" alt="TikTok" style="display:block;border-radius:50%;"></a></td>
+            <td style="padding:0 6px;"><a href="{_SOCIAL_FACEBOOK}"><img src="{icon('facebook')}" width="40" height="40" alt="Facebook" style="display:block;border-radius:50%;"></a></td>
+          </tr></table>
+        </td></tr>
+        <tr><td align="center" style="padding:16px 24px 26px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+            <td align="center" bgcolor="#25D366" style="border-radius:10px;">
+              <a href="{_SOCIAL_WHATSAPP}" style="display:inline-block;padding:13px 26px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">
+                <img src="{icon('whatsapp')}" width="20" height="20" alt="" style="vertical-align:middle;border-radius:50%;margin-left:8px;">تواصل معنا على واتساب
+              </a>
+            </td></tr></table>
+        </td></tr>
+        <tr><td align="center" style="background:#08080e;padding:22px 24px;border-top:1px solid #1e1e2a;">
+          <p style="color:#e5e5ee;font-size:14px;font-weight:700;margin:0 0 6px;">فريق غاوي</p>
+          <p style="color:#5a5a68;font-size:12px;margin:0 0 10px;">© 2026 Ghawy — AI Automation Atlas</p>
+          <p style="margin:0;">
+            <a href="{_LINK_PRIVACY}" style="color:#8a8a99;font-size:12px;text-decoration:none;">سياسة الخصوصية</a>
+            <span style="color:#3a3a48;">&nbsp;·&nbsp;</span>
+            <a href="{_LINK_TERMS}" style="color:#8a8a99;font-size:12px;text-decoration:none;">الشروط والأحكام</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</div>"""
+
+
+def _brand_email_text(*, heading: str, body_paragraphs: list, cta_text: str,
+                      cta_url: str, pre_footer: str = "") -> str:
+    """نسخة نصية بسيطة (plain-text) لنفس المحتوى — لتحسين الوصول والـ deliverability."""
+    lines = [heading, ""]
+    lines += list(body_paragraphs)
+    lines += ["", f"{cta_text}: {cta_url}"]
+    if pre_footer:
+        lines += ["", pre_footer]
+    lines += [
+        "",
+        "— فريق غاوي",
+        f"إنستجرام: {_SOCIAL_INSTAGRAM}",
+        f"تيك توك: {_SOCIAL_TIKTOK}",
+        f"فيسبوك: {_SOCIAL_FACEBOOK}",
+        f"واتساب: {_SOCIAL_WHATSAPP}",
+        "© 2026 Ghawy — AI Automation Atlas",
+    ]
+    return "\n".join(lines)
+
+
+# ─── 1) إيميل: خلّص أول درس ──────────────────────────────
+def send_first_lesson_email(to_email: str, full_name: str, course_id: int) -> None:
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    name = _first_name(full_name)
+    heading = f"عاش جداً يا {name}،"
+    body = [
+        "أنا لسه ظاهر عندي في السيستم إنك خلصت أول درس، ومقدرتش مبعتلكش بنفسي أقولك: عاش يا بطل، البداية دايماً هي أصعب خطوة وأنت كسرتها خلاص.",
+        "ناس كتير بتسجل ولكن مش بتبدأ فعلاً. بس أنت أخدت أكشن وبدأت فعلاً. فدا يدل إنك داخل وعارف إنت عايز إيه، وشغوف بجد وعارف من نفسك ومن شغلك.",
+        "الخطوة اللي جاية هي الأهم. لأن البداية لوحدها عمرها ما كانت كفاية. الاستمرارية هي اللي بتبني الصورة كاملة. الدرس الجاي مستنيك وجاهز، كمل طريقك وإحنا معاك خطوة بخطوة.",
+    ]
+    cta_text = "ادخل على الدرس الثاني الآن"
+    cta_url = f"{frontend_url}/course-detail.html?id={course_id}"
+    pre_footer = f"افتكر دايماً يا {name}، كل خطوة إنت بتاخدها إحنا هنفضل شايفينها، وهنفضل دايماً ندعمك 🙏."
+
+    _send_email(
+        to_email=to_email,
+        subject=f"عاش جداً يا {name}،",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+    )
+
+
+# ─── 2) إيميل: خلّص كورس كامل (الشهادة جاهزة) ────────────
+def send_course_completed_email(to_email: str, full_name: str, course_name: str, course_id: int) -> None:
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    name = _first_name(full_name)
+    heading = f"مبروك يا {name}! شهادتك من غاوي جاهزة 🎓"
+    body = [
+        f"يا أهلاً بيك يا غاوي، أنا عرفت إنك أتممت كورس {course_name} بالكامل في غاوي بنجاح!",
+        "فريق غاوي مش قادر يوصفلك مدى فخره بيك. الوصول للنهاية وتطبيق كل الدروس دي خطوة مبيعملهاش غير شخص \"غاوي\" فعلاً وعايز ينقل حياته وشغله لمكان تاني خالص.",
+        "تتويجاً للمجهود ده، فريق غاوي جهز لك شهادة إتمام الكورس الرسمية الخاصة بيك، ومتاحة دلوقتي للتحميل فوراً. تقدر تحمل شهادتك من هنا:",
+    ]
+    cta_text = "تحميل شهادة الإتمام 🎓"
+    cta_url = f"{frontend_url}/course-detail.html?id={course_id}"
+    pre_footer = "افتكر دايماً.. دي مجرد بداية لرحلة أكبر جوه المجتمع، والكورسات والتحديثات الجاية مستنياك عشان نطور أكتر وأكتر."
+
+    _send_email(
+        to_email=to_email,
+        subject=f"مبروك يا {name}! شهادتك من غاوي جاهزة 🎓",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+    )
+
+
+# ─── 3) إيميل: باقي 5 أيام على انتهاء الاشتراك ───────────
+def send_5day_expiry_email(to_email: str, full_name: str) -> None:
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    name = _first_name(full_name)
+    heading = f"{name}، باقي 5 أيام على انتهاء اشتراكك في غاوي"
+    body = [
+        "حابين نفكرك إن باقي 5 أيام فقط على انتهاء فترة اشتراكك الحالية في غاوي.",
+        "إنت لسه في نص الطريق. ولو الاشتراك خلص، هتفقد الوصول لكل الكورسات الجاية والتقدم اللي وصلتله. الشهر الجديد جوه غاوي محضرين لك فيه كورسات وتحديثات قوية جداً، عشان كده إحنا متحمسين جداً نكمل معاك الرحلة دي ونشوف النقلة اللي هتعملها في شغلك الشهر الجاي.",
+        "لو حابب تراجع بيانات الدفع أو تتحكم في اشتراكك، تقدر تدخل على حسابك فوراً من هنا:",
+    ]
+    cta_text = "إدارة اشتراكي وبيانات الدفع ⚙️"
+    cta_url = f"{frontend_url}/profile-settings.html"
+
+    _send_email(
+        to_email=to_email,
+        subject=f"{name}، باقي 5 أيام على انتهاء اشتراكك في غاوي",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+    )

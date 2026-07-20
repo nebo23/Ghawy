@@ -4,6 +4,51 @@ from fastapi import HTTPException
 from app.models import Lesson, UserProgress, User, Certificate
 from datetime import datetime, timedelta
 import uuid
+import logging
+import threading
+
+logger = logging.getLogger(__name__)
+
+
+def _send_email_bg(fn, *args) -> None:
+    """SMTP بطيء وممكن يجمّد الـ event loop — بنبعت في thread منفصل fire-and-forget.
+    الـ thread بياخد قيم بسيطة بس (مفيش DB session) عشان يفضل thread-safe."""
+    def _run():
+        try:
+            fn(*args)
+        except Exception as exc:
+            logger.warning("Lifecycle email failed: %s", exc)
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _maybe_send_lifecycle_emails(db: Session, user_id: int, course_id: int,
+                                 percentage: int, newly_completed: bool) -> None:
+    """يبعت إيميل 'خلصت أول درس' و/أو 'الشهادة جاهزة' — كل واحد مرة واحدة بس.
+    بنحدّد الـ flag ونعمله commit الأول (ضد التكرار) وبعدين نبعت في الخلفية."""
+    from app.services.email_service import send_first_lesson_email, send_course_completed_email
+    from app.models import Course
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.email:
+        return
+
+    # #1 — أول درس يخلصه المستخدم في حياته (عبر أي كورس)
+    if newly_completed and user.first_lesson_email_sent_at is None:
+        total_done = db.query(UserProgress).filter(UserProgress.user_id == user_id).count()
+        if total_done == 1:
+            user.first_lesson_email_sent_at = datetime.utcnow()
+            db.commit()
+            _send_email_bg(send_first_lesson_email, user.email, user.full_name, course_id)
+
+    # #2 — الكورس وصل 100% (guard على صف الشهادة نفسه = مرة واحدة لكل كورس)
+    if percentage == 100:
+        cert = db.query(Certificate).filter_by(user_id=user_id, course_id=course_id).first()
+        if cert and cert.completion_email_sent_at is None:
+            cert.completion_email_sent_at = datetime.utcnow()
+            db.commit()
+            course = db.query(Course).filter(Course.id == course_id).first()
+            course_name = (course.title if course else None) or "الكورس"
+            _send_email_bg(send_course_completed_email, user.email, user.full_name, course_name, course_id)
 
 
 def calculate_video_streak(user_id: int, db: Session) -> int:
@@ -86,7 +131,8 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
         course_id=course_id
     ).first()
 
-    if not existing:
+    newly_completed = not existing
+    if newly_completed:
         progress = UserProgress(
             user_id=user_id,
             lesson_id=lesson_id,
@@ -108,6 +154,12 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
     if percentage == 100:
         cert = issue_certificate(user_id, course_id, db)
         certificate_url = cert.certificate_id
+
+    # 2b. Automated lifecycle emails — never let a mail issue break completion
+    try:
+        _maybe_send_lifecycle_emails(db, user_id, course_id, percentage, newly_completed)
+    except Exception:
+        logger.exception("Lifecycle email trigger failed for user=%s course=%s", user_id, course_id)
 
     # 3. Return formatting required by Frontend JS
     return {

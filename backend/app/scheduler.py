@@ -120,6 +120,61 @@ async def check_expiring_subscriptions():
         logger.error("💥 Renewal reminder error: %s", e)
 
 
+# ─── 5-Day Expiry Reminder (exactly 5 days before expiry) ──
+def _send_5day_expiry_reminders() -> None:
+    """Sync body — runs in a thread (DB + SMTP).
+    بيبعت إيميل 'باقي 5 أيام' مرة واحدة لكل فترة اشتراك. الـ guard
+    (expiry5_email_sent_for == end_at) بيمنع التكرار ويتصفّر تلقائياً مع
+    التجديد لأن end_at بيتغير."""
+    from app.services.email_service import send_5day_expiry_email
+
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        # نافذة "باقي 5 أيام": ينتهي بعد 4 لـ 5 أيام من دلوقتي
+        window_lo = now + timedelta(days=4)
+        window_hi = now + timedelta(days=5)
+
+        candidates = db.query(User).filter(
+            User.is_active == True,
+            User.end_at.isnot(None),
+            User.end_at > window_lo,
+            User.end_at <= window_hi,
+            User.email.isnot(None),
+        ).all()
+
+        logger.info("📧 Found %s subscriptions ~5 days from expiry", len(candidates))
+        sent = 0
+        for user in candidates:
+            # متبعتش تاني لنفس فترة الاشتراك (نفس end_at)
+            if (user.expiry5_email_sent_for is not None and user.end_at is not None
+                    and abs((user.expiry5_email_sent_for - user.end_at).total_seconds()) < 60):
+                continue
+            try:
+                send_5day_expiry_email(user.email, user.full_name)
+                user.expiry5_email_sent_for = user.end_at
+                db.commit()  # commit لكل واحد عشان لو حصل crash ميتبعتش تاني
+                sent += 1
+                time.sleep(0.5)  # مهلة صغيرة بين الإيميلات عشان Gmail
+            except Exception as e:
+                db.rollback()
+                logger.error("❌ 5-day expiry email failed for %s: %s", user.email, e)
+
+        logger.info("📧 5-day expiry done: sent %s/%s", sent, len(candidates))
+    finally:
+        db.close()
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=15, id="expiry_5day_reminder")
+async def check_5day_expiry():
+    """بيدور يومياً على اللي باقي على اشتراكهم 5 أيام ويبعتلهم تنبيه — مرة واحدة."""
+    logger.info("📧 Scheduler: Checking for 5-day expiry reminders...")
+    try:
+        await asyncio.to_thread(_send_5day_expiry_reminders)
+    except Exception as e:
+        logger.error("💥 5-day expiry reminder error: %s", e)
+
+
 # ─── Winback Email (registered but never activated, 24h+) ──
 # اللي اتعمل قبل الحد ده عمره ما هيوصله الإيميل (قرار الإطلاق: آخر 5 أيام بس)
 WINBACK_MIN_CREATED_AT = datetime(2026, 7, 3)

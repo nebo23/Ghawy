@@ -101,6 +101,8 @@ class User(Base):
     subscription_source = Column(String(64), nullable=True)
     custom_title = Column(String(120), nullable=True)
     winback_email_sent_at = Column(DateTime, nullable=True)  # إيميل "ليه وقفت؟" — يتبعت مرة واحدة بس
+    first_lesson_email_sent_at = Column(DateTime, nullable=True)  # إيميل "خلصت أول درس" — مرة واحدة بس
+    expiry5_email_sent_for = Column(DateTime, nullable=True)  # آخر end_at اتبعتله تنبيه الـ 5 أيام (يتصفّر مع التجديد)
 
     @property
     def is_online(self) -> bool:
@@ -443,6 +445,7 @@ class Certificate(Base):
     course_id = Column(Integer, ForeignKey("courses.id"))
     certificate_id = Column(String, unique=True)  # GHAWY-2026-XXXXXX
     issued_at = Column(DateTime, default=datetime.utcnow)
+    completion_email_sent_at = Column(DateTime, nullable=True)  # إيميل "شهادتك جاهزة" — مرة واحدة لكل كورس
     __table_args__ = (UniqueConstraint("user_id", "course_id"),)
 
 
