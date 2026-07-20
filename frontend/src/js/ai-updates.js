@@ -291,11 +291,11 @@ function createPostElement(post) {
     let bodyBlock;
     if (needsExpand) {
         const excerpt = plain.slice(0, EXCERPT_LEN).trim() + '…';
-        bodyBlock = `<div class="ai-post-excerpt" dir="auto">${linkifyHtml(excerpt)}</div>`;
-        bodyBlock += `<div class="ai-post-full" dir="auto" style="display:none;">${renderRich(body)}</div>`;
+        bodyBlock = `<div class="ai-post-excerpt" dir="${window.bidiDir ? window.bidiDir(excerpt) : 'auto'}">${linkifyHtml(excerpt)}</div>`;
+        bodyBlock += `<div class="ai-post-full" dir="${window.bidiDir ? window.bidiDir(body) : 'auto'}" style="display:none;">${renderRich(body)}</div>`;
         bodyBlock += `<button class="read-more-btn" onclick="toggleReadMore(${post.id}, this)">Read More <i data-lucide="chevron-down"></i></button>`;
     } else {
-        bodyBlock = `<div class="ai-post-excerpt" dir="auto">${renderRich(body)}</div>`;
+        bodyBlock = `<div class="ai-post-excerpt" dir="${window.bidiDir ? window.bidiDir(body) : 'auto'}">${renderRich(body)}</div>`;
     }
 
     // Media (photo/video) rendered inline in the body, always visible
@@ -329,7 +329,7 @@ function createPostElement(post) {
                         <div class="ai-post-time">${post.time_ago}</div>
                     </div>
                 </div>
-                <div class="ai-post-title" dir="auto">${escapeHtml(post.title)}</div>
+                <div class="ai-post-title" dir="${window.bidiDir ? window.bidiDir(post.title) : 'auto'}">${escapeHtml(post.title)}</div>
                 ${bodyBlock}
                 ${mediaHtml}
                 ${pollHtml}
@@ -497,7 +497,7 @@ function renderMostPopular(list) {
         <div class="rail-item rank" onclick="goToPost(${p.id})">
             <span class="rail-rank">${i + 1}</span>
             <div class="rail-item-body">
-                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-title" dir="${window.bidiDir ? window.bidiDir(p.title) : 'auto'}">${escapeHtml(p.title)}</div>
                 <div class="rail-item-sub"><span style="color:${meta.color}">${meta.label}</span></div>
             </div>
             <span class="rail-item-metric"><i data-lucide="flame"></i> ${p.engagement}</span>
@@ -513,7 +513,7 @@ function renderNewTools(list) {
         <div class="rail-item" onclick="goToPost(${p.id})">
             <span class="rail-dot" style="background:${catMeta('tools').color}"></span>
             <div class="rail-item-body">
-                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-title" dir="${window.bidiDir ? window.bidiDir(p.title) : 'auto'}">${escapeHtml(p.title)}</div>
                 <div class="rail-item-sub">${p.time_ago}</div>
             </div>
             <span class="rail-new-badge">NEW</span>
@@ -535,7 +535,7 @@ function renderWhatsNew(list) {
         <div class="rail-item" onclick="goToPost(${p.id})">
             ${icon}
             <div class="rail-item-body">
-                <div class="rail-item-title" dir="auto">${escapeHtml(p.title)}</div>
+                <div class="rail-item-title" dir="${window.bidiDir ? window.bidiDir(p.title) : 'auto'}">${escapeHtml(p.title)}</div>
                 <div class="rail-item-sub">${p.time_ago}</div>
             </div>
         </div>`;
@@ -551,7 +551,7 @@ function renderContributors(list) {
             <span class="rail-rank ${i === 0 ? 'gold' : ''}">${i + 1}</span>
             <img src="${getAvatarSrc(u)}" class="rail-avatar" alt="">
             <div class="rail-item-body">
-                <div class="rail-item-title" dir="auto">${escapeHtml(u.full_name)}</div>
+                <div class="rail-item-title" dir="${window.bidiDir ? window.bidiDir(u.full_name) : 'auto'}">${escapeHtml(u.full_name)}</div>
                 <div class="rail-item-sub">${escapeHtml(getRoleLabel(u))}</div>
             </div>
             <span class="rail-points">${u.points} pts</span>
@@ -577,7 +577,7 @@ function renderPollHtml(poll) {
             const src = o.image_url.startsWith('http') ? o.image_url : API + o.image_url;
             return `<div class="poll-media-item">
                 <img src="${escapeHtml(src)}" alt="" loading="lazy" onclick="openLightbox(this.src)">
-                <div class="poll-media-cap" dir="auto">${escapeHtml(o.text)}</div>
+                <div class="poll-media-cap" dir="${window.bidiDir ? window.bidiDir(o.text) : 'auto'}">${escapeHtml(o.text)}</div>
             </div>`;
         }).join('') + `</div>`;
     }
@@ -586,7 +586,7 @@ function renderPollHtml(poll) {
         <div class="ai-poll-wrap" id="poll-wrap-${poll.id}">
         ${galleryHtml}
         <div class="ai-poll-container" id="poll-${poll.id}">
-            <div class="ai-poll-question" dir="auto">${escapeHtml(poll.question)}</div>
+            <div class="ai-poll-question" dir="${window.bidiDir ? window.bidiDir(poll.question) : 'auto'}">${escapeHtml(poll.question)}</div>
     `;
 
     poll.options.forEach(opt => {
@@ -601,7 +601,7 @@ function renderPollHtml(poll) {
                     <div class="poll-progress" style="width: ${opt.percentage}%"></div>
                     <div style="display:flex; align-items:center; gap:12px; position:relative; z-index:1;">
                         ${customIcon}
-                        <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
+                        <span class="poll-option-text" dir="${window.bidiDir ? window.bidiDir(opt.text) : 'auto'}">${escapeHtml(opt.text)}</span>
                     </div>
                     <span class="poll-option-pct">${opt.percentage}%</span>
                 </div>
@@ -611,7 +611,7 @@ function renderPollHtml(poll) {
                 <label class="ai-poll-option unvoted">
                     <input type="radio" name="poll-${poll.id}" value="${opt.id}" onchange="submitVote(${poll.id}, ${opt.id})">
                     <span class="radio-custom"></span>
-                    <span class="poll-option-text" dir="auto">${escapeHtml(opt.text)}</span>
+                    <span class="poll-option-text" dir="${window.bidiDir ? window.bidiDir(opt.text) : 'auto'}">${escapeHtml(opt.text)}</span>
                 </label>
             `;
         }
@@ -764,7 +764,7 @@ function createCommentElement(comment, isReply = false) {
                     <span class="ai-comment-author">${comment.author?.full_name || 'User'}</span>
                     <span class="ai-comment-time">${comment.time_ago}</span>
                 </div>
-                <div class="ai-comment-body" dir="auto">${linkifyHtml(comment.body)}</div>
+                <div class="ai-comment-body" dir="${window.bidiDir ? window.bidiDir(comment.body) : 'auto'}">${linkifyHtml(comment.body)}</div>
             </div>
             <div class="ai-comment-actions">
                 ${actionsHtml}

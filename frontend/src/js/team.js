@@ -227,9 +227,9 @@ async function loadUsers() {
     }
     if (!res.ok) { showToast('❌ Failed to load users', 'error'); return; }
     allUsers = await res.json();
-    filteredUsers = [...allUsers];
     updateStats();
-    renderTable();
+    updateExpiringCount();
+    applyAllFilters();
   } catch (e) {
     showToast('❌ Failed to load users', 'error');
   }
@@ -282,6 +282,7 @@ function renderTable() {
             <div class="member-name">${escapeHtml(user.full_name)}</div>
             <div class="member-badge">${escapeHtml(getRoleLabel(user))}</div>
             <div class="member-id" style="font-size:11px;color:#888;font-weight:600;margin-top:2px;">🆔 ID: ${user.id}</div>
+            ${isUnpaidActive(user) ? '<span class="np-tag" title="Active without a recorded payment — غير دافع">Not paid</span>' : ''}
           </div>
         </div>
       </td>
@@ -353,33 +354,211 @@ function renderTable() {
   setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
 }
 
-// ── Search & Filter ──────────────────────────────────
+// ── Search, Filter & Sort ─────────────────────────────
+// All filters combine with AND logic; sorting keeps registration order accurate
+// and uses paid-status only as a tie-breaker (a not-actually-paid member never
+// outranks a paying one when the primary sort key is equal).
+const EXPIRING_SOON_DAYS = 7;
+
+const filterState = {
+  search: '',
+  status: 'all',        // all | active | inactive
+  package: 'all',       // all | monthly | quarterly | yearly | legacy | none
+  sort: 'reg_new',      // reg_new | reg_old | exp_near | exp_far | bday_near | age_old | age_young
+  dateRange: 'all',     // 24h | 7d | 14d | 30d | 60d | 90d | all | custom
+  customFrom: null,
+  customTo: null,
+  expiringSoon: false,
+};
+
+// Map a member's latest confirmed plan_key (+ legacy source) to a package bucket.
+function packageBucket(u) {
+  const pk = (u.plan_key || '').toLowerCase();
+  if (pk.startsWith('monthly')) return 'monthly';
+  if (pk.startsWith('quarterly')) return 'quarterly';
+  if (pk.startsWith('yearly')) return 'yearly';
+  if (u.subscription_source === 'legacy_promo') return 'legacy';
+  return 'none';
+}
+
+// Whole-day difference from now to a UTC timestamp (negative = already passed).
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const d = toEgyptDate(dateStr);
+  if (isNaN(d)) return null;
+  return Math.floor((d.getTime() - Date.now()) / 86400000);
+}
+
+function isExpiringSoon(u) {
+  const dd = daysUntil(u.end_at);
+  return dd !== null && dd >= 0 && dd <= EXPIRING_SOON_DAYS;
+}
+
+// Active member with neither a confirmed payment nor a subscription source —
+// i.e. activated manually by an admin, not an actual paying/legacy subscriber.
+function isUnpaidActive(u) {
+  return !!u.is_active && !u.has_paid && !u.subscription_source;
+}
+
+// Days until the member's next birthday (same month/day next occurrence).
+function daysToBirthday(dateStr) {
+  if (!dateStr) return Infinity;
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return Infinity;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let next = new Date(now.getFullYear(), d.getMonth(), d.getDate());
+  if (next < today) next = new Date(now.getFullYear() + 1, d.getMonth(), d.getDate());
+  return Math.round((next - today) / 86400000);
+}
+
+function withinDateRange(u) {
+  if (filterState.dateRange === 'all') return true;
+  const created = u.created_at ? toEgyptDate(u.created_at) : null;
+  if (!created || isNaN(created)) return false;
+  if (filterState.dateRange === 'custom') {
+    if (filterState.customFrom) {
+      const f = new Date(filterState.customFrom + 'T00:00:00');
+      if (created < f) return false;
+    }
+    if (filterState.customTo) {
+      const t = new Date(filterState.customTo + 'T23:59:59');
+      if (created > t) return false;
+    }
+    return true;
+  }
+  const days = { '24h': 1, '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90 }[filterState.dateRange];
+  if (!days) return true;
+  return created.getTime() >= Date.now() - days * 86400000;
+}
+
+function ts(dateStr) {
+  if (!dateStr) return null;
+  const d = toEgyptDate(dateStr);
+  return isNaN(d) ? null : d.getTime();
+}
+function birthTs(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  return isNaN(d) ? null : d.getTime();
+}
+
+function sortUsers(arr) {
+  const paidRank = u => (u.has_paid ? 1 : 0);
+  // Ascending with nulls always last.
+  const ascNullsLast = (a, b) => {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return a - b;
+  };
+  let cmp;
+  switch (filterState.sort) {
+    case 'reg_old':
+      cmp = (a, b) => ascNullsLast(ts(a.created_at), ts(b.created_at)); break;
+    case 'exp_near':
+      cmp = (a, b) => ascNullsLast(ts(a.end_at), ts(b.end_at)); break;
+    case 'exp_far':
+      cmp = (a, b) => ascNullsLast(ts(b.end_at), ts(a.end_at)); break;
+    case 'bday_near':
+      cmp = (a, b) => daysToBirthday(a.birth_date) - daysToBirthday(b.birth_date); break;
+    case 'age_old':   // oldest = earliest birth date first
+      cmp = (a, b) => ascNullsLast(birthTs(a.birth_date), birthTs(b.birth_date)); break;
+    case 'age_young': // youngest = latest birth date first
+      cmp = (a, b) => ascNullsLast(birthTs(b.birth_date), birthTs(a.birth_date)); break;
+    case 'reg_new':
+    default:
+      cmp = (a, b) => ascNullsLast(ts(b.created_at), ts(a.created_at)); break;
+  }
+  return arr.sort((a, b) => {
+    const primary = cmp(a, b);
+    if (primary !== 0) return primary;
+    return paidRank(b) - paidRank(a); // tie-breaker: paid first
+  });
+}
+
 let searchTimeout;
 function handleSearch(val) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    applyFilters(val, document.getElementById('status-filter').value);
+    filterState.search = val;
+    applyAllFilters();
   }, 300);
 }
 
 function handleFilter(status) {
-  applyFilters(document.getElementById('search-input').value, status);
+  filterState.status = status;
+  applyAllFilters();
 }
 
-function applyFilters(search, status) {
-  filteredUsers = allUsers.filter(u => {
+function setPackageFilter(pkg) {
+  filterState.package = pkg;
+  applyAllFilters();
+}
+
+function setSortFilter(sort) {
+  filterState.sort = sort;
+  applyAllFilters();
+}
+
+function setDateRange(range) {
+  filterState.dateRange = range;
+  if (range !== 'custom') {
+    filterState.customFrom = null;
+    filterState.customTo = null;
+    const df = document.getElementById('date-from'); if (df) df.value = '';
+    const dt = document.getElementById('date-to'); if (dt) dt.value = '';
+  }
+  document.querySelectorAll('#team-quickdates .qd-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.range === range));
+  applyAllFilters();
+}
+
+function applyCustomRange() {
+  const from = document.getElementById('date-from').value || null;
+  const to = document.getElementById('date-to').value || null;
+  if (!from && !to) { setDateRange('all'); return; }
+  filterState.dateRange = 'custom';
+  filterState.customFrom = from;
+  filterState.customTo = to;
+  document.querySelectorAll('#team-quickdates .qd-btn').forEach(b => b.classList.remove('active'));
+  applyAllFilters();
+}
+
+function toggleExpiringSoon() {
+  filterState.expiringSoon = !filterState.expiringSoon;
+  const btn = document.getElementById('expiring-toggle');
+  if (btn) btn.classList.toggle('active', filterState.expiringSoon);
+  applyAllFilters();
+}
+
+function updateExpiringCount() {
+  const el = document.getElementById('expiring-count');
+  if (el) el.textContent = allUsers.filter(isExpiringSoon).length;
+}
+
+function applyAllFilters() {
+  const search = (filterState.search || '').toLowerCase();
+  const matched = allUsers.filter(u => {
     const matchSearch = !search ||
-      u.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      (u.email && u.email.toLowerCase().includes(search.toLowerCase())) ||
-      (u.phone && u.phone.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus = status === 'all' ||
-      (status === 'active' && u.is_active) ||
-      (status === 'inactive' && !u.is_active);
-    return matchSearch && matchStatus;
+      (u.full_name && u.full_name.toLowerCase().includes(search)) ||
+      (u.email && u.email.toLowerCase().includes(search)) ||
+      (u.phone && u.phone.toLowerCase().includes(search));
+    const matchStatus = filterState.status === 'all' ||
+      (filterState.status === 'active' && u.is_active) ||
+      (filterState.status === 'inactive' && !u.is_active);
+    const matchPackage = filterState.package === 'all' || packageBucket(u) === filterState.package;
+    const matchExpiring = !filterState.expiringSoon || isExpiringSoon(u);
+    const matchDate = withinDateRange(u);
+    return matchSearch && matchStatus && matchPackage && matchExpiring && matchDate;
   });
+  filteredUsers = sortUsers(matched);
   currentPage = 1;
   renderTable();
 }
+
+// Back-compat: some callers still invoke applyFilters directly.
+function applyFilters() { applyAllFilters(); }
 
 // ── Toggle Active ────────────────────────────────────
 async function toggleActive(userId, checkbox) {

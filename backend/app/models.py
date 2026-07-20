@@ -317,6 +317,7 @@ class Message(Base):
     reply_to_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
     read_count = Column(Integer, server_default=text('0'), default=0)
     is_deleted = Column(Boolean, server_default=text('false'), default=False)
+    edited_at = Column(DateTime, nullable=True)  # set when the sender edits the message
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     channel = relationship("Channel", back_populates="messages")

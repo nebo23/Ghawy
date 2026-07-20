@@ -16,6 +16,41 @@ window.escapeHtml = function(unsafe) {
         .replace(/'/g, "&#039;");
 };
 
+// 🔤 Base paragraph direction for a piece of user text.
+// `dir="auto"` uses the FIRST strong character, which mis-detects an Arabic
+// message that happens to start with an English word/number/emoji (e.g.
+// "GPT-4 هو أحسن موديل") and flips the whole line to LTR. We instead force RTL
+// whenever the text contains any Arabic letter — the Unicode bidi algorithm
+// then keeps inline English/number runs LTR without breaking the line.
+window.bidiDir = function(text) {
+  // Arabic + Supplement + Extended-A + Presentation Forms A/B
+  return /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(text || '')
+    ? 'rtl' : 'ltr';
+};
+
+// 🔗 Shared URL matcher + inline linkifier for chat/DM message bodies.
+window.CHAT_URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+
+// Turn one already-escaped URL match into a clickable link (new tab, LTR).
+function chatUrlAnchor(escapedUrl) {
+  let url = escapedUrl;
+  let trail = '';
+  const t = url.match(/[.,!?;:)\]}'"]+$/);   // keep trailing punctuation out of the link
+  if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+  const href = url.startsWith('www.') ? 'https://' + url : url;
+  return `<a href="${href}" target="_blank" rel="noopener noreferrer" dir="ltr" class="msg-link">${url}</a>${trail}`;
+}
+
+// Full render pipeline for a chat/DM text body:
+//   escape (XSS-safe) → linkify URLs → highlight @admin mentions on the text runs.
+// URLs and mentions are handled on separate segments so neither corrupts the other.
+window.formatChatText = function(rawContent) {
+  const escaped = window.escapeHtml(rawContent || '');
+  const parts = escaped.split(window.CHAT_URL_RE);   // capture group keeps URLs at odd indices
+  const fmtMentions = window.formatAdminMentions || ((s) => s);
+  return parts.map((part, i) => i % 2 === 1 ? chatUrlAnchor(part) : fmtMentions(part)).join('');
+};
+
 function showAlert(msg, type) {
   const el = document.getElementById('alert');
   if (el) {

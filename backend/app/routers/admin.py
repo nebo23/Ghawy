@@ -103,7 +103,27 @@ def list_users(
     # Build response list (return ALL matching users — client does pagination)
     from datetime import datetime
     now = datetime.utcnow()
-    
+
+    # ── Batch-load confirmed payments (paid status + package) in one query ──
+    # A member "actually paid" iff they have a CONFIRMED payment (covers both
+    # Kashier and approved manual payments, which both write a CONFIRMED row).
+    # We keep the latest confirmed plan_key as the member's current package.
+    paid_map = {}  # user_id -> latest plan_key (or None)
+    user_ids = [u.id for u in users]
+    if user_ids:
+        pay_rows = (
+            db.query(Payment.user_id, Payment.plan_key, Payment.confirmed_at, Payment.created_at)
+            .filter(Payment.user_id.in_(user_ids), Payment.status == PaymentStatus.CONFIRMED)
+            .all()
+        )
+        # Pick the most recent confirmed payment per user (by confirmed_at, then created_at)
+        best_ts = {}
+        for uid, plan_key, confirmed_at, created_at in pay_rows:
+            ts = confirmed_at or created_at or datetime.min
+            if uid not in best_ts or ts >= best_ts[uid]:
+                best_ts[uid] = ts
+                paid_map[uid] = plan_key
+
     result = []
     for u in users:
         result.append({
@@ -127,6 +147,10 @@ def list_users(
             "social_media_url": u.social_media_url if viewer_is_owner else None,
             "is_owner": getattr(u, 'is_owner', False),
             "winback_sent_at": u.winback_email_sent_at.isoformat() if u.winback_email_sent_at else None,
+            # Subscription/package fields for Team Dashboard filtering & sorting
+            "has_paid": u.id in paid_map,
+            "plan_key": paid_map.get(u.id),
+            "subscription_source": u.subscription_source,
         })
 
     return result

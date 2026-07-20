@@ -136,6 +136,7 @@ def get_messages_simple(
             "file_name": msg.file_name,
             "file_size": msg.file_size,
             "created_at": msg.created_at.isoformat() if msg.created_at else None,
+            "edited_at": msg.edited_at.isoformat() if msg.edited_at else None,
             "author_name": sender.full_name if sender else "Unknown",
             "author_avatar_url": sender.avatar_url if sender else None,
             "author_badge": sender.badge if sender else "Member",
@@ -324,6 +325,60 @@ async def delete_message(
     })
     
     return {"message": "Message deleted"}
+
+
+# ─── PUT /chat/messages/{message_id} — edit own message ──────
+class EditMessageRequest(BaseModel):
+    content: str
+
+
+@router.put("/messages/{message_id}")
+async def edit_message(
+    message_id: int,
+    data: EditMessageRequest,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """Edit the text of one's own message. Reactions and read receipts live in
+    separate tables and are intentionally left untouched, so an edit preserves
+    both. Only the original sender may edit (admins cannot edit others')."""
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg or msg.is_deleted:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    if msg.sender_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own messages")
+
+    # Only text messages are editable (image/voice/file bodies aren't text-editable here)
+    if msg.message_type and msg.message_type != MessageType.TEXT:
+        raise HTTPException(status_code=400, detail="Only text messages can be edited")
+
+    new_content = (data.content or "").strip()
+    if not new_content:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    msg.content = new_content
+    msg.edited_at = datetime.utcnow()
+    channel_id = msg.channel_id
+    db.commit()
+    db.refresh(msg)
+
+    from app.services.ws_manager import manager
+    await manager.broadcast_to_channel(channel_id, {
+        "event": "message_edited",
+        "data": {
+            "message_id": msg.id,
+            "channel_id": channel_id,
+            "content": msg.content,
+            "edited_at": msg.edited_at.isoformat() if msg.edited_at else None,
+        }
+    })
+
+    return {
+        "id": msg.id,
+        "content": msg.content,
+        "edited_at": msg.edited_at.isoformat() if msg.edited_at else None,
+    }
 
 
 class MarkReadRequest(BaseModel):

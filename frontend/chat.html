@@ -270,6 +270,62 @@
             word-wrap: break-word
         }
 
+        .msg-txt a.msg-link {
+            color: #4ea1ff;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
+        /* Faint "edited" marker next to the timestamp (WhatsApp-style) */
+        .msg-edited {
+            font-size: .7rem;
+            color: var(--text-muted);
+            opacity: .7;
+            font-style: italic;
+            margin-inline-start: 2px;
+        }
+
+        /* Inline edit box */
+        .msg-edit-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 220px;
+        }
+        .msg-edit-box {
+            width: 100%;
+            resize: none;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-primary, #fff);
+            background: var(--bg-input, #1a1a1a);
+            border: 1px solid rgba(193, 255, 17, 0.35);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-family: inherit;
+            outline: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .msg-edit-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .msg-edit-actions button {
+            border: none;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+        }
+        .msg-edit-save { background: rgba(193, 255, 17, 0.15); color: var(--gold, #c1ff11); }
+        .msg-edit-cancel { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); }
+
         .msg-read {
             font-size: .75rem;
             color: var(--text-muted);
@@ -1522,7 +1578,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1783960000"></script>
+    <script src="src/js/utils.js?v=1784577600"></script>
 
     <style>
         /* Custom Modal */
@@ -2848,6 +2904,8 @@
         // Normalize emoji before sending (strip variation selector U+FE0F for backend match)
         const normalizeEmoji = (e) => e.replace(/\ufe0f/g, '');
         const messageReactionsCache = {};
+        // Per-message edit state: { prefix: reply-prefix, text: editable body }
+        const msgEditCache = {};
 
         // ── File attachment rendering (download card for non-image files) ──
         function formatFileSize(bytes) {
@@ -3067,6 +3125,8 @@
                     } else if (msg.event === 'message_deleted') {
                         const el = document.getElementById(`msg-${msg.data.message_id}`);
                         if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }
+                    } else if (msg.event === 'message_edited') {
+                        applyMessageEdit(msg.data.message_id, msg.data.content, msg.data.edited_at);
                     } else if (msg.event === 'ping') {
                         // 🏓 Keepalive — respond so server knows we're alive
                         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -3686,18 +3746,28 @@
             let contentInnerHtml = '';
             const msgType = m.message_type || 'text';
 
-            const safeContent = actualContent ? (window.formatAdminMentions ? window.formatAdminMentions(escHtml(actualContent)) : escHtml(actualContent)) : '';
+            // Escape → linkify URLs → highlight @mentions (shared pipeline in utils.js)
+            const safeContent = actualContent
+                ? (window.formatChatText ? window.formatChatText(actualContent)
+                    : (window.formatAdminMentions ? window.formatAdminMentions(escHtml(actualContent)) : escHtml(actualContent)))
+                : '';
+            // Base paragraph direction: RTL for Arabic content (fixes first-strong bug),
+            // inline English/number runs stay LTR via the browser's bidi algorithm.
+            const txtDir = window.bidiDir ? window.bidiDir(actualContent) : 'auto';
+            // Remember reply prefix + editable body so an edit can preserve the reply.
+            msgEditCache[m.id] = { prefix: replyMatch ? replyMatch[0] : '', text: actualContent };
+            const txtDiv = `<div class="msg-txt" id="msg-txt-${m.id}" dir="${txtDir}">${safeContent}</div>`;
 
             if (msgType === 'image' && m.file_url) {
                 contentInnerHtml = `<img class="msg-image" loading="lazy" decoding="async" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
-                if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${safeContent}</div>`;
+                if (actualContent) contentInnerHtml += txtDiv;
             } else if (msgType === 'voice' && m.file_url) {
                 contentInnerHtml = renderVoicePlayer(m.file_url, m.id);
             } else if (msgType === 'file' && m.file_url) {
                 contentInnerHtml = renderFileAttachment(m.file_url, m.file_name, m.file_size);
-                if (actualContent) contentInnerHtml += `<div class="msg-txt" dir="auto">${safeContent}</div>`;
+                if (actualContent) contentInnerHtml += txtDiv;
             } else {
-                contentInnerHtml = `<div class="msg-txt" dir="auto">${safeContent}</div>`;
+                contentInnerHtml = txtDiv;
             }
             const contentHtml = `<div class="msg-content-bubble">${contentInnerHtml}</div>`;
             const reactionsHtml = renderMessageReactions(m.id, m.reactions_summary || []);
@@ -3713,6 +3783,8 @@
             // Delete button (for own messages or if current user is admin)
             const canDelete = isOwn || currentUserIsAdmin;
             const deleteBtn = canDelete ? `<button class="msg-action-btn" title="Delete" onclick="deleteMessage(${m.id})"><i class="fa-solid fa-trash"></i></button>` : '';
+            // Edit button — only the sender can edit, and only text messages
+            const editBtn = (isOwn && msgType === 'text') ? `<button class="msg-action-btn" title="Edit" onclick="startEditMessage(${m.id})"><i class="fa-solid fa-pen"></i></button>` : '';
 
             const onlineClass = m.is_online ? 'online' : '';
             const msgClass = isOwn ? 'msg msg-own' : 'msg msg-observe-target';
@@ -3725,6 +3797,7 @@
                     ${renderMessageReactionPopover(m.id)}
                     <button class="msg-action-btn" title="React" onclick="toggleReactionBar(${m.id})"><i class="fa-regular fa-face-smile"></i></button>
                     <button class="msg-action-btn" title="Reply" onclick="replyToMsg(${m.id}, '${escHtml(m.author_name).replace(/'/g, "\\'")}', '${m.author_avatar_url || ''}', '${rawText}')"><i class="fa-solid fa-reply"></i></button>
+                    ${editBtn}
                     ${deleteBtn}
                 </div>
             `;
@@ -3739,6 +3812,7 @@
                         <span class="msg-name msg-author-clickable" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})">${escHtml(m.author_name || 'Unknown')}</span>
                         ${badgeHtml}
                         <span class="msg-ts">${formatTime(m.created_at)}</span>
+                        <span class="msg-edited" id="msg-edited-${m.id}" title="Edited"${m.edited_at ? '' : ' style="display:none"'}>edited</span>
                     </div>
                     <div class="msg-content-row">
                         ${contentHtml}
@@ -3918,6 +3992,103 @@
                 modal.style.display = 'none';
                 msgToDelete = null;
             }, 200);
+        }
+
+        // ── Edit message (inline, WhatsApp-style) ──
+        function autoGrowEdit(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'; }
+
+        function startEditMessage(id) {
+            const txtEl = document.getElementById(`msg-txt-${id}`);
+            if (!txtEl) return;
+            if (txtEl.querySelector('.msg-edit-box')) { txtEl.querySelector('.msg-edit-box').focus(); return; }
+            const cache = msgEditCache[id] || { prefix: '', text: '' };
+            const original = cache.text || '';
+            txtEl.dataset.editing = '1';
+            txtEl.innerHTML = `
+                <div class="msg-edit-wrap">
+                    <textarea class="msg-edit-box" dir="${window.bidiDir ? window.bidiDir(original) : 'auto'}"
+                        oninput="this.setAttribute('dir', (window.bidiDir?window.bidiDir(this.value):'auto')); autoGrowEdit(this);"
+                        onkeydown="handleEditKeydown(event, ${id})"></textarea>
+                    <div class="msg-edit-actions">
+                        <button class="msg-edit-cancel" onclick="cancelEditMessage(${id})" title="Cancel (Esc)"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="msg-edit-save" onclick="saveEditMessage(${id})" title="Save (Enter)"><i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>`;
+            const ta = txtEl.querySelector('.msg-edit-box');
+            ta.value = original;
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+            autoGrowEdit(ta);
+        }
+
+        function handleEditKeydown(e, id) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEditMessage(id); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancelEditMessage(id); }
+        }
+
+        function cancelEditMessage(id) {
+            const cache = msgEditCache[id] || { text: '' };
+            renderEditedText(id, cache.text || '');
+        }
+
+        async function saveEditMessage(id) {
+            const txtEl = document.getElementById(`msg-txt-${id}`);
+            if (!txtEl) return;
+            const ta = txtEl.querySelector('.msg-edit-box');
+            if (!ta) return;
+            const newText = ta.value.trim();
+            const cache = msgEditCache[id] || { prefix: '', text: '' };
+            if (!newText) { notifyToast('Message cannot be empty', 'error'); return; }
+            if (newText === (cache.text || '')) { cancelEditMessage(id); return; }
+            const fullContent = (cache.prefix || '') + newText;
+            ta.disabled = true;
+            try {
+                const res = await apiFetch(`/chat/messages/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ content: fullContent })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    notifyToast('Failed to edit: ' + (err.detail || 'Unknown error'), 'error');
+                    ta.disabled = false;
+                    return;
+                }
+                cache.text = newText;
+                msgEditCache[id] = cache;
+                renderEditedText(id, newText);
+                const badge = document.getElementById(`msg-edited-${id}`);
+                if (badge) badge.style.display = '';
+            } catch (e) {
+                notifyToast('Network error while editing', 'error');
+                ta.disabled = false;
+            }
+        }
+
+        // Apply an edit that arrived over WS (raw content may include a reply prefix).
+        function applyMessageEdit(id, rawContent, editedAt) {
+            const txtEl = document.getElementById(`msg-txt-${id}`);
+            if (!txtEl) return;  // message not on screen — ignore
+            let text = rawContent || '';
+            const rm = text.match(/^\[REPLY\|(\d+)\|([^\|]+)\|([^\]]*)\]/);
+            const prefix = rm ? rm[0] : '';
+            if (rm) text = text.substring(rm[0].length);
+            const cache = msgEditCache[id] || {};
+            cache.prefix = prefix; cache.text = text;
+            msgEditCache[id] = cache;
+            renderEditedText(id, text);
+            const badge = document.getElementById(`msg-edited-${id}`);
+            if (badge) badge.style.display = '';
+        }
+
+        // Re-render just the message body — reactions and read receipts are separate
+        // DOM nodes and are intentionally left untouched.
+        function renderEditedText(id, text) {
+            const txtEl = document.getElementById(`msg-txt-${id}`);
+            if (!txtEl) return;
+            delete txtEl.dataset.editing;
+            txtEl.setAttribute('dir', window.bidiDir ? window.bidiDir(text) : 'auto');
+            txtEl.innerHTML = window.formatChatText ? window.formatChatText(text)
+                : (window.formatAdminMentions ? window.formatAdminMentions(escHtml(text)) : escHtml(text));
         }
 
         // ── Reply ──
@@ -4954,8 +5125,8 @@
                             ${badgeHtml}
                             <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
                         </div>
-                        <h4 dir="auto" style="font-size:1rem;font-weight:700;color:var(--text-primary,#f1f0ea);margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
-                        <div class="${bodyClass}" dir="auto" style="font-size:0.88rem;color:var(--text-secondary,#b8b8b8);line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
+                        <h4 dir="${window.bidiDir ? window.bidiDir(p.title || '') : 'auto'}" style="font-size:1rem;font-weight:700;color:var(--text-primary,#f1f0ea);margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
+                        <div class="${bodyClass}" dir="${window.bidiDir ? window.bidiDir(p.body || '') : 'auto'}" style="font-size:0.88rem;color:var(--text-secondary,#b8b8b8);line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
                         ${seeMoreBtn}
                         ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${tagsHtml}</div>` : ''}
                         ${imageHtml}
@@ -5202,7 +5373,7 @@
                         <span class="comm-inline-comment-author" onclick="openUserProfile(${a.id})" style="cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
                         <span class="comm-inline-comment-time">${c.time_ago || ''}</span>
                     </div>
-                    <div class="comm-inline-comment-text" dir="auto">${escHtml(c.body || '')}</div>
+                    <div class="comm-inline-comment-text" dir="${window.bidiDir ? window.bidiDir(c.body || '') : 'auto'}">${escHtml(c.body || '')}</div>
                     ${actionsHtml}
                     <div id="reply-input-${c.id}" style="display:none;"></div>
                 </div>
