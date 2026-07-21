@@ -230,13 +230,17 @@ def seed_defaults():
         db.close()
 
 # ✅ app يتعمل الأول — disable docs in production
+# openapi_url كمان لازم يتقفل: docs_url=None بيخفي الـ UI بس، و/openapi.json كان
+# لسه شغال — ماسح 2026-07-21 سحب منه خريطة الـ API كاملة قبل ما يضرب الـ endpoints
 _docs_url = None if ENVIRONMENT == "production" else "/docs"
 _redoc_url = None if ENVIRONMENT == "production" else "/redoc"
+_openapi_url = None if ENVIRONMENT == "production" else "/openapi.json"
 app = FastAPI(
     title="Community Backend",
     version="2.0.0",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
 )
 
 # ✅ SECRET_KEY من الـ .env — لازم يكون موجود وإلا التطبيق ميشتغلش
@@ -341,6 +345,17 @@ def get_payment_info():
         "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "600"),
         "currency": "EGP"
     }
+
+@app.on_event("startup")
+async def expand_threadpool():
+    # كل sync endpoint/dependency بياخد ثريد من anyio (الافتراضي 40). تحت ضغط،
+    # طلب بيعدي الـ auth (transaction مفتوحة + اتصال DB محجوز) وبعدين يقف في
+    # طابور الثريدات ماسك الاتصال → الـ pool بيفضى والموقع يتجمد (انهيار 2026-07-21،
+    # 26 دقيقة). 120 ثريد > سعة الـ DB pool بهامش يمنع الطابور-وهو-ماسك-اتصال.
+    import anyio.to_thread
+    anyio.to_thread.current_default_thread_limiter().total_tokens = 120
+    logging.getLogger(__name__).info("✅ anyio threadpool capacity raised to 120")
+
 
 # ── Scheduler (recurring charges) ──────────────────────────
 try:

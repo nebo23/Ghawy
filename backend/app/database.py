@@ -20,10 +20,13 @@ if not DATABASE_URL or not DATABASE_URL.startswith("postgresql"):
 engine = create_engine(
     DATABASE_URL,
     pool_size=30,
-    max_overflow=20,
+    max_overflow=30,    # 60 total ≤ PG max_connections=100 (single gunicorn worker)
     pool_pre_ping=True,
     pool_recycle=1800,  # recycle connections every 30m to avoid stale/leaked handles
-    pool_timeout=10,    # fail fast (10s) instead of default 30s to prevent request pile-up
+    pool_timeout=3,     # fail fast: under load a thread waiting on the pool blocks the
+                        # whole threadpool queue — 3s keeps threads churning, 10s caused
+                        # the 2026-07-21 congestion collapse to self-sustain for 26 min
+    connect_args={"options": "-c statement_timeout=30000"},  # no query may run >30s
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

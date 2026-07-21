@@ -115,6 +115,10 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
             detail="الكود غير صحيح أو انتهت صلاحيته"
         )
     if store_entry["code"] != submitted_otp:
+        # حرق الكود بعد 5 محاولات غلط — 6 أرقام قابلة للتخمين لو المحاولات مفتوحة
+        store_entry["attempts"] = store_entry.get("attempts", 0) + 1
+        if store_entry["attempts"] >= 5:
+            _otp_store.pop(email, None)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="الكود غير صحيح أو انتهت صلاحيته"

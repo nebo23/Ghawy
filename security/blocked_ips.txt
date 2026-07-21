@@ -8,3 +8,7 @@
 # 2026-07-19: automated attack swarm (Python-urllib / ghawy-im-rce),
 # ~700 register + manual-payment probe requests, tempmail flood + upload XSS/RCE attempts.
 197.54.103.231
+
+# 2026-07-21: curl/8.7.1 flood on /api/auth/verify-email + /api/legacy/verify-otp
+# (~2-4 req/s sustained, OTP brute-force pattern; same ISP range as 07-19 attacker).
+197.54.53.99

@@ -65,6 +65,10 @@ def send_verification_email_bg(email: str, code: str) -> None:
             logger.warning("SMTP send failed for %s: %s", email, exc)
     threading.Thread(target=_run, daemon=True).start()
 
+# عدّاد محاولات التحقق الغلط لكل إيميل — الكود بيتحرق بعد 5 محاولات (ضد التخمين).
+# in-memory يكفي: worker واحد في production، والكود نفسه صلاحيته 15 دقيقة.
+_verify_attempts: dict[str, int] = {}
+
 # ─── Register ────────────────────────────────────────────────
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(data: UserRegister, request: Request, db: Session = Depends(get_db)):
@@ -207,8 +211,18 @@ def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
     logger.debug("Verify attempt: email=%s, submitted=%r, stored=%r", data.email, submitted_code, user.verification_code)
 
     if user.verification_code != submitted_code:
+        attempts = _verify_attempts.get(user.email, 0) + 1
+        _verify_attempts[user.email] = attempts
+        if attempts >= 5:
+            # حرق الكود — لازم يطلب كود جديد بدل ما يفضل يخمّن
+            user.verification_code = None
+            user.verification_expiry = None
+            db.commit()
+            _verify_attempts.pop(user.email, None)
+            raise HTTPException(status_code=400, detail="تم تجاوز عدد المحاولات. اطلب كود تحقق جديد.")
         raise HTTPException(status_code=400, detail="Invalid verification code")
 
+    _verify_attempts.pop(user.email, None)
     user.is_verified = True
     user.verification_code = None
     user.verification_expiry = None
@@ -247,10 +261,11 @@ def resend_verification_code(data: ResendVerificationRequest, db: Session = Depe
     
     verification_code = generate_verification_code()
     verification_expiry = current_utc + timedelta(minutes=VERIFICATION_EXPIRE_MINUTES)
-    
+
     user.verification_code = verification_code
     user.verification_expiry = verification_expiry
     db.commit()
+    _verify_attempts.pop(user.email, None)  # كود جديد = عدّاد محاولات جديد
 
     logger.info(" Resent verification code for %s: %s", user.email, verification_code)
 
