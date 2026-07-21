@@ -210,13 +210,11 @@
         </div>
       </div>
 
-      <!-- "I'm not a robot" — Cloudflare Turnstile.
-           TODO: replace the test data-sitekey below with your real SITE key from
-           the Cloudflare dashboard (Turnstile → your widget). The matching
-           SECRET key goes in backend/.env.production as TURNSTILE_SECRET_KEY. -->
+      <!-- "I'm not a robot" — Cloudflare Turnstile. The matching SECRET key
+           lives in backend/.env.production as TURNSTILE_SECRET_KEY. -->
       <div class="mb-4 flex justify-center">
         <div class="cf-turnstile"
-             data-sitekey="1x00000000000000000000AA"
+             data-sitekey="0x4AAAAAAD6kttxI3Je2SKjB"
              data-theme="dark"
              data-callback="onTurnstileSuccess"
              data-expired-callback="onTurnstileExpired"
