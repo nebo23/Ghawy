@@ -520,7 +520,7 @@ def send_winback_email(to_email: str, full_name: str, governorate: str = None) -
 
 # ═══════════════════════════════════════════════════════
 #  AUTOMATED LIFECYCLE EMAILS — shared branded base template
-#  (نفس الـ Header/Logo/السوشيال/زرار واتساب/الفوتر لكل الإيميلات؛
+#  (نفس الـ Header/Logo/السوشيال/الفوتر لكل الإيميلات؛
 #   المتغيّر الوحيد هو المحتوى: العنوان + الجسم + نص زرار الـ CTA)
 # ═══════════════════════════════════════════════════════
 
@@ -529,8 +529,10 @@ _SOCIAL_INSTAGRAM = "https://www.instagram.com/ghawy.ai/"
 _SOCIAL_FACEBOOK = "https://www.facebook.com/profile.php?id=61591378479904"
 _SOCIAL_TIKTOK = "https://www.tiktok.com/@ghawy.ai"
 _SOCIAL_WHATSAPP = "https://wa.me/201033903334"
+_WHATSAPP_DISPLAY = "01033903334"
 _LINK_PRIVACY = "https://ghawy.ai/privacy"
 _LINK_TERMS = "https://ghawy.ai/terms"
+_LINK_START = "https://ghawy.ai"
 
 
 def _first_name(full_name: str) -> str:
@@ -540,63 +542,69 @@ def _first_name(full_name: str) -> str:
 
 def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
                       cta_url: str, pre_footer: str = "") -> str:
-    """القالب الأساسي الموحّد لكل الإيميلات التلقائية (RTL)."""
+    """القالب الأساسي الموحّد لكل الإيميلات التلقائية (RTL) — Design System فاتح."""
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
-    logo = f"{frontend_url}/imgs/ghawy-new-logo-transparent.png"
-    icon = lambda n: f"{frontend_url}/imgs/email/{n}.png"
+    logo = f"{frontend_url}/imgs/community-logo.png"
+    # أيقونات السوشيال بنسخة رمادية موحّدة (monochrome) بدل الألوان البراندية
+    icon = lambda n: f"{frontend_url}/imgs/email/{n}-mono.png"
+
+    # ستاك خطوط عربي نضيف (يفضل قريب من المرجع) مع fallbacks مضمونة على كل الأجهزة
+    font_stack = "'Tajawal','Cairo',Tahoma,Arial,sans-serif"
 
     paragraphs_html = "".join(
-        f'<p style="margin:0 0 18px;">{p}</p>' for p in body_paragraphs
+        f'<p style="margin:0 0 14px;">{p}</p>' for p in body_paragraphs
     )
 
     pre_footer_block = ""
     if pre_footer:
         pre_footer_block = (
-            '<div style="color:#9a9aa6;font-size:14px;line-height:1.9;text-align:right;'
-            'margin-top:8px;border-top:1px solid #1e1e2a;padding-top:16px;">'
+            '<div style="color:#4b4b52;font-size:14px;line-height:1.9;text-align:right;'
+            'margin-top:8px;border-top:1px solid #E5E5E5;padding-top:16px;">'
             f'{pre_footer}</div>'
         )
 
     return f"""\
-<div style="background:#05050a;padding:24px 0;margin:0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#05050a;">
+<div style="background:#F4F4F5;padding:24px 0;margin:0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F4F5;">
     <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" dir="rtl" style="max-width:600px;width:100%;background:#0d0d14;border:1px solid #1e1e2a;border-radius:16px;overflow:hidden;font-family:Tahoma,Arial,sans-serif;">
-        <tr><td align="center" style="background:linear-gradient(135deg,#12121c,#0a0a12);padding:28px 24px;border-bottom:1px solid #1e1e2a;">
-          <img src="{logo}" alt="Ghawy" width="130" style="display:block;max-width:130px;height:auto;margin:0 auto;">
-        </td></tr>
-        <tr><td style="padding:32px 32px 8px;">
-          <h1 style="color:#ffffff;font-size:22px;font-weight:800;margin:0 0 18px;text-align:right;line-height:1.5;">{heading}</h1>
-          <div style="color:#c7c7d1;font-size:16px;line-height:2;text-align:right;">{paragraphs_html}</div>
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px auto;"><tr>
-            <td align="center" bgcolor="#3f8ff9" style="border-radius:10px;">
-              <a href="{cta_url}" style="display:inline-block;padding:15px 34px;color:#04122b;font-size:16px;font-weight:800;text-decoration:none;">{cta_text}</a>
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" dir="rtl" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E5E5E5;border-radius:14px;overflow:hidden;font-family:{font_stack};box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <tr><td style="padding:34px 32px 8px;">
+          <p style="color:#1A1A1A;font-size:16px;font-weight:600;margin:0 0 16px;text-align:right;line-height:1.7;">{heading}</p>
+          <div style="color:#1A1A1A;font-size:15px;font-weight:400;line-height:1.7;text-align:right;">{paragraphs_html}</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 12px;"><tr>
+            <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
+              <a href="{cta_url}" style="display:block;padding:16px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{font_stack};">{cta_text}</a>
             </td></tr></table>
           {pre_footer_block}
+          <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>
         </td></tr>
-        <tr><td align="center" style="padding:14px 24px 4px;">
-          <p style="color:#8a8a99;font-size:13px;margin:0 0 12px;">تابعنا على السوشيال ميديا</p>
+        <tr><td align="center" style="padding:26px 24px 6px;">
           <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-            <td style="padding:0 6px;"><a href="{_SOCIAL_INSTAGRAM}"><img src="{icon('instagram')}" width="40" height="40" alt="Instagram" style="display:block;border-radius:50%;"></a></td>
-            <td style="padding:0 6px;"><a href="{_SOCIAL_TIKTOK}"><img src="{icon('tiktok')}" width="40" height="40" alt="TikTok" style="display:block;border-radius:50%;"></a></td>
-            <td style="padding:0 6px;"><a href="{_SOCIAL_FACEBOOK}"><img src="{icon('facebook')}" width="40" height="40" alt="Facebook" style="display:block;border-radius:50%;"></a></td>
-          </tr></table>
-        </td></tr>
-        <tr><td align="center" style="padding:16px 24px 26px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-            <td align="center" bgcolor="#25D366" style="border-radius:10px;">
-              <a href="{_SOCIAL_WHATSAPP}" style="display:inline-block;padding:13px 26px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">
-                <img src="{icon('whatsapp')}" width="20" height="20" alt="" style="vertical-align:middle;border-radius:50%;margin-left:8px;">تواصل معنا على واتساب
-              </a>
+            <td align="center" bgcolor="#FFFFFF" style="border-radius:16px;padding:16px 22px;border:1px solid #ECECEC;">
+              <img src="{logo}" alt="Ghawy" width="80" style="display:block;max-width:80px;height:auto;margin:0 auto;">
             </td></tr></table>
         </td></tr>
-        <tr><td align="center" style="background:#08080e;padding:22px 24px;border-top:1px solid #1e1e2a;">
-          <p style="color:#e5e5ee;font-size:14px;font-weight:700;margin:0 0 6px;">فريق غاوي</p>
-          <p style="color:#5a5a68;font-size:12px;margin:0 0 10px;">© 2026 Ghawy — AI Automation Atlas</p>
+        <tr><td align="center" style="padding:18px 24px 6px;">
+          <p style="color:#6B7280;font-size:13px;margin:0 0 12px;">تابعنا على السوشيال ميديا</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+            <td style="padding:0 5px;"><a href="{_SOCIAL_INSTAGRAM}"><img src="{icon('instagram')}" width="28" height="28" alt="Instagram" style="display:block;"></a></td>
+            <td style="padding:0 5px;"><a href="{_SOCIAL_TIKTOK}"><img src="{icon('tiktok')}" width="28" height="28" alt="TikTok" style="display:block;"></a></td>
+            <td style="padding:0 5px;"><a href="{_SOCIAL_FACEBOOK}"><img src="{icon('facebook')}" width="28" height="28" alt="Facebook" style="display:block;"></a></td>
+          </tr></table>
+        </td></tr>
+        <tr><td align="center" style="background:#FAFAFB;padding:22px 24px;border-top:1px solid #E5E5E5;">
+          <p style="color:#9a9aa6;font-size:12px;margin:0 0 10px;">© 2026 Ghawy — AI Automation Atlas</p>
+          <p style="margin:0 0 10px;">
+            <a href="{_LINK_TERMS}" style="color:#2563EB;font-size:12px;text-decoration:none;">الشروط والأحكام</a>
+            <span style="color:#c7c7cf;">&nbsp;·&nbsp;</span>
+            <a href="{_LINK_PRIVACY}" style="color:#2563EB;font-size:12px;text-decoration:none;">سياسة الخصوصية</a>
+            <span style="color:#c7c7cf;">&nbsp;·&nbsp;</span>
+            <a href="{_LINK_START}" style="color:#2563EB;font-size:12px;text-decoration:none;">ابدأ الآن</a>
+          </p>
           <p style="margin:0;">
-            <a href="{_LINK_PRIVACY}" style="color:#8a8a99;font-size:12px;text-decoration:none;">سياسة الخصوصية</a>
-            <span style="color:#3a3a48;">&nbsp;·&nbsp;</span>
-            <a href="{_LINK_TERMS}" style="color:#8a8a99;font-size:12px;text-decoration:none;">الشروط والأحكام</a>
+            <a href="{_SOCIAL_WHATSAPP}" style="color:#6B7280;font-size:12px;text-decoration:none;">
+              <img src="{icon('whatsapp')}" width="14" height="14" alt="واتساب" style="vertical-align:middle;margin-left:5px;">{_WHATSAPP_DISPLAY}
+            </a>
           </p>
         </td></tr>
       </table>
@@ -687,4 +695,74 @@ def send_5day_expiry_email(to_email: str, full_name: str) -> None:
         subject=f"{name}، باقي 5 أيام على انتهاء اشتراكك في غاوي",
         body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
         body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+    )
+
+
+# ─── 4) إيميل: عيد ميلاد (هدية 7 أيام مجانية) ─────────────
+def send_birthday_email(to_email: str, full_name: str, age: int, user_id: int, year: int) -> None:
+    """تهنئة عيد ميلاد + زرار بيمدّد الاشتراك 7 أيام على الباقة الحالية.
+    الزرار بيروح لـ /api/birthday/claim ومعاه توكن موقّع بيربط الهدية باليوزر."""
+    from app.routers.birthday import make_birthday_token  # lazy عشان نتجنب circular import
+
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    name = _first_name(full_name)
+    token = make_birthday_token(user_id, year)
+
+    heading = f"ازيك يا {name}،"
+    age_line = (
+        f"النهاردة بتكمل {age} سنة من السعي والتطوير، ويارب السنة الجديدة تعود عليك بكل "
+        "الخير وتكون سنة نجاح وتقدم في تعلمك."
+        if age else
+        "النهاردة يوم مميز جداً، ويارب السنة الجديدة تعود عليك بكل الخير وتكون سنة نجاح "
+        "وتقدم في تعلمك."
+    )
+    body = [
+        age_line,
+        "فريق غاوي حابب يهنئك بمناسبة عيد ميلادك، ويمدّد اشتراكك لمدة 7 أيام مجانية 🎁 "
+        "تقدر تفعّل هديتك دلوقتي من الزرار هنا:",
+    ]
+    cta_text = "تفعيل الـ 7 أيام المجانية"
+    cta_url = f"{frontend_url}/api/birthday/claim?token={token}"
+    pre_footer = "كل سنة وانت طيب من كل فريق غاوي 🎂"
+
+    _send_email(
+        to_email=to_email,
+        subject=f"كل سنة وانت طيب يا {name}! 🎉",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+    )
+
+
+# ─── 5) إيميل: 6 أيام مدخلش المنصة خالص ───────────────────
+def send_inactive_6day_email(to_email: str, full_name: str, resume_url: str = None) -> None:
+    """تذكير شخصي لليوزر اللي بقاله 6 أيام مدخلش المنصة — يرجّعه يكمّل.
+    resume_url = deep link لآخر كورس وقف عنده، أو الداشبورد لو مش متاح."""
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    name = _first_name(full_name)
+    cta_url = resume_url or f"{frontend_url}/dashboard.html"
+
+    heading = f"ازيك يا {name}، يارب تكون بخير وبأحسن حال."
+    body = [
+        "أنا لاحظت إن بقالك 6 أيام كاملين مدخلتش على المنصة ولا كملت طريقك في الكورس "
+        "والمجتمع، فقلت لازم أبعتلك وأطمن عليك بنفسي.. انت كويس؟",
+        "أنا عارف إن ضغوطات الحياة والشغل ساعات بتاخدنا، بس خليني أفكرك: أنت دخلت غاوي "
+        "عشان كان عندك هدف واضح وعايز تعمل نقلة حقيقية في حياتك. الهدف دا لسه مستنيك "
+        "جوه، ومفيش حاجة هتوصلك ليه غير الالتزام والاستمرارية.",
+        "كل يوم بيفوت وأنت بعيد، الحماس بيقل، والخطوة بتبقى أصعب. إحنا لسه فيها، "
+        "والشباب في الكوميونيتي شغالين ومكملين، والدروس مستنياك عشان تبدأ تطبق وتشوف "
+        "نتايج بعينك. خصص لنفسك نص ساعة في اليوم وارجع كمل.",
+        "وجودك هنا كان قرار، لكن استمراريتك هي مسؤولية، افتكر اللي انت بدأت عشانه.",
+        "ادخل دلوقتي وشوف وقفت فين وكمل طريقك من هنا:",
+    ]
+    cta_text = "ارجع للمنصة وكمل طريقك 🚀"
+    pre_footer = (
+        "لو في أي حاجة معطلاك أو واقفة قدامك، ادخل على الكوميونيتي واكتب بوست، "
+        "والفريق هيرد عليك فوراً."
+    )
+
+    _send_email(
+        to_email=to_email,
+        subject=f"{name}، افتكر اللي بدأت عشانه!",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
     )

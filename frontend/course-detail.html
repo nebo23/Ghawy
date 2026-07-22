@@ -1298,66 +1298,6 @@
             padding: 12px;
         }
 
-        /* ── Live Promo Card ── */
-        .cd-live-promo {
-            background: linear-gradient(135deg, rgba(63, 143, 249, 0.12), rgba(63, 143, 249, 0.04));
-            border: 1px solid rgba(63, 143, 249, 0.2);
-            border-radius: var(--radius);
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cd-live-promo::before {
-            content: '';
-            position: absolute;
-            top: -30%;
-            right: -20%;
-            width: 60%;
-            height: 160%;
-            background: radial-gradient(ellipse, rgba(63, 143, 249, 0.08), transparent 70%);
-            pointer-events: none;
-        }
-
-        .cd-live-promo .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #ef4444;
-            color: #fff;
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: .65rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            position: absolute;
-            top: 16px;
-            right: 16px;
-        }
-
-        .cd-live-promo .live-badge .dot {
-            width: 6px;
-            height: 6px;
-            background: #fff;
-            border-radius: 50%;
-            animation: pulse-dot 1.5s infinite;
-        }
-
-        .cd-live-promo h4 {
-            color: #3f8ff9;
-            font-size: .95rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .cd-live-promo p {
-            font-size: .8rem;
-            color: var(--text-secondary);
-            margin-bottom: 14px;
-            line-height: 1.5;
-            position: relative;
-        }
-
         /* Premium course progress overrides */
         .course-progress-header {
             position: relative;
@@ -2899,14 +2839,6 @@
                             </div>
                         </div>
 
-                        <!-- Build With Me Live -->
-                        <div class="cd-live-promo">
-                            <div class="live-badge"><span class="dot"></span> Live</div>
-                            <h4>Build With Me Live</h4>
-                            <p>Join our live sessions and build real projects with experts.</p>
-                            <button class="btn-blue-full" onclick="window.location.href='build-with-me.html'"><i
-                                    class="fa-regular fa-calendar"></i> View Live Schedule</button>
-                        </div>
                     </div>
                 </div>
             </div>

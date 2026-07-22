@@ -13,8 +13,9 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy import extract
 from app.database import SessionLocal
-from app.models import User, Payment, PaymentStatus
+from app.models import User, Payment, PaymentStatus, UserCourseProgress
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +174,133 @@ async def check_5day_expiry():
         await asyncio.to_thread(_send_5day_expiry_reminders)
     except Exception as e:
         logger.error("💥 5-day expiry reminder error: %s", e)
+
+
+# ─── Birthday Email (هدية 7 أيام) ─────────────────────────
+def _send_birthday_emails() -> None:
+    """Sync body — runs in a thread (DB + SMTP).
+    بيبعت تهنئة عيد ميلاد + هدية 7 أيام للمشتركين اللي عيد ميلادهم النهاردة —
+    مرة واحدة في السنة (guard: birthday_email_sent_year). بنبعت بس للي عندهم
+    اشتراك مدفوع قبل كده (عشان الهدية 'على الباقة الحالية')."""
+    from app.services.email_service import send_birthday_email
+
+    db = SessionLocal()
+    try:
+        today = datetime.now(timezone.utc).astimezone().date()
+        year = today.year
+
+        paid_user_ids = db.query(Payment.user_id).filter(
+            Payment.status == PaymentStatus.CONFIRMED
+        )
+
+        candidates = db.query(User).filter(
+            User.birth_date.isnot(None),
+            extract("month", User.birth_date) == today.month,
+            extract("day", User.birth_date) == today.day,
+            User.email.isnot(None),
+            (User.birthday_email_sent_year.is_(None)) | (User.birthday_email_sent_year != year),
+            User.id.in_(paid_user_ids),
+        ).all()
+
+        logger.info("🎂 Found %s birthday(s) today", len(candidates))
+        sent = 0
+        for user in candidates:
+            try:
+                age = year - user.birth_date.year
+                send_birthday_email(
+                    to_email=user.email,
+                    full_name=user.full_name,
+                    age=age if age > 0 else 0,
+                    user_id=user.id,
+                    year=year,
+                )
+                user.birthday_email_sent_year = year
+                db.commit()  # commit لكل واحد عشان لو حصل crash ميتبعتش تاني
+                sent += 1
+                time.sleep(0.5)  # مهلة صغيرة بين الإيميلات عشان Gmail
+            except Exception as e:
+                db.rollback()
+                logger.error("❌ Birthday email failed for %s: %s", user.email, e)
+
+        logger.info("🎂 Birthday emails done: sent %s/%s", sent, len(candidates))
+    finally:
+        db.close()
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=30, id="birthday_email")
+async def check_birthdays():
+    """بيدور يومياً على أعياد ميلاد النهاردة ويبعت تهنئة + هدية 7 أيام."""
+    logger.info("🎂 Scheduler: Checking for birthdays...")
+    try:
+        await asyncio.to_thread(_send_birthday_emails)
+    except Exception as e:
+        logger.error("💥 Birthday email error: %s", e)
+
+
+# ─── 6-Day Inactivity Nudge ("افتكر اللي بدأت عشانه") ─────
+INACTIVE_DAYS = 6
+INACTIVE_BATCH_SIZE = 40
+
+
+def _send_inactive_6day_emails() -> None:
+    """Sync body — runs in a thread (DB + SMTP).
+    بيبعت تذكير للمشتركين النشطين اللي آخر دخول ليهم (last_seen) بقاله أكتر
+    من 6 أيام. الـ guard (inactive6_email_sent_at) بيمنع التكرار في نفس
+    فترة الغياب، وبيتصفّر ضمنياً لما اليوزر يرجع (last_seen يبقى أحدث من
+    تاريخ الإرسال)، فأي فترة غياب جديدة بتتبعت مرة واحدة."""
+    from app.services.email_service import send_inactive_6day_email
+
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        cutoff = now - timedelta(days=INACTIVE_DAYS)
+
+        candidates = db.query(User).filter(
+            User.is_active == True,
+            User.email.isnot(None),
+            User.last_seen.isnot(None),
+            User.last_seen <= cutoff,
+            # اتبعتش قبل كده في نفس فترة الغياب دي
+            (User.inactive6_email_sent_at.is_(None))
+            | (User.inactive6_email_sent_at < User.last_seen),
+        ).order_by(User.last_seen.asc()).limit(INACTIVE_BATCH_SIZE).all()
+
+        logger.info("😴 Found %s inactive (6d+) subscribers", len(candidates))
+        sent = 0
+        for user in candidates:
+            try:
+                # deep link لآخر كورس اتفتح، وإلا الداشبورد
+                last_course = db.query(UserCourseProgress).filter(
+                    UserCourseProgress.user_id == user.id
+                ).order_by(UserCourseProgress.last_accessed.desc()).first()
+                resume_url = (
+                    f"{frontend_url}/course-detail.html?id={last_course.course_id}"
+                    if last_course else f"{frontend_url}/dashboard.html"
+                )
+
+                send_inactive_6day_email(user.email, user.full_name, resume_url)
+                user.inactive6_email_sent_at = datetime.utcnow()
+                db.commit()  # commit لكل واحد عشان لو حصل crash ميتبعتش تاني
+                sent += 1
+                time.sleep(0.5)  # مهلة صغيرة بين الإيميلات عشان Gmail
+            except Exception as e:
+                db.rollback()
+                logger.error("❌ Inactive-6d email failed for %s: %s", user.email, e)
+
+        logger.info("😴 Inactive-6d done: sent %s/%s", sent, len(candidates))
+    finally:
+        db.close()
+
+
+@scheduler.scheduled_job("cron", hour=9, minute=45, id="inactive_6day")
+async def check_inactive_6day():
+    """بيدور يومياً على المشتركين اللي غابوا 6 أيام+ ويبعتلهم تذكير يرجعوا."""
+    logger.info("😴 Scheduler: Checking for 6-day inactive subscribers...")
+    try:
+        await asyncio.to_thread(_send_inactive_6day_emails)
+    except Exception as e:
+        logger.error("💥 Inactive-6d error: %s", e)
 
 
 # ─── Winback Email (registered but never activated, 24h+) ──

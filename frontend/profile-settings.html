@@ -605,8 +605,24 @@
                     // Plan label + amount
                     const planLabel = document.getElementById('subPlanLabel');
                     const amount = document.getElementById('subAmount');
-                    if (planLabel) planLabel.textContent = data.plan_label;
-                    if (amount) amount.textContent = `${data.amount.toLocaleString()} ${data.currency}`;
+                    const uiLangEarly = localStorage.getItem('ghawy_lang_pref')
+                        || document.documentElement.getAttribute('lang') || 'en';
+                    // Free members (no confirmed payment) → show "Free / مجاني", never a price
+                    const isFreeMember = data.is_free || data.amount == null;
+                    if (planLabel) {
+                        planLabel.textContent = isFreeMember
+                            ? (uiLangEarly === 'ar' ? 'مجاني' : 'Free')
+                            : data.plan_label;
+                    }
+                    if (amount) {
+                        if (isFreeMember) {
+                            amount.textContent = '';
+                            amount.style.display = 'none';
+                        } else {
+                            amount.style.display = '';
+                            amount.textContent = `${data.amount.toLocaleString()} ${data.currency}`;
+                        }
+                    }
 
                     // Dates
                     const startDate = document.getElementById('subStartDate');
@@ -672,6 +688,40 @@
 
         // استدعيها في الـ init
         loadSubscriptionInfo();
+
+        // ── هدية عيد الميلاد: بعد ما اليوزر يضغط زرار الـ 7 أيام في الإيميل،
+        //    الباك إند بيمدّد end_at ويحوّله هنا بـ ?gift=... — نطمّنه بإشعار ونعيد تحميل بيانات الاشتراك.
+        (function birthdayGiftNotice() {
+            const gift = new URLSearchParams(window.location.search).get('gift');
+            if (!gift) return;
+            const uiLang = localStorage.getItem('ghawy_lang_pref')
+                || document.documentElement.getAttribute('lang') || 'ar';
+            const ar = uiLang === 'ar';
+            const MAP = {
+                birthday_ok:   { ok: true,  msg: ar ? '🎉 تم إضافة 7 أيام مجانية لاشتراكك. كل سنة وانت طيب!' : '🎉 7 free days were added to your subscription. Happy birthday!' },
+                birthday_used: { ok: false, msg: ar ? 'هديتك اتفعّلت قبل كده السنة دي 🎂' : 'Your birthday gift was already claimed this year 🎂' },
+                invalid:       { ok: false, msg: ar ? 'اللينك مش صالح أو انتهت صلاحيته.' : 'This link is invalid or has expired.' },
+            };
+            const item = MAP[gift];
+            if (!item) return;
+
+            const bar = document.createElement('div');
+            bar.setAttribute('dir', ar ? 'rtl' : 'ltr');
+            bar.style.cssText =
+                'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;'
+                + 'max-width:92%;padding:13px 20px;border-radius:12px;font-size:14px;font-weight:700;'
+                + 'box-shadow:0 8px 28px rgba(0,0,0,.28);color:#0a0a0a;'
+                + (item.ok ? 'background:#D6FF3F;' : 'background:#fde68a;');
+            bar.textContent = item.msg;
+            document.body.appendChild(bar);
+
+            // شيل الـ query param من الـ URL عشان الإشعار ميتكررش مع أي refresh
+            try { history.replaceState(null, '', window.location.pathname); } catch (_) {}
+            // لو الهدية اتفعّلت، أعد تحميل بيانات الاشتراك عشان الأيام تبان زايدة فوراً
+            if (item.ok) { try { loadSubscriptionInfo(); } catch (_) {} }
+            setTimeout(() => { bar.style.transition = 'opacity .4s'; bar.style.opacity = '0';
+                setTimeout(() => bar.remove(), 400); }, 6000);
+        })();
     </script>
 
 

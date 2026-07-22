@@ -61,37 +61,58 @@ def get_subscription_info(
     """
     بيرجع تفاصيل الاشتراك للمستخدم
     """
-    # جيب آخر payment مدفوع للمستخدم
+    # جيب آخر payment مؤكد للمستخدم
     last_payment = db.query(Payment).filter(
         Payment.user_id == current_user.id,
         Payment.status == PaymentStatus.CONFIRMED
     ).order_by(Payment.created_at.desc()).first()
 
-    plan_key = (last_payment.plan_key if last_payment and last_payment.plan_key else None) or "monthly_egp"
-    plan_info = PLAN_LABELS.get(plan_key, PLAN_LABELS["monthly_egp"])
-
-    # حساب الـ days remaining من end_at
-    days_remaining = None
     is_active = current_user.is_active
     subscription_end = current_user.end_at
 
-    # حساب subscription_start من end_at - plan duration
-    subscription_start = None
+    # الأيام المتبقية من end_at
+    days_remaining = None
     if subscription_end:
         delta = subscription_end - datetime.utcnow()
         days_remaining = max(0, delta.days)
+
+    # عضو مجاني: مفيش أي دفعة مؤكدة (اشتراك مجاني / legacy promo / منحة يدوية).
+    # مايتعرضش سعر خالص — يتعرض إنه "مجاني".
+    if last_payment is None:
+        return {
+            "is_active": is_active,
+            "is_free": True,
+            "plan_key": None,
+            "plan_label": "مجاني",
+            "amount": None,
+            "currency": None,
+            "subscription_start": None,
+            "subscription_end": subscription_end.isoformat() if subscription_end else None,
+            "days_remaining": days_remaining,
+            "payment_method": None,
+        }
+
+    # عضو دافع: نعرض المبلغ الحقيقي اللي اتدفع فعلاً من سجل الدفع نفسه
+    # (مش رقم ثابت من PLAN_LABELS عشان مايبقاش قديم/غلط).
+    plan_key = last_payment.plan_key or "monthly_egp"
+    plan_info = PLAN_LABELS.get(plan_key, PLAN_LABELS["monthly_egp"])
+
+    # تقدير تاريخ البداية = end_at ناقص مدة الباقة
+    subscription_start = None
+    if subscription_end:
         subscription_start = subscription_end - timedelta(days=plan_info["days"])
 
     return {
         "is_active": is_active,
+        "is_free": False,
         "plan_key": plan_key,
         "plan_label": plan_info["label"],
-        "amount": plan_info["amount"],
-        "currency": plan_info["currency"],
+        "amount": float(last_payment.amount) if last_payment.amount is not None else None,
+        "currency": last_payment.currency or plan_info["currency"],
         "subscription_start": subscription_start.isoformat() if subscription_start else None,
         "subscription_end": subscription_end.isoformat() if subscription_end else None,
         "days_remaining": days_remaining,
-        "payment_method": last_payment.method.value if last_payment else None,
+        "payment_method": last_payment.method.value,
     }
 
 

@@ -103,6 +103,9 @@ class User(Base):
     winback_email_sent_at = Column(DateTime, nullable=True)  # إيميل "ليه وقفت؟" — يتبعت مرة واحدة بس
     first_lesson_email_sent_at = Column(DateTime, nullable=True)  # إيميل "خلصت أول درس" — مرة واحدة بس
     expiry5_email_sent_for = Column(DateTime, nullable=True)  # آخر end_at اتبعتله تنبيه الـ 5 أيام (يتصفّر مع التجديد)
+    birthday_email_sent_year = Column(Integer, nullable=True)  # آخر سنة اتبعتله فيها إيميل عيد الميلاد (مرة/سنة)
+    birthday_gift_year = Column(Integer, nullable=True)  # آخر سنة فعّل فيها هدية الـ 7 أيام (يمنع التكرار)
+    inactive6_email_sent_at = Column(DateTime, nullable=True)  # آخر مرة اتبعتله تذكير "6 أيام مدخلتش"; يتصفّر لما يرجع نشط
 
     @property
     def is_online(self) -> bool:
