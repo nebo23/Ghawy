@@ -22,6 +22,7 @@ let currentUserIsOwner = false;
 let paymentsLoaded = false;
 let analyticsLoaded = false;
 let studentsProgressLoaded = false;
+let emailsLoaded = false;
 
 function initTabs() {
   const tabs = document.querySelectorAll('.team-section-btn');
@@ -40,7 +41,8 @@ function initTabs() {
     'courses': 'Courses Management',
     'projects': 'Projects Review',
     'reports': 'Daily Reports',
-    'feedbacks': 'Community Feedbacks'
+    'feedbacks': 'Community Feedbacks',
+    'emails': 'Email Campaigns'
   };
 
   tabs.forEach(tab => {
@@ -93,6 +95,10 @@ function initTabs() {
       if (target === 'feedbacks') {
         if (typeof loadFeedbacksTab === 'function') loadFeedbacksTab();
       }
+      if (target === 'emails' && !emailsLoaded) {
+        loadEmailsTab();
+        emailsLoaded = true;
+      }
     });
   });
 
@@ -102,7 +108,7 @@ function initTabs() {
     // 'users' (Members), 'payments', 'pending-requests' and 'analytics' are visible
     // to admins too — contact details/delete are restricted per-row below and enforced
     // server-side. The remaining content-management tabs stay owner-only.
-    const ownerOnlyTabs = ['live-sessions', 'guest-of-honors', 'courses'];
+    const ownerOnlyTabs = ['live-sessions', 'guest-of-honors', 'courses', 'emails'];
     ownerOnlyTabs.forEach(tabId => {
       const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
       if (btn) {
@@ -4230,4 +4236,292 @@ async function submitExam() {
     showToast(examId ? 'Exam updated!' : 'Exam created!', 'success');
     loadExams();
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  EMAIL CAMPAIGNS TAB (owner-only)
+//  ينده /admin/email-campaigns/*  — الجمهور من الداتابيز الحية،
+//  الوضع الافتراضي test، الحقيقي محتاج جملة GHAWY-OFFICIAL-SEND.
+// ══════════════════════════════════════════════════════════
+const EC_LIMIT = 50;
+let ecAllRecipients = [];      // كل الأعضاء المطابقين للفلتر (من السيرفر)
+let ecSelected = new Map();    // email -> recipient object (بيفضل عبر الصفحات/الفلاتر)
+let ecPage = 1;
+let ecStatusTimer = null;
+
+function loadEmailsTab() {
+  const cid = document.getElementById('ec-campaign-id');
+  if (cid && !cid.value) {
+    const d = new Date();
+    cid.value = `campaign-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  document.querySelectorAll('input[name="ec-mode"]').forEach(r => r.addEventListener('change', ecOnModeChange));
+  ecOnModeChange();
+  const s = document.getElementById('ec-f-search');
+  if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') loadRecipients(); });
+  loadRecipients();
+}
+
+function ecGetMode() {
+  const el = document.querySelector('input[name="ec-mode"]:checked');
+  return el ? el.value : 'test';
+}
+
+function ecOnModeChange() {
+  const mode = ecGetMode();
+  const warn = document.getElementById('ec-real-warn');
+  const btn = document.getElementById('ec-send-btn');
+  if (warn) warn.style.display = mode === 'real' ? 'block' : 'none';
+  if (btn) {
+    btn.classList.toggle('real', mode === 'real');
+    btn.innerHTML = mode === 'real'
+      ? '<i data-lucide="alert-triangle" style="width:15px;height:15px;"></i> إرسال حقيقي'
+      : '<i data-lucide="send" style="width:15px;height:15px;"></i> إرسال تجريبي';
+  }
+  ecUpdateCounts();
+  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+}
+
+async function loadRecipients() {
+  const tbody = document.getElementById('ec-recipients-tbody');
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">جاري التحميل...</td></tr>`;
+  const params = new URLSearchParams();
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  if (g('ec-f-search')) params.set('search', g('ec-f-search'));
+  if (g('ec-f-country')) params.set('country', g('ec-f-country'));
+  if (g('ec-f-gov')) params.set('governorate', g('ec-f-gov'));
+  const st = g('ec-f-status'); if (st && st !== 'all') params.set('status', st);
+  const pl = g('ec-f-plan'); if (pl && pl !== 'all') params.set('plan', pl);
+  if (g('ec-f-expiring')) params.set('expiring_days', g('ec-f-expiring'));
+  if (document.getElementById('ec-f-staff')?.checked) params.set('include_staff', 'true');
+  params.set('include_facets', 'true');
+
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/recipients?${params}`, { headers });
+    if (res.status === 403) { showToast('👑 Owners only', 'error'); tbody.innerHTML = ''; return; }
+    if (!res.ok) { showToast('❌ فشل تحميل الأعضاء', 'error'); return; }
+    const data = await res.json();
+    ecAllRecipients = data.recipients || [];
+    ecFillDatalist('ec-countries', data.countries);
+    ecFillDatalist('ec-govs', data.governorates);
+    ecPage = 1;
+    ecRenderRecipients();
+    ecUpdateCounts();
+    if (data.truncated) showToast(`⚠️ العدد كبير — اتحمّل أول ${ecAllRecipients.length}`, 'info');
+  } catch (e) {
+    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+  }
+}
+
+function ecFillDatalist(id, arr) {
+  const dl = document.getElementById(id);
+  if (!dl || !arr) return;
+  dl.innerHTML = arr.map(v => `<option value="${escapeHtml(v)}"></option>`).join('');
+}
+
+function ecRenderRecipients() {
+  const tbody = document.getElementById('ec-recipients-tbody');
+  if (!ecAllRecipients.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">مفيش أعضاء مطابقين للفلتر</td></tr>`;
+    document.getElementById('ec-pagination').innerHTML = '';
+    return;
+  }
+  const start = (ecPage - 1) * EC_LIMIT;
+  const rows = ecAllRecipients.slice(start, start + EC_LIMIT);
+  tbody.innerHTML = rows.map(r => {
+    const checked = ecSelected.has(r.email) ? 'checked' : '';
+    const statusPill = r.is_active
+      ? '<span class="ec-pill active">Active</span>'
+      : '<span class="ec-pill inactive">Inactive</span>';
+    const plan = r.plan_group ? escapeHtml(r.plan_group) : '—';
+    return `<tr>
+      <td><input type="checkbox" class="ec-cb" ${checked} onchange="ecToggle('${encodeURIComponent(r.email)}', this.checked)"></td>
+      <td>${escapeHtml(r.name || '—')}</td>
+      <td style="direction:ltr;text-align:right;font-size:12px;color:#aaa;">${escapeHtml(r.email)}</td>
+      <td>${escapeHtml(r.governorate || '—')}</td>
+      <td>${plan}</td>
+      <td>${statusPill}</td>
+    </tr>`;
+  }).join('');
+  const totalPages = Math.ceil(ecAllRecipients.length / EC_LIMIT);
+  buildPager(document.getElementById('ec-pagination'), ecPage, totalPages, 'ecGoPage');
+}
+
+function ecGoPage(p) { ecPage = p; ecRenderRecipients(); }
+
+function ecToggle(encEmail, checked) {
+  const email = decodeURIComponent(encEmail);
+  const rec = ecAllRecipients.find(r => r.email === email);
+  if (!rec) return;
+  if (checked) ecSelected.set(email, rec); else ecSelected.delete(email);
+  ecUpdateCounts();
+}
+
+function ecSelectAll(sel) {
+  if (sel) ecAllRecipients.forEach(r => ecSelected.set(r.email, r));
+  else ecAllRecipients.forEach(r => ecSelected.delete(r.email));
+  ecRenderRecipients();
+  ecUpdateCounts();
+}
+
+function ecUpdateCounts() {
+  const chip = document.getElementById('ec-count-chip');
+  if (!chip) return;
+  const selected = ecSelected.size;
+  chip.textContent = ecAllRecipients.length;
+  document.getElementById('ec-selinfo').textContent = `${selected} محدد`;
+  const summ = document.getElementById('ec-send-summary');
+  if (ecGetMode() === 'test') {
+    summ.innerHTML = `تجريبي: هيروح لإيميلات التست بس (المعاينة من أول عضو محدّد)`;
+  } else {
+    summ.innerHTML = `هيتبعت لـ <b>${selected}</b> عضو حقيقي`;
+  }
+}
+
+function ecSelectedList() { return Array.from(ecSelected.values()); }
+
+function ecBuildContent() {
+  const g = id => (document.getElementById(id)?.value || '');
+  const content = {
+    subject_template: g('ec-subject').trim(),
+    body_html: g('ec-body'),
+    signoff_html: g('ec-signoff').trim() || 'محمد - غاوي',
+  };
+  const bt = g('ec-btn-text').trim(), bl = g('ec-btn-link').trim();
+  if (bt && bl) { content.button_text = bt; content.button_link = bl; }
+  const cl = g('ec-closing').trim();
+  if (cl) content.closing_line = cl;
+  return content;
+}
+
+function ecValidateContent(content) {
+  if (!content.subject_template) { showToast('❌ لازم عنوان للرسالة', 'error'); return false; }
+  if (!content.body_html || !content.body_html.trim()) { showToast('❌ لازم نص للرسالة', 'error'); return false; }
+  return true;
+}
+
+async function previewEmail() {
+  const content = ecBuildContent();
+  if (!ecValidateContent(content)) return;
+  const sample = ecSelectedList()[0] || ecAllRecipients[0] || null;
+  const subjEl = document.getElementById('ec-preview-subject');
+  const frame = document.getElementById('ec-preview-frame');
+  subjEl.textContent = 'جاري بناء المعاينة...';
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/preview`, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        content,
+        sample: sample ? {
+          name: sample.name, governorate: sample.governorate, country: sample.country,
+          email: sample.email, governorate_ar: sample.governorate_ar
+        } : null
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) { subjEl.textContent = '—'; showToast(`❌ ${data.detail || 'فشل المعاينة'}`, 'error'); return; }
+    subjEl.textContent = data.subject || '—';
+    frame.srcdoc = data.html || '';
+  } catch (e) {
+    subjEl.textContent = '—';
+    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+  }
+}
+
+function sendCampaign() {
+  const content = ecBuildContent();
+  if (!ecValidateContent(content)) return;
+  if (ecGetMode() === 'real') {
+    const selected = ecSelected.size;
+    if (!selected) { showToast('❌ اختار أعضاء الأول', 'error'); return; }
+    document.getElementById('ec-confirm-count').textContent = selected;
+    document.getElementById('ec-confirm-input').value = '';
+    openModal('ec-confirm-modal');
+    setTimeout(() => document.getElementById('ec-confirm-input').focus(), 100);
+    return;
+  }
+  ecDoSend('test', null);
+}
+
+function confirmRealSend() {
+  const phrase = (document.getElementById('ec-confirm-input').value || '').trim();
+  if (phrase !== 'GHAWY-OFFICIAL-SEND') { showToast('❌ الجملة مش مظبوطة', 'error'); return; }
+  closeModal('ec-confirm-modal');
+  ecDoSend('real', phrase);
+}
+
+async function ecDoSend(mode, confirmPhrase) {
+  const content = ecBuildContent();
+  const btn = document.getElementById('ec-send-btn');
+  const resultBox = document.getElementById('ec-send-result');
+  const campaignId = (document.getElementById('ec-campaign-id').value || '').trim();
+  const testEmails = (document.getElementById('ec-test-emails').value || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  const recipients = ecSelectedList().map(r => ({
+    name: r.name, email: r.email, phone: r.phone, country: r.country,
+    governorate: r.governorate, governorate_ar: r.governorate_ar, age: r.age, plan: r.plan
+  }));
+
+  const payload = { recipients, content, campaign_id: campaignId, mode, test_emails: testEmails };
+  if (confirmPhrase) payload.confirm_phrase = confirmPhrase;
+
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = 'جاري الإرسال...';
+  resultBox.style.display = 'block';
+  resultBox.className = 'ec-result';
+  resultBox.innerHTML = 'شغّال...';
+
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/send`, {
+      method: 'POST', headers, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      resultBox.className = 'ec-result err';
+      resultBox.innerHTML = `❌ ${escapeHtml(data.detail || 'فشل الإرسال')}`;
+      return;
+    }
+    if (mode === 'test') {
+      const fails = (data.failures || []).map(f => `<div>• ${escapeHtml(f[0])}: ${escapeHtml(String(f[1]))}</div>`).join('');
+      resultBox.className = 'ec-result ok';
+      resultBox.innerHTML = `✅ تم إرسال التست — نجح ${data.success_count}, فشل ${data.fail_count}<br>
+        <span style="color:#888;font-size:12px;">راح لـ: ${escapeHtml((data.test_emails_used || []).join(', '))}</span>${fails ? `<div class="ec-fails">${fails}</div>` : ''}`;
+      showToast('✅ اتبعت التست', 'success');
+    } else if (data.started === false) {
+      resultBox.className = 'ec-result ok';
+      resultBox.innerHTML = `ℹ️ ${escapeHtml(data.message || '')}`;
+    } else {
+      resultBox.className = 'ec-result ok';
+      resultBox.innerHTML = `🚀 ${escapeHtml(data.message || 'بدأ الإرسال')} <div id="ec-progress" style="margin-top:8px;color:#888;"></div>`;
+      showToast('🚀 بدأ الإرسال الحقيقي', 'success');
+      ecPollStatus(campaignId, data.queued || 0);
+    }
+  } catch (e) {
+    resultBox.className = 'ec-result err';
+    resultBox.innerHTML = `❌ خطأ شبكة: ${escapeHtml(e.message)}`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+  }
+}
+
+function ecPollStatus(campaignId, queuedTotal) {
+  if (ecStatusTimer) clearInterval(ecStatusTimer);
+  const tick = async () => {
+    try {
+      const res = await fetch(`${API}/admin/email-campaigns/status?campaign_id=${encodeURIComponent(campaignId)}`, { headers });
+      if (!res.ok) return;
+      const d = await res.json();
+      const el = document.getElementById('ec-progress');
+      if (el) {
+        const total = d.queued_total || queuedTotal || d.processed;
+        el.innerHTML = `تم إرسال <b style="color:#D0FA06;">${d.sent}</b>${d.failed ? ` · فشل ${d.failed}` : ''}${total ? ` من ${total}` : ''} ${d.running ? '⏳' : '✅ خلص'}`;
+      }
+      if (!d.running) { clearInterval(ecStatusTimer); ecStatusTimer = null; }
+    } catch (e) { }
+  };
+  tick();
+  ecStatusTimer = setInterval(tick, 4000);
 }

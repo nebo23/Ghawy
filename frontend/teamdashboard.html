@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=7" />
+  <link rel="stylesheet" href="src/css/team.css?v=8" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1009,6 +1009,10 @@
               <i data-lucide="message-square" style="width:18px;height:18px;"></i>
               <span class="tab-label">Feedbacks</span>
             </button>
+            <button class="team-section-btn" data-tab="emails">
+              <i data-lucide="mail" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Emails</span>
+            </button>
           </nav>
 
           <!-- Tab Content Area -->
@@ -1734,8 +1738,146 @@
               </div>
             </div>
 
+            <!-- Tab Content: Email Campaigns (owner-only) -->
+            <div id="tab-emails" class="tab-panel" style="display:none;">
+              <div class="ec-intro">
+                <h3>📧 Email Campaigns</h3>
+                <p>ابعت حملة إيميل مخصّصة لأعضاء غاوي بالبراند الكامل. الوضع الافتراضي دايماً <b>تجريبي (test)</b> — بيروح لإيميلات التست بس. الإرسال الحقيقي محتاج تأكيد صريح.</p>
+              </div>
+
+              <div class="ec-grid">
+                <!-- LEFT column: content + send -->
+                <div class="ec-col">
+
+                  <!-- 1) Content -->
+                  <div class="ec-card">
+                    <div class="ec-card-title">1) محتوى الإيميل</div>
+                    <div class="fg">
+                      <label>معرّف الحملة <span class="ec-muted">(نفس المعرّف بيمنع تكرار الإرسال لنفس الشخص)</span></label>
+                      <input type="text" id="ec-campaign-id" placeholder="campaign-2026-07-22" />
+                    </div>
+                    <div class="fg">
+                      <label>عنوان الرسالة (Subject) *</label>
+                      <input type="text" id="ec-subject" placeholder="مثال: أهلاً {first_name} 👋 خبر حلو ليك" />
+                    </div>
+                    <div class="fg">
+                      <label>نص الرسالة (HTML) *</label>
+                      <textarea id="ec-body" rows="9" placeholder="اكتب محتوى الإيميل هنا... تقدر تستخدم HTML و&lt;br&gt; للأسطر."></textarea>
+                      <div class="ec-hint">متغيّرات تتحط بين قوسين وتتبدّل لكل عضو: <code>{first_name}</code> <code>{first_name_ar}</code> <code>{greeting}</code> <code>{governorate}</code> <code>{governorate_ar}</code> <code>{country}</code></div>
+                    </div>
+                    <div class="ec-row2">
+                      <div class="fg" style="flex:2;"><label>نص الزرار</label><input type="text" id="ec-btn-text" placeholder="ابدأ دلوقتي" /></div>
+                      <div class="fg" style="flex:3;"><label>لينك الزرار</label><input type="url" id="ec-btn-link" placeholder="https://ghawy.ai" /></div>
+                    </div>
+                    <div class="fg"><label>سطر ختامي (اختياري)</label><input type="text" id="ec-closing" placeholder="مستنيينك 🤍" /></div>
+                    <div class="fg"><label>التوقيع</label><input type="text" id="ec-signoff" value="محمد - غاوي" /></div>
+                  </div>
+
+                  <!-- 4) Send -->
+                  <div class="ec-card">
+                    <div class="ec-card-title">4) الإرسال</div>
+                    <div class="ec-mode" id="ec-mode-wrap">
+                      <label class="ec-mode-opt"><input type="radio" name="ec-mode" value="test" checked /> <span>🧪 تجريبي (test)</span></label>
+                      <label class="ec-mode-opt"><input type="radio" name="ec-mode" value="real" /> <span>🚨 حقيقي (real)</span></label>
+                    </div>
+                    <div class="fg" id="ec-test-emails-wrap">
+                      <label>إيميلات التست (مفصولة بفاصلة)</label>
+                      <input type="text" id="ec-test-emails" value="mohamedsalaahh7@gmail.com, cmosalahh@gmail.com" placeholder="you@example.com, other@example.com" />
+                    </div>
+                    <div class="ec-real-warn" id="ec-real-warn" style="display:none;">
+                      ⚠️ الوضع الحقيقي هيبعت لكل الأعضاء المحدّدين فعلياً. هيتطلب منك تأكيد صريح.
+                    </div>
+                    <div class="ec-send-summary" id="ec-send-summary">هيتبعت لـ <b>0</b> شخص</div>
+                    <button class="ec-send-btn" id="ec-send-btn" onclick="sendCampaign()">
+                      <i data-lucide="send" style="width:15px;height:15px;"></i> إرسال
+                    </button>
+                    <div id="ec-send-result" class="ec-result" style="display:none;"></div>
+                  </div>
+
+                </div>
+
+                <!-- RIGHT column: audience + preview -->
+                <div class="ec-col">
+
+                  <!-- 2) Audience -->
+                  <div class="ec-card">
+                    <div class="ec-card-title">2) الجمهور <span class="ec-chip" id="ec-count-chip">0</span></div>
+                    <div class="ec-filters">
+                      <input type="text" id="ec-f-search" placeholder="🔍 اسم أو إيميل" />
+                      <input type="text" id="ec-f-country" list="ec-countries" placeholder="البلد" />
+                      <input type="text" id="ec-f-gov" list="ec-govs" placeholder="المحافظة" />
+                      <select id="ec-f-status">
+                        <option value="all">كل الحالات</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                      <select id="ec-f-plan">
+                        <option value="all">كل الباقات</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="none">بدون باقة</option>
+                      </select>
+                      <input type="number" id="ec-f-expiring" min="0" max="365" placeholder="بتخلص خلال (يوم)" />
+                      <label class="ec-chk"><input type="checkbox" id="ec-f-staff" /> ضمّ الفريق</label>
+                      <button class="ec-load-btn" onclick="loadRecipients()"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> تحميل</button>
+                    </div>
+                    <datalist id="ec-countries"></datalist>
+                    <datalist id="ec-govs"></datalist>
+                    <div class="ec-selbar">
+                      <button class="ec-mini" onclick="ecSelectAll(true)">تحديد الكل</button>
+                      <button class="ec-mini" onclick="ecSelectAll(false)">إلغاء التحديد</button>
+                      <span class="ec-selinfo" id="ec-selinfo">0 محدد</span>
+                    </div>
+                    <div class="ec-table-wrap">
+                      <table class="ec-table">
+                        <thead><tr>
+                          <th style="width:34px;"></th><th>الاسم</th><th>الإيميل</th><th>المحافظة</th><th>الباقة</th><th>الحالة</th>
+                        </tr></thead>
+                        <tbody id="ec-recipients-tbody">
+                          <tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">اضغط "تحميل" لعرض الأعضاء</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="ec-pagination" id="ec-pagination"></div>
+                  </div>
+
+                  <!-- 3) Preview -->
+                  <div class="ec-card">
+                    <div class="ec-card-title">3) المعاينة
+                      <button class="ec-mini" onclick="previewEmail()"><i data-lucide="eye" style="width:13px;height:13px;"></i> حدّث المعاينة</button>
+                    </div>
+                    <div class="ec-preview-subject" id="ec-preview-subject">— العنوان هيظهر هنا —</div>
+                    <iframe id="ec-preview-frame" class="ec-preview-frame" sandbox="" title="Email preview"></iframe>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
           </div><!-- end team-content-area -->
         </div><!-- end team-layout -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Real Email Send Confirmation Modal -->
+  <div class="modal-overlay-team" id="ec-confirm-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3>🚨 تأكيد الإرسال الحقيقي</h3><button class="modal-close-team" onclick="closeModal('ec-confirm-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#f8c471;font-size:14px;line-height:1.8;margin:0 0 14px;">
+          إنت على وشك تبعت إيميل <b>حقيقي</b> لـ <b id="ec-confirm-count" style="color:#fff;">0</b> عضو فعلي. الخطوة دي مش بترجع.
+        </p>
+        <p style="color:#888;font-size:13px;margin:0 0 8px;">اكتب الجملة دي بالظبط عشان تأكّد:</p>
+        <div style="background:#0a0a0a;border:1px dashed #444;border-radius:8px;padding:10px;text-align:center;font-family:monospace;color:#D0FA06;letter-spacing:1px;margin-bottom:10px;user-select:all;">GHAWY-OFFICIAL-SEND</div>
+        <div class="fg"><input type="text" id="ec-confirm-input" placeholder="اكتب الجملة هنا" autocomplete="off" spellcheck="false" /></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('ec-confirm-modal')">إلغاء</button>
+        <button class="btn-confirm-team" id="ec-confirm-send-btn" onclick="confirmRealSend()">🚀 ابعت رسمي</button>
       </div>
     </div>
   </div>
@@ -2370,7 +2512,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1784577600"></script>
+  <script src="src/js/team.js?v=1784664000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 

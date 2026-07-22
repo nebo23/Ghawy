@@ -168,6 +168,22 @@ class Payment(Base):
     confirmed_at = Column(DateTime, nullable=True)
 
 
+# ═══════════════════════════════════════════
+#  EMAIL CAMPAIGNS
+# ═══════════════════════════════════════════
+
+class EmailCampaignSend(Base):
+    """سجل إرسال حملات الإيميل — صف لكل (حملة، إيميل) عشان نمنع تكرار الإرسال لنفس الشخص
+    في نفس الحملة (dedup) حتى لو الإرسال اتقطع ورجع اشتغل. (الجدول بيتعمل auto عبر create_all)."""
+    __tablename__ = "email_campaign_sends"
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(String(200), index=True, nullable=False)  # اسم/معرّف الحملة
+    email = Column(String(255), index=True, nullable=False)
+    status = Column(String(500), nullable=False, default="sent")   # "sent" أو "failed: ..."
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+
 
 # ═══════════════════════════════════════════
 #  COMMUNITY — Categories, Posts, Comments, Likes
