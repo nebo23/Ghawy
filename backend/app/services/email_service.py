@@ -5,12 +5,71 @@ import unicodedata
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 from pathlib import Path
 from dotenv import load_dotenv
 
 
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
+
+
+# ═══════════════════════════════════════════════════════
+#  هوية الباعت الموحّدة + أصول البراند (مصدر واحد لكل الإيميلات)
+#  كل إيميل يخرج من النظام (معاملاتي + حملات) بيستخدم الاسم ده والقالب الموحّد.
+# ═══════════════════════════════════════════════════════
+
+# اسم الباعت الظاهر — موحّد لكل الإيميلات (معاملاتي + حملات)
+FROM_NAME = "Ghawy Team"
+
+# فونت موحّد لكل الإيميلات (Cairo + fallback مضمون)
+FONT_STACK = "'Cairo', Arial, sans-serif"
+
+# لون اللينكات الموحّد — نفس أزرق المنصة
+LINK_BLUE = "#3f8ff9"
+
+# صور البراند inline عبر Content-ID (نفس مجلد أصول الحملات — مصدر واحد مش مكرّر)
+_BRAND_ASSETS_DIR = Path(__file__).resolve().parent / "email_campaign_assets"
+_BRAND_ASSET_FILES = {
+    "logo": _BRAND_ASSETS_DIR / "logo.png",
+    "instagram": _BRAND_ASSETS_DIR / "icon_instagram.png",
+    "facebook": _BRAND_ASSETS_DIR / "icon_facebook.png",
+    "tiktok": _BRAND_ASSETS_DIR / "icon_tiktok.png",
+    "whatsapp": _BRAND_ASSETS_DIR / "icon_whatsapp.png",
+}
+# مصادر الصور جوه القالب: Content-ID (للإرسال الفعلي)
+_CID_IMAGE_SRCS = {
+    "logo": "cid:ghawy_logo",
+    "instagram": "cid:social_instagram",
+    "facebook": "cid:social_facebook",
+    "tiktok": "cid:social_tiktok",
+    "whatsapp": "cid:icon_whatsapp",
+}
+# الـ Content-ID header ids المطابقة (اللي بتتربط وقت الإرسال)
+_CID_HEADER_IDS = {
+    "logo": "ghawy_logo",
+    "instagram": "social_instagram",
+    "facebook": "social_facebook",
+    "tiktok": "social_tiktok",
+    "whatsapp": "icon_whatsapp",
+}
+
+
+def _attach_brand_images(message) -> None:
+    """يربط صور البراند (لوجو/سوشيال/واتساب) inline بالـ Content-IDs اللي القالب الموحّد
+    بيرجّعها (cid:...). بيتندَه تلقائياً من _send_email لأي إيميل فيه صور البراند."""
+    for key, header_id in _CID_HEADER_IDS.items():
+        path = _BRAND_ASSET_FILES.get(key)
+        if not path or not os.path.exists(path):
+            continue
+        try:
+            with open(path, "rb") as f:
+                img = MIMEImage(f.read())
+            img.add_header("Content-ID", f"<{header_id}>")
+            img.add_header("Content-Disposition", "inline", filename=os.path.basename(str(path)))
+            message.attach(img)
+        except Exception:
+            continue
 
 
 def _get_smtp_config():
@@ -28,20 +87,27 @@ def _get_smtp_config():
 
 
 def _send_email(to_email: str, subject: str, body_text: str, body_html: str = None) -> None:
-    """Generic email sender. If body_html is provided, sends multipart."""
+    """المُرسِل الموحّد لكل الإيميلات المعاملاتية. الاسم الظاهر دايماً FROM_NAME ("Ghawy Team").
+    لو الـ HTML بيستخدم القالب الموحّد (فيه صور البراند cid:) بنربط الصور inline تلقائياً."""
     smtp_host, smtp_port, smtp_user, smtp_password, smtp_from = _get_smtp_config()
+    from_header = f"{FROM_NAME} <{smtp_from}>" if FROM_NAME else smtp_from
 
     if body_html:
-        message = MIMEMultipart("alternative")
+        # multipart/related عشان صور البراند inline (cid:) تتعرض جوه الإيميل
+        message = MIMEMultipart("related")
         message["Subject"] = subject
-        message["From"] = smtp_from
+        message["From"] = from_header
         message["To"] = to_email
-        message.attach(MIMEText(body_text, "plain"))
-        message.attach(MIMEText(body_html, "html"))
+        alt = MIMEMultipart("alternative")
+        alt.attach(MIMEText(body_text, "plain", "utf-8"))
+        alt.attach(MIMEText(body_html, "html", "utf-8"))
+        message.attach(alt)
+        if "cid:" in body_html:
+            _attach_brand_images(message)
     else:
         message = EmailMessage()
         message["Subject"] = subject
-        message["From"] = smtp_from
+        message["From"] = from_header
         message["To"] = to_email
         message.set_content(body_text)
 
@@ -51,41 +117,54 @@ def _send_email(to_email: str, subject: str, body_text: str, body_html: str = No
         server.send_message(message)
 
 
+def _otp_inner_html(code: str, intro: str, expiry_note: str) -> str:
+    """المحتوى الداخلي لإيميل كود التحقق — بيتلفّ في القالب الموحّد."""
+    return f"""
+          <p style="color:#1A1A1A;font-size:16px;font-weight:600;margin:0 0 16px;text-align:right;">كود التحقق الخاص بك</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 18px;text-align:right;">{intro}</p>
+          <div style="background:#f4f8ff;border:1px solid #d5e3fb;border-radius:10px;padding:22px;text-align:center;margin:0 0 18px;">
+            <span style="color:{LINK_BLUE};font-size:34px;letter-spacing:8px;font-weight:800;font-family:{FONT_STACK};">{code}</span>
+          </div>
+          <p style="color:#6b7280;font-size:13px;text-align:right;margin:0;">{expiry_note}</p>"""
+
+
 def send_verification_email(to_email: str, code: str) -> None:
+    body_text = (
+        f"كود التحقق الخاص بك هو: {code}\n\n"
+        "الكود صالح لمدة 15 دقيقة.\n"
+        "لو مطلبتش الكود ده، تجاهل الرسالة."
+    )
+    inner = _otp_inner_html(
+        code,
+        intro="استخدم الكود التالي لإتمام عملية التحقق:",
+        expiry_note="الكود صالح لمدة 15 دقيقة. لو مطلبتش الكود ده، تجاهل الرسالة.",
+    )
     _send_email(
         to_email=to_email,
-        subject="Your verification code",
-        body_text=(
-            f"Your verification code is: {code}\n\n"
-            "This code expires in 15 minutes.\n"
-            "If you did not request this, ignore this email."
-        ),
+        subject="كود التحقق — غاوي",
+        body_text=body_text,
+        body_html=render_ghawy_email(inner),
     )
 
 
 def send_legacy_otp_email(to_email: str, code: str) -> None:
     """Send OTP for legacy members promo verification."""
     body_text = (
-        f"مرحباً بك في Ghawy،\n\n"
+        f"مرحباً بك في غاوي،\n\n"
         f"كود التحقق الخاص بك هو: {code}\n\n"
         f"هذا الكود صالح لمدة 10 دقائق.\n"
         f"إذا لم تطلب هذا الكود، يرجى تجاهل هذه الرسالة."
     )
-    body_html = f"""
-    <div dir="rtl" style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a; text-align: center;">
-        <h2 style="color: #fff; margin: 0 0 20px;">كود التحقق الخاص بك</h2>
-        <p style="color: #ccc; font-size: 16px; margin: 0 0 20px;">استخدم الكود التالي للحصول على الشهر المجاني:</p>
-        <div style="background: rgba(63, 143, 249, 0.1); border: 1px solid rgba(63, 143, 249, 0.3); border-radius: 8px; padding: 24px; margin: 20px 0;">
-            <p style="color: #3f8ff9; font-size: 36px; letter-spacing: 8px; font-weight: 700; margin: 0;">{code}</p>
-        </div>
-        <p style="color: #888; font-size: 13px; margin-top: 24px;">هذا الكود صالح لمدة 10 دقائق.</p>
-    </div>
-    """
+    inner = _otp_inner_html(
+        code,
+        intro="استخدم الكود التالي للحصول على الشهر المجاني:",
+        expiry_note="الكود صالح لمدة 10 دقائق. لو مطلبتش الكود ده، تجاهل الرسالة.",
+    )
     _send_email(
         to_email=to_email,
         subject="كود التحقق — Ghawy Legacy",
         body_text=body_text,
-        body_html=body_html,
+        body_html=render_ghawy_email(inner),
     )
 
 
@@ -115,26 +194,34 @@ def send_admin_payment_notification(
         f"Review it here: {frontend_url}/teamdashboard.html#pending-requests"
     )
 
-    body_html = f"""
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
-        <h2 style="color: #fff; margin: 0 0 20px;">🔔 New Payment Request</h2>
-        <p style="color: #aaa; margin: 0 0 20px;">A new manual payment request has been submitted.</p>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Name</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{full_name}</td></tr>
-            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Email</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{email}</td></tr>
-            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Phone</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{phone or 'N/A'}</td></tr>
-            <tr><td style="color: #888; padding: 8px 0; border-bottom: 1px solid #1e1e1e;">Amount</td><td style="color: #fff; padding: 8px 0; border-bottom: 1px solid #1e1e1e; text-align: right;">{amount or 'N/A'} EGP</td></tr>
-            <tr><td style="color: #888; padding: 8px 0;">Submitted</td><td style="color: #fff; padding: 8px 0; text-align: right;">{created_at}</td></tr>
-        </table>
-        <a href="{frontend_url}/teamdashboard.html#pending-requests" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Review Now →</a>
-    </div>
-    """
+    def _row(label, value, last=False):
+        border = "" if last else "border-bottom:1px solid #eee;"
+        return (
+            f'<tr><td style="color:#6b7280;padding:9px 0;{border}text-align:right;">{label}</td>'
+            f'<td style="color:#1a1a1a;padding:9px 0;{border}text-align:left;direction:ltr;">{value}</td></tr>'
+        )
+
+    review_url = f"{frontend_url}/teamdashboard.html#pending-requests"
+    inner = f"""
+          <p style="color:#1A1A1A;font-size:16px;font-weight:700;margin:0 0 16px;text-align:right;">🔔 طلب دفع جديد</p>
+          <p style="color:#4b4b52;font-size:15px;margin:0 0 18px;text-align:right;">اتقدّم طلب دفع يدوي جديد ومحتاج مراجعة.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 22px;font-size:14px;">
+            {_row('الاسم', full_name)}
+            {_row('الإيميل', email)}
+            {_row('الموبايل', phone or 'N/A')}
+            {_row('المبلغ', f"{amount or 'N/A'} EGP")}
+            {_row('التاريخ', created_at, last=True)}
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px;"><tr>
+            <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
+              <a href="{review_url}" style="display:block;padding:15px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">مراجعة الطلب الآن →</a>
+            </td></tr></table>"""
 
     _send_email(
         to_email=admin_email,
         subject=f"🔔 New payment request — {full_name}",
         body_text=body_text,
-        body_html=body_html,
+        body_html=render_ghawy_email(inner),
     )
 
 
@@ -683,17 +770,77 @@ def _first_name(full_name: str) -> str:
     return arabize_first_name(tok) or tok
 
 
+def _ghawy_footer_html(srcs: dict) -> str:
+    """الفوتر الموحّد لكل الإيميلات: لوجو + سوشيال (تيك توك/فيسبوك/إنستجرام) + لينكات
+    زرقا + واتساب الدعم + سطر الكوبيرايت. srcs = خريطة مصادر الصور
+    (CID للإرسال الفعلي / data: URIs للمعاينة)."""
+    def link(url, label):
+        return (f'<a href="{url}" target="_blank" style="color:{LINK_BLUE};text-decoration:none;'
+                f'margin:0 9px;font-size:13px;">{label}</a>')
+
+    def social(url, key, alt):
+        return (f'<a href="{url}" target="_blank" style="display:inline-block;margin:0 7px;text-decoration:none;border:0;">'
+                f'<img src="{srcs.get(key, "")}" width="28" height="28" alt="{alt}" '
+                f'style="display:inline-block;width:28px;height:28px;border:0;vertical-align:middle;"></a>')
+
+    return f"""
+        <tr><td style="padding:0 40px 34px;">
+          <div style="border-top:1px solid #eee;padding-top:26px;text-align:center;">
+            <div><img src="{srcs.get('logo', '')}" alt="Ghawy" width="72" style="display:inline-block;border:0;opacity:0.92;"></div>
+            <div style="margin-top:16px;">
+              {social(_SOCIAL_TIKTOK, 'tiktok', 'TikTok')}
+              {social(_SOCIAL_FACEBOOK, 'facebook', 'Facebook')}
+              {social(_SOCIAL_INSTAGRAM, 'instagram', 'Instagram')}
+            </div>
+            <div style="margin-top:18px;">
+              {link(_LINK_TERMS, 'الشروط والأحكام')}
+              {link(_LINK_PRIVACY, 'سياسة الخصوصية')}
+              {link(_LINK_START, 'ابدأ الآن')}
+            </div>
+            <div style="margin-top:14px;">
+              <a href="{_SOCIAL_WHATSAPP}" target="_blank" style="text-decoration:none;color:{LINK_BLUE};font-size:13px;">
+                <img src="{srcs.get('whatsapp', '')}" width="18" height="18" alt="واتساب" style="vertical-align:middle;margin-left:6px;border:0;">الدعم: {_WHATSAPP_DISPLAY}
+              </a>
+            </div>
+            <div style="margin-top:20px;color:#9a9aa6;font-size:12px;">© Copyright Ghawy 2026</div>
+          </div>
+        </td></tr>"""
+
+
+def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool = True) -> str:
+    """القالب الموحّد الوحيد لشكل أي إيميل غاوي (معاملاتي أو حملة).
+    body_html = المحتوى الداخلي بس؛ الإطار (card فاتح + فونت Cairo + الفوتر الموحّد) واحد
+    لكل الإيميلات — ممنوع يبقى فيه قالب تاني."""
+    srcs = image_srcs or _CID_IMAGE_SRCS
+    footer_html = _ghawy_footer_html(srcs) if footer else ""
+    return f"""<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:24px 0;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+             style="background-color:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;font-family:{FONT_STACK};box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <tr>
+          <td style="padding:36px 40px;direction:rtl;text-align:right;color:#1a1a1a;font-size:16px;line-height:1.9;font-family:{FONT_STACK};">
+            {body_html}
+          </td>
+        </tr>
+        {footer_html}
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+
 def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
                       cta_url: str, pre_footer: str = "") -> str:
-    """القالب الأساسي الموحّد لكل الإيميلات التلقائية (RTL) — Design System فاتح."""
-    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
-    logo = f"{frontend_url}/imgs/community-logo.png"
-    # أيقونات السوشيال بنسخة رمادية موحّدة (monochrome) بدل الألوان البراندية
-    icon = lambda n: f"{frontend_url}/imgs/email/{n}-mono.png"
-
-    # ستاك خطوط عربي نضيف (يفضل قريب من المرجع) مع fallbacks مضمونة على كل الأجهزة
-    font_stack = "'Tajawal','Cairo',Tahoma,Arial,sans-serif"
-
+    """الإيميلات التلقائية: بيبني المحتوى الداخلي بس (عنوان + فقرات + زرار CTA + توقيع)
+    ويلفّه في القالب الموحّد render_ghawy_email — فمفيش قالب مكرّر."""
     paragraphs_html = "".join(
         f'<p style="margin:0 0 14px;">{p}</p>' for p in body_paragraphs
     )
@@ -706,54 +853,16 @@ def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
             f'{pre_footer}</div>'
         )
 
-    return f"""\
-<div style="background:#F4F4F5;padding:24px 0;margin:0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F4F5;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" dir="rtl" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E5E5E5;border-radius:14px;overflow:hidden;font-family:{font_stack};box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-        <tr><td style="padding:34px 32px 8px;">
+    inner = f"""
           <p style="color:#1A1A1A;font-size:16px;font-weight:600;margin:0 0 16px;text-align:right;line-height:1.7;">{heading}</p>
           <div style="color:#1A1A1A;font-size:15px;font-weight:400;line-height:1.7;text-align:right;">{paragraphs_html}</div>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 12px;"><tr>
             <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
-              <a href="{cta_url}" style="display:block;padding:16px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{font_stack};">{cta_text}</a>
+              <a href="{cta_url}" style="display:block;padding:16px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">{cta_text}</a>
             </td></tr></table>
           {pre_footer_block}
-          <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>
-        </td></tr>
-        <tr><td align="center" style="padding:26px 24px 6px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-            <td align="center" bgcolor="#FFFFFF" style="border-radius:16px;padding:16px 22px;border:1px solid #ECECEC;">
-              <img src="{logo}" alt="Ghawy" width="80" style="display:block;max-width:80px;height:auto;margin:0 auto;">
-            </td></tr></table>
-        </td></tr>
-        <tr><td align="center" style="padding:18px 24px 6px;">
-          <p style="color:#6B7280;font-size:13px;margin:0 0 12px;">تابعنا على السوشيال ميديا</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-            <td style="padding:0 5px;"><a href="{_SOCIAL_INSTAGRAM}"><img src="{icon('instagram')}" width="28" height="28" alt="Instagram" style="display:block;"></a></td>
-            <td style="padding:0 5px;"><a href="{_SOCIAL_TIKTOK}"><img src="{icon('tiktok')}" width="28" height="28" alt="TikTok" style="display:block;"></a></td>
-            <td style="padding:0 5px;"><a href="{_SOCIAL_FACEBOOK}"><img src="{icon('facebook')}" width="28" height="28" alt="Facebook" style="display:block;"></a></td>
-          </tr></table>
-        </td></tr>
-        <tr><td align="center" style="background:#FAFAFB;padding:22px 24px;border-top:1px solid #E5E5E5;">
-          <p style="color:#9a9aa6;font-size:12px;margin:0 0 10px;">© 2026 Ghawy — AI Automation Atlas</p>
-          <p style="margin:0 0 10px;">
-            <a href="{_LINK_TERMS}" style="color:#2563EB;font-size:12px;text-decoration:none;">الشروط والأحكام</a>
-            <span style="color:#c7c7cf;">&nbsp;·&nbsp;</span>
-            <a href="{_LINK_PRIVACY}" style="color:#2563EB;font-size:12px;text-decoration:none;">سياسة الخصوصية</a>
-            <span style="color:#c7c7cf;">&nbsp;·&nbsp;</span>
-            <a href="{_LINK_START}" style="color:#2563EB;font-size:12px;text-decoration:none;">ابدأ الآن</a>
-          </p>
-          <p style="margin:0;">
-            <a href="{_SOCIAL_WHATSAPP}" style="color:#6B7280;font-size:12px;text-decoration:none;">
-              <img src="{icon('whatsapp')}" width="14" height="14" alt="واتساب" style="vertical-align:middle;margin-left:5px;">{_WHATSAPP_DISPLAY}
-            </a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</div>"""
+          <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>"""
+    return render_ghawy_email(inner)
 
 
 def _brand_email_text(*, heading: str, body_paragraphs: list, cta_text: str,
@@ -772,7 +881,7 @@ def _brand_email_text(*, heading: str, body_paragraphs: list, cta_text: str,
         f"تيك توك: {_SOCIAL_TIKTOK}",
         f"فيسبوك: {_SOCIAL_FACEBOOK}",
         f"واتساب: {_SOCIAL_WHATSAPP}",
-        "© 2026 Ghawy — AI Automation Atlas",
+        "© Copyright Ghawy 2026",
     ]
     return "\n".join(lines)
 

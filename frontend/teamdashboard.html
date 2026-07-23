@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=10" />
+  <link rel="stylesheet" href="src/css/team.css?v=11" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1813,8 +1813,24 @@
                       <input type="text" id="ec-subject" placeholder="مثال: أهلاً {first_name} 👋 خبر حلو ليك" />
                     </div>
                     <div class="fg">
-                      <label>نص الرسالة (HTML) *</label>
-                      <textarea id="ec-body" rows="9" placeholder="اكتب محتوى الإيميل هنا... تقدر تستخدم HTML و&lt;br&gt; للأسطر."></textarea>
+                      <label>نص الرسالة *</label>
+                      <div class="ec-editor-wrap">
+                        <div class="ec-toolbar" id="ec-toolbar">
+                          <button type="button" class="ec-tb" data-cmd="h1" title="عنوان كبير (H1)">H1</button>
+                          <button type="button" class="ec-tb" data-cmd="h2" title="عنوان متوسط (H2)">H2</button>
+                          <button type="button" class="ec-tb" data-cmd="h3" title="عنوان صغير (H3)">H3</button>
+                          <span class="ec-tb-sep"></span>
+                          <button type="button" class="ec-tb" data-cmd="bold" title="عريض"><b>B</b></button>
+                          <button type="button" class="ec-tb" data-cmd="italic" title="مائل"><i>I</i></button>
+                          <span class="ec-tb-sep"></span>
+                          <button type="button" class="ec-tb" data-cmd="ul" title="قائمة نقطية">☰</button>
+                          <button type="button" class="ec-tb" data-cmd="link" title="إضافة رابط">🔗</button>
+                          <button type="button" class="ec-tb" data-cmd="hr" title="خط فاصل">―</button>
+                          <button type="button" class="ec-tb" data-cmd="image" title="إضافة صورة">🖼️</button>
+                        </div>
+                        <div id="ec-body-editor" class="ec-richtext" contenteditable="true" dir="rtl" data-placeholder="اكتب محتوى الإيميل هنا... استخدم شريط الأدوات فوق للعناوين والتنسيق والصور."></div>
+                      </div>
+                      <textarea id="ec-body" style="display:none;"></textarea>
                       <div class="ec-hint">🏷️ اسحب المتغيّر لأي خانة (العنوان/النص) أو اضغط عليه عشان يتحط عند المؤشّر — وبيتبدّل لكل عضو:</div>
                       <div class="ec-vars" id="ec-vars">
                         <span class="ec-var" draggable="true" data-var="{first_name}" title="الاسم الأول زي ما هو في الحساب (ممكن يكون إنجليزي)">{first_name}</span>
@@ -1830,7 +1846,10 @@
                       <div class="fg" style="flex:3;"><label>لينك الزرار</label><input type="url" id="ec-btn-link" placeholder="https://ghawy.ai" /></div>
                     </div>
                     <div class="fg"><label>سطر ختامي (اختياري)</label><input type="text" id="ec-closing" placeholder="مستنيينك 🤍" /></div>
-                    <div class="fg"><label>التوقيع</label><input type="text" id="ec-signoff" value="محمد - غاوي" /></div>
+                    <div class="ec-row2">
+                      <div class="fg" style="flex:1;"><label>التوقيع</label><input type="text" id="ec-signoff" value="محمد - غاوي" /></div>
+                      <div class="fg" style="flex:1;"><label>لو الاسم مش معروف نناديه بـ <span class="ec-muted">(fallback لـ {first_name_ar})</span></label><input type="text" id="ec-name-fallback" value="صديقنا" placeholder="صديقنا" /></div>
+                    </div>
                   </div>
 
                   <!-- 4) Send -->
@@ -2574,7 +2593,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1784900000"></script>
+  <script src="src/js/team.js?v=1785200000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 

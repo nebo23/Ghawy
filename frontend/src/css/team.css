@@ -1275,6 +1275,34 @@
 #tab-emails textarea { resize: vertical; line-height: 1.7; direction: rtl; }
 #tab-emails input:focus, #tab-emails textarea:focus, #tab-emails select:focus { border-color: #3f8ff9; }
 
+/* Rich text editor (body) */
+#tab-emails .ec-editor-wrap { border: 1px solid #333; border-radius: 8px; overflow: hidden; background: #111; }
+#tab-emails .ec-editor-wrap:focus-within { border-color: #3f8ff9; }
+#tab-emails .ec-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px; background: #161616; border-bottom: 1px solid #2a2a2a; }
+#tab-emails .ec-tb {
+  min-width: 30px; height: 28px; padding: 0 8px; background: #0d0d0d; border: 1px solid #2a2a2a;
+  border-radius: 6px; color: #ddd; font-size: 13px; cursor: pointer; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; transition: border-color .15s, background .15s;
+}
+#tab-emails .ec-tb:hover { border-color: #3f8ff9; background: #12203a; color: #fff; }
+#tab-emails .ec-tb:active { transform: scale(0.94); }
+#tab-emails .ec-tb b, #tab-emails .ec-tb i { font-size: 14px; }
+#tab-emails .ec-tb-sep { width: 1px; height: 18px; background: #2a2a2a; margin: 0 3px; }
+#tab-emails .ec-richtext {
+  min-height: 190px; max-height: 460px; overflow-y: auto; padding: 12px 14px; color: #fff;
+  font-size: 14px; line-height: 1.9; direction: rtl; text-align: right; outline: none; background: #111;
+}
+#tab-emails .ec-richtext.ec-drop-active { box-shadow: inset 0 0 0 2px rgba(208,250,6,.25); }
+#tab-emails .ec-richtext:empty::before { content: attr(data-placeholder); color: #666; pointer-events: none; }
+#tab-emails .ec-richtext h1 { font-size: 22px; font-weight: 800; margin: 0 0 10px; color: #fff; }
+#tab-emails .ec-richtext h2 { font-size: 19px; font-weight: 800; margin: 0 0 9px; color: #fff; }
+#tab-emails .ec-richtext h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: #fff; }
+#tab-emails .ec-richtext p { margin: 0 0 10px; }
+#tab-emails .ec-richtext a { color: #3f8ff9; }
+#tab-emails .ec-richtext hr { border: 0; border-top: 1px solid #3a3a3a; margin: 14px 0; }
+#tab-emails .ec-richtext img { max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0; }
+#tab-emails .ec-richtext ul, #tab-emails .ec-richtext ol { margin: 0 0 10px; padding-inline-start: 22px; }
+
 #tab-emails .ec-row2 { display: flex; gap: 10px; }
 #tab-emails .ec-row2 .fg { flex: 1; margin-bottom: 12px; }
 

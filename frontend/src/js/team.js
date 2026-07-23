@@ -4268,7 +4268,126 @@ function ecInitEditorControls() {
   document.querySelectorAll('input[name="ec-mode"]').forEach(r => r.addEventListener('change', ecOnModeChange));
   const s = document.getElementById('ec-f-search');
   if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') loadRecipients(); });
+  ecInitToolbar();
   ecInitVars();
+}
+
+// ══ محرر المحتوى الغني (Rich Text) ═══════════════════════════════
+// contentEditable + toolbar (H1/H2/H3/Bold/Italic/List/Link/Divider/Image).
+// الناتج بيتعقّم (sanitize) لـ HTML آمن للإيميل وبيتخزّن في #ec-body (المخفي).
+
+// الوسوم المسموحة + ستايلات inline آمنة للإيميل (نفس أزرق الفوتر للينكات)
+const EC_ALLOWED = { H1:1, H2:1, H3:1, P:1, STRONG:1, EM:1, A:1, HR:1, IMG:1, UL:1, OL:1, LI:1, BR:1 };
+const EC_STYLES = {
+  H1: 'margin:0 0 14px;font-size:26px;line-height:1.4;font-weight:800;color:#111;',
+  H2: 'margin:0 0 12px;font-size:22px;line-height:1.4;font-weight:800;color:#111;',
+  H3: 'margin:0 0 10px;font-size:18px;line-height:1.4;font-weight:700;color:#111;',
+  P:  'margin:0 0 14px;font-size:16px;line-height:1.9;color:#1a1a1a;',
+  A:  'color:#3f8ff9;text-decoration:underline;',
+  HR: 'border:0;border-top:1px solid #e5e5e5;margin:22px 0;',
+  IMG:'max-width:100%;height:auto;display:block;border-radius:8px;margin:0 0 14px;',
+  UL: 'margin:0 0 14px;padding-inline-start:22px;',
+  OL: 'margin:0 0 14px;padding-inline-start:22px;',
+  LI: 'margin:0 0 6px;font-size:16px;line-height:1.9;color:#1a1a1a;',
+};
+
+function ecSanitizeInto(src, out) {
+  src.childNodes.forEach(child => {
+    if (child.nodeType === 3) { out.appendChild(document.createTextNode(child.textContent)); return; }
+    if (child.nodeType !== 1) return;
+    let tag = child.tagName;
+    if (tag === 'B') tag = 'STRONG';
+    if (tag === 'I') tag = 'EM';
+    if (tag === 'DIV') tag = 'P';
+    if (!EC_ALLOWED[tag]) { ecSanitizeInto(child, out); return; } // وسم مرفوض → نسيب المحتوى بس
+    const el = document.createElement(tag.toLowerCase());
+    if (EC_STYLES[tag]) el.setAttribute('style', EC_STYLES[tag]);
+    if (tag === 'A') {
+      let href = child.getAttribute('href') || '';
+      if (/^\s*javascript:/i.test(href)) href = '';
+      el.setAttribute('href', href);
+      el.setAttribute('target', '_blank');
+      el.setAttribute('rel', 'noopener');
+    }
+    if (tag === 'IMG') {
+      let src2 = child.getAttribute('src') || '';
+      if (!/^(https?:\/\/|data:image\/)/i.test(src2)) src2 = '';
+      el.setAttribute('src', src2);
+      el.setAttribute('alt', child.getAttribute('alt') || '');
+    }
+    if (tag !== 'BR' && tag !== 'HR' && tag !== 'IMG') ecSanitizeInto(child, el);
+    out.appendChild(el);
+  });
+}
+
+function ecSanitizeHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  const out = document.createElement('div');
+  ecSanitizeInto(tmp, out);
+  return out.innerHTML;
+}
+
+function ecSyncBody() {
+  const editor = document.getElementById('ec-body-editor');
+  const hidden = document.getElementById('ec-body');
+  if (!editor || !hidden) return;
+  const html = ecSanitizeHtml(editor.innerHTML).trim();
+  hidden.value = html;
+}
+
+function ecInitToolbar() {
+  const tb = document.getElementById('ec-toolbar');
+  const editor = document.getElementById('ec-body-editor');
+  if (!tb || !editor) return;
+  // منع فقدان التحديد وقت الضغط على زرار الأدوات
+  tb.addEventListener('mousedown', e => e.preventDefault());
+  tb.querySelectorAll('.ec-tb').forEach(b => b.addEventListener('click', () => ecExecCmd(b.dataset.cmd)));
+  editor.addEventListener('input', ecSyncBody);
+  editor.addEventListener('blur', ecSyncBody);
+  editor.addEventListener('focus', () => { ecLastField = editor; });
+}
+
+function ecExecCmd(cmd) {
+  const editor = document.getElementById('ec-body-editor');
+  if (!editor) return;
+  editor.focus();
+  switch (cmd) {
+    case 'h1': document.execCommand('formatBlock', false, 'H1'); break;
+    case 'h2': document.execCommand('formatBlock', false, 'H2'); break;
+    case 'h3': document.execCommand('formatBlock', false, 'H3'); break;
+    case 'bold': document.execCommand('bold'); break;
+    case 'italic': document.execCommand('italic'); break;
+    case 'ul': document.execCommand('insertUnorderedList'); break;
+    case 'hr': document.execCommand('insertHTML', false, '<hr><p><br></p>'); break;
+    case 'link': {
+      const url = (prompt('لينك (URL):', 'https://') || '').trim();
+      if (url && !/^javascript:/i.test(url)) document.execCommand('createLink', false, url);
+      break;
+    }
+    case 'image': {
+      const url = (prompt('رابط الصورة (URL):', 'https://') || '').trim();
+      if (url && /^(https?:\/\/|data:image\/)/i.test(url)) {
+        document.execCommand('insertHTML', false, `<img src="${url.replace(/"/g, '&quot;')}" alt=""><p><br></p>`);
+      }
+      break;
+    }
+  }
+  ecSyncBody();
+}
+
+function ecInsertAtCaret(editor, text) {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const node = document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node); range.setEndAfter(node);
+    sel.removeAllRanges(); sel.addRange(range);
+  } else {
+    editor.appendChild(document.createTextNode(text));
+  }
 }
 
 // ── تبديل العروض ──────────────────────────────────────────────
@@ -4373,7 +4492,9 @@ const EC_TEXT_FIELDS = ['ec-title', 'ec-description', 'ec-campaign-id', 'ec-subj
 function ecResetEditor() {
   ecEditing = null;
   EC_TEXT_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const editor = document.getElementById('ec-body-editor'); if (editor) editor.innerHTML = '';
   const so = document.getElementById('ec-signoff'); if (so) so.value = 'محمد - غاوي';
+  const nf = document.getElementById('ec-name-fallback'); if (nf) nf.value = 'صديقنا';
   const idEl = document.getElementById('ec-campaign-id'); if (idEl) idEl.readOnly = false;
   const t = document.getElementById('ec-editor-title'); if (t) t.textContent = '📧 حملة جديدة';
   ecApplyAudience({});
@@ -4400,7 +4521,13 @@ function ecFillEditor(camp) {
   set('ec-campaign-id', camp.campaign_id || '');
   const c = camp.content || {};
   set('ec-subject', c.subject_template || '');
-  set('ec-body', c.body_html || (Array.isArray(c.body_paragraphs_html) ? c.body_paragraphs_html.join('\n') : ''));
+  // جسم الرسالة → المحرر الغني (بيتعقّم عند التحميل) + مزامنة للـ hidden field
+  const bodyHtml = c.body_html || (Array.isArray(c.body_paragraphs_html)
+    ? c.body_paragraphs_html.map(p => `<p>${p}</p>`).join('') : '');
+  const editor = document.getElementById('ec-body-editor');
+  if (editor) editor.innerHTML = ecSanitizeHtml(bodyHtml);
+  ecSyncBody();
+  set('ec-name-fallback', c.name_ar_fallback || 'صديقنا');
   let bt = c.button_text || '', bl = c.button_link || '';
   if ((!bt || !bl) && Array.isArray(c.buttons) && c.buttons.length) {
     bt = c.buttons[0].text || bt; bl = c.buttons[0].link || bl;
@@ -4557,15 +4684,21 @@ let ecLastField = null;
 function ecInitVars() {
   if (ecVarsInited) return;
   ecVarsInited = true;
-  // الخانات اللي بتقبل المتغيّرات — بنتتبّع آخر واحدة اتعملها focus عشان الضغط يحطّها فيها
-  const fieldIds = ['ec-subject', 'ec-body', 'ec-closing', 'ec-btn-text', 'ec-signoff'];
+  // الخانات اللي بتقبل المتغيّرات — بنتتبّع آخر واحدة اتعملها focus عشان الضغط يحطّها فيها.
+  // جسم الرسالة بقى محرر غني (contentEditable) بدل textarea — بيتضاف لنفس التتبّع.
+  const fieldIds = ['ec-subject', 'ec-closing', 'ec-btn-text', 'ec-signoff'];
   const fields = fieldIds.map(id => document.getElementById(id)).filter(Boolean);
+  const editor = document.getElementById('ec-body-editor');
+  if (editor) fields.push(editor);
   fields.forEach(el => {
     el.addEventListener('focus', () => { ecLastField = el; });
-    // تمييز بصري وقت السحب فوق الخانة (الإفلات نفسه بيتعامل معاه المتصفح تلقائي للـ input/textarea)
+    // تمييز بصري وقت السحب فوق الخانة (الإفلات نفسه بيتعامل معاه المتصفح تلقائي)
     el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('ec-drop-active'); });
     el.addEventListener('dragleave', () => el.classList.remove('ec-drop-active'));
-    el.addEventListener('drop', () => { el.classList.remove('ec-drop-active'); setTimeout(() => { ecLastField = el; }, 0); });
+    el.addEventListener('drop', () => {
+      el.classList.remove('ec-drop-active');
+      setTimeout(() => { ecLastField = el; if (el.isContentEditable) ecSyncBody(); }, 0);
+    });
   });
   document.querySelectorAll('#ec-vars .ec-var').forEach(chip => {
     chip.addEventListener('dragstart', e => {
@@ -4580,9 +4713,15 @@ function ecInitVars() {
 }
 
 function ecInsertVar(text) {
-  const el = ecLastField || document.getElementById('ec-body');
+  const el = ecLastField || document.getElementById('ec-body-editor');
   if (!el) return;
   el.focus();
+  if (el.isContentEditable) {
+    ecInsertAtCaret(el, text);
+    ecSyncBody();
+    ecLastField = el;
+    return;
+  }
   const start = (el.selectionStart != null) ? el.selectionStart : el.value.length;
   const end = (el.selectionEnd != null) ? el.selectionEnd : el.value.length;
   el.value = el.value.slice(0, start) + text + el.value.slice(end);
@@ -4710,12 +4849,15 @@ function ecUpdateCounts() {
 function ecSelectedList() { return Array.from(ecSelected.values()); }
 
 function ecBuildContent() {
+  ecSyncBody(); // يعقّم محتوى المحرر ويكتبه في #ec-body قبل القراءة
   const g = id => (document.getElementById(id)?.value || '');
   const content = {
     subject_template: g('ec-subject').trim(),
     body_html: g('ec-body'),
     signoff_html: g('ec-signoff').trim() || 'محمد - غاوي',
   };
+  const nf = g('ec-name-fallback').trim();
+  if (nf) content.name_ar_fallback = nf;
   const bt = g('ec-btn-text').trim(), bl = g('ec-btn-link').trim();
   if (bt && bl) { content.button_text = bt; content.button_link = bl; }
   const cl = g('ec-closing').trim();

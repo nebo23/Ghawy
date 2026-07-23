@@ -39,6 +39,11 @@ from app.services.email_service import (
     _governorate_to_arabic,
     arabize_first_name,
     country_to_arabic,
+    render_ghawy_email,
+    _attach_brand_images,
+    _CID_IMAGE_SRCS,
+    FROM_NAME,
+    FONT_STACK,
 )
 from app.database import SessionLocal
 from app.models import EmailCampaignSend
@@ -57,8 +62,8 @@ BRAND_GREEN = "#D0FA06"
 MIN_DELAY_SECONDS = 4
 MAX_DELAY_SECONDS = 9
 
-# الاسم الظاهر جنب الإيميل الباعت (support@ghawy.ai بييجي من SMTP_FROM_EMAIL)
-FROM_NAME = "غاوي"
+# الاسم الظاهر جنب الإيميل الباعت موحّد من email_service.FROM_NAME ("Ghawy Team")
+# (support@ghawy.ai بييجي من SMTP_FROM_EMAIL) — مفيش اسم باعت مكرّر هنا.
 
 # إيميلات التست الافتراضية لو الداشبورد مبعتش قائمة test_emails
 DEFAULT_TEST_EMAILS = [
@@ -90,14 +95,8 @@ _ASSET_FILES = {
     "whatsapp": WHATSAPP_ICON_FILE,
 }
 
-# مصادر الصور الافتراضية للإرسال الحقيقي: Content-ID (الصور بتتربط كـ MIMEImage في build_message)
-_CID_IMAGE_SRCS = {
-    "logo": "cid:ghawy_logo",
-    "instagram": "cid:social_instagram",
-    "facebook": "cid:social_facebook",
-    "tiktok": "cid:social_tiktok",
-    "whatsapp": "cid:icon_whatsapp",
-}
+# مصادر صور البراند للإرسال الحقيقي = Content-ID الموحّد من email_service (_CID_IMAGE_SRCS
+# مستورد فوق). الصور بتتربط inline عبر _attach_brand_images في build_message.
 
 
 # ============================================================
@@ -112,6 +111,21 @@ def get_first_name(full_name: str) -> str:
         if name.startswith(compound):
             return compound
     return name.split()[0] if name.split() else "صديقي"
+
+
+def is_valid_contact(name: str, email: str) -> bool:
+    """صف صالح للمناداة باسمه الحقيقي: اسم مش فاضي/مش إيميل/مفيهوش أرقام + إيميل صحيح.
+    الأعضاء الحقيقيين كتير مسجّلين بأسماء لاتينية عادية (Youssef, Haya, Karawan...) —
+    ده طبيعي في داتا غاوي فمينفعش نرفض اسم بس لأنه لاتيني."""
+    if not name or not email or "@" not in str(email):
+        return False
+    name = str(name).strip()
+    if not name or "@" in name:
+        return False
+    first = get_first_name(name)
+    if any(ch.isdigit() for ch in first):
+        return False
+    return True
 
 
 def clean_gov(gov) -> str:
@@ -142,6 +156,97 @@ def _apply_vars(text: Optional[str], template_vars: dict) -> str:
     for key, val in template_vars.items():
         out = out.replace("{" + key + "}", str(val))
     return out
+
+
+# ============================================================
+# تعقيم الـ HTML (sanitize) — دفاع خلفي قبل الحفظ/الإرسال
+# بيسمح بالوسوم الآمنة للإيميل بس ويمنع أي script/handlers.
+# ============================================================
+
+import html as _html
+from html.parser import HTMLParser
+
+_ALLOWED_TAGS = {"h1", "h2", "h3", "p", "strong", "em", "a", "hr", "img", "ul", "ol", "li", "br"}
+_VOID_TAGS = {"br", "hr", "img"}
+_ALLOWED_ATTRS = {
+    "a": {"href", "target", "rel", "style"},
+    "img": {"src", "alt", "style", "width", "height"},
+}
+_DEFAULT_ATTRS = {"style"}
+
+
+class _EmailHTMLSanitizer(HTMLParser):
+    """يعيد بناء HTML من الوسوم المسموحة بس + whitelist للـ attributes، وبيرمي أي وسم/سمة
+    مش مسموحة (script/on*/style فيه javascript...). الوسوم المرفوضة بيتشال الوسم نفسه بس
+    والنص جواها بيفضل."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out = []
+        self._open = []
+
+    def _safe_attrs(self, tag, attrs):
+        allowed = _ALLOWED_ATTRS.get(tag, _DEFAULT_ATTRS)
+        safe = []
+        for k, v in attrs:
+            k = (k or "").lower()
+            if k not in allowed:
+                continue
+            v = v or ""
+            low = v.strip().lower().replace("\t", "").replace("\n", "")
+            if k in ("href", "src") and low.startswith("javascript:"):
+                continue
+            if k == "src" and not (low.startswith("http://") or low.startswith("https://") or low.startswith("data:image/")):
+                continue
+            if k == "style" and ("javascript:" in low or "expression(" in low):
+                continue
+            safe.append((k, v))
+        return safe
+
+    def _emit_open(self, tag, attrs, self_closing=False):
+        tag = tag.lower()
+        if tag not in _ALLOWED_TAGS:
+            return
+        attr_str = "".join(f' {k}="{_html.escape(v, quote=True)}"' for k, v in self._safe_attrs(tag, attrs))
+        self.out.append(f"<{tag}{attr_str}>")
+        if tag not in _VOID_TAGS and not self_closing:
+            self._open.append(tag)
+
+    def handle_starttag(self, tag, attrs):
+        self._emit_open(tag, attrs, self_closing=False)
+
+    def handle_startendtag(self, tag, attrs):
+        self._emit_open(tag, attrs, self_closing=True)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag not in _ALLOWED_TAGS or tag in _VOID_TAGS:
+            return
+        if tag in self._open:
+            while self._open:
+                t = self._open.pop()
+                self.out.append(f"</{t}>")
+                if t == tag:
+                    break
+
+    def handle_data(self, data):
+        self.out.append(_html.escape(data))
+
+    def result(self):
+        while self._open:
+            self.out.append(f"</{self._open.pop()}>")
+        return "".join(self.out)
+
+
+def sanitize_email_html(html: Optional[str]) -> str:
+    """يعقّم جسم الرسالة قبل الحفظ/الإرسال — يسمح بـ h1,h2,h3,p,strong,em,a,hr,img,ul,ol,li,br
+    بس. أي {placeholder} بيفضل زي ما هو (بيتبدّل بعدين في _apply_vars)."""
+    if not html:
+        return html or ""
+    parser = _EmailHTMLSanitizer()
+    parser.feed(str(html))
+    parser.close()
+    return parser.result()
 
 
 # ============================================================
@@ -213,10 +318,21 @@ def build_template_vars(row: dict, content: Optional["EmailContent"] = None) -> 
     gov = clean_gov(row.get("Governorate", ""))
     country = row.get("Country", "") or ""
 
-    # ── الاسم بالعربي: معرّب من الماب، وإلا fallback الحملة، وإلا "صديقنا" (مش الاسم اللاتيني) ──
-    first_name_ar = row.get("Name_Ar", "") or arabize_first_name(first_name)
-    if not first_name_ar:
-        first_name_ar = (content.name_ar_fallback if content and content.name_ar_fallback else None) or "صديقنا"
+    # ── الاسم بالعربي — الترتيب: Name_Ar الصريح → الاسم معرّب من الماب → الاسم الأول
+    #    الحقيقي لو صالح (حتى لو لاتيني زي haya/haidy/karawan) → كلمة الـ fallback أخيراً.
+    #    الاسم الحقيقي أولوية على كلمة الـ fallback؛ الـ fallback بس لما مفيش اسم صالح خالص.
+    name_ar_explicit = (row.get("Name_Ar", "") or "").strip()
+    has_real_name = bool(name.strip())
+    arabized = arabize_first_name(first_name) if has_real_name else None
+    fallback_word = (content.name_ar_fallback if content and content.name_ar_fallback else None) or "صديقنا"
+    if name_ar_explicit:
+        first_name_ar = name_ar_explicit
+    elif arabized and arabized != "صديقي":
+        first_name_ar = arabized
+    elif is_valid_contact(name, row.get("Email", "")) and first_name and first_name != "صديقي":
+        first_name_ar = first_name
+    else:
+        first_name_ar = fallback_word
 
     # ── المحافظة بالعربي: المرسَل جاهز، وإلا الترجمة من الماب، وإلا fallback الحملة، وإلا فاضي ──
     governorate_ar = row.get("Governorate_Ar", "") or _governorate_to_arabic(gov)
@@ -247,8 +363,9 @@ def build_template_vars(row: dict, content: Optional["EmailContent"] = None) -> 
 
 def render_email_html(template_vars: dict, content: EmailContent, image_srcs: Optional[dict] = None) -> str:
     """
-    التنسيق الكامل (جدول layout + خلفية + فونت Cairo + زرار CTA + لوجو + سوشيال). الشكل
-    العام ثابت، بس لون الزرار قابل للتخصيص عبر content.button_color.
+    بيبني المحتوى الداخلي للحملة (intro + body_html + أزرار CTA + سطر ختامي + توقيع) ويلفّه
+    في القالب الموحّد render_ghawy_email — نفس شكل كل إيميلات غاوي (نفس الـ card الفاتح +
+    فونت Cairo + نفس الفوتر). مفيش قالب/فوتر مكرّر هنا.
 
     image_srcs: خريطة مصادر الصور (logo/instagram/facebook/tiktok/whatsapp). الافتراضي
     Content-ID للإرسال الحقيقي؛ في المعاينة بيتبعت data: URIs عشان الصور تبان في المتصفح.
@@ -272,76 +389,23 @@ def render_email_html(template_vars: dict, content: EmailContent, image_srcs: Op
                 <tr>
                   <td style="border-radius:8px; background-color:{btn.color};">
                     <a href="{btn.link}" target="_blank"
-                       style="display:inline-block; padding:14px 34px; color:#1a1a1a; text-decoration:none; font-weight:700; font-size:16px; font-family:'Cairo', Arial, sans-serif;">
+                       style="display:inline-block; padding:14px 34px; color:#1a1a1a; text-decoration:none; font-weight:700; font-size:16px; font-family:{FONT_STACK};">
                        {_apply_vars(btn.text, template_vars)}
                     </a>
                   </td>
                 </tr>
               </table>"""
     if buttons_html:
-        buttons_html = f'<div style="margin:0 0 24px;">{buttons_html}</div>'
+        parts.append(f'<div style="margin:8px 0 24px;">{buttons_html}</div>')
 
     if content.closing_line:
         parts.append(f'<p style="margin:0 0 6px;">{_apply_vars(content.closing_line, template_vars)}</p>')
 
-    signoff_html = f'<p style="margin:0 0 28px; color:#666;">{content.signoff_html}</p>'
+    if content.signoff_html:
+        parts.append(f'<p style="margin:0 0 8px; color:#666;">{_apply_vars(content.signoff_html, template_vars)}</p>')
 
-    footer_block = ""
-    if content.include_footer:
-        logo_row = (
-            f'<div><img src="{srcs.get("logo", "")}" alt="Ghawy" width="64" height="64" '
-            f'style="display:inline-block; border:0; opacity:0.9;"></div>'
-        )
-        social_row = "".join(
-            f'<a href="{url}" target="_blank" style="display:inline-block; margin:0 8px; text-decoration:none; border:0;">'
-            f'<img src="{srcs.get(name, "")}" alt="{name}" width="28" height="28" '
-            f'style="display:inline-block; width:28px; height:28px; border:0; vertical-align:middle;"></a>'
-            for name, url in GHAWY_SOCIALS.items()
-        )
-        links_row = "".join(
-            f'<a href="{link["url"]}" target="_blank" style="color:#999; text-decoration:none; margin:0 10px; font-size:12px;">{link["label"]}</a>'
-            for link in GHAWY_FOOTER_LINKS
-        )
-        phone_row = (
-            f'<a href="{GHAWY_WHATSAPP_LINK}" target="_blank" style="text-decoration:none;">'
-            f'<img src="{srcs.get("whatsapp", "")}" alt="whatsapp" width="22" height="22" '
-            f'style="display:inline-block; width:22px; height:22px; border:0; vertical-align:middle; margin-inline-end:6px;">'
-            f'<span style="color:#999; font-size:13px; vertical-align:middle;">{GHAWY_SUPPORT_PHONE}</span></a>'
-        )
-        footer_block = f"""<div style="text-align:center; border-top:1px solid #eee; padding-top:24px;">
-                {logo_row}
-                <div style="margin-top:14px;">{social_row}</div>
-                <div style="margin-top:14px;">{links_row}</div>
-                <div style="margin-top:14px;">{phone_row}</div>
-              </div>"""
-
-    body_paragraphs = "\n              ".join(parts)
-
-    return f"""<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="UTF-8">
-</head>
-<body style="margin:0; padding:0; background-color:#f4f4f4;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:24px 0;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0"
-               style="background-color:#ffffff; border-radius:12px; overflow:hidden; max-width:600px; width:100%; font-family:'Cairo', Arial, sans-serif;">
-          <tr>
-            <td style="padding:36px 40px; direction:rtl; text-align:right; color:#1a1a1a; font-size:16px; line-height:1.9;">
-              {body_paragraphs}
-              {buttons_html}
-              {signoff_html}
-              {footer_block}
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
+    inner = "\n              ".join(parts)
+    return render_ghawy_email(inner, image_srcs=srcs, footer=content.include_footer)
 
 
 def render_email_text(template_vars: dict, content: EmailContent) -> str:
@@ -381,28 +445,9 @@ def build_message(to_email: str, row: dict, content: EmailContent, smtp_from: st
     alt.attach(MIMEText(render_email_html(template_vars, content), "html", "utf-8"))
     msg.attach(alt)
 
+    # صور البراند inline بالـ Content-IDs الموحّدة (نفس اللي القالب بيرجّعها cid:...)
     if content.include_footer:
-        if os.path.exists(LOGO_FILE):
-            with open(LOGO_FILE, "rb") as f:
-                logo = MIMEImage(f.read())
-            logo.add_header("Content-ID", "<ghawy_logo>")
-            logo.add_header("Content-Disposition", "inline", filename="logo.png")
-            msg.attach(logo)
-
-        for name, icon_path in SOCIAL_ICON_FILES.items():
-            if os.path.exists(icon_path):
-                with open(icon_path, "rb") as f:
-                    icon_img = MIMEImage(f.read())
-                icon_img.add_header("Content-ID", f"<social_{name}>")
-                icon_img.add_header("Content-Disposition", "inline", filename=os.path.basename(icon_path))
-                msg.attach(icon_img)
-
-        if os.path.exists(WHATSAPP_ICON_FILE):
-            with open(WHATSAPP_ICON_FILE, "rb") as f:
-                wa_img = MIMEImage(f.read())
-            wa_img.add_header("Content-ID", "<icon_whatsapp>")
-            wa_img.add_header("Content-Disposition", "inline", filename="icon_whatsapp.png")
-            msg.attach(wa_img)
+        _attach_brand_images(msg)
 
     return msg
 
@@ -592,5 +637,9 @@ def build_content(content_cfg: dict) -> EmailContent:
     for key in allowed:
         if key in content_cfg and content_cfg[key] is not None:
             kwargs[key] = content_cfg[key]
+
+    # تعقيم جسم الرسالة (المحرر الغني) قبل الحفظ/الإرسال — دفاع خلفي حتى لو الفرونت اتخطّى
+    if kwargs.get("body_html"):
+        kwargs["body_html"] = sanitize_email_html(kwargs["body_html"])
 
     return EmailContent(**kwargs)
