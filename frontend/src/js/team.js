@@ -4259,7 +4259,48 @@ function loadEmailsTab() {
   ecOnModeChange();
   const s = document.getElementById('ec-f-search');
   if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') loadRecipients(); });
+  ecInitVars();
   loadRecipients();
+}
+
+// ── متغيّرات الإيميل: سحب/إفلات + ضغط لإضافتها عند المؤشّر ──────────
+let ecVarsInited = false;
+let ecLastField = null;
+function ecInitVars() {
+  if (ecVarsInited) return;
+  ecVarsInited = true;
+  // الخانات اللي بتقبل المتغيّرات — بنتتبّع آخر واحدة اتعملها focus عشان الضغط يحطّها فيها
+  const fieldIds = ['ec-subject', 'ec-body', 'ec-closing', 'ec-btn-text', 'ec-signoff'];
+  const fields = fieldIds.map(id => document.getElementById(id)).filter(Boolean);
+  fields.forEach(el => {
+    el.addEventListener('focus', () => { ecLastField = el; });
+    // تمييز بصري وقت السحب فوق الخانة (الإفلات نفسه بيتعامل معاه المتصفح تلقائي للـ input/textarea)
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('ec-drop-active'); });
+    el.addEventListener('dragleave', () => el.classList.remove('ec-drop-active'));
+    el.addEventListener('drop', () => { el.classList.remove('ec-drop-active'); setTimeout(() => { ecLastField = el; }, 0); });
+  });
+  document.querySelectorAll('#ec-vars .ec-var').forEach(chip => {
+    chip.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', chip.dataset.var);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    chip.addEventListener('click', () => {
+      ecInsertVar(chip.dataset.var);
+      chip.classList.remove('ec-inserted'); void chip.offsetWidth; chip.classList.add('ec-inserted');
+    });
+  });
+}
+
+function ecInsertVar(text) {
+  const el = ecLastField || document.getElementById('ec-body');
+  if (!el) return;
+  el.focus();
+  const start = (el.selectionStart != null) ? el.selectionStart : el.value.length;
+  const end = (el.selectionEnd != null) ? el.selectionEnd : el.value.length;
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  const pos = start + text.length;
+  try { el.setSelectionRange(pos, pos); } catch (e) {}
+  ecLastField = el;
 }
 
 function ecGetMode() {
@@ -4414,7 +4455,8 @@ async function previewEmail() {
         content,
         sample: sample ? {
           name: sample.name, governorate: sample.governorate, country: sample.country,
-          email: sample.email, governorate_ar: sample.governorate_ar
+          email: sample.email, governorate_ar: sample.governorate_ar,
+          name_ar: sample.name_ar, country_ar: sample.country_ar
         } : null
       })
     });
@@ -4459,7 +4501,8 @@ async function ecDoSend(mode, confirmPhrase) {
     .split(',').map(s => s.trim()).filter(Boolean);
   const recipients = ecSelectedList().map(r => ({
     name: r.name, email: r.email, phone: r.phone, country: r.country,
-    governorate: r.governorate, governorate_ar: r.governorate_ar, age: r.age, plan: r.plan
+    governorate: r.governorate, governorate_ar: r.governorate_ar,
+    name_ar: r.name_ar, country_ar: r.country_ar, age: r.age, plan: r.plan
   }));
 
   const payload = { recipients, content, campaign_id: campaignId, mode, test_emails: testEmails };

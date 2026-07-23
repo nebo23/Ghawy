@@ -30,7 +30,7 @@ from app.database import get_db
 from app.models import User, Payment, PaymentStatus, EmailCampaignSend
 from app.routers.users import get_current_user
 from app.routers.admin import require_owner
-from app.services.email_service import _governorate_to_arabic
+from app.services.email_service import _governorate_to_arabic, arabize_first_name, country_to_arabic
 from app.services import email_campaign_service as ecs
 
 
@@ -100,8 +100,8 @@ def _serialize_recipient(u: User, plan_key: Optional[str]) -> Dict[str, Any]:
         "country": u.country or "",
         "governorate": u.governorate or "",
         "governorate_ar": _governorate_to_arabic(u.governorate or "") or "",
-        "name_ar": "",
-        "country_ar": "",
+        "name_ar": arabize_first_name(u.full_name or "") or "",
+        "country_ar": country_to_arabic(u.country or ""),
         "age": _age_from_birth(u.birth_date),
         "plan": plan_key or "",
         "plan_group": _plan_group(plan_key),
@@ -222,6 +222,7 @@ def preview_email(
             "Email": s.get("email", "") or "member@example.com",
             "Governorate_Ar": s.get("governorate_ar", "") or "",
             "Name_Ar": s.get("name_ar", "") or "",
+            "Country_Ar": s.get("country_ar", "") or "",
         }
 
     result = ecs.render_preview(content, sample_row)

@@ -1,4 +1,5 @@
 import os
+import re
 import smtplib
 import unicodedata
 from email.message import EmailMessage
@@ -142,40 +143,21 @@ def send_payment_approval_email(
     full_name: str,
     registration_url: str,
 ) -> None:
-    """Send approval + invite link to user after admin approves their payment."""
-    body_text = (
-        f"Hi {full_name},\n\n"
-        "Your payment has been verified! You're one step away from joining Ghawy.\n\n"
-        "Click the link below to set your password and get instant access:\n\n"
-        f"{registration_url}\n\n"
-        "This link expires in 48 hours.\n\n"
-        "See you inside,\n"
-        "The Ghawy Team"
-    )
-
-    body_html = f"""
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
-        <div style="text-align: center; margin-bottom: 24px;">
-            <div style="font-size: 48px; margin-bottom: 8px;">🎉</div>
-            <h2 style="color: #fff; margin: 0;">You're in!</h2>
-        </div>
-        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
-        <p style="color: #ccc; line-height: 1.6;">Your payment has been verified! You're one step away from joining Ghawy.</p>
-        <p style="color: #ccc; line-height: 1.6;">Click the button below to set your password and get instant access:</p>
-        <div style="text-align: center; margin: 28px 0;">
-            <a href="{registration_url}" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px;">Complete Registration →</a>
-        </div>
-        <p style="color: #888; font-size: 13px; text-align: center;">This link expires in 48 hours.</p>
-        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
-        <p style="color: #888; font-size: 13px;">See you inside,<br>The Ghawy Team</p>
-    </div>
-    """
+    """تأكيد الدفع + لينك تفعيل الحساب بعد موافقة الأدمن — بنفس الـ Design System البراندي."""
+    name = _first_name(full_name)
+    heading = f"مبروك يا {name}! دفعتك اتأكّدت ✅"
+    body = [
+        "تم تأكيد عملية الدفع بتاعتك بنجاح، وانت دلوقتي على بُعد خطوة واحدة بس من إنك تدخل غاوي.",
+        "اضغط على الزرار عشان تحدّد الباسورد بتاعك وتفعّل حسابك وتدخل فوراً:",
+    ]
+    cta_text = "فعّل حسابك وادخل غاوي →"
+    pre_footer = "اللينك ده صالح لمدة 48 ساعة."
 
     _send_email(
         to_email=to_email,
-        subject="You're in! Complete your Ghawy registration 🎉",
-        body_text=body_text,
-        body_html=body_html,
+        subject=f"مبروك يا {name}! فعّل حسابك في غاوي 🎉",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=registration_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=registration_url, pre_footer=pre_footer),
     )
 
 
@@ -184,42 +166,24 @@ def send_payment_rejection_email(
     full_name: str,
     rejection_reason: str,
 ) -> None:
-    """Notify user that their payment request was rejected."""
-    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
-
-    body_text = (
-        f"Hi {full_name},\n\n"
-        "Unfortunately we couldn't verify your payment.\n\n"
-        f"Reason: {rejection_reason}\n\n"
-        "If you believe this is a mistake, please reply to this email "
-        "or resubmit with a clearer receipt.\n\n"
-        f"Try again: {frontend_url}/pay.html\n\n"
-        "The Ghawy Team"
-    )
-
-    body_html = f"""
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
-        <h2 style="color: #fff; margin: 0 0 20px;">Update on your payment request</h2>
-        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
-        <p style="color: #ccc; line-height: 1.6;">Unfortunately we couldn't verify your payment.</p>
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
-            <p style="color: #ef4444; margin: 0; font-weight: 600;">Reason:</p>
-            <p style="color: #fca5a5; margin: 8px 0 0;">{rejection_reason}</p>
-        </div>
-        <p style="color: #ccc; line-height: 1.6;">If you believe this is a mistake, please reply to this email or resubmit with a clearer receipt.</p>
-        <div style="text-align: center; margin: 28px 0;">
-            <a href="{frontend_url}/pay.html" style="display: inline-block; background: #2a2a2a; color: #fff; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none; border: 1px solid #333;">Try Again →</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
-        <p style="color: #888; font-size: 13px;">The Ghawy Team</p>
-    </div>
-    """
+    """إشعار رفض طلب الدفع — بنفس الـ Design System البراندي الفاتح."""
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    name = _first_name(full_name)
+    heading = f"{name}، تحديث بخصوص طلب الدفع بتاعك"
+    body = [
+        "للأسف مقدرناش نأكّد عملية الدفع بتاعتك.",
+        f"السبب: <strong>{rejection_reason}</strong>",
+        "لو شايف إن ده حصل بالغلط، ردّ على الإيميل ده أو ابعت الإيصال تاني بصورة أوضح "
+        "وإحنا هنراجعه فوراً.",
+    ]
+    cta_text = "حاول تاني"
+    cta_url = f"{frontend_url}/pay.html"
 
     _send_email(
         to_email=to_email,
-        subject="Update on your Ghawy payment request",
-        body_text=body_text,
-        body_html=body_html,
+        subject="تحديث بخصوص طلب الدفع بتاعك في غاوي",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
     )
 
 
@@ -234,46 +198,26 @@ def send_live_session_notification(
     scheduled_at: str,
     description: str = "",
 ) -> None:
-    """Notify a subscriber about an upcoming live session."""
-    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
+    """إشعار سيشن لايف جديدة — بنفس الـ Design System البراندي الفاتح."""
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    name = _first_name(full_name)
 
-    body_text = (
-        f"Hi {full_name},\n\n"
-        f"📺 New live session announced!\n\n"
-        f"Title: {session_title}\n"
-        f"When: {scheduled_at}\n"
-        f"{('Description: ' + description + chr(10)) if description else ''}\n"
-        f"Register here: {frontend_url}/build-with-me.html\n\n"
-        "See you there!\n"
-        "The Ghawy Team"
-    )
-
-    body_html = f"""
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #0a0a0a; padding: 32px; border-radius: 12px; border: 1px solid #2a2a2a;">
-        <div style="text-align: center; margin-bottom: 24px;">
-            <div style="font-size: 48px; margin-bottom: 8px;">📺</div>
-            <h2 style="color: #fff; margin: 0;">New Live Session!</h2>
-        </div>
-        <p style="color: #ccc; line-height: 1.6;">Hi {full_name},</p>
-        <p style="color: #ccc; line-height: 1.6;">We have a new live session coming up!</p>
-        <div style="background: rgba(63, 143, 249, 0.08); border: 1px solid rgba(63, 143, 249, 0.25); border-radius: 10px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #fff; margin: 0 0 8px;">{session_title}</h3>
-            <p style="color: #3f8ff9; font-weight: 600; margin: 0 0 8px;">🗓 {scheduled_at}</p>
-            {'<p style="color: #aaa; margin: 0;">' + description + '</p>' if description else ''}
-        </div>
-        <div style="text-align: center; margin: 28px 0;">
-            <a href="{frontend_url}/build-with-me.html" style="display: inline-block; background: #3f8ff9; color: #000; font-weight: 700; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px;">Register Now →</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 24px 0;">
-        <p style="color: #888; font-size: 13px;">See you there!<br>The Ghawy Team</p>
-    </div>
-    """
+    heading = f"{name}، في سيشن لايف جديدة مستنياك 📺"
+    body = [
+        f"حابين نقولك إن في جلسة بث مباشر جديدة في غاوي: <strong>{session_title}</strong>.",
+        f"ميعادها: <strong>{scheduled_at}</strong>.",
+    ]
+    if description and description.strip():
+        body.append(description.strip())
+    body.append("سجّل حضورك من الزرار هنا عشان متفوّتكش 👇")
+    cta_text = "احجز مكانك في اللايف 🚀"
+    cta_url = f"{frontend_url}/build-with-me.html"
 
     _send_email(
         to_email=to_email,
-        subject=f"📺 New Live Session: {session_title}",
-        body_text=body_text,
-        body_html=body_html,
+        subject=f"📺 سيشن لايف جديدة: {session_title}",
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
     )
 
 
@@ -282,13 +226,25 @@ def send_live_session_notification(
 # ═══════════════════════════════════════════════════════
 
 _RENEWAL_PLAN_LABELS = {
-    "monthly_egp":   {"label": "الشهري",       "amount": "10 جنيه",   "renew_label": "جدد اشتراكك الشهري"},
-    "quarterly_egp": {"label": "تلت شهور",     "amount": "1,200 جنيه", "renew_label": "جدد اشتراكك"},
-    "yearly_egp":    {"label": "السنوي",        "amount": "3,000 جنيه", "renew_label": "جدد اشتراكك السنوي"},
-    "monthly_usd":   {"label": "Monthly",       "amount": "$15",        "renew_label": "Renew Monthly Plan"},
-    "quarterly_usd": {"label": "Quarterly",     "amount": "$35",        "renew_label": "Renew Quarterly Plan"},
-    "yearly_usd":    {"label": "Yearly",        "amount": "$100",       "renew_label": "Renew Yearly Plan"},
+    "monthly_egp":   {"label": "الشهري",   "renew_label": "جدّد اشتراكك الشهري"},
+    "quarterly_egp": {"label": "تلت شهور", "renew_label": "جدّد اشتراكك"},
+    "yearly_egp":    {"label": "السنوي",   "renew_label": "جدّد اشتراكك السنوي"},
+    "monthly_usd":   {"label": "الشهري",   "renew_label": "جدّد اشتراكك الشهري"},
+    "quarterly_usd": {"label": "تلت شهور", "renew_label": "جدّد اشتراكك"},
+    "yearly_usd":    {"label": "السنوي",   "renew_label": "جدّد اشتراكك السنوي"},
 }
+
+
+def _plan_price_str(plan_key: str) -> str:
+    """السعر الحقيقي للباقة من مصدر الحقيقة (payment.PLAN_PRICES) — مش قيمة مكتوبة بالإيد."""
+    try:
+        from app.routers.payment import PLAN_PRICES  # lazy: تفادي circular import
+        p = PLAN_PRICES.get(plan_key)
+        if p:
+            return f"{p['amount']:,} جنيه" if p["currency"] == "EGP" else f"${p['amount']}"
+    except Exception:
+        pass
+    return ""
 
 
 def send_renewal_reminder_email(
@@ -298,104 +254,31 @@ def send_renewal_reminder_email(
     plan_key: str,
     subscription_end,
 ) -> None:
-    """بيبعت إيميل تذكير انتهاء الاشتراك"""
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5500")
+    """تذكير قرب انتهاء الاشتراك — بنفس الـ Design System البراندي الفاتح + السعر الحقيقي."""
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
     plan = _RENEWAL_PLAN_LABELS.get(plan_key, _RENEWAL_PLAN_LABELS["monthly_egp"])
+    price_str = _plan_price_str(plan_key)
     end_date_str = subscription_end.strftime("%d/%m/%Y") if subscription_end else "—"
     renew_url = f"{frontend_url}/payment.html?plan={plan_key}"
+    name = _first_name(full_name)
+    day_word = "يوم" if days_left == 1 else "أيام"
 
-    is_arabic = plan_key.endswith("_egp")
-
-    if is_arabic:
-        subject = f"⏰ اشتراكك في Ghawy هينتهي خلال {days_left} يوم"
-        body_text = (
-            f"مرحباً {full_name},\n\n"
-            f"اشتراكك {plan['label']} هينتهي في {end_date_str} — متبقيلك {days_left} يوم بس.\n\n"
-            f"سعر التجديد: {plan['amount']}\n\n"
-            f"جدد من هنا: {renew_url}\n\n"
-            "لو محتاج مساعدة، تواصل معنا في أي وقت.\n"
-            "© 2026 Ghawy — AI Automation Atlas"
-        )
-        body_html = f"""
-        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0f; color: #fff; border-radius: 12px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #3f8ff9, #1d6fd4); padding: 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900;">Ghawy</h1>
-                <p style="margin: 8px 0 0; opacity: .8;">منصة التعلم الذكي</p>
-            </div>
-            <div style="padding: 32px;">
-                <h2 style="color: #fff; margin-bottom: 16px;">مرحباً {full_name} 👋</h2>
-                <p style="color: #9ca3af; line-height: 1.8; margin-bottom: 24px;">
-                    اشتراكك <strong style="color: #fff;">{plan["label"]}</strong> هينتهي في
-                    <strong style="color: #f59e0b;">{end_date_str}</strong>
-                    — يعني متبقيلك <strong style="color: #ef4444;">{days_left} يوم</strong> بس.
-                </p>
-                <div style="background: #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
-                    <div style="font-size: .8rem; color: #6b7280; margin-bottom: 4px;">سعر التجديد</div>
-                    <div style="font-size: 1.5rem; font-weight: 900; color: #3f8ff9;">{plan["amount"]}</div>
-                </div>
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <a href="{renew_url}"
-                       style="display: inline-block; background: #3f8ff9; color: #fff; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 1rem; text-decoration: none;">
-                        🔄 {plan["renew_label"]}
-                    </a>
-                </div>
-                <p style="color: #6b7280; font-size: .82rem; text-align: center;">
-                    لو محتاج مساعدة، تواصل معنا في أي وقت.
-                </p>
-            </div>
-            <div style="background: #050507; padding: 16px; text-align: center;">
-                <p style="color: #374151; font-size: .75rem; margin: 0;">© 2026 Ghawy — AI Automation Atlas</p>
-            </div>
-        </div>
-        """
-    else:
-        subject = f"⏰ Your Ghawy subscription expires in {days_left} day{'s' if days_left > 1 else ''}"
-        body_text = (
-            f"Hi {full_name},\n\n"
-            f"Your {plan['label']} subscription expires on {end_date_str} — only {days_left} day{'s' if days_left > 1 else ''} left.\n\n"
-            f"Renewal Price: {plan['amount']}\n\n"
-            f"Renew here: {renew_url}\n\n"
-            "Need help? Reach out anytime.\n"
-            "© 2026 Ghawy — AI Automation Atlas"
-        )
-        body_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0f; color: #fff; border-radius: 12px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #3f8ff9, #1d6fd4); padding: 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900;">Ghawy</h1>
-                <p style="margin: 8px 0 0; opacity: .8;">AI Learning Platform</p>
-            </div>
-            <div style="padding: 32px;">
-                <h2 style="color: #fff; margin-bottom: 16px;">Hi {full_name} 👋</h2>
-                <p style="color: #9ca3af; line-height: 1.8; margin-bottom: 24px;">
-                    Your <strong style="color: #fff;">{plan["label"]}</strong> subscription expires on
-                    <strong style="color: #f59e0b;">{end_date_str}</strong>
-                    — only <strong style="color: #ef4444;">{days_left} day{'s' if days_left > 1 else ''}</strong> left.
-                </p>
-                <div style="background: #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
-                    <div style="font-size: .8rem; color: #6b7280; margin-bottom: 4px;">Renewal Price</div>
-                    <div style="font-size: 1.5rem; font-weight: 900; color: #3f8ff9;">{plan["amount"]}</div>
-                </div>
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <a href="{renew_url}"
-                       style="display: inline-block; background: #3f8ff9; color: #fff; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 1rem; text-decoration: none;">
-                        🔄 {plan["renew_label"]}
-                    </a>
-                </div>
-                <p style="color: #6b7280; font-size: .82rem; text-align: center;">
-                    Need help? Reach out anytime.
-                </p>
-            </div>
-            <div style="background: #050507; padding: 16px; text-align: center;">
-                <p style="color: #374151; font-size: .75rem; margin: 0;">© 2026 Ghawy — AI Automation Atlas</p>
-            </div>
-        </div>
-        """
+    heading = f"{name}، باقي {days_left} {day_word} على انتهاء اشتراكك في غاوي"
+    body = [
+        f"حابين نفكّرك إن اشتراكك <strong>{plan['label']}</strong> في غاوي قرب يخلص يوم "
+        f"<strong>{end_date_str}</strong> — متبقّي <strong>{days_left} {day_word}</strong> بس.",
+        (f"سعر التجديد: <strong>{price_str}</strong>. " if price_str else "")
+        + "ولو الاشتراك خلص هتفقد الوصول لكل الكورسات والتقدّم اللي وصلتله، والشهر الجديد "
+        "جوه غاوي محضّرين لك فيه كورسات وتحديثات قوية جداً — عشان كده متحمسين نكمّل معاك.",
+        "تقدر تجدّد أو تراجع بيانات الدفع فوراً من الزرار هنا:",
+    ]
+    cta_text = f"🔄 {plan['renew_label']}"
 
     _send_email(
         to_email=to_email,
-        subject=subject,
-        body_text=body_text,
-        body_html=body_html,
+        subject=heading,
+        body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=renew_url),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=renew_url),
     )
 
 
@@ -535,9 +418,269 @@ _LINK_TERMS = "https://ghawy.ai/terms"
 _LINK_START = "https://ghawy.ai"
 
 
+# ───────────────────────────────────────────────────────
+#  تعريب الأسماء الأولى — الغالبية العظمى من الأعضاء مسجّلين
+#  باسم لاتيني (Mohamed / Ahmed / Omar ...). عشان الإيميلات
+#  تبان عربي فعلاً (مش "Mohamed" وسط نص عربي)، بنترجم أشهر
+#  الأسماء لصيغتها العربية. أي اسم مش معروف بيرجع None (بيرجع
+#  المنادي للـ fallback).
+# ───────────────────────────────────────────────────────
+
+_AR_FIRST_NAMES = {
+    # محمد وتنويعاته
+    "mohamed": "محمد", "mohammed": "محمد", "mohamad": "محمد", "mohammad": "محمد",
+    "muhammad": "محمد", "muhamed": "محمد", "mohammd": "محمد", "mhmd": "محمد",
+    "mohab": "محمد", "med": "محمد", "moh": "محمد",
+    # أحمد
+    "ahmed": "أحمد", "ahmad": "أحمد", "ahmd": "أحمد",
+    # محمود
+    "mahmoud": "محمود", "mahmood": "محمود", "mahmoed": "محمود", "mahmud": "محمود",
+    # مصطفى
+    "mostafa": "مصطفى", "mustafa": "مصطفى", "moustafa": "مصطفى", "moustapha": "مصطفى",
+    "mostapha": "مصطفى",
+    # عمر / عمرو
+    "omar": "عمر", "omer": "عمر", "umar": "عمر",
+    "amr": "عمرو", "amro": "عمرو",
+    # يوسف
+    "youssef": "يوسف", "yousef": "يوسف", "yusuf": "يوسف", "yosef": "يوسف",
+    "yousief": "يوسف", "youseff": "يوسف", "yousuf": "يوسف", "yosuf": "يوسف",
+    "youssuf": "يوسف",
+    # عبد الرحمن / عبد الله / عبد العزيز / عبد المجيد
+    "abdelrahman": "عبد الرحمن", "abdulrahman": "عبد الرحمن", "abdurrahman": "عبد الرحمن",
+    "abdelrhman": "عبد الرحمن", "abdalrahman": "عبد الرحمن", "abdorahman": "عبد الرحمن",
+    "abdallah": "عبد الله", "abdullah": "عبد الله", "abdalla": "عبد الله",
+    "abdulla": "عبد الله", "abdellah": "عبد الله",
+    "abdelaziz": "عبد العزيز", "abdulaziz": "عبد العزيز", "abdualaziz": "عبد العزيز",
+    "abdulmajeed": "عبد المجيد", "abdulmajid": "عبد المجيد",
+    "abdelfattah": "عبد الفتاح", "abdo": "عبده", "abdu": "عبده", "abdel": "عبد الرحمن",
+    # علي / علاء / عمار / أنس
+    "ali": "علي", "aly": "علي",
+    "alaa": "علاء", "aalaa": "علاء", "ala": "علاء",
+    "ammar": "عمار", "anas": "أنس",
+    # حمزة / حسن / حسين / حسام / حازم / هاشم
+    "hamza": "حمزة", "hamzah": "حمزة",
+    "hassan": "حسن", "hasan": "حسن",
+    "hussein": "حسين", "hussain": "حسين", "husein": "حسين", "hosein": "حسين",
+    "hossam": "حسام", "hosam": "حسام", "hussam": "حسام",
+    "hazem": "حازم", "hazim": "حازم",
+    "hashem": "هاشم", "hashim": "هاشم",
+    # زياد / مازن / معاذ / معتز / أدهم / سيف / ياسين
+    "ziad": "زياد", "zeyad": "زياد", "zyad": "زياد", "ziyad": "زياد",
+    "mazen": "مازن", "mazin": "مازن",
+    "moaz": "معاذ", "muadh": "معاذ",
+    "moataz": "معتز", "muataz": "معتز", "motaz": "معتز",
+    "adham": "أدهم",
+    "seif": "سيف", "saif": "سيف", "saef": "سيف", "sayf": "سيف",
+    "yassin": "ياسين", "yassine": "ياسين", "yasin": "ياسين", "yassen": "ياسين",
+    "yaseen": "ياسين",
+    # خالد / كريم / وليد / طارق / شريف / عمر
+    "khaled": "خالد", "khalid": "خالد",
+    "karim": "كريم", "kareem": "كريم", "karem": "كريم",
+    "walid": "وليد", "waleed": "وليد", "waled": "وليد",
+    "tarek": "طارق", "tareq": "طارق", "tarik": "طارق", "tariq": "طارق",
+    "sherif": "شريف", "shrief": "شريف", "sharif": "شريف",
+    # أسامة / نبيل / مؤمن / إياد / إسلام / إبراهيم / آدم / أمير
+    "osama": "أسامة", "usama": "أسامة",
+    "nabil": "نبيل",
+    "momen": "مؤمن", "moamen": "مؤمن", "moemen": "مؤمن", "mumen": "مؤمن", "momin": "مؤمن",
+    "eyad": "إياد", "iyad": "إياد",
+    "eslam": "إسلام", "islam": "إسلام",
+    "ibrahim": "إبراهيم", "ebrahim": "إبراهيم", "ebrahem": "إبراهيم", "ibrahem": "إبراهيم",
+    "adam": "آدم",
+    "amir": "أمير", "ameer": "أمير",
+    # مالك / مروان / بلال / نصر / صلاح / عثمان / يحيى / إيهاب / فارس
+    "malek": "مالك", "malik": "مالك",
+    "marwan": "مروان",
+    "belal": "بلال", "bilal": "بلال",
+    "nasr": "نصر",
+    "salah": "صلاح",
+    "othman": "عثمان", "osman": "عثمان", "othmane": "عثمان",
+    "yehia": "يحيى", "yahia": "يحيى", "yehya": "يحيى", "yahya": "يحيى",
+    "ehab": "إيهاب",
+    "fares": "فارس", "faris": "فارس",
+    # ماجد / أمجد / سعد / سامي / هاني / زكريا / وائل / تامر / عماد / أشرف
+    "maged": "ماجد", "majed": "ماجد",
+    "amgad": "أمجد", "amjad": "أمجد",
+    "saad": "سعد", "sa3d": "سعد",
+    "samy": "سامي", "sami": "سامي",
+    "hani": "هاني", "hany": "هاني",
+    "zakarya": "زكريا", "zakaria": "زكريا",
+    "wael": "وائل",
+    "tamer": "تامر",
+    "emad": "عماد", "imad": "عماد",
+    "ashraf": "أشرف",
+    # أيمن / بهاء / ربيع / يونس / جهاد / نعيم / زين / تيم / أيهم / رامي / فادي / سامح / باسل
+    "ayman": "أيمن",
+    "bahaa": "بهاء", "baha": "بهاء",
+    "rabie": "ربيع", "rabea": "ربيع",
+    "younis": "يونس", "younes": "يونس", "yunus": "يونس",
+    "gihad": "جهاد", "jihad": "جهاد",
+    "naim": "نعيم", "naeem": "نعيم",
+    "zain": "زين", "zayn": "زين", "zein": "زين",
+    "tayem": "تيم", "taim": "تيم", "teem": "تيم",
+    "ayham": "أيهم",
+    "ramy": "رامي", "rami": "رامي",
+    "fady": "فادي", "fadi": "فادي",
+    "sameh": "سامح",
+    "bassel": "باسل", "basel": "باسل", "basil": "باسل",
+    "ezz": "عز", "moheb": "محب", "anis": "أنيس",
+    # أسماء قبطية شائعة
+    "mina": "مينا", "mena": "مينا",
+    "kerollos": "كيرلس", "kirollos": "كيرلس", "kerolous": "كيرلس", "kirolos": "كيرلس",
+    "bavly": "بافلي", "filopater": "فيلوباتير", "eriny": "إيريني", "irini": "إيريني",
+    "gerges": "جرجس", "george": "جورج", "beshoy": "بيشوي", "boula": "بولا",
+    # أسماء بنات
+    "fatma": "فاطمة", "fatima": "فاطمة", "fatimah": "فاطمة",
+    "aya": "آية", "aia": "آية",
+    "mariam": "مريم", "maryam": "مريم", "marim": "مريم",
+    "sara": "سارة", "sarah": "سارة", "sarra": "سارة",
+    "nour": "نور", "noor": "نور", "nor": "نور",
+    "nourhan": "نورهان", "nurhan": "نورهان",
+    "salma": "سلمى",
+    "yasmin": "ياسمين", "yasmine": "ياسمين", "yasmeen": "ياسمين", "jasmine": "ياسمين",
+    "habiba": "حبيبة", "habeba": "حبيبة",
+    "menna": "منة", "mennah": "منة",
+    "nada": "ندى",
+    "dina": "دينا",
+    "rana": "رنا",
+    "reham": "ريهام", "riham": "ريهام",
+    "heba": "هبة", "hiba": "هبة",
+    "mona": "منى", "mouna": "منى",
+    "esraa": "إسراء", "israa": "إسراء", "esra": "إسراء",
+    "doaa": "دعاء", "doa": "دعاء",
+    "amira": "أميرة", "ameera": "أميرة",
+    "aisha": "عائشة", "aicha": "عائشة",
+    "malak": "ملك",
+    "farah": "فرح",
+    "rania": "رانية", "raneem": "رنيم", "raneen": "رنين",
+    "shaimaa": "شيماء", "shimaa": "شيماء", "shaima": "شيماء",
+    "asmaa": "أسماء", "asma": "أسماء",
+    "hana": "هنا", "hanaa": "هناء", "hannah": "هناء",
+    "rahma": "رحمة", "rahmah": "رحمة",
+    "toka": "تقى", "tuqa": "تقى",
+    "rawan": "روان", "rewan": "روان", "rowan": "روان",
+    "jana": "جنى", "jannah": "جنة", "janna": "جنة",
+    "sama": "سما", "samaa": "سماء",
+    "eman": "إيمان", "iman": "إيمان",
+    "nadia": "نادية",
+    "radwa": "رضوى", "radwan": "رضوان",
+    "sherouk": "شروق", "shrouk": "شروق", "shorouk": "شروق",
+    "manar": "منار", "dana": "دانة", "dania": "دانية",
+    "kholoud": "خلود", "khouloud": "خلود",
+    "safaa": "صفاء", "wafaa": "وفاء", "sana": "سناء", "soha": "سها",
+    "sahar": "سحر", "farida": "فريدة", "basant": "بسنت",
+    "sumaya": "سمية", "somaya": "سمية",
+    "rahaf": "رهف", "lujain": "لجين", "lojain": "لجين",
+    "jood": "جود", "joud": "جود", "judy": "جودي", "jodi": "جودي",
+    "layla": "ليلى", "laila": "ليلى", "lilas": "ليلى",
+    "kenzy": "كنزي", "kenzi": "كنزي", "kenza": "كنزة",
+    "talia": "تاليا", "lian": "ليان", "lien": "ليان",
+    "sondos": "سندس", "sandra": "ساندرا", "maria": "ماريا",
+    "aml": "أمل", "amal": "أمل", "amany": "أماني", "amani": "أماني",
+    "logina": "لوجينا", "rodina": "رودينا", "haidy": "هايدي",
+    "joumana": "جمانة", "gomana": "جمانة", "jumana": "جمانة",
+    # إضافات من بيانات الأعضاء الحقيقية + أسماء خليجية/شامية شائعة
+    "anouar": "أنور", "anwar": "أنور",
+    "mohanad": "مهند", "mohaned": "مهند", "mohanned": "مهند", "muhannad": "مهند",
+    "fathy": "فتحي", "fathi": "فتحي",
+    "abdalrhman": "عبد الرحمن", "abdelrahim": "عبد الرحيم", "abderrahmane": "عبد الرحمن",
+    "amed": "أحمد",
+    "oussama": "أسامة",
+    "faiz": "فايز", "fayez": "فايز", "fayes": "فايز",
+    "badr": "بدر", "bader": "بدر",
+    "reem": "ريم", "rim": "ريم",
+    "david": "داود", "dawood": "داود", "dawoud": "داود",
+    "yasser": "ياسر", "yaser": "ياسر", "yassir": "ياسر",
+    "samir": "سمير", "sameer": "سمير", "munir": "منير", "mounir": "منير",
+    "adel": "عادل", "gamal": "جمال", "kamal": "كمال", "galal": "جلال",
+    "magdy": "مجدي", "hamdy": "حمدي", "sabry": "صبري", "lotfy": "لطفي",
+    "shawky": "شوقي", "shawki": "شوقي", "refaat": "رفعت",
+    "taha": "طه", "ismail": "إسماعيل", "esmail": "إسماعيل", "ismael": "إسماعيل",
+    "idris": "إدريس", "sohaib": "صهيب", "suhaib": "صهيب",
+    "obada": "عبادة", "ubada": "عبادة", "qusai": "قصي", "qusay": "قصي",
+    "wassim": "وسيم", "waseem": "وسيم", "nizar": "نزار", "ghaith": "غيث",
+    "noureddine": "نور الدين", "noureddin": "نور الدين", "noureldeen": "نور الدين",
+    "abdelhamid": "عبد الحميد", "abdelghani": "عبد الغني", "abdelmoneim": "عبد المنعم",
+    "fahd": "فهد", "faisal": "فيصل", "faysal": "فيصل", "sultan": "سلطان",
+    "turki": "تركي", "nayef": "نايف", "saud": "سعود", "rakan": "راكان",
+    "rayan": "ريان", "rayyan": "ريان", "laith": "ليث", "layth": "ليث",
+    "hamad": "حمد", "khalifa": "خليفة", "rashed": "راشد", "rashid": "راشد",
+    # أسماء بنات إضافية
+    "yousra": "يسرا", "yosra": "يسرا", "shahd": "شهد", "retaj": "ريتاج",
+    "remas": "ريماس", "retal": "ريتال", "rital": "ريتال",
+    "joury": "جوري", "jory": "جوري", "sham": "شام", "mayar": "ميار",
+    "lamar": "لمار", "lara": "لارا", "tia": "تيا", "mila": "ميلا",
+    "raghad": "رغد", "danya": "دانيا", "jouri": "جوري",
+    "hala": "هالة", "ghala": "غلا", "wateen": "وتين",
+    "batoul": "بتول", "batool": "بتول", "sedra": "سدرة", "sidra": "سدرة",
+    "leen": "لين", "lin": "لين", "elin": "إلين", "celine": "سيلين",
+}
+
+
+_COUNTRY_AR = {
+    "egypt": "مصر", "united arab emirates": "الإمارات", "uae": "الإمارات",
+    "saudi arabia": "السعودية", "ksa": "السعودية", "kuwait": "الكويت",
+    "algeria": "الجزائر", "jordan": "الأردن", "morocco": "المغرب",
+    "palestine": "فلسطين", "palestinian territory": "فلسطين", "state of palestine": "فلسطين",
+    "iraq": "العراق", "tunisia": "تونس", "turkey": "تركيا", "türkiye": "تركيا", "turkiye": "تركيا",
+    "syria": "سوريا", "syrian arab republic": "سوريا", "libya": "ليبيا",
+    "lebanon": "لبنان", "qatar": "قطر", "yemen": "اليمن", "oman": "عُمان",
+    "sudan": "السودان", "mauritania": "موريتانيا", "bahrain": "البحرين",
+    "united states": "الولايات المتحدة", "united states of america": "الولايات المتحدة",
+    "united kingdom": "المملكة المتحدة", "germany": "ألمانيا", "france": "فرنسا",
+    "italy": "إيطاليا", "canada": "كندا", "chad": "تشاد", "malaysia": "ماليزيا",
+    "singapore": "سنغافورة", "burkina faso": "بوركينا فاسو", "somalia": "الصومال",
+    "djibouti": "جيبوتي", "comoros": "جزر القمر",
+}
+
+
+def country_to_arabic(raw: str) -> str:
+    """اسم البلد بالعربي، أو النص الأصلي لو مش معروف."""
+    if not raw or not raw.strip():
+        return ""
+    if is_arabic_text(raw):
+        return raw.strip()
+    return _COUNTRY_AR.get(raw.strip().lower(), raw.strip())
+
+
+def is_arabic_text(s: str) -> bool:
+    """صح لو النص فيه أي حرف عربي."""
+    return bool(s) and any("؀" <= ch <= "ۿ" for ch in s)
+
+
+def _norm_latin_name(s: str) -> str:
+    """تطبيع اسم لاتيني للبحث في الماب: إزالة التشكيل + حروف بس + lowercase."""
+    s = unicodedata.normalize("NFKD", s or "")
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = "".join(ch for ch in s if ch.isalpha())
+    return s.lower().strip()
+
+
+def arabize_first_name(name: str):
+    """
+    يرجّع الصيغة العربية لاسم أول واحد:
+      • لو فيه عربي أصلاً → يرجّعه زي ما هو.
+      • لو لاتيني ومعروف في الماب → الترجمة العربية.
+      • غير كده → None (المنادي يقرر الـ fallback).
+    """
+    if not name or not name.strip():
+        return None
+    tok = name.strip().split()[0]
+    if is_arabic_text(tok):
+        return tok
+    return _AR_FIRST_NAMES.get(_norm_latin_name(tok))
+
+
 def _first_name(full_name: str) -> str:
+    """
+    الاسم الأول للتحية في الإيميلات التلقائية — معرّب لو أمكن، وإلا الاسم الأول زي
+    ما هو، وإلا "صديقنا".
+    """
     name = (full_name or "").strip()
-    return name.split()[0] if name else "صديقنا"
+    if not name:
+        return "صديقنا"
+    tok = name.split()[0]
+    return arabize_first_name(tok) or tok
 
 
 def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
@@ -616,11 +759,12 @@ def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
 def _brand_email_text(*, heading: str, body_paragraphs: list, cta_text: str,
                       cta_url: str, pre_footer: str = "") -> str:
     """نسخة نصية بسيطة (plain-text) لنفس المحتوى — لتحسين الوصول والـ deliverability."""
-    lines = [heading, ""]
-    lines += list(body_paragraphs)
-    lines += ["", f"{cta_text}: {cta_url}"]
+    strip = lambda s: re.sub(r"<[^>]+>", "", s or "")
+    lines = [strip(heading), ""]
+    lines += [strip(p) for p in body_paragraphs]
+    lines += ["", f"{strip(cta_text)}: {cta_url}"]
     if pre_footer:
-        lines += ["", pre_footer]
+        lines += ["", strip(pre_footer)]
     lines += [
         "",
         "— فريق غاوي",

@@ -34,7 +34,12 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from typing import Optional
 
-from app.services.email_service import _get_smtp_config
+from app.services.email_service import (
+    _get_smtp_config,
+    _governorate_to_arabic,
+    arabize_first_name,
+    country_to_arabic,
+)
 from app.database import SessionLocal
 from app.models import EmailCampaignSend
 
@@ -208,18 +213,25 @@ def build_template_vars(row: dict, content: Optional["EmailContent"] = None) -> 
     gov = clean_gov(row.get("Governorate", ""))
     country = row.get("Country", "") or ""
 
-    name_fallback = (content.name_ar_fallback if content and content.name_ar_fallback else None) or first_name
-    gov_fallback = (content.governorate_ar_fallback if content and content.governorate_ar_fallback else None) or gov
+    # ── الاسم بالعربي: معرّب من الماب، وإلا fallback الحملة، وإلا "صديقنا" (مش الاسم اللاتيني) ──
+    first_name_ar = row.get("Name_Ar", "") or arabize_first_name(first_name)
+    if not first_name_ar:
+        first_name_ar = (content.name_ar_fallback if content and content.name_ar_fallback else None) or "صديقنا"
 
-    first_name_ar = row.get("Name_Ar", "") or name_fallback
-    country_ar = row.get("Country_Ar", "") or country
-    governorate_ar = row.get("Governorate_Ar", "") or gov_fallback
+    # ── المحافظة بالعربي: المرسَل جاهز، وإلا الترجمة من الماب، وإلا fallback الحملة، وإلا فاضي ──
+    governorate_ar = row.get("Governorate_Ar", "") or _governorate_to_arabic(gov)
+    if not governorate_ar:
+        governorate_ar = (content.governorate_ar_fallback if content and content.governorate_ar_fallback else None) or ""
+
+    # ── البلد بالعربي ──
+    country_ar = row.get("Country_Ar", "") or country_to_arabic(country)
 
     return {
         "first_name": first_name,
         "first_name_ar": first_name_ar,
         "full_name": name,
-        "greeting": _greeting_line(gov),
+        # التحية دايماً بالعربي — بتستخدم المحافظة المعرّبة (مش الاسم اللاتيني)
+        "greeting": _greeting_line(governorate_ar),
         "email": row.get("Email", "") or "",
         "phone": row.get("Phone", "") or "",
         "country": country,
@@ -487,7 +499,11 @@ def send_campaign(
     if test_mode:
         if not test_emails:
             raise RuntimeError("مفيش أي إيميل تست في وضع الاختبار.")
-        sample = targets[0] if targets else {"Name": "صديقي", "Governorate": ""}
+        # لو مفيش أعضاء متحددين للتست، بنستخدم عيّنة واقعية كاملة عشان كل المتغيرات
+        # ({governorate}/{governorate_ar}/{country}) تبان معمورة في إيميل التست مش فاضية.
+        sample = targets[0] if targets else {
+            "Name": "محمد أحمد", "Governorate": "Cairo", "Country": "Egypt",
+        }
         send_list = [(email, {**sample, "Email": email}) for email in test_emails]
     else:
         sent_already = load_sent_log(campaign_name, session_factory)

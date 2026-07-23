@@ -1253,6 +1253,19 @@
 #tab-emails .ec-hint { color: #777; font-size: 11px; line-height: 1.9; margin-top: 2px; }
 #tab-emails .ec-hint code { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 4px; padding: 1px 5px; color: #D0FA06; font-size: 11px; direction: ltr; display: inline-block; }
 
+#tab-emails .ec-vars { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+#tab-emails .ec-var {
+  background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 6px; padding: 4px 9px;
+  color: #D0FA06; font-size: 12px; direction: ltr; display: inline-flex; align-items: center; gap: 5px;
+  cursor: grab; user-select: none; transition: border-color .15s, background .15s, transform .1s;
+}
+#tab-emails .ec-var::before { content: "⋮⋮"; color: #555; font-size: 11px; letter-spacing: -1px; }
+#tab-emails .ec-var:hover { border-color: #D0FA06; background: #161608; }
+#tab-emails .ec-var:active { cursor: grabbing; transform: scale(0.96); }
+#tab-emails .ec-var.ec-inserted { animation: ecFlash .5s ease; }
+@keyframes ecFlash { 0% { background: #D0FA06; color: #0a0a0a; } 100% { background: #0d0d0d; color: #D0FA06; } }
+#tab-emails input.ec-drop-active, #tab-emails textarea.ec-drop-active { border-color: #D0FA06 !important; box-shadow: 0 0 0 2px rgba(208,250,6,.15); }
+
 #tab-emails input[type=text], #tab-emails input[type=url], #tab-emails input[type=number],
 #tab-emails textarea, #tab-emails select {
   background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px 12px;

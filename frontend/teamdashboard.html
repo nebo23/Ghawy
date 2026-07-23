@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=8" />
+  <link rel="stylesheet" href="src/css/team.css?v=9" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1763,7 +1763,15 @@
                     <div class="fg">
                       <label>نص الرسالة (HTML) *</label>
                       <textarea id="ec-body" rows="9" placeholder="اكتب محتوى الإيميل هنا... تقدر تستخدم HTML و&lt;br&gt; للأسطر."></textarea>
-                      <div class="ec-hint">متغيّرات تتحط بين قوسين وتتبدّل لكل عضو: <code>{first_name}</code> <code>{first_name_ar}</code> <code>{greeting}</code> <code>{governorate}</code> <code>{governorate_ar}</code> <code>{country}</code></div>
+                      <div class="ec-hint">🏷️ اسحب المتغيّر لأي خانة (العنوان/النص) أو اضغط عليه عشان يتحط عند المؤشّر — وبيتبدّل لكل عضو:</div>
+                      <div class="ec-vars" id="ec-vars">
+                        <span class="ec-var" draggable="true" data-var="{first_name}" title="الاسم الأول زي ما هو في الحساب (ممكن يكون إنجليزي)">{first_name}</span>
+                        <span class="ec-var" draggable="true" data-var="{first_name_ar}" title="الاسم الأول بالعربي (متعرّب تلقائي)">{first_name_ar}</span>
+                        <span class="ec-var" draggable="true" data-var="{greeting}" title="تحية جاهزة بالعربي حسب محافظة العضو">{greeting}</span>
+                        <span class="ec-var" draggable="true" data-var="{governorate}" title="المحافظة زي ما هي">{governorate}</span>
+                        <span class="ec-var" draggable="true" data-var="{governorate_ar}" title="المحافظة بالعربي">{governorate_ar}</span>
+                        <span class="ec-var" draggable="true" data-var="{country}" title="البلد">{country}</span>
+                      </div>
                     </div>
                     <div class="ec-row2">
                       <div class="fg" style="flex:2;"><label>نص الزرار</label><input type="text" id="ec-btn-text" placeholder="ابدأ دلوقتي" /></div>
@@ -2512,7 +2520,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1784664000"></script>
+  <script src="src/js/team.js?v=1784800000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
