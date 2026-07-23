@@ -1,0 +1,27 @@
+{
+  "campaign_id": "claude_course_subscribers",
+  "title": "كورس Claude للمشتركين",
+  "description": "مسودة حملة يدوية للإعلان عن كورس Claude الجديد لكل المشتركين النشطين.",
+  "send_mode": "manual",
+  "active": false,
+  "trigger": null,
+  "audience": {
+    "status": "active",
+    "plan": "all",
+    "country": "",
+    "governorate": "",
+    "expiring_days": null,
+    "include_staff": false,
+    "search": ""
+  },
+  "content": {
+    "subject_template": "{first_name_ar} 🚀 كورس Claude الجديد نزل ليك",
+    "body_html": "<p>{greeting}</p><p>خبر حلو 🎉 نزّلنا كورس Claude كامل — من أول الأساسيات لحد إنك تبني حاجات حقيقية بالـ AI.</p><p>الكورس متاح دلوقتي لكل المشتركين من غير أي تكلفة إضافية.</p>",
+    "button_text": "افتح الكورس",
+    "button_link": "https://ghawy.ai",
+    "closing_line": "اتعلّم واستمتع 🤍",
+    "signoff_html": "محمد - غاوي"
+  },
+  "created_at": "2026-07-23T00:00:00Z",
+  "updated_at": "2026-07-23T00:00:00Z"
+}

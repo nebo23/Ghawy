@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=9" />
+  <link rel="stylesheet" href="src/css/team.css?v=10" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1740,22 +1740,74 @@
 
             <!-- Tab Content: Email Campaigns (owner-only) -->
             <div id="tab-emails" class="tab-panel" style="display:none;">
+
+              <!-- ═══ LIST VIEW (الصفحة الأولى) ═══ -->
+              <div id="emails-list-view">
+                <div class="ec-intro">
+                  <h3>📧 Email Campaigns</h3>
+                  <p>دي كل حملات الإيميل. اضغط على أي حملة عشان تفتحها وتعدّلها، أو ابدأ حملة جديدة من الأول. الفتح والحفظ <b>مابيبعتش أي إيميل</b> — الإرسال ليه شاشته وقواعده.</p>
+                </div>
+                <div class="ec-list-toolbar">
+                  <button class="ec-new-btn" onclick="ecNewCampaign()"><i data-lucide="plus" style="width:16px;height:16px;"></i> حملة جديدة</button>
+                  <button class="ec-mini" onclick="loadEmailsList()"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> تحديث</button>
+                </div>
+                <div class="ec-campaigns-grid" id="ec-campaigns-grid">
+                  <div class="ec-empty">جاري التحميل...</div>
+                </div>
+              </div>
+
+              <!-- ═══ EDITOR VIEW (المنشئ — شاشة تانية جوه نفس التاب) ═══ -->
+              <div id="emails-editor-view" style="display:none;">
+
+              <div class="ec-editor-head">
+                <button class="ec-back-btn" onclick="ecBackToList()"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i> رجوع للحملات</button>
+                <div class="ec-editor-head-right">
+                  <span class="ec-status-badge" id="ec-editor-badge"></span>
+                  <button class="ec-save-btn" onclick="ecSaveCampaign()"><i data-lucide="save" style="width:15px;height:15px;"></i> حفظ</button>
+                </div>
+              </div>
+
               <div class="ec-intro">
-                <h3>📧 Email Campaigns</h3>
-                <p>ابعت حملة إيميل مخصّصة لأعضاء غاوي بالبراند الكامل. الوضع الافتراضي دايماً <b>تجريبي (test)</b> — بيروح لإيميلات التست بس. الإرسال الحقيقي محتاج تأكيد صريح.</p>
+                <h3 id="ec-editor-title">📧 حملة جديدة</h3>
+                <p>عبّي المحتوى واحفظ. الوضع الافتراضي للإرسال دايماً <b>تجريبي (test)</b> — بيروح لإيميلات التست بس. الإرسال الحقيقي محتاج تأكيد صريح.</p>
+              </div>
+
+              <!-- بانر الأوتوميشن — بيظهر للحملات الأوتوماتيك بس -->
+              <div class="ec-auto-banner" id="ec-auto-banner" style="display:none;">
+                <div class="ec-auto-info">
+                  <span class="ec-auto-icon">⚙️</span>
+                  <div>
+                    <div class="ec-auto-title">حملة أوتوماتيك (triggered)</div>
+                    <div class="ec-auto-sub" id="ec-auto-sub">بتتبعت تلقائياً عبر الـ runner حسب الـ trigger — مش بإرسال يدوي.</div>
+                  </div>
+                </div>
+                <button class="ec-toggle-btn" id="ec-toggle-btn" onclick="ecToggleActive()">تفعيل/إيقاف</button>
               </div>
 
               <div class="ec-grid">
                 <!-- LEFT column: content + send -->
                 <div class="ec-col">
 
+                  <!-- 0) Campaign meta -->
+                  <div class="ec-card">
+                    <div class="ec-card-title">تفاصيل الحملة</div>
+                    <div class="fg">
+                      <label>اسم الحملة (للعرض في القائمة) *</label>
+                      <input type="text" id="ec-title" placeholder="مثال: كورس Claude للمشتركين" />
+                    </div>
+                    <div class="fg">
+                      <label>وصف مختصر <span class="ec-muted">(بيظهر في كارت الحملة)</span></label>
+                      <input type="text" id="ec-description" placeholder="مثال: إعلان عن كورس Claude الجديد لكل المشتركين النشطين" />
+                    </div>
+                    <div class="fg">
+                      <label>معرّف الحملة <span class="ec-muted">(بيتولّد تلقائي — بيمنع تكرار الإرسال لنفس الشخص)</span></label>
+                      <input type="text" id="ec-campaign-id" placeholder="campaign-2026-07-22" />
+                    </div>
+                  </div>
+
                   <!-- 1) Content -->
                   <div class="ec-card">
                     <div class="ec-card-title">1) محتوى الإيميل</div>
-                    <div class="fg">
-                      <label>معرّف الحملة <span class="ec-muted">(نفس المعرّف بيمنع تكرار الإرسال لنفس الشخص)</span></label>
-                      <input type="text" id="ec-campaign-id" placeholder="campaign-2026-07-22" />
-                    </div>
                     <div class="fg">
                       <label>عنوان الرسالة (Subject) *</label>
                       <input type="text" id="ec-subject" placeholder="مثال: أهلاً {first_name} 👋 خبر حلو ليك" />
@@ -1861,6 +1913,8 @@
 
                 </div>
               </div>
+
+              </div><!-- end emails-editor-view -->
             </div>
 
           </div><!-- end team-content-area -->
@@ -2520,7 +2574,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1784800000"></script>
+  <script src="src/js/team.js?v=1784900000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 

@@ -1,0 +1,31 @@
+{
+  "campaign_id": "payment_success_kashier",
+  "title": "تأكيد نجاح الدفع (Kashier)",
+  "description": "إيميل أوتوماتيك بيتبعت عند نجاح عملية دفع عبر Kashier — تأكيد وترحيب بالعضو الجديد.",
+  "send_mode": "automated",
+  "active": false,
+  "trigger": {
+    "type": "payment_success",
+    "provider": "kashier",
+    "once": true
+  },
+  "audience": {
+    "status": "active",
+    "plan": "all",
+    "country": "",
+    "governorate": "",
+    "expiring_days": null,
+    "include_staff": false,
+    "search": ""
+  },
+  "content": {
+    "subject_template": "مبروك {first_name_ar} 🎉 اشتراكك اشتغل",
+    "body_html": "<p>{greeting}</p><p>تم استلام دفعتك بنجاح ✅ ومبروك عليك الاشتراك في غاوي!</p><p>من دلوقتي تقدر تدخل على كل الدروس واللايف سيشنز والمجتمع.</p>",
+    "button_text": "ابدأ التعلّم دلوقتي",
+    "button_link": "https://ghawy.ai",
+    "closing_line": "استمتع بالرحلة 🤍",
+    "signoff_html": "محمد - غاوي"
+  },
+  "created_at": "2026-07-23T00:00:00Z",
+  "updated_at": "2026-07-23T00:00:00Z"
+}

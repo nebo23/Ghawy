@@ -95,9 +95,10 @@ function initTabs() {
       if (target === 'feedbacks') {
         if (typeof loadFeedbacksTab === 'function') loadFeedbacksTab();
       }
-      if (target === 'emails' && !emailsLoaded) {
-        loadEmailsTab();
-        emailsLoaded = true;
+      if (target === 'emails') {
+        // دايماً افتح على قائمة الحملات كصفحة أولى (حتى لو رجعنا للتاب بعد ما كنا في المنشئ)
+        if (!emailsLoaded) { loadEmailsTab(); emailsLoaded = true; }
+        else { ecShowListView(); loadEmailsList(); }
       }
     });
   });
@@ -4249,18 +4250,305 @@ let ecSelected = new Map();    // email -> recipient object (بيفضل عبر �
 let ecPage = 1;
 let ecStatusTimer = null;
 
+// ── حالة المنشئ الحالية: null = حملة جديدة، أو { campaign_id, send_mode, active, trigger } ──
+let ecEditing = null;
+let ecEditorInited = false;
+
+// فتح التاب دايماً على **قائمة الحملات** كصفحة أولى
 function loadEmailsTab() {
-  const cid = document.getElementById('ec-campaign-id');
-  if (cid && !cid.value) {
-    const d = new Date();
-    cid.value = `campaign-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
+  ecInitEditorControls();
+  ecShowListView();
+  loadEmailsList();
+}
+
+// listeners المنشئ بتتظبط مرة واحدة بس (بتفضل موجودة عبر التنقّل list↔editor)
+function ecInitEditorControls() {
+  if (ecEditorInited) return;
+  ecEditorInited = true;
   document.querySelectorAll('input[name="ec-mode"]').forEach(r => r.addEventListener('change', ecOnModeChange));
-  ecOnModeChange();
   const s = document.getElementById('ec-f-search');
   if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') loadRecipients(); });
   ecInitVars();
+}
+
+// ── تبديل العروض ──────────────────────────────────────────────
+function ecShowListView() {
+  document.getElementById('emails-list-view').style.display = '';
+  document.getElementById('emails-editor-view').style.display = 'none';
+}
+function ecShowEditorView() {
+  document.getElementById('emails-list-view').style.display = 'none';
+  document.getElementById('emails-editor-view').style.display = '';
+  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+}
+
+// ── قائمة الحملات ─────────────────────────────────────────────
+async function loadEmailsList() {
+  const grid = document.getElementById('ec-campaigns-grid');
+  if (grid) grid.innerHTML = '<div class="ec-empty">جاري التحميل...</div>';
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/campaigns`, { headers });
+    if (res.status === 403) { showToast('👑 Owners only', 'error'); if (grid) grid.innerHTML = ''; return; }
+    if (!res.ok) { if (grid) grid.innerHTML = '<div class="ec-empty">❌ فشل تحميل الحملات</div>'; return; }
+    const data = await res.json();
+    ecRenderCampaignCards(data.campaigns || []);
+  } catch (e) {
+    if (grid) grid.innerHTML = `<div class="ec-empty">❌ خطأ شبكة: ${escapeHtml(e.message)}</div>`;
+  }
+  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+}
+
+function ecStatusMeta(c) {
+  if (c.type === 'automated') {
+    return c.status === 'active'
+      ? { cls: 'active', label: 'Active — أوتوميشن شغّال' }
+      : { cls: 'stopped', label: 'متوقف — أوتوميشن' };
+  }
+  return { cls: 'draft', label: 'مسودة' };
+}
+
+function ecRenderCampaignCards(items) {
+  const grid = document.getElementById('ec-campaigns-grid');
+  if (!grid) return;
+  if (!items.length) {
+    grid.innerHTML = '<div class="ec-empty">مفيش حملات لسه. اضغط "حملة جديدة" عشان تبدأ. ✨</div>';
+    return;
+  }
+  grid.innerHTML = items.map(c => {
+    const st = ecStatusMeta(c);
+    const trig = c.trigger_type
+      ? `<span class="ec-card-trigger">⚡ ${escapeHtml(c.trigger_type)}</span>` : '';
+    return `<div class="ec-camp-card" onclick="ecOpenCampaign('${encodeURIComponent(c.campaign_id)}')" title="فتح / تعديل">
+      <div class="ec-camp-top">
+        <span class="ec-status-badge ${st.cls}">${st.label}</span>
+        ${trig}
+      </div>
+      <div class="ec-camp-title">${escapeHtml(c.title || c.campaign_id)}</div>
+      <div class="ec-camp-desc">${escapeHtml(c.description || '—')}</div>
+      <div class="ec-camp-foot">
+        <span class="ec-camp-sent">📨 إجمالي المرسل لهم: <b>${c.sent_total || 0}</b></span>
+        <span class="ec-camp-open">فتح / تعديل ›</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── فتح حملة موجودة → المنشئ متعبّي ────────────────────────────
+async function ecOpenCampaign(encId) {
+  const cid = decodeURIComponent(encId);
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/campaigns/${encodeURIComponent(cid)}`, { headers });
+    if (res.status === 404) { showToast('❌ الحملة مش موجودة', 'error'); loadEmailsList(); return; }
+    if (!res.ok) { showToast('❌ فشل فتح الحملة', 'error'); loadEmailsList(); return; }
+    const camp = await res.json();
+    ecFillEditor(camp);
+    ecShowEditorView();
+    loadRecipients();
+  } catch (e) {
+    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+    loadEmailsList();
+  }
+}
+
+// ── حملة جديدة → منشئ فاضي ─────────────────────────────────────
+function ecNewCampaign() {
+  ecResetEditor();
+  ecShowEditorView();
+  const cid = document.getElementById('ec-campaign-id');
+  if (cid) {
+    const d = new Date();
+    cid.value = `campaign-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
   loadRecipients();
+}
+
+// ── رجوع للقائمة (مع refresh) ─────────────────────────────────
+function ecBackToList() {
+  ecShowListView();
+  loadEmailsList();
+}
+
+const EC_TEXT_FIELDS = ['ec-title', 'ec-description', 'ec-campaign-id', 'ec-subject', 'ec-body', 'ec-btn-text', 'ec-btn-link', 'ec-closing'];
+
+function ecResetEditor() {
+  ecEditing = null;
+  EC_TEXT_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const so = document.getElementById('ec-signoff'); if (so) so.value = 'محمد - غاوي';
+  const idEl = document.getElementById('ec-campaign-id'); if (idEl) idEl.readOnly = false;
+  const t = document.getElementById('ec-editor-title'); if (t) t.textContent = '📧 حملة جديدة';
+  ecApplyAudience({});
+  const rb = document.getElementById('ec-send-result'); if (rb) rb.style.display = 'none';
+  const subj = document.getElementById('ec-preview-subject'); if (subj) subj.textContent = '— العنوان هيظهر هنا —';
+  const frame = document.getElementById('ec-preview-frame'); if (frame) frame.srcdoc = '';
+  const testRadio = document.querySelector('input[name="ec-mode"][value="test"]'); if (testRadio) testRadio.checked = true;
+  ecSelected.clear();
+  ecUpdateEditorChrome();
+}
+
+function ecFillEditor(camp) {
+  ecEditing = {
+    campaign_id: camp.campaign_id,
+    send_mode: camp.send_mode || 'manual',
+    active: !!camp.active,
+    trigger: camp.trigger || null,
+    type: camp.type,
+    status: camp.status,
+  };
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); };
+  set('ec-title', camp.title || '');
+  set('ec-description', camp.description || '');
+  set('ec-campaign-id', camp.campaign_id || '');
+  const c = camp.content || {};
+  set('ec-subject', c.subject_template || '');
+  set('ec-body', c.body_html || (Array.isArray(c.body_paragraphs_html) ? c.body_paragraphs_html.join('\n') : ''));
+  let bt = c.button_text || '', bl = c.button_link || '';
+  if ((!bt || !bl) && Array.isArray(c.buttons) && c.buttons.length) {
+    bt = c.buttons[0].text || bt; bl = c.buttons[0].link || bl;
+  }
+  set('ec-btn-text', bt);
+  set('ec-btn-link', bl);
+  set('ec-closing', c.closing_line || '');
+  set('ec-signoff', c.signoff_html || 'محمد - غاوي');
+  ecApplyAudience(camp.audience || {});
+  const t = document.getElementById('ec-editor-title');
+  if (t) t.textContent = '📧 ' + (camp.title || camp.campaign_id);
+  const idEl = document.getElementById('ec-campaign-id'); if (idEl) idEl.readOnly = true;
+  ecSelected.clear();
+  const rb = document.getElementById('ec-send-result'); if (rb) rb.style.display = 'none';
+  ecUpdateEditorChrome();
+}
+
+// شكل رأس المنشئ: البادج + بانر الأوتوميشن + تقييد الإرسال اليدوي للأوتوماتيك
+function ecUpdateEditorChrome() {
+  const badge = document.getElementById('ec-editor-badge');
+  const banner = document.getElementById('ec-auto-banner');
+  const isAuto = !!(ecEditing && ecEditing.send_mode === 'automated');
+  if (badge) {
+    let cls = 'new', label = 'حملة جديدة';
+    if (ecEditing) {
+      if (isAuto) { cls = ecEditing.active ? 'active' : 'stopped'; label = ecEditing.active ? 'Active — أوتوميشن شغّال' : 'متوقف — أوتوميشن'; }
+      else { cls = 'draft'; label = 'مسودة'; }
+    }
+    badge.className = 'ec-status-badge ' + cls;
+    badge.textContent = label;
+  }
+  if (banner) {
+    if (isAuto) {
+      banner.style.display = 'flex';
+      const sub = document.getElementById('ec-auto-sub');
+      const trigType = ecEditing.trigger && ecEditing.trigger.type ? ecEditing.trigger.type : null;
+      if (sub) sub.textContent = trigType
+        ? `Trigger: ${trigType} — بتتبعت تلقائياً عبر الـ runner (مش بإرسال يدوي).`
+        : 'بتتبعت تلقائياً عبر الـ runner حسب الـ trigger (مش بإرسال يدوي).';
+      const tbtn = document.getElementById('ec-toggle-btn');
+      if (tbtn) {
+        tbtn.textContent = ecEditing.active ? '⏸ إيقاف الأوتوميشن' : '▶ تفعيل الأوتوميشن';
+        tbtn.className = 'ec-toggle-btn ' + (ecEditing.active ? 'on' : 'off');
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  ecApplySendRestrictions(isAuto);
+}
+
+// الأوتوماتيك: يتقفل عليه وضع الإرسال الحقيقي اليدوي (بيتبعت عبر الـ runner)
+function ecApplySendRestrictions(isAuto) {
+  const realRadio = document.querySelector('input[name="ec-mode"][value="real"]');
+  const realOpt = realRadio ? realRadio.closest('.ec-mode-opt') : null;
+  if (isAuto) {
+    const testRadio = document.querySelector('input[name="ec-mode"][value="test"]');
+    if (testRadio) testRadio.checked = true;
+    if (realRadio) realRadio.disabled = true;
+    if (realOpt) realOpt.style.display = 'none';
+  } else {
+    if (realRadio) realRadio.disabled = false;
+    if (realOpt) realOpt.style.display = '';
+  }
+  ecOnModeChange();
+}
+
+// ── فلاتر الجمهور: قراءة/تطبيق (بتتحفظ مع الحملة وتترجّع عند الفتح) ──
+function ecGetAudience() {
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const exp = g('ec-f-expiring');
+  return {
+    status: g('ec-f-status') || 'all',
+    plan: g('ec-f-plan') || 'all',
+    country: g('ec-f-country'),
+    governorate: g('ec-f-gov'),
+    expiring_days: exp ? Number(exp) : null,
+    include_staff: !!document.getElementById('ec-f-staff')?.checked,
+    search: g('ec-f-search'),
+  };
+}
+function ecApplyAudience(a) {
+  a = a || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); };
+  set('ec-f-search', a.search || '');
+  set('ec-f-country', a.country || '');
+  set('ec-f-gov', a.governorate || '');
+  const st = document.getElementById('ec-f-status'); if (st) st.value = a.status || 'all';
+  const pl = document.getElementById('ec-f-plan'); if (pl) pl.value = a.plan || 'all';
+  set('ec-f-expiring', a.expiring_days != null ? a.expiring_days : '');
+  const staff = document.getElementById('ec-f-staff'); if (staff) staff.checked = !!a.include_staff;
+}
+
+// ── حفظ الحملة (POST جديد / PUT موجود) — مايبعتش أي إيميل ──────
+async function ecSaveCampaign() {
+  const title = (document.getElementById('ec-title')?.value || '').trim();
+  const content = ecBuildContent();
+  if (!title && !content.subject_template) {
+    showToast('❌ لازم اسم للحملة أو عنوان رسالة (Subject)', 'error');
+    return;
+  }
+  const payload = {
+    title,
+    description: (document.getElementById('ec-description')?.value || '').trim(),
+    content,
+    audience: ecGetAudience(),
+  };
+  let url, method;
+  if (ecEditing && ecEditing.campaign_id) {
+    url = `${API}/admin/email-campaigns/campaigns/${encodeURIComponent(ecEditing.campaign_id)}`;
+    method = 'PUT';
+    payload.send_mode = ecEditing.send_mode;
+  } else {
+    url = `${API}/admin/email-campaigns/campaigns`;
+    method = 'POST';
+    payload.send_mode = 'manual';
+    payload.campaign_id = (document.getElementById('ec-campaign-id')?.value || '').trim() || null;
+  }
+  try {
+    const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { showToast(`❌ ${data.detail || 'فشل الحفظ'}`, 'error'); return; }
+    showToast('✅ اتحفظت الحملة', 'success');
+    ecShowListView();
+    loadEmailsList();
+  } catch (e) {
+    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+  }
+}
+
+// ── تفعيل/إيقاف الأوتوميشن (زرار صريح بس) ─────────────────────
+async function ecToggleActive() {
+  if (!ecEditing || !ecEditing.campaign_id || ecEditing.send_mode !== 'automated') return;
+  const newActive = !ecEditing.active;
+  const verb = newActive ? 'تفعيل' : 'إيقاف';
+  if (!confirm(`متأكد إنك عايز ${verb} الأوتوميشن دي؟`)) return;
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/campaigns/${encodeURIComponent(ecEditing.campaign_id)}/active`, {
+      method: 'POST', headers, body: JSON.stringify({ active: newActive })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(`❌ ${data.detail || 'فشل'}`, 'error'); return; }
+    ecEditing.active = !!data.active;
+    ecUpdateEditorChrome();
+    showToast(newActive ? '▶ اتفعّلت الأوتوميشن' : '⏸ اتوقفت الأوتوميشن', 'success');
+  } catch (e) {
+    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+  }
 }
 
 // ── متغيّرات الإيميل: سحب/إفلات + ضغط لإضافتها عند المؤشّر ──────────

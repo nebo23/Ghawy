@@ -45,6 +45,8 @@ services:
       # Persist uploads outside the container
       - uploads_data:/app/uploads
       - static_data:/app/static
+      # Persist email campaign JSON files (dashboard-created campaigns survive rebuilds)
+      - campaigns_data:/app/campaigns
     networks:
       - internal
       - external
@@ -100,6 +102,8 @@ volumes:
   postgres_data:
     driver: local
   uploads_data:
+    driver: local
+  campaigns_data:
     driver: local
   static_data:
     driver: local

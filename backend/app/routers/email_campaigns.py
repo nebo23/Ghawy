@@ -32,6 +32,7 @@ from app.routers.users import get_current_user
 from app.routers.admin import require_owner
 from app.services.email_service import _governorate_to_arabic, arabize_first_name, country_to_arabic
 from app.services import email_campaign_service as ecs
+from app.services import campaign_store
 
 
 logger = logging.getLogger("ghawy.email_campaigns")
@@ -63,6 +64,21 @@ class SendRequest(BaseModel):
     mode: str = "test"
     confirm_phrase: Optional[str] = None
     test_emails: Optional[List[str]] = None
+
+
+class CampaignSave(BaseModel):
+    """جسم إنشاء/تحديث حملة — تخزين بس، مايبعتش أي إيميل."""
+    campaign_id: Optional[str] = None
+    title: str = ""
+    description: str = ""
+    send_mode: str = "manual"                    # manual (مسودة داشبورد) | automated (runner)
+    trigger: Optional[Dict[str, Any]] = None     # إعدادات الـ trigger (للأوتوماتيك)
+    audience: Optional[Dict[str, Any]] = None    # فلاتر الجمهور المحفوظة
+    content: Dict[str, Any] = {}
+
+
+class ActiveToggle(BaseModel):
+    active: bool
 
 
 # ══════════════════════════════════════════════════════════════
@@ -376,3 +392,166 @@ def campaign_status(
         "running": running,
         "queued_total": queued_total,
     }
+
+
+# ══════════════════════════════════════════════════════════════
+#  Campaign store — قائمة الحملات + فتح/إنشاء/تحديث (JSON دائم)
+#  ملاحظة: كل الدوال دي بتقرا/بتكتب JSON بس — **مفيش أي إرسال إيميل**.
+# ══════════════════════════════════════════════════════════════
+
+def _sent_counts(db: Session, campaign_ids: List[str]) -> Dict[str, int]:
+    """إجمالي المرسل لهم فعلاً (status=sent) لكل حملة، من الـ sent-log."""
+    if not campaign_ids:
+        return {}
+    rows = (
+        db.query(EmailCampaignSend.campaign_id, func.count(EmailCampaignSend.id))
+        .filter(EmailCampaignSend.campaign_id.in_(campaign_ids), EmailCampaignSend.status == "sent")
+        .group_by(EmailCampaignSend.campaign_id)
+        .all()
+    )
+    return {cid: cnt for cid, cnt in rows}
+
+
+def _derive_type_status(camp: Dict[str, Any]) -> Dict[str, str]:
+    """يشتق النوع (draft/automated) والحالة (active/stopped/draft) من الحملة."""
+    if (camp.get("send_mode") or "manual") == "automated":
+        return {"type": "automated", "status": "active" if camp.get("active") else "stopped"}
+    return {"type": "draft", "status": "draft"}
+
+
+@router.get("/campaigns")
+def list_campaigns(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """كل الحملات للقائمة: العنوان/الوصف، النوع، الحالة، وعدّاد إجمالي المرسل لهم."""
+    require_owner(current_user)
+    camps = campaign_store.list_all()
+    counts = _sent_counts(db, [c.get("campaign_id") for c in camps if c.get("campaign_id")])
+    items = []
+    for c in camps:
+        cid = c.get("campaign_id")
+        ts = _derive_type_status(c)
+        items.append({
+            "campaign_id": cid,
+            "title": c.get("title") or cid,
+            "description": c.get("description") or "",
+            "type": ts["type"],
+            "status": ts["status"],
+            "active": bool(c.get("active")),
+            "send_mode": c.get("send_mode") or "manual",
+            "trigger_type": (c.get("trigger") or {}).get("type") if c.get("trigger") else None,
+            "sent_total": counts.get(cid, 0),
+            "updated_at": c.get("updated_at"),
+        })
+    return {"campaigns": items, "count": len(items)}
+
+
+@router.get("/campaigns/{campaign_id}")
+def get_campaign(
+    campaign_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """حملة كاملة (محتوى + فلاتر جمهور + trigger + الوضع + الحالة) عشان المنشئ يتعبّى منها."""
+    require_owner(current_user)
+    camp = campaign_store.get(campaign_id)
+    if camp is None:
+        raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
+    ts = _derive_type_status(camp)
+    camp["type"] = ts["type"]
+    camp["status"] = ts["status"]
+    camp["sent_total"] = _sent_counts(db, [campaign_id]).get(campaign_id, 0)
+    return camp
+
+
+@router.post("/campaigns")
+def create_campaign(
+    body: CampaignSave,
+    current_user: User = Depends(get_current_user),
+):
+    """ينشئ حملة جديدة (مسودة افتراضياً) بملف JSON جديد — من غير أي إرسال."""
+    require_owner(current_user)
+    title = (body.title or "").strip()
+    content = body.content or {}
+    if not title and not (content.get("subject_template") or "").strip():
+        raise HTTPException(status_code=400, detail="لازم على الأقل عنوان للحملة أو Subject.")
+
+    send_mode = (body.send_mode or "manual").strip().lower()
+    if send_mode not in ("manual", "automated"):
+        send_mode = "manual"
+
+    data: Dict[str, Any] = {
+        "campaign_id": (body.campaign_id or "").strip() or None,
+        "title": title,
+        "description": (body.description or "").strip(),
+        "send_mode": send_mode,
+        # حملة جديدة أوتوماتيك بتتخزّن **متوقفة** (active=False) — التفعيل بزرار صريح بس
+        "active": False,
+        "trigger": body.trigger if send_mode == "automated" else None,
+        "audience": body.audience or {},
+        "content": content,
+    }
+    try:
+        saved = campaign_store.create(data)
+    except Exception as e:
+        logger.exception("Failed to create campaign")
+        raise HTTPException(status_code=500, detail=f"فشل حفظ الحملة: {e}")
+    return {"ok": True, "campaign_id": saved["campaign_id"], "campaign": saved}
+
+
+@router.put("/campaigns/{campaign_id}")
+def update_campaign(
+    campaign_id: str,
+    body: CampaignSave,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    يحدّث حملة موجودة في نفس الملف — من غير أي إرسال.
+    للأوتوماتيك: إعدادات الـ trigger و فلاج active **بيتحافظ عليهم كما هم** ومش بيتغيّروا
+    من الحفظ العادي (الـ active بيتقلب من endpoint التفعيل الصريح بس).
+    """
+    require_owner(current_user)
+    existing = campaign_store.get(campaign_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
+
+    # الوضع الأصلي محفوظ — الحفظ العادي مايحوّلش حملة من/إلى أوتوماتيك بالغلط
+    send_mode = existing.get("send_mode") or "manual"
+    is_automated = send_mode == "automated"
+
+    data: Dict[str, Any] = {
+        "title": (body.title or "").strip() or existing.get("title", ""),
+        "description": (body.description or "").strip(),
+        "send_mode": send_mode,
+        # للأوتوماتيك: نحافظ على active و trigger زي ما هم (مش بيتغيّروا من الحفظ)
+        "active": bool(existing.get("active")) if is_automated else False,
+        "trigger": existing.get("trigger") if is_automated else None,
+        "audience": body.audience if body.audience is not None else existing.get("audience", {}),
+        "content": body.content or existing.get("content", {}),
+    }
+    try:
+        saved = campaign_store.update(campaign_id, data)
+    except Exception as e:
+        logger.exception("Failed to update campaign %s", campaign_id)
+        raise HTTPException(status_code=500, detail=f"فشل تحديث الحملة: {e}")
+    if saved is None:
+        raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
+    return {"ok": True, "campaign_id": campaign_id, "campaign": saved}
+
+
+@router.post("/campaigns/{campaign_id}/active")
+def toggle_campaign_active(
+    campaign_id: str,
+    body: ActiveToggle,
+    current_user: User = Depends(get_current_user),
+):
+    """يفعّل/يوقف حملة أوتوماتيك (زرار صريح) — بيقلب فلاج active بس، مايبعتش إيميل."""
+    require_owner(current_user)
+    existing = campaign_store.get(campaign_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
+    if (existing.get("send_mode") or "manual") != "automated":
+        raise HTTPException(status_code=400, detail="التفعيل/الإيقاف للحملات الأوتوماتيك بس.")
+    saved = campaign_store.set_active(campaign_id, body.active)
+    return {"ok": True, "campaign_id": campaign_id, "active": bool(saved.get("active"))}

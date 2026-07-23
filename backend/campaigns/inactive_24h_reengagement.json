@@ -1,0 +1,31 @@
+{
+  "campaign_id": "inactive_24h_reengagement",
+  "title": "ليه وقفت؟ (بعد 24 ساعة من غير اشتراك)",
+  "description": "إيميل أوتوماتيك بيتبعت مرة واحدة بعد 24 ساعة من التسجيل من غير دفع — يرجّع العضو يكمّل اشتراكه.",
+  "send_mode": "automated",
+  "active": true,
+  "trigger": {
+    "type": "signup_no_payment",
+    "delay_hours": 24,
+    "once": true
+  },
+  "audience": {
+    "status": "all",
+    "plan": "none",
+    "country": "",
+    "governorate": "",
+    "expiring_days": null,
+    "include_staff": false,
+    "search": ""
+  },
+  "content": {
+    "subject_template": "{first_name_ar} 👋 ليه وقفت؟ رجعلنا نكمّل",
+    "body_html": "<p>{greeting}</p><p>لاحظنا إنك سجّلت معانا في غاوي بس لسه ماكمّلتش اشتراكك 🤍</p><p>كل يوم بيعدّي من غير ما تبدأ، بتفوّت عليك حاجات كتير — دروس، لايف سيشنز، ومجتمع بيتعلّم الـ AI صح.</p><p>رجعلنا نكمّل خطوة واحدة بس ونبدأ سوا.</p>",
+    "button_text": "كمّل اشتراكك دلوقتي",
+    "button_link": "https://ghawy.ai",
+    "closing_line": "مستنيينك 🤍",
+    "signoff_html": "محمد - غاوي"
+  },
+  "created_at": "2026-07-23T00:00:00Z",
+  "updated_at": "2026-07-23T00:00:00Z"
+}

@@ -1322,6 +1322,73 @@
 #tab-emails .ec-preview-subject { background: #111; border: 1px solid #262626; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 10px; direction: rtl; }
 #tab-emails .ec-preview-frame { width: 100%; height: 460px; border: 1px solid #262626; border-radius: 8px; background: #fff; }
 
+/* ── Campaigns list view ─────────────────────────────────────── */
+#tab-emails .ec-list-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+#tab-emails .ec-new-btn {
+  display: inline-flex; align-items: center; gap: 7px; background: #D0FA06; color: #0a0a0a;
+  border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: filter .15s;
+}
+#tab-emails .ec-new-btn:hover { filter: brightness(1.08); }
+
+#tab-emails .ec-campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+#tab-emails .ec-empty { grid-column: 1 / -1; text-align: center; color: #888; padding: 40px 20px; font-size: 14px; }
+
+#tab-emails .ec-camp-card {
+  background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 16px;
+  cursor: pointer; transition: border-color .15s, transform .1s, background .15s;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#tab-emails .ec-camp-card:hover { border-color: #3f8ff9; background: #191919; transform: translateY(-1px); }
+#tab-emails .ec-camp-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#tab-emails .ec-camp-title { color: #fff; font-size: 15px; font-weight: 700; line-height: 1.4; }
+#tab-emails .ec-camp-desc { color: #999; font-size: 12.5px; line-height: 1.7; min-height: 34px; }
+#tab-emails .ec-camp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; border-top: 1px solid #232323; padding-top: 10px; }
+#tab-emails .ec-camp-sent { color: #aaa; font-size: 12px; }
+#tab-emails .ec-camp-sent b { color: #D0FA06; }
+#tab-emails .ec-camp-open { color: #3f8ff9; font-size: 12px; font-weight: 600; }
+#tab-emails .ec-card-trigger { color: #a78bfa; font-size: 11px; background: rgba(167,139,250,0.12); border-radius: 20px; padding: 2px 8px; direction: ltr; }
+
+/* Status badge (shared: list cards + editor head) */
+#tab-emails .ec-status-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+#tab-emails .ec-status-badge.active { background: rgba(34,197,94,0.15); color: #22c55e; }
+#tab-emails .ec-status-badge.stopped { background: rgba(239,68,68,0.12); color: #ef4444; }
+#tab-emails .ec-status-badge.draft { background: rgba(148,163,184,0.15); color: #94a3b8; }
+#tab-emails .ec-status-badge.new { background: rgba(63,143,249,0.15); color: #3f8ff9; }
+
+/* ── Editor head (back + save) ────────────────────────────────── */
+#tab-emails .ec-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+#tab-emails .ec-editor-head-right { display: flex; align-items: center; gap: 12px; }
+#tab-emails .ec-back-btn {
+  display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.06);
+  color: #ccc; border: 1px solid #333; border-radius: 8px; padding: 8px 14px; font-size: 13px;
+  cursor: pointer; font-family: inherit;
+}
+#tab-emails .ec-back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+#tab-emails .ec-save-btn {
+  display: inline-flex; align-items: center; gap: 7px; background: #22c55e; color: #06210f;
+  border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: filter .15s;
+}
+#tab-emails .ec-save-btn:hover { filter: brightness(1.08); }
+
+/* ── Automation banner ────────────────────────────────────────── */
+#tab-emails .ec-auto-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; flex-wrap: wrap;
+}
+#tab-emails .ec-auto-info { display: flex; align-items: center; gap: 12px; }
+#tab-emails .ec-auto-icon { font-size: 22px; }
+#tab-emails .ec-auto-title { color: #c4b5fd; font-size: 14px; font-weight: 700; }
+#tab-emails .ec-auto-sub { color: #999; font-size: 12px; line-height: 1.7; margin-top: 2px; }
+#tab-emails .ec-toggle-btn {
+  border: 1px solid #333; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+#tab-emails .ec-toggle-btn.on { background: rgba(239,68,68,0.12); color: #ef4444; border-color: rgba(239,68,68,0.4); }
+#tab-emails .ec-toggle-btn.off { background: rgba(34,197,94,0.12); color: #22c55e; border-color: rgba(34,197,94,0.4); }
+
 @media (max-width: 1100px) {
   #tab-emails .ec-grid { grid-template-columns: 1fr; }
 }
