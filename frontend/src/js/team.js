@@ -4249,6 +4249,22 @@ let ecAllRecipients = [];      // كل الأعضاء المطابقين للف�
 let ecSelected = new Map();    // email -> recipient object (بيفضل عبر الصفحات/الفلاتر)
 let ecPage = 1;
 let ecStatusTimer = null;
+let ecFilterQuality = null;    // ملخّص جودة كل المطابقين للفلتر (جاي مع /recipients)
+let ecFacetsLoaded = false;    // قوائم البلاد/المحافظات اتحمّلت (مش محتاجينها كل نداء)
+let ecQualityReq = 0;          // توكن — يمنع نتيجة جودة قديمة إنها تسبق الجديدة
+let ecPreviewReq = 0;          // نفس الفكرة للمعاينة الحيّة
+let ecRecipReq = 0;            // ونفسها لتحميل الجمهور (الفلاتر بتتغيّر بسرعة)
+let ecLastQualityKey = '';     // بصمة آخر جمهور اتحسبت جودته (يمنع نداء مكرر)
+let ecLastPreviewKey = '';     // بصمة آخر محتوى اتعملت له معاينة (يمنع نداء مكرر)
+
+// debounce بسيط — بيأجّل التنفيذ لحد ما اليوزر يبطّل تغيير/كتابة
+function ecDebounce(fn, ms) {
+  let t = null;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
 
 // ── حالة المنشئ الحالية: null = حملة جديدة، أو { campaign_id, send_mode, active, trigger } ──
 let ecEditing = null;
@@ -4270,6 +4286,41 @@ function ecInitEditorControls() {
   if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') loadRecipients(); });
   ecInitToolbar();
   ecInitVars();
+  ecInitLiveFilters();
+  ecInitLivePreview();
+}
+
+// ── الفلاتر بتتطبّق لوحدها (debounced) عشان العدّاد يتحدّث لحظياً ─────────
+const EC_FILTER_TEXT = ['ec-f-search', 'ec-f-country', 'ec-f-gov', 'ec-f-expiring'];
+const EC_FILTER_PICK = ['ec-f-status', 'ec-f-plan', 'ec-f-staff'];
+const ecReloadRecipients = ecDebounce(() => loadRecipients(), 400);
+
+function ecInitLiveFilters() {
+  EC_FILTER_TEXT.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', ecReloadRecipients);
+  });
+  EC_FILTER_PICK.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => loadRecipients());
+  });
+}
+
+// ── المعاينة الحيّة: أي تعديل في المحتوى → معاينة جديدة بعد ~400ms ────────
+const EC_CONTENT_FIELDS = ['ec-subject', 'ec-btn-text', 'ec-btn-link', 'ec-closing', 'ec-signoff', 'ec-name-fallback'];
+const ecSchedulePreview = ecDebounce(() => previewEmail({ auto: true }), 400);
+
+function ecInitLivePreview() {
+  EC_CONTENT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', ecSchedulePreview);
+  });
+  // كلمة الـ fallback بتأثّر على ملخّص الجودة كمان
+  const nf = document.getElementById('ec-name-fallback');
+  if (nf) nf.addEventListener('input', () => { ecLastQualityKey = ''; ecScheduleQuality(); });
+  const editor = document.getElementById('ec-body-editor');
+  if (editor) editor.addEventListener('input', ecSchedulePreview);
 }
 
 // ══ محرر المحتوى الغني (Rich Text) ═══════════════════════════════
@@ -4374,6 +4425,7 @@ function ecExecCmd(cmd) {
     }
   }
   ecSyncBody();
+  ecSchedulePreview();
 }
 
 function ecInsertAtCaret(editor, text) {
@@ -4503,6 +4555,12 @@ function ecResetEditor() {
   const frame = document.getElementById('ec-preview-frame'); if (frame) frame.srcdoc = '';
   const testRadio = document.querySelector('input[name="ec-mode"][value="test"]'); if (testRadio) testRadio.checked = true;
   ecSelected.clear();
+  ecFilterQuality = null;
+  ecLastQualityKey = '';
+  ecLastPreviewKey = '';
+  ['ec-audience-quality', 'ec-send-quality'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   ecUpdateEditorChrome();
 }
 
@@ -4543,6 +4601,9 @@ function ecFillEditor(camp) {
   ecSelected.clear();
   const rb = document.getElementById('ec-send-result'); if (rb) rb.style.display = 'none';
   ecUpdateEditorChrome();
+  // معاينة فورية للحملة المفتوحة (من غير ما اليوزر يضغط حاجة)
+  ecLastPreviewKey = '';
+  ecSchedulePreview();
 }
 
 // شكل رأس المنشئ: البادج + بانر الأوتوميشن + تقييد الإرسال اليدوي للأوتوماتيك
@@ -4720,6 +4781,7 @@ function ecInsertVar(text) {
     ecInsertAtCaret(el, text);
     ecSyncBody();
     ecLastField = el;
+    ecSchedulePreview();
     return;
   }
   const start = (el.selectionStart != null) ? el.selectionStart : el.value.length;
@@ -4728,6 +4790,7 @@ function ecInsertVar(text) {
   const pos = start + text.length;
   try { el.setSelectionRange(pos, pos); } catch (e) {}
   ecLastField = el;
+  ecSchedulePreview();
 }
 
 function ecGetMode() {
@@ -4762,22 +4825,32 @@ async function loadRecipients() {
   const pl = g('ec-f-plan'); if (pl && pl !== 'all') params.set('plan', pl);
   if (g('ec-f-expiring')) params.set('expiring_days', g('ec-f-expiring'));
   if (document.getElementById('ec-f-staff')?.checked) params.set('include_staff', 'true');
-  params.set('include_facets', 'true');
+  // قوائم البلاد/المحافظات ثابتة — نجيبها مرة واحدة بس (الفلاتر بتتنده كل ما اليوزر يكتب)
+  params.set('include_facets', ecFacetsLoaded ? 'false' : 'true');
+  params.set('name_fallback', ecNameFallback());
 
+  const my = ++ecRecipReq;
   try {
     const res = await fetch(`${API}/admin/email-campaigns/recipients?${params}`, { headers });
+    if (my !== ecRecipReq) return;   // فلتر أحدث سبقه — نتجاهل النتيجة القديمة
     if (res.status === 403) { showToast('👑 Owners only', 'error'); tbody.innerHTML = ''; return; }
     if (!res.ok) { showToast('❌ فشل تحميل الأعضاء', 'error'); return; }
     const data = await res.json();
+    if (my !== ecRecipReq) return;
     ecAllRecipients = data.recipients || [];
-    ecFillDatalist('ec-countries', data.countries);
-    ecFillDatalist('ec-govs', data.governorates);
+    ecFilterQuality = data.quality || null;
+    if (data.countries || data.governorates) {
+      ecFillDatalist('ec-countries', data.countries);
+      ecFillDatalist('ec-govs', data.governorates);
+      ecFacetsLoaded = true;
+    }
     ecPage = 1;
     ecRenderRecipients();
     ecUpdateCounts();
+    ecSchedulePreview();   // عيّنة المعاينة اتغيّرت مع الجمهور الجديد
     if (data.truncated) showToast(`⚠️ العدد كبير — اتحمّل أول ${ecAllRecipients.length}`, 'info');
   } catch (e) {
-    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+    if (my === ecRecipReq) showToast('❌ خطأ شبكة: ' + e.message, 'error');
   }
 }
 
@@ -4832,18 +4905,107 @@ function ecSelectAll(sel) {
   ecUpdateCounts();
 }
 
+// الجمهور اللي الأرقام بتتحسب عليه: المحدّدين فعلاً، ولو مفيش تحديد → كل المطابقين للفلتر
+function ecTargetList() {
+  return ecSelected.size ? ecSelectedList() : ecAllRecipients;
+}
+
+function ecNameFallback() {
+  return (document.getElementById('ec-name-fallback')?.value || '').trim() || 'صديقنا';
+}
+
+// عدّاد المستقبلين — بيتكتب في مكانين: تحت جدول الجمهور وجنب زرار الإرسال
 function ecUpdateCounts() {
-  const chip = document.getElementById('ec-count-chip');
-  if (!chip) return;
   const selected = ecSelected.size;
-  chip.textContent = ecAllRecipients.length;
-  document.getElementById('ec-selinfo').textContent = `${selected} محدد`;
-  const summ = document.getElementById('ec-send-summary');
-  if (ecGetMode() === 'test') {
-    summ.innerHTML = `تجريبي: هيروح لإيميلات التست بس (المعاينة من أول عضو محدّد)`;
-  } else {
-    summ.innerHTML = `هيتبعت لـ <b>${selected}</b> عضو حقيقي`;
+  const matched = ecAllRecipients.length;
+  const chip = document.getElementById('ec-count-chip');
+  if (chip) chip.textContent = matched;
+  const selinfo = document.getElementById('ec-selinfo');
+  if (selinfo) selinfo.textContent = `${selected} محدد`;
+
+  const main = `هيتبعت لـ <b>${selected}</b> شخص`;
+  const sub = selected
+    ? `من ${matched} مطابقين للفلتر`
+    : (matched ? `${matched} مطابقين للفلتر — حدّد اللي عايزهم أو اضغط "تحديد الكل"` : 'مفيش أعضاء مطابقين للفلتر');
+  const testNote = ecGetMode() === 'test'
+    ? '<span class="ec-target-test">🧪 وضع تجريبي — الرسالة هتروح لإيميلات التست بس</span>' : '';
+  const html = `<span class="ec-target-main">${main}</span><span class="ec-target-sub">${sub}</span>${testNote}`;
+
+  ['ec-audience-summary', 'ec-send-summary'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+  ecScheduleQuality();
+}
+
+// ══ ملخّص جودة الداتا — كله محسوب في الـ backend من نفس build_template_vars ══
+const ecScheduleQuality = ecDebounce(() => ecRefreshQuality(), 350);
+
+async function ecRefreshQuality() {
+  const boxes = ['ec-audience-quality', 'ec-send-quality']
+    .map(id => document.getElementById(id)).filter(Boolean);
+  if (!boxes.length) return;
+
+  const list = ecTargetList();
+  const isSelection = ecSelected.size > 0;
+  if (!list.length) { boxes.forEach(b => b.style.display = 'none'); ecLastQualityKey = ''; return; }
+
+  const fallback = ecNameFallback();
+  const key = `${isSelection ? 'sel' : 'all'}|${fallback}|${list.length}|${list.map(r => r.email).join(',')}`;
+  if (key === ecLastQualityKey) return;   // نفس الجمهور ونفس الـ fallback — مفيش داعي لنداء
+  ecLastQualityKey = key;
+
+  // مفيش تحديد + نفس كلمة الـ fallback؟ الملخّص جه أصلاً مع /recipients — من غير نداء زيادة
+  if (!isSelection && ecFilterQuality && ecFilterQuality.fallback_word === fallback) {
+    ecRenderQuality(ecFilterQuality, false);
+    return;
   }
+
+  const my = ++ecQualityReq;
+  try {
+    const res = await fetch(`${API}/admin/email-campaigns/audience-quality`, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        recipients: list.map(r => ({
+          name: r.name, email: r.email, country: r.country, country_ar: r.country_ar,
+          governorate: r.governorate, governorate_ar: r.governorate_ar, name_ar: r.name_ar
+        })),
+        name_ar_fallback: fallback
+      })
+    });
+    if (my !== ecQualityReq) return;               // نتيجة قديمة اتخطّتها واحدة أحدث
+    if (!res.ok) { ecLastQualityKey = ''; boxes.forEach(b => b.style.display = 'none'); return; }
+    const q = await res.json();
+    if (my !== ecQualityReq) return;
+    ecRenderQuality(q, isSelection);
+  } catch (e) {
+    ecLastQualityKey = '';
+  }
+}
+
+function ecRenderQuality(q, isSelection) {
+  // ملاحظة: أي كلمة لاتيني جوه نص عربي بتتلف في الـ bidi — بنعزلها بـ <bdi>
+  const parts = [];
+  if (q.name_fallback) {
+    parts.push(`<b>${q.name_fallback}</b> اسمهم مش هيتترجم فهيتنادوا بالكلمة الاحتياطية (<bdi class="ec-q-word">${escapeHtml(q.fallback_word || '')}</bdi>)`);
+  }
+  if (q.missing_governorate) parts.push(`<b>${q.missing_governorate}</b> محافظتهم ناقصة`);
+  if (q.invalid_contact) parts.push(`<b>${q.invalid_contact}</b> بياناتهم مشبوهة (اسم/إيميل)`);
+
+  const scope = isSelection ? '' :
+    '<span class="ec-q-scope">الأرقام دي لكل المطابقين للفلتر — لسه مفيش تحديد.</span>';
+  const html = parts.length
+    ? `<span class="ec-q-head">⚠️ هيتبعت لـ <b>${q.total}</b> — منهم ${parts.join('، و')}.</span>${scope}
+       <span class="ec-q-note">ده تنبيه بس ومش بيمنع الإرسال — الرسالة هتتبعت عادي بالكلمة الاحتياطية.</span>`
+    : `<span class="ec-q-head">✅ داتا الـ <b>${q.total}</b> دول كاملة — كل الأسماء والمحافظات هتظهر صح.</span>${scope}`;
+
+  ['ec-audience-quality', 'ec-send-quality'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'ec-quality ' + (parts.length ? 'warn' : 'ok');
+    el.innerHTML = html;
+    el.style.display = 'flex';   // لازم flex (الـ inline بيتغلّب على الـ CSS) عشان كل سطر لوحده
+  });
 }
 
 function ecSelectedList() { return Array.from(ecSelected.values()); }
@@ -4871,32 +5033,67 @@ function ecValidateContent(content) {
   return true;
 }
 
-async function previewEmail() {
+function ecPreviewDot(state) {
+  const dot = document.getElementById('ec-preview-live');
+  if (!dot) return;
+  dot.className = 'ec-live-dot' + (state === 'busy' ? ' busy' : '');
+  dot.textContent = state === 'busy' ? '● بيحدّث...' : '● حيّة';
+}
+
+/**
+ * المعاينة — نفس الـ HTML النهائي اللي هيتبعت بالظبط (من /preview).
+ * بتتنده تلقائياً (debounced) مع أي تعديل في المحتوى، أو يدوياً من الزرار.
+ * opts.auto = true → من التحديث التلقائي: من غير toasts ومن غير رسائل تحميل مزعجة.
+ */
+async function previewEmail(opts) {
+  const auto = !!(opts && opts.auto === true);
   const content = ecBuildContent();
-  if (!ecValidateContent(content)) return;
+  if (auto) {
+    // تلقائي: مانضغطش على السيرفر طول ما المحتوى لسه ناقص
+    if (!content.subject_template || !(content.body_html || '').trim()) return;
+  } else if (!ecValidateContent(content)) {
+    return;
+  }
+
   const sample = ecSelectedList()[0] || ecAllRecipients[0] || null;
+  const sampleBody = sample ? {
+    name: sample.name, governorate: sample.governorate, country: sample.country,
+    email: sample.email, governorate_ar: sample.governorate_ar,
+    name_ar: sample.name_ar, country_ar: sample.country_ar
+  } : null;
+
+  const key = JSON.stringify([content, sample ? sample.email : null]);
+  if (auto && key === ecLastPreviewKey) return;   // مفيش أي تغيير — مفيش نداء
+  ecLastPreviewKey = key;
+
   const subjEl = document.getElementById('ec-preview-subject');
   const frame = document.getElementById('ec-preview-frame');
-  subjEl.textContent = 'جاري بناء المعاينة...';
+  if (!auto && subjEl) subjEl.textContent = 'جاري بناء المعاينة...';
+  ecPreviewDot('busy');
+
+  const my = ++ecPreviewReq;
   try {
     const res = await fetch(`${API}/admin/email-campaigns/preview`, {
       method: 'POST', headers,
-      body: JSON.stringify({
-        content,
-        sample: sample ? {
-          name: sample.name, governorate: sample.governorate, country: sample.country,
-          email: sample.email, governorate_ar: sample.governorate_ar,
-          name_ar: sample.name_ar, country_ar: sample.country_ar
-        } : null
-      })
+      body: JSON.stringify({ content, sample: sampleBody })
     });
+    if (my !== ecPreviewReq) return;   // تعديل أحدث سبقه
     const data = await res.json();
-    if (!res.ok) { subjEl.textContent = '—'; showToast(`❌ ${data.detail || 'فشل المعاينة'}`, 'error'); return; }
-    subjEl.textContent = data.subject || '—';
-    frame.srcdoc = data.html || '';
+    if (my !== ecPreviewReq) return;
+    if (!res.ok) {
+      ecLastPreviewKey = '';
+      if (subjEl && !auto) subjEl.textContent = '—';
+      if (!auto) showToast(`❌ ${data.detail || 'فشل المعاينة'}`, 'error');
+      return;
+    }
+    if (subjEl) subjEl.textContent = data.subject || '—';
+    if (frame) frame.srcdoc = data.html || '';
   } catch (e) {
-    subjEl.textContent = '—';
-    showToast('❌ خطأ شبكة: ' + e.message, 'error');
+    ecLastPreviewKey = '';
+    if (subjEl && !auto) subjEl.textContent = '—';
+    if (!auto) showToast('❌ خطأ شبكة: ' + e.message, 'error');
+  } finally {
+    if (my === ecPreviewReq) ecPreviewDot('idle');
   }
 }
 

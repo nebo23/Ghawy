@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=11" />
+  <link rel="stylesheet" href="src/css/team.css?v=12" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1866,7 +1866,8 @@
                     <div class="ec-real-warn" id="ec-real-warn" style="display:none;">
                       ⚠️ الوضع الحقيقي هيبعت لكل الأعضاء المحدّدين فعلياً. هيتطلب منك تأكيد صريح.
                     </div>
-                    <div class="ec-send-summary" id="ec-send-summary">هيتبعت لـ <b>0</b> شخص</div>
+                    <div class="ec-target-box ec-send-summary" id="ec-send-summary">هيتبعت لـ <b>0</b> شخص</div>
+                    <div class="ec-quality" id="ec-send-quality" style="display:none;"></div>
                     <button class="ec-send-btn" id="ec-send-btn" onclick="sendCampaign()">
                       <i data-lucide="send" style="width:15px;height:15px;"></i> إرسال
                     </button>
@@ -1908,6 +1909,9 @@
                       <button class="ec-mini" onclick="ecSelectAll(false)">إلغاء التحديد</button>
                       <span class="ec-selinfo" id="ec-selinfo">0 محدد</span>
                     </div>
+                    <!-- عدّاد المستقبلين + ملخّص جودة الداتا (بيتحدّثوا لحظياً مع الفلاتر والتحديد) -->
+                    <div class="ec-target-box" id="ec-audience-summary">هيتبعت لـ <b>0</b> شخص</div>
+                    <div class="ec-quality" id="ec-audience-quality" style="display:none;"></div>
                     <div class="ec-table-wrap">
                       <table class="ec-table">
                         <thead><tr>
@@ -1924,6 +1928,7 @@
                   <!-- 3) Preview -->
                   <div class="ec-card">
                     <div class="ec-card-title">3) المعاينة
+                      <span class="ec-live-dot" id="ec-preview-live" title="المعاينة بتتحدّث تلقائي مع أي تعديل">● حيّة</span>
                       <button class="ec-mini" onclick="previewEmail()"><i data-lucide="eye" style="width:13px;height:13px;"></i> حدّث المعاينة</button>
                     </div>
                     <div class="ec-preview-subject" id="ec-preview-subject">— العنوان هيظهر هنا —</div>
@@ -2593,7 +2598,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1785200000"></script>
+  <script src="src/js/team.js?v=1785300000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 

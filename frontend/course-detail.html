@@ -397,7 +397,7 @@
             border-color: #22c55e;
             background: #22c55e;
             color: #fff;
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, .13);
         }
 
         .lesson-row .complete-btn i {
@@ -1432,27 +1432,102 @@
 
         /* ═══ LESSON COMPLETION ═══ */
         .complete-btn {
-            width: 28px;
-            height: 28px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            border: 2px solid #444;
+            border: 1.5px solid var(--border-light, #2a2a2a);
             background: none;
-            color: #888;
-            font-size: 14px;
+            color: transparent;
+            font-size: .62rem;
             cursor: default;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all .2s;
+            transition: background .25s ease, border-color .25s ease, color .25s ease, box-shadow .25s ease;
             flex-shrink: 0;
             padding: 0;
             line-height: 1;
         }
 
+        .complete-btn i {
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
         .complete-btn.completed {
-            background: #3f8ff9;
-            border-color: #3f8ff9;
+            background: #22c55e;
+            border-color: #22c55e;
             color: #fff;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, .13);
+        }
+
+        .complete-btn.completed i {
+            opacity: 1;
+        }
+
+        /* CTA تحت الفيديو: "Mark lesson as complete" / "Completed" */
+        .lesson-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light, #222);
+            background: var(--bg-card);
+            color: var(--text-primary, #f1f0ea);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color .18s ease, color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        .lesson-cta:hover {
+            border-color: var(--gold, #c1ff11);
+            color: var(--gold, #c1ff11);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+        }
+
+        .lesson-cta:active {
+            transform: translateY(0);
+        }
+
+        .lesson-cta .cta-mark {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            opacity: .5;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            transition: all .2s ease;
+        }
+
+        .lesson-cta.completed {
+            background: rgba(34, 197, 94, .12);
+            border-color: rgba(34, 197, 94, .42);
+            color: #22c55e;
+            cursor: default;
+        }
+
+        .lesson-cta.completed:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: rgba(34, 197, 94, .42);
+            color: #22c55e;
+        }
+
+        .lesson-cta.completed .cta-mark {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: #fff;
+            opacity: 1;
         }
 
         .lesson-row.completed .lesson-title {
@@ -2486,10 +2561,9 @@
                             </div>
                             <div id="lessonCompleteArea"
                                 style="display:none; margin-top:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                                <div class="complete-btn" id="currentLessonCompleteBtn"
-                                    style="width:auto;border-radius:8px;padding:10px 20px;font-size:14px;gap:8px;height:auto;font-family:inherit;font-weight:600;background:var(--bg-card);cursor:pointer;">
-                                    <span id="completeBtnIcon">○</span> <span id="completeBtnText">Mark lesson as
-                                        complete</span>
+                                <div class="lesson-cta" id="currentLessonCompleteBtn" role="button" tabindex="0">
+                                    <span class="cta-mark" id="completeBtnIcon"></span>
+                                    <span id="completeBtnText">Mark lesson as complete</span>
                                 </div>
                             </div>
                             <!-- Project lesson bar — shown when the playing lesson has a project -->
@@ -3076,13 +3150,13 @@
             if (isCompleted) {
                 pBtn.classList.add('completed');
                 pBtn.style.cursor = 'default';
-                pIcon.textContent = '✅';
-                pText.textContent = 'Completed';
+                if (pIcon) pIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                if (pText) pText.textContent = 'Completed';
             } else {
                 pBtn.classList.remove('completed');
                 pBtn.style.cursor = 'pointer';
-                pIcon.textContent = '○';
-                pText.textContent = 'Mark lesson as complete';
+                if (pIcon) pIcon.innerHTML = '';
+                if (pText) pText.textContent = 'Mark lesson as complete';
             }
         }
 

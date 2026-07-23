@@ -57,6 +57,13 @@ class PreviewRequest(BaseModel):
     sample: Optional[Dict[str, Any]] = None
 
 
+class QualityRequest(BaseModel):
+    """جسم فحص جودة الداتا — بيتحسب من نفس منطق build_template_vars، مايبعتش أي إيميل."""
+    recipients: List[Dict[str, Any]] = []
+    name_ar_fallback: Optional[str] = None
+    governorate_ar_fallback: Optional[str] = None
+
+
 class SendRequest(BaseModel):
     recipients: List[Dict[str, Any]] = []
     content: Dict[str, Any]
@@ -128,6 +135,65 @@ def _serialize_recipient(u: User, plan_key: Optional[str]) -> Dict[str, Any]:
 
 
 # ══════════════════════════════════════════════════════════════
+#  ملخّص جودة الداتا للجمهور المختار
+#  بيتحسب من **نفس** ecs.build_template_vars اللي الإرسال الفعلي بيستخدمه — فالأرقام
+#  دي مطابقة 100% لللي هيحصل وقت الإرسال (مفيش منطق أسماء/محافظات مكرر في الفرونت).
+# ══════════════════════════════════════════════════════════════
+
+def _quality_content(name_ar_fallback: Optional[str], governorate_ar_fallback: Optional[str]):
+    """EmailContent خفيف بنفس كلمات الـ fallback بتاعة الحملة (الـ subject مش مستخدم هنا)."""
+    return ecs.EmailContent(
+        subject_template="—",
+        name_ar_fallback=(name_ar_fallback or "").strip(),
+        governorate_ar_fallback=(governorate_ar_fallback or "").strip(),
+    )
+
+
+def _audience_quality(rows: List[Dict[str, Any]], content) -> Dict[str, Any]:
+    """
+    rows = صفوف بعد normalize_recipients (Name/Email/Governorate/...).
+    بيرجّع: كام واحد هيستخدم fallback الاسم، كام محافظته فاضية، وكام بياناته مشبوهة.
+    """
+    fallback_word = (content.name_ar_fallback if content and content.name_ar_fallback else None) or "صديقنا"
+    name_fallback = 0
+    missing_governorate = 0
+    invalid_contact = 0
+
+    for row in rows:
+        tvars = ecs.build_template_vars(row, content)
+        if tvars.get("first_name_ar") == fallback_word:
+            name_fallback += 1
+        if not (tvars.get("governorate") or "").strip():
+            missing_governorate += 1
+        if not ecs.is_valid_contact(row.get("Name", ""), row.get("Email", "")):
+            invalid_contact += 1
+
+    total = len(rows)
+    return {
+        "total": total,
+        "name_fallback": name_fallback,
+        "missing_governorate": missing_governorate,
+        "invalid_contact": invalid_contact,
+        "clean": max(0, total - max(name_fallback, missing_governorate, invalid_contact)),
+        "fallback_word": fallback_word,
+    }
+
+
+@router.post("/audience-quality")
+def audience_quality(
+    body: QualityRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """ملخّص جودة الداتا لقائمة مستلمين صريحة (اللي محدّدين فعلاً) — تنبيه بس، مايمنعش الإرسال."""
+    require_owner(current_user)
+    rows = ecs.normalize_recipients(body.recipients)
+    if len(rows) > MAX_RECIPIENTS:
+        raise HTTPException(status_code=400, detail=f"عدد المستلمين أكبر من الحد المسموح ({MAX_RECIPIENTS}).")
+    content = _quality_content(body.name_ar_fallback, body.governorate_ar_fallback)
+    return _audience_quality(rows, content)
+
+
+# ══════════════════════════════════════════════════════════════
 #  GET /recipients — الجمهور المرشّح من الداتابيز الحية (بفلاتر)
 # ══════════════════════════════════════════════════════════════
 
@@ -141,6 +207,7 @@ def get_recipients(
     expiring_days: Optional[int] = Query(None, ge=0, le=365, description="الاشتراكات اللي بتخلص خلال N يوم"),
     include_staff: bool = Query(False, description="ضمّ الأدمن/الأونر (افتراضي: مستبعدين)"),
     include_facets: bool = Query(True, description="رجّع قوائم البلاد/المحافظات للفلاتر"),
+    name_fallback: Optional[str] = Query(None, description="كلمة الـ fallback للاسم (لحساب ملخّص الجودة)"),
     limit: int = Query(MAX_RECIPIENTS, ge=1, le=MAX_RECIPIENTS),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -202,6 +269,11 @@ def get_recipients(
         "recipients": recipients,
         "returned": len(recipients),
         "truncated": len(users) >= limit,
+        # ملخّص جودة الداتا لكل الجمهور المطابق للفلتر (نفس منطق الإرسال)
+        "quality": _audience_quality(
+            ecs.normalize_recipients(recipients),
+            _quality_content(name_fallback, None),
+        ),
     }
 
     if include_facets:
