@@ -10,6 +10,7 @@ synchronous (زي pool checkout وقت الزحمة أو SMTP بطيء) بيجم
 """
 import asyncio
 import logging
+import os
 import time
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
