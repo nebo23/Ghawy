@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=12" />
+  <link rel="stylesheet" href="src/css/team.css?v=13" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -962,7 +962,10 @@
         <div class="team-layout">
 
           <!-- Sections Sidebar -->
-          <nav class="team-sections-nav">
+          <nav class="team-sections-nav" id="teamSectionsNav">
+            <button class="team-nav-collapse" id="teamNavCollapse" type="button" aria-label="Collapse sections" aria-expanded="true" title="طيّ / فتح القائمة">
+              <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
+            </button>
             <div class="team-sections-label">Sections</div>
             <button class="team-section-btn active" data-tab="users">
               <i data-lucide="users" style="width:18px;height:18px;"></i>
@@ -1842,6 +1845,9 @@
                       </div>
                     </div>
                     <div class="ec-row2">
+                      <div class="fg" style="flex:1;"><label>إيموجي علوي (Hero) <span class="ec-muted">(اختياري — يظهر كبير فوق)</span></label><input type="text" id="ec-hero" maxlength="8" placeholder="مثال: 🎂 أو 🎉" /></div>
+                    </div>
+                    <div class="ec-row2">
                       <div class="fg" style="flex:2;"><label>نص الزرار</label><input type="text" id="ec-btn-text" placeholder="ابدأ دلوقتي" /></div>
                       <div class="fg" style="flex:3;"><label>لينك الزرار</label><input type="url" id="ec-btn-link" placeholder="https://ghawy.ai" /></div>
                     </div>
@@ -2598,7 +2604,7 @@
   <script src="src/js/utils.js?v=1784577600"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1785300000"></script>
+  <script src="src/js/team.js?v=1785400000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" onload="lucide.createIcons()"></script>
 
@@ -3342,23 +3348,46 @@
       var toggle = document.getElementById('teamNavToggle');
       var nav = document.querySelector('.team-sections-nav');
       var backdrop = document.getElementById('teamSectionsBackdrop');
-      if (!toggle || !nav || !backdrop) return;
+      if (!nav) return;
 
+      // ── Mobile off-canvas drawer (hamburger in the topbar) ──
       function openNav() {
         nav.classList.add('mobile-open');
-        backdrop.classList.add('show');
+        if (backdrop) backdrop.classList.add('show');
       }
       function closeNav() {
         nav.classList.remove('mobile-open');
-        backdrop.classList.remove('show');
+        if (backdrop) backdrop.classList.remove('show');
+      }
+      if (toggle) {
+        toggle.addEventListener('click', function() {
+          nav.classList.contains('mobile-open') ? closeNav() : openNav();
+        });
+      }
+      if (backdrop) backdrop.addEventListener('click', closeNav);
+
+      // ── Desktop collapse (icons-only) — persisted in localStorage ──
+      var collapseBtn = document.getElementById('teamNavCollapse');
+      var COLLAPSE_KEY = 'ghawy_team_nav_collapsed';
+      function applyCollapsed(on) {
+        nav.classList.toggle('collapsed', !!on);
+        if (collapseBtn) collapseBtn.setAttribute('aria-expanded', on ? 'false' : 'true');
+      }
+      // Give each button a title so icons-only mode still shows the section name on hover
+      document.querySelectorAll('.team-section-btn').forEach(function(btn) {
+        var lbl = btn.querySelector('.tab-label');
+        if (lbl && !btn.getAttribute('title')) btn.setAttribute('title', lbl.textContent.trim());
+      });
+      try { applyCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch (e) {}
+      if (collapseBtn) {
+        collapseBtn.addEventListener('click', function() {
+          var on = !nav.classList.contains('collapsed');
+          applyCollapsed(on);
+          try { localStorage.setItem(COLLAPSE_KEY, on ? '1' : '0'); } catch (e) {}
+        });
       }
 
-      toggle.addEventListener('click', function() {
-        nav.classList.contains('mobile-open') ? closeNav() : openNav();
-      });
-
-      backdrop.addEventListener('click', closeNav);
-
+      // Close mobile drawer after picking a section
       document.querySelectorAll('.team-section-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
           if (window.innerWidth <= 768) closeNav();

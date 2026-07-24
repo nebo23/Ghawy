@@ -443,6 +443,10 @@ def send_winback_email(to_email: str, full_name: str, governorate: str = None) -
 
     subject = "خدت بالي إنك وقفت في آخر خطوة… 🤍"
 
+    # اللينك دايماً من URL نضيف (من غير سلاش زايدة في الأول ولا نص الزرار في الـ href)
+    cta_url = _LINK_START  # "https://ghawy.ai"
+    cta_text = "ارجع وكمّل آخر خطوة 🤍"
+
     body_text = (
         f"{hello}\n"
         "أنا محمد, من غاوي.\n"
@@ -453,38 +457,37 @@ def send_winback_email(to_email: str, full_name: str, governorate: str = None) -
         "ولا في حاجة في العرض مش واضحة؟\n"
         "ولا في سبب تاني خالص؟\n\n"
         "مقدر جدا اهتمامك وثقتك, فأتمني تقولي ايه السبب, وأنا هتواصل معاك شخصياً.\n\n"
-        "لو حبيت ترجع وتبدأ، اللينك هنا:\n"
-        "https://ghawy.ai/\n"
+        f"لو حبيت ترجع وتبدأ، اللينك هنا:\n{cta_url}\n"
         "افتكر, انت لسه فيها, مستنيك 🤍\n\n"
         "محمد - غاوي"
     )
 
-    # HTML بسيط ومقصود يبان كإيميل شخصي مش نشرة تسويقية
-    body_html = f"""
-    <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937; font-size: 1rem; line-height: 2; padding: 8px 4px;">
-        <p style="margin: 0 0 4px;">{hello}</p>
-        <p style="margin: 0 0 4px;">أنا محمد, من غاوي.</p>
-        <p style="margin: 0 0 20px;">{greeting}</p>
-        <p style="margin: 0 0 20px;">بس انا خدت بالي إنك دخلت علي الموقع وسجلت بالفعل, بس فضلت في آخر خطوة…</p>
-        <p style="margin: 0 0 20px;">انا بس عايز أفهم منك إيه اللي حصل وعطلك؟</p>
-        <p style="margin: 0 0 20px;">
+    # المحتوى الداخلي بس — بيتلفّ في القالب الموحّد render_ghawy_email (نفس الهيدر/اللوجو
+    # والـ card الفاتح وفونت Cairo والفوتر الموحّد زي كل إيميلات غاوي).
+    inner = f"""
+          <p style="color:#1A1A1A;font-size:16px;font-weight:600;margin:0 0 4px;text-align:right;">{hello}</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 4px;text-align:right;">أنا محمد, من غاوي.</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 18px;text-align:right;">{greeting}</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 16px;text-align:right;line-height:1.9;">بس انا خدت بالي إنك دخلت علي الموقع وسجلت بالفعل, بس فضلت في آخر خطوة…</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 16px;text-align:right;line-height:1.9;">انا بس عايز أفهم منك إيه اللي حصل وعطلك؟</p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 16px;text-align:right;line-height:1.9;">
             هل كان في مشكلة في الدفع؟<br>
             ولا في حاجة في العرض مش واضحة؟<br>
             ولا في سبب تاني خالص؟
-        </p>
-        <p style="margin: 0 0 20px;">مقدر جدا اهتمامك وثقتك, فأتمني تقولي ايه السبب, وأنا هتواصل معاك شخصياً.</p>
-        <p style="margin: 0 0 4px;">لو حبيت ترجع وتبدأ، اللينك هنا:</p>
-        <p style="margin: 0 0 20px;"><a href="https://ghawy.ai/" style="color: #3f8ff9; font-weight: 700;">https://ghawy.ai/</a></p>
-        <p style="margin: 0 0 24px;">افتكر, انت لسه فيها, مستنيك 🤍</p>
-        <p style="margin: 0; font-weight: 700;">محمد - غاوي</p>
-    </div>
-    """
+          </p>
+          <p style="color:#1A1A1A;font-size:15px;margin:0 0 16px;text-align:right;line-height:1.9;">مقدر جدا اهتمامك وثقتك, فأتمني تقولي ايه السبب, وأنا هتواصل معاك شخصياً.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 12px;"><tr>
+            <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
+              <a href="{cta_url}" style="display:block;padding:16px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">{cta_text}</a>
+            </td></tr></table>
+          <p style="color:#1A1A1A;font-size:15px;margin:6px 0 20px;text-align:right;">افتكر, انت لسه فيها, مستنيك 🤍</p>
+          <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:0;text-align:right;">محمد - غاوي</p>"""
 
     _send_email(
         to_email=to_email,
         subject=subject,
         body_text=body_text,
-        body_html=body_html,
+        body_html=render_ghawy_email(inner),
     )
 
 
@@ -807,12 +810,32 @@ def _ghawy_footer_html(srcs: dict) -> str:
         </td></tr>"""
 
 
-def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool = True) -> str:
+def _hero_emoji_html(hero_emoji: str) -> str:
+    """بلوك الـ hero: emoji/أيقونة كبيرة متوسّطة فوق المحتوى مباشرة (لإيميلات عيد الميلاد/
+    الشهادة وأي إيميل أيقوني). بستايل inline آمن للإيميل. لو مفيش emoji بيرجّع نص فاضي
+    فالإيميل يترندر عادي من غير مساحة زايدة."""
+    emoji = (hero_emoji or "").strip()
+    if not emoji:
+        return ""
+    # الـ emoji بييجي من منشئ الحملة — نهرّبه HTML كدفاع خلفي (الـ emoji متأثرش)
+    emoji = (emoji.replace("&", "&amp;").replace("<", "&lt;")
+             .replace(">", "&gt;").replace('"', "&quot;"))[:16]
+    return (
+        '<div style="text-align:center;margin:0 0 24px;line-height:1;">'
+        f'<span style="font-size:64px;line-height:1;display:inline-block;">{emoji}</span>'
+        '</div>'
+    )
+
+
+def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool = True,
+                       hero_emoji: str = "") -> str:
     """القالب الموحّد الوحيد لشكل أي إيميل غاوي (معاملاتي أو حملة).
     body_html = المحتوى الداخلي بس؛ الإطار (card فاتح + فونت Cairo + الفوتر الموحّد) واحد
-    لكل الإيميلات — ممنوع يبقى فيه قالب تاني."""
+    لكل الإيميلات — ممنوع يبقى فيه قالب تاني.
+    hero_emoji (اختياري) = emoji/أيقونة كبيرة تتعرض فوق المحتوى مباشرة كـ hero متوسّط."""
     srcs = image_srcs or _CID_IMAGE_SRCS
     footer_html = _ghawy_footer_html(srcs) if footer else ""
+    hero_html = _hero_emoji_html(hero_emoji)
     return f"""<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
@@ -826,7 +849,7 @@ def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool 
              style="background-color:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;font-family:{FONT_STACK};box-shadow:0 1px 4px rgba(0,0,0,0.06);">
         <tr>
           <td style="padding:36px 40px;direction:rtl;text-align:right;color:#1a1a1a;font-size:16px;line-height:1.9;font-family:{FONT_STACK};">
-            {body_html}
+            {hero_html}{body_html}
           </td>
         </tr>
         {footer_html}
@@ -838,9 +861,10 @@ def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool 
 
 
 def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
-                      cta_url: str, pre_footer: str = "") -> str:
+                      cta_url: str, pre_footer: str = "", hero_emoji: str = "") -> str:
     """الإيميلات التلقائية: بيبني المحتوى الداخلي بس (عنوان + فقرات + زرار CTA + توقيع)
-    ويلفّه في القالب الموحّد render_ghawy_email — فمفيش قالب مكرّر."""
+    ويلفّه في القالب الموحّد render_ghawy_email — فمفيش قالب مكرّر.
+    hero_emoji (اختياري) = emoji كبيرة فوق المحتوى (عيد ميلاد 🎂 / شهادة 🎓 ...)."""
     paragraphs_html = "".join(
         f'<p style="margin:0 0 14px;">{p}</p>' for p in body_paragraphs
     )
@@ -862,7 +886,7 @@ def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
             </td></tr></table>
           {pre_footer_block}
           <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>"""
-    return render_ghawy_email(inner)
+    return render_ghawy_email(inner, hero_emoji=hero_emoji)
 
 
 def _brand_email_text(*, heading: str, body_paragraphs: list, cta_text: str,
@@ -926,7 +950,7 @@ def send_course_completed_email(to_email: str, full_name: str, course_name: str,
         to_email=to_email,
         subject=f"مبروك يا {name}! شهادتك من غاوي جاهزة 🎓",
         body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
-        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer, hero_emoji="🎓"),
     )
 
 
@@ -982,7 +1006,7 @@ def send_birthday_email(to_email: str, full_name: str, age: int, user_id: int, y
         to_email=to_email,
         subject=f"كل سنة وانت طيب يا {name}! 🎉",
         body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
-        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer),
+        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url, pre_footer=pre_footer, hero_emoji="🎂"),
     )
 
 

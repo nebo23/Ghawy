@@ -4307,7 +4307,7 @@ function ecInitLiveFilters() {
 }
 
 // ── المعاينة الحيّة: أي تعديل في المحتوى → معاينة جديدة بعد ~400ms ────────
-const EC_CONTENT_FIELDS = ['ec-subject', 'ec-btn-text', 'ec-btn-link', 'ec-closing', 'ec-signoff', 'ec-name-fallback'];
+const EC_CONTENT_FIELDS = ['ec-subject', 'ec-hero', 'ec-btn-text', 'ec-btn-link', 'ec-closing', 'ec-signoff', 'ec-name-fallback'];
 const ecSchedulePreview = ecDebounce(() => previewEmail({ auto: true }), 400);
 
 function ecInitLivePreview() {
@@ -4539,7 +4539,7 @@ function ecBackToList() {
   loadEmailsList();
 }
 
-const EC_TEXT_FIELDS = ['ec-title', 'ec-description', 'ec-campaign-id', 'ec-subject', 'ec-body', 'ec-btn-text', 'ec-btn-link', 'ec-closing'];
+const EC_TEXT_FIELDS = ['ec-title', 'ec-description', 'ec-campaign-id', 'ec-subject', 'ec-body', 'ec-hero', 'ec-btn-text', 'ec-btn-link', 'ec-closing'];
 
 function ecResetEditor() {
   ecEditing = null;
@@ -4586,6 +4586,7 @@ function ecFillEditor(camp) {
   if (editor) editor.innerHTML = ecSanitizeHtml(bodyHtml);
   ecSyncBody();
   set('ec-name-fallback', c.name_ar_fallback || 'صديقنا');
+  set('ec-hero', c.hero_emoji || '');
   let bt = c.button_text || '', bl = c.button_link || '';
   if ((!bt || !bl) && Array.isArray(c.buttons) && c.buttons.length) {
     bt = c.buttons[0].text || bt; bl = c.buttons[0].link || bl;
@@ -5020,6 +5021,8 @@ function ecBuildContent() {
   };
   const nf = g('ec-name-fallback').trim();
   if (nf) content.name_ar_fallback = nf;
+  const hero = g('ec-hero').trim();
+  if (hero) content.hero_emoji = hero;
   const bt = g('ec-btn-text').trim(), bl = g('ec-btn-link').trim();
   if (bt && bl) { content.button_text = bt; content.button_link = bl; }
   const cl = g('ec-closing').trim();

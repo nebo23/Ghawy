@@ -275,6 +275,7 @@ class EmailContent:
     name_ar_fallback: str = ""
     governorate_ar_fallback: str = ""
     include_footer: bool = True
+    hero_emoji: str = ""                                        # emoji كبيرة فوق كـ hero (اختياري)
 
     def __post_init__(self):
         # توافق قديم: button_text/button_link من غير buttons → زرار واحد
@@ -405,7 +406,10 @@ def render_email_html(template_vars: dict, content: EmailContent, image_srcs: Op
         parts.append(f'<p style="margin:0 0 8px; color:#666;">{_apply_vars(content.signoff_html, template_vars)}</p>')
 
     inner = "\n              ".join(parts)
-    return render_ghawy_email(inner, image_srcs=srcs, footer=content.include_footer)
+    return render_ghawy_email(
+        inner, image_srcs=srcs, footer=content.include_footer,
+        hero_emoji=(content.hero_emoji or ""),
+    )
 
 
 def render_email_text(template_vars: dict, content: EmailContent) -> str:
@@ -632,7 +636,7 @@ def build_content(content_cfg: dict) -> EmailContent:
     allowed = (
         "body_paragraphs_html", "body_html", "buttons", "button_text", "button_link",
         "button_color", "closing_line", "signoff_html", "intro_line",
-        "name_ar_fallback", "governorate_ar_fallback", "include_footer",
+        "name_ar_fallback", "governorate_ar_fallback", "include_footer", "hero_emoji",
     )
     for key in allowed:
         if key in content_cfg and content_cfg[key] is not None:

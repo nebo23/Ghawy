@@ -22,6 +22,11 @@
   flex-direction: column;
   gap: 4px;
   direction: ltr;
+  transition: width 0.22s ease, padding 0.22s ease;
+}
+
+.team-section-btn {
+  position: relative;
 }
 
 .team-sections-label {
@@ -31,6 +36,77 @@
   letter-spacing: 1.2px;
   color: #555;
   padding: 4px 12px 10px;
+}
+
+/* ── Desktop collapse toggle (icons-only) ── */
+.team-nav-collapse {
+  display: none;            /* shown only on desktop (see min-width query) */
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  width: 30px;
+  height: 30px;
+  margin: 0 0 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.team-nav-collapse:hover {
+  color: #ccc;
+  background: rgba(255,255,255,0.09);
+}
+
+/* ── Desktop-only collapsed (icons-only) behaviour ── */
+@media (min-width: 769px) {
+  .team-nav-collapse {
+    display: inline-flex;
+  }
+
+  .team-sections-nav.collapsed {
+    width: 62px;
+    padding: 0 8px;
+  }
+
+  /* Hide text labels + the "Sections" heading when collapsed */
+  .team-sections-nav.collapsed .tab-label,
+  .team-sections-nav.collapsed .team-sections-label {
+    display: none;
+  }
+
+  /* Center the icons, drop the row gap */
+  .team-sections-nav.collapsed .team-section-btn {
+    justify-content: center;
+    gap: 0;
+    padding: 11px 0;
+    border-left-color: transparent;
+  }
+
+  /* Keep the active accent as a subtle background instead of the left bar */
+  .team-sections-nav.collapsed .team-section-btn.active {
+    border-left-color: transparent;
+    background: rgba(63,143,249,0.15);
+  }
+
+  /* Pending badge floats over the icon in collapsed mode */
+  .team-sections-nav.collapsed .pending-badge {
+    position: absolute;
+    top: 3px;
+    right: 8px;
+    margin: 0;
+  }
+
+  /* Collapse chevron flips to point the other way + centers */
+  .team-sections-nav.collapsed .team-nav-collapse {
+    align-self: center;
+  }
+  .team-sections-nav.collapsed .team-nav-collapse svg,
+  .team-sections-nav.collapsed .team-nav-collapse i {
+    transform: rotate(180deg);
+  }
 }
 
 .team-section-btn {
