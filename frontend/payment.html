@@ -9,10 +9,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الاشتراك — Ghawy</title>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png">
   <link rel="stylesheet" href="src/css/style.css?v=20260630">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
   <style>
     body {
       justify-content: flex-start;
@@ -64,13 +63,13 @@
     <p class="secure-note" data-i18n="securePay">🔒 الدفع آمن 100% عبر Kashier</p>
   </div>
 
-  <script src="src/js/utils.js?v=1784577600"></script>
+  <script src="src/js/utils.js?v=1785484800"></script>
     
   <script src="src/js/i18n.js"></script>
   <script src="src/js/payment.js?v=20260702a"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());
 
     // Manual payment → go to the manual payment page (pay.html) with the chosen plan
     function goManual(key) {

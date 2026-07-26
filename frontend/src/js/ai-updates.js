@@ -153,7 +153,7 @@ async function loadFeed(page = 1) {
                     <p>${isFiltered ? 'No posts in this category this week. Try another filter.' : 'The feed shows each week\'s new updates — check back soon.'}</p>
                 </div>
             `;
-            lucide.createIcons();
+            window.lucide && window.lucide.createIcons();
             return;
         }
 
@@ -161,7 +161,7 @@ async function loadFeed(page = 1) {
             feed.appendChild(createPostElement(post));
         });
         
-        lucide.createIcons();
+        window.lucide && window.lucide.createIcons();
 
         // Handle scrolling to a specific post if a hash is present
         if (page === 1 && window.location.hash) {
@@ -373,7 +373,7 @@ function toggleReadMore(postId, btn) {
         if (excerpt) excerpt.style.display = 'none';
         btn.innerHTML = 'Show Less <i data-lucide="chevron-up"></i>';
     }
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
 }
 
 // ── Toolbar: filters, sort, view toggle, subscribe ────────
@@ -466,7 +466,7 @@ async function loadOverview() {
         renderWhatsNew(data.whats_new || []);
         renderContributors(data.top_contributors || []);
 
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) window.lucide && window.lucide.createIcons();
     } catch (err) {
         console.warn('Overview load failed:', err);
     }
@@ -652,7 +652,7 @@ async function toggleReaction(postId, emoji) {
         // Preserve the comment button
         const commentBtnHtml = reactionContainer.querySelector('.comment-toggle-btn').outerHTML;
         reactionContainer.innerHTML = newHtml + commentBtnHtml;
-        lucide.createIcons();
+        window.lucide && window.lucide.createIcons();
 
     } catch (err) {
         showToast("Error toggling reaction", "error");
@@ -680,7 +680,7 @@ async function submitVote(pollId, optionId) {
         // Replace the whole wrapper (gallery + poll) so the gallery isn't duplicated
         const container = document.getElementById(`poll-wrap-${pollId}`) || document.getElementById(`poll-${pollId}`);
         container.outerHTML = renderPollHtml(poll);
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) window.lucide && window.lucide.createIcons();
         
     } catch (err) {
         showToast(err.message, "error");
@@ -720,7 +720,7 @@ async function loadComments(postId) {
         comments.forEach(c => {
             list.appendChild(createCommentElement(c));
         });
-        lucide.createIcons();
+        window.lucide && window.lucide.createIcons();
 
     } catch (err) {
         list.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">Failed to load comments</div>';
@@ -801,7 +801,7 @@ function toggleReplyBox(postId, parentId) {
             <button class="ai-comment-send" onclick="submitReply(${postId}, ${parentId})"><i data-lucide="send" size="16"></i></button>
         </div>
     `;
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
     const ta = document.getElementById(`reply-input-${parentId}`);
     if (ta) ta.focus();
 }
@@ -1184,7 +1184,7 @@ function addVideoUrlRow(value = '', removable = true) {
     `;
     div.querySelector('input').value = value;
     container.appendChild(div);
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
 }
 
 function resetVideoUrls(urls) {
@@ -1221,7 +1221,7 @@ function addPollOptionRow(removable = false, opt = null) {
         }
     }
     container.appendChild(div);
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
 }
 
 // options: existing poll options (edit mode, read-only) or nothing (fresh 2 rows).
@@ -1295,7 +1295,7 @@ function openCreateModal() {
     resetVideoUrls();
     resetPollOptions();
     document.getElementById('createPostModal').style.display = 'flex';
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
 }
 
 // Open the modal pre-filled with an existing post's data (edit mode).
@@ -1330,7 +1330,7 @@ function openEditModal(postId) {
     }
 
     document.getElementById('createPostModal').style.display = 'flex';
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) window.lucide && window.lucide.createIcons();
 }
 
 function closeCreateModal() {

@@ -358,7 +358,7 @@ function renderTable() {
   `}).join('');
 
   renderPagination();
-  setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+  setTimeout(() => { if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons(); }, 10);
 }
 
 // ── Search, Filter & Sort ─────────────────────────────
@@ -664,7 +664,7 @@ async function toggleOwner(userId) {
       user.is_admin = data.is_admin;
     }
     renderTable();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
     showToast(data.is_owner ? '👑 Made Owner' : '👤 Removed Owner', 'success');
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -943,7 +943,7 @@ async function loadPayments() {
           </div>
         </td></tr>`;
       document.getElementById('payments-pagination').innerHTML = '';
-      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+      setTimeout(() => { if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons(); }, 10);
       return;
     }
 
@@ -986,7 +986,7 @@ async function loadPayments() {
 
     // Pagination
     renderPaymentsPagination(data.page, data.pages);
-    setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+    setTimeout(() => { if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons(); }, 10);
   } catch (e) {
     console.error(e);
     showToast('❌ Failed to load payments: ' + e.message, 'error');
@@ -1273,7 +1273,7 @@ function renderSpTable() {
   }).join('');
 
   renderSpPagination();
-  setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 10);
+  setTimeout(() => { if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons(); }, 10);
 }
 
 function spDetailRow(s) {
@@ -1737,7 +1737,7 @@ function renderMprCards(requests, container) {
     `;
     container.appendChild(card);
   });
-  lucide.createIcons();
+  window.lucide && window.lucide.createIcons();
 }
 
 function renderMprPagination(page, pages) {
@@ -2960,7 +2960,7 @@ function renderProjectsTable() {
       </tr>`;
   }).join('');
 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
 }
 
 async function downloadProjectFile(projectId, btnEl) {
@@ -3678,7 +3678,7 @@ function renderGohGuests() {
       </td>
     </tr>
   `}).join('');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
 }
 
 function renderGohSessions() {
@@ -3705,7 +3705,7 @@ function renderGohSessions() {
       </td>
     </tr>
   `}).join('');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
 }
 
 function populateGuestSelect() {
@@ -3735,7 +3735,7 @@ function renderGohSuggestions() {
       </td>
     </tr>
   `}).join('');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
 }
 
 async function deleteSuggestedGuest(id) {
@@ -4450,7 +4450,7 @@ function ecShowListView() {
 function ecShowEditorView() {
   document.getElementById('emails-list-view').style.display = 'none';
   document.getElementById('emails-editor-view').style.display = '';
-  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+  if (typeof lucide !== 'undefined') setTimeout(() => window.lucide && window.lucide.createIcons(), 10);
 }
 
 // ── قائمة الحملات ─────────────────────────────────────────────
@@ -4466,7 +4466,7 @@ async function loadEmailsList() {
   } catch (e) {
     if (grid) grid.innerHTML = `<div class="ec-empty">❌ خطأ شبكة: ${escapeHtml(e.message)}</div>`;
   }
-  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+  if (typeof lucide !== 'undefined') setTimeout(() => window.lucide && window.lucide.createIcons(), 10);
 }
 
 function ecStatusMeta(c) {
@@ -4811,7 +4811,7 @@ function ecOnModeChange() {
       : '<i data-lucide="send" style="width:15px;height:15px;"></i> إرسال تجريبي';
   }
   ecUpdateCounts();
-  if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+  if (typeof lucide !== 'undefined') setTimeout(() => window.lucide && window.lucide.createIcons(), 10);
 }
 
 async function loadRecipients() {
@@ -5176,7 +5176,7 @@ async function ecDoSend(mode, confirmPhrase) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = orig;
-    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 10);
+    if (typeof lucide !== 'undefined') setTimeout(() => window.lucide && window.lucide.createIcons(), 10);
   }
 }
 

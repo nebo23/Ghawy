@@ -81,10 +81,10 @@ function copyInstapay() {
         const btn = document.getElementById('copy-instapay-btn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = `<i data-lucide="check"></i> Copied`;
-        lucide.createIcons();
+        window.lucide && window.lucide.createIcons();
         setTimeout(() => {
             btn.innerHTML = originalHtml;
-            lucide.createIcons();
+            window.lucide && window.lucide.createIcons();
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy: ', err);

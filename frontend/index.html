@@ -36,9 +36,7 @@
 
     <meta name="theme-color" content="#000000" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
-    <link rel="preconnect" href="https://unpkg.com" crossorigin />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
@@ -86,7 +84,7 @@
 
     <link rel="stylesheet" href="src/css/main.css?v=20260629">
 
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
     <style id="rtlLtrLayoutSystem">
         /* ═══════════════════════════════════
@@ -2636,7 +2634,7 @@
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="src/js/main.js?v=20260629"></script>
-    <script src="src/js/utils.js?v=1784577600"></script>
+    <script src="src/js/utils.js?v=1785484800"></script>
 
     <script>
         /* ═══════════════════════════════════════════
@@ -3129,7 +3127,7 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());
     </script>
 
     <script id="rtlLtrLayoutSystemJS">

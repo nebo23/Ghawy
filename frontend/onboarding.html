@@ -9,7 +9,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome — Ghawy</title>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <meta name="description" content="Complete your Ghawy profile to get started" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,7 +16,7 @@
     rel="stylesheet" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/onboarding.css?v=2" />
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 </head>
 
 <body>
@@ -228,12 +227,12 @@
     </div>
   </div>
 
-  <script src="src/js/utils.js?v=1784577600"></script>
+  <script src="src/js/utils.js?v=1785484800"></script>
 
   <script src="src/js/onboarding.js?v=4"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());
   </script>
 </body>
 
