@@ -109,6 +109,125 @@ body {
     margin-left: 0 !important;
 }
 
+/* ══════════════════════════════════════════
+   DESKTOP SIDEBAR COLLAPSE (icons-only)
+   Toggle button injected into .sidebar-logo by utils.js.
+   State lives in localStorage + body.sidebar-collapsed, so it
+   persists across every community page that shares this sidebar.
+══════════════════════════════════════════ */
+.sidebar-collapse-btn {
+    display: none;              /* desktop-only, enabled in the min-width query */
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-left: auto;         /* push to the far end of the logo row */
+    flex-shrink: 0;
+    padding: 0;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.38);
+    border-radius: 9px;
+    color: #3b82f6;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+.sidebar-collapse-btn:hover {
+    color: #6ba9ff;
+    background: rgba(59, 130, 246, 0.22);
+    border-color: rgba(59, 130, 246, 0.6);
+}
+
+.sidebar-collapse-btn i {
+    transition: transform .22s ease;
+}
+
+/* Smooth width/margin transition — only enabled after first paint
+   (utils.js adds body.sidebar-anim) so the initial state never animates. */
+body.sidebar-anim .dash-sidebar,
+body.sidebar-anim .dash-main {
+    transition: width .22s ease, margin .22s ease;
+}
+
+@media (min-width: 769px) {
+    .sidebar-collapse-btn {
+        display: inline-flex;
+    }
+
+    /* Shrink the shared width var → sidebar AND main margin both follow it */
+    body.sidebar-collapsed {
+        --sidebar-w: 74px;
+    }
+
+    /* Logo row stacks (icon over toggle) and centers */
+    body.sidebar-collapsed .sidebar-logo {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 8px 10px;
+    }
+    body.sidebar-collapsed .sidebar-logo span {
+        display: none;         /* hide the "Ghawy" wordmark */
+    }
+    body.sidebar-collapsed .sidebar-collapse-btn {
+        margin-left: 0;        /* centered once stacked */
+    }
+    body.sidebar-collapsed .sidebar-collapse-btn i {
+        transform: rotate(180deg);
+    }
+
+    /* Nav: icons only, centered */
+    body.sidebar-collapsed .sidebar-nav {
+        padding: 4px 8px;
+    }
+    body.sidebar-collapsed .nav-item {
+        justify-content: center;
+        gap: 0;
+        padding: 9px 0;
+    }
+    body.sidebar-collapsed .nav-item > span:not(.nav-icon-wrap):not(.dm-badge) {
+        display: none;         /* hide the text label, keep the icon wrap */
+    }
+    /* Reset the active item's left-bar offsets so the icon stays centered */
+    body.sidebar-collapsed .nav-item.active {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        border-radius: var(--radius-sm);
+    }
+    /* Unread badge becomes a small dot pinned to the icon corner */
+    body.sidebar-collapsed .nav-item .dm-badge {
+        position: absolute;
+        top: 3px;
+        right: 12px;
+        margin: 0;
+    }
+    /* Hide the section divider in collapsed mode */
+    body.sidebar-collapsed .sidebar-nav > div[style] {
+        margin-top: 10px !important;
+    }
+
+    /* Profile card: avatar only */
+    body.sidebar-collapsed .sb-profile-card {
+        margin: 16px 8px;
+        padding: 10px 6px;
+        align-items: center;
+    }
+    body.sidebar-collapsed .sb-profile-row {
+        justify-content: center;
+    }
+    body.sidebar-collapsed .sb-avatar {
+        width: 42px;
+        height: 42px;
+    }
+    body.sidebar-collapsed .sb-user-info,
+    body.sidebar-collapsed .sb-streak-row {
+        display: none;
+    }
+}
+
 /* Logo */
 .sidebar-logo {
     padding: 18px 18px 12px;

@@ -625,6 +625,49 @@ function initSidebar() {
       });
     });
   }
+
+  // ── Desktop collapse (icons-only) — shared across every community page ──
+  // The state lives on <body> + localStorage so it persists as you navigate
+  // between dashboard / courses / chat / etc. CSS gates the visuals to desktop.
+  if (sidebar) {
+    const COLLAPSE_KEY = 'ghawy_sidebar_collapsed';
+    const logoRow = sidebar.querySelector('.sidebar-logo');
+    let collapseBtn = null;
+
+    // Give each nav item a title so icons-only mode still names it on hover
+    sidebar.querySelectorAll('.nav-item').forEach(item => {
+      const lbl = item.querySelector('span:not(.nav-icon-wrap):not(.dm-badge)');
+      if (lbl && !item.getAttribute('title')) item.setAttribute('title', lbl.textContent.trim());
+    });
+
+    function applyCollapsed(on) {
+      document.body.classList.toggle('sidebar-collapsed', !!on);
+      if (collapseBtn) {
+        collapseBtn.setAttribute('aria-expanded', on ? 'false' : 'true');
+        collapseBtn.setAttribute('title', on ? 'فتح القائمة' : 'طيّ القائمة');
+      }
+    }
+
+    if (logoRow) {
+      collapseBtn = document.createElement('button');
+      collapseBtn.type = 'button';
+      collapseBtn.className = 'sidebar-collapse-btn';
+      collapseBtn.setAttribute('aria-label', 'Collapse sidebar');
+      collapseBtn.innerHTML = '<i class="fa-solid fa-angles-left"></i>';
+      logoRow.appendChild(collapseBtn);
+      collapseBtn.addEventListener('click', () => {
+        const on = !document.body.classList.contains('sidebar-collapsed');
+        applyCollapsed(on);
+        try { localStorage.setItem(COLLAPSE_KEY, on ? '1' : '0'); } catch (e) {}
+      });
+    }
+
+    try { applyCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch (e) {}
+    // Enable the width transition only after first paint so load never animates
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.classList.add('sidebar-anim');
+    }));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
