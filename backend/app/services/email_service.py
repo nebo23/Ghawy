@@ -253,24 +253,27 @@ def send_payment_rejection_email(
     full_name: str,
     rejection_reason: str,
 ) -> None:
-    """إشعار رفض طلب الدفع — بنفس الـ Design System البراندي الفاتح."""
+    """إشعار رفض طلب الدفع — نفس القالب الموحّد بس بثيم أحمر (نتيجة سلبية)."""
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
     name = _first_name(full_name)
-    heading = f"{name}، تحديث بخصوص طلب الدفع بتاعك"
+    heading = f"{name}، للأسف مقدرناش نأكّد طلب الدفع بتاعك ❌"
     body = [
-        "للأسف مقدرناش نأكّد عملية الدفع بتاعتك.",
-        f"السبب: <strong>{rejection_reason}</strong>",
+        "راجعنا الإيصال اللي بعتّه ومقدرناش نأكّد عملية الدفع.",
+        f'السبب: <strong style="color:#DC2626;">{rejection_reason}</strong>',
         "لو شايف إن ده حصل بالغلط، ردّ على الإيميل ده أو ابعت الإيصال تاني بصورة أوضح "
         "وإحنا هنراجعه فوراً.",
     ]
-    cta_text = "حاول تاني"
+    cta_text = "ابعت الإيصال تاني"
     cta_url = f"{frontend_url}/pay.html"
 
     _send_email(
         to_email=to_email,
         subject="تحديث بخصوص طلب الدفع بتاعك في غاوي",
         body_text=_brand_email_text(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
-        body_html=_brand_email_html(heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url),
+        body_html=_brand_email_html(
+            heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url,
+            heading_color="#DC2626", cta_bg="#DC2626", cta_color="#ffffff",
+        ),
     )
 
 
@@ -861,10 +864,14 @@ def render_ghawy_email(body_html: str, *, image_srcs: dict = None, footer: bool 
 
 
 def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
-                      cta_url: str, pre_footer: str = "", hero_emoji: str = "") -> str:
+                      cta_url: str, pre_footer: str = "", hero_emoji: str = "",
+                      cta_bg: str = "#D6FF3F", cta_color: str = "#0a0a0a",
+                      heading_color: str = "#1A1A1A") -> str:
     """الإيميلات التلقائية: بيبني المحتوى الداخلي بس (عنوان + فقرات + زرار CTA + توقيع)
     ويلفّه في القالب الموحّد render_ghawy_email — فمفيش قالب مكرّر.
-    hero_emoji (اختياري) = emoji كبيرة فوق المحتوى (عيد ميلاد 🎂 / شهادة 🎓 ...)."""
+    hero_emoji (اختياري) = emoji كبيرة فوق المحتوى (عيد ميلاد 🎂 / شهادة 🎓 ...).
+    cta_bg/cta_color/heading_color (اختياري) = تلوين مختلف للإيميلات السلبية
+    (زي رفض الدفع بالأحمر) — الافتراضي هو الليموني البراندي لكل الباقي."""
     paragraphs_html = "".join(
         f'<p style="margin:0 0 14px;">{p}</p>' for p in body_paragraphs
     )
@@ -878,11 +885,11 @@ def _brand_email_html(*, heading: str, body_paragraphs: list, cta_text: str,
         )
 
     inner = f"""
-          <p style="color:#1A1A1A;font-size:16px;font-weight:600;margin:0 0 16px;text-align:right;line-height:1.7;">{heading}</p>
+          <p style="color:{heading_color};font-size:16px;font-weight:600;margin:0 0 16px;text-align:right;line-height:1.7;">{heading}</p>
           <div style="color:#1A1A1A;font-size:15px;font-weight:400;line-height:1.7;text-align:right;">{paragraphs_html}</div>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 12px;"><tr>
-            <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
-              <a href="{cta_url}" style="display:block;padding:16px 24px;color:#0a0a0a;font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">{cta_text}</a>
+            <td align="center" bgcolor="{cta_bg}" style="border-radius:10px;">
+              <a href="{cta_url}" style="display:block;padding:16px 24px;color:{cta_color};font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">{cta_text}</a>
             </td></tr></table>
           {pre_footer_block}
           <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>"""
