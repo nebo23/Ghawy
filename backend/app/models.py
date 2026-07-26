@@ -936,3 +936,23 @@ class AdminMemberNote(Base):
 
     member = relationship("User", foreign_keys=[member_id])
     admin = relationship("User", foreign_keys=[updated_by])
+
+
+class BirthdayGiftClaim(Base):
+    """
+    طلبات هدية عيد الميلاد (7 أيام مجانية).
+    زرار الإيميل مبقاش يفعّل الهدية فوراً — بيسجّل طلب pending هنا، والأدمن
+    بيوافق عليه من الـ Team Dashboard (Pending Requests) فتتضاف الأيام
+    ويوصل لليوزر DM تهنئة أوتوماتيك من أكونت محمد صلاح.
+    (الجدول بيتعمل auto عبر create_all — مفيش migration)
+    user_id/decided_by من غير FK constraint عشان نتجنب أي lock على جدول users.
+    """
+    __tablename__ = "birthday_gift_claims"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    year = Column(Integer, nullable=False)
+    status = Column(String, nullable=False, default="pending", server_default="pending")  # pending / approved / rejected
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    decided_at = Column(DateTime, nullable=True)
+    decided_by = Column(Integer, nullable=True)

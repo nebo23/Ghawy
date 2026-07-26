@@ -76,6 +76,7 @@ function initTabs() {
       if (target === 'pending-requests') {
         mprCurrentPage = 1;
         loadPendingRequestsTab();
+        loadBirthdayClaims();
       }
       if (target === 'live-sessions') {
         loadLiveSessionsTab();
@@ -221,6 +222,7 @@ async function loadTeamPage() {
   });
 
   loadManualPaymentStats(); // fetch badge count
+  loadBirthdayClaims();     // birthday gift claims count into the same badge
 }
 
 async function loadUsers() {
@@ -1590,20 +1592,148 @@ async function authFetch(url, options = {}) {
   return fetch(url, options);
 }
 
+// Pending badge = manual payments + birthday gift claims (both live under the
+// Pending Requests tab), so the two loaders feed shared counters.
+let mprPendingCount = 0;
+let bgcPendingCount = 0;
+
+function renderPendingBadge() {
+  const badge = document.getElementById('pending-badge');
+  if (!badge) return;
+  const total = (mprPendingCount || 0) + (bgcPendingCount || 0);
+  if (total > 0) {
+    badge.innerText = total;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 async function loadManualPaymentStats() {
   try {
     const res = await authFetch(`${API}/manual-payments/stats`);
     if (res.ok) {
       const data = await res.json();
-      const badge = document.getElementById('pending-badge');
-      if (data.pending_count > 0) {
-        badge.innerText = data.pending_count;
-        badge.style.display = 'inline-flex';
-      } else {
-        badge.style.display = 'none';
-      }
+      mprPendingCount = data.pending_count || 0;
+      renderPendingBadge();
     }
   } catch (e) { }
+}
+
+// ── Birthday gift claims (7 free days) — approve adds the days + auto-DM ──
+async function loadBirthdayClaims() {
+  const section = document.getElementById('bgc-section');
+  const container = document.getElementById('bgc-cards-container');
+  if (!section || !container) return;
+
+  try {
+    const res = await authFetch(`${API}/birthday/claims?status=pending`);
+    if (!res.ok) throw new Error('Failed to load birthday claims');
+    const data = await res.json();
+
+    bgcPendingCount = data.pending_count || 0;
+    renderPendingBadge();
+
+    const claims = data.claims || [];
+    const label = document.getElementById('bgc-count-label');
+    if (label) label.innerText = `(${claims.length})`;
+
+    if (!claims.length) {
+      section.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    section.style.display = '';
+    container.innerHTML = '';
+
+    claims.forEach(c => {
+      // Backend sends naive UTC timestamps — mark as UTC then render in Egypt time.
+      const rawTs = c.created_at || '';
+      const d = new Date(/Z|[+-]\d{2}:?\d{2}$/.test(rawTs) ? rawTs : rawTs + 'Z');
+      const dateStr = isNaN(d) ? '—' : d.toLocaleString('en-GB', {
+        timeZone: 'Africa/Cairo',
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+      const bday = c.birth_date
+        ? new Date(c.birth_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        : '—';
+      const rawEnd = c.end_at || '';
+      const endD = rawEnd ? new Date(/Z|[+-]\d{2}:?\d{2}$/.test(rawEnd) ? rawEnd : rawEnd + 'Z') : null;
+      const endStr = endD && !isNaN(endD)
+        ? endD.toLocaleDateString('en-GB', { timeZone: 'Africa/Cairo', day: '2-digit', month: 'short', year: 'numeric' })
+        : '—';
+      const phoneHtml = c.phone
+        ? `<a class="mpr-phone" href="https://wa.me/${toWaMeNumber(c.phone)}" target="_blank" rel="noopener" title="Open WhatsApp">${escapeHtml(c.phone)}</a>`
+        : '';
+
+      const card = document.createElement('div');
+      card.className = 'mpr-card';
+      card.innerHTML = `
+        <div class="mpr-card-header">
+          <div class="mpr-user-info">
+            <div class="mpr-name">${escapeHtml(c.full_name || '')}</div>
+            <div class="mpr-email">${escapeHtml(c.email || '')}</div>
+            ${phoneHtml}
+          </div>
+          <div class="mpr-status-badge pending">🎂 BIRTHDAY</div>
+        </div>
+
+        <div class="mpr-details">
+          <div class="mpr-detail-row"><span>Gift</span><strong>+7 free days</strong></div>
+          <div class="mpr-detail-row"><span>Birthday</span><strong>${bday}</strong></div>
+          <div class="mpr-detail-row"><span>Current expiry</span><strong>${endStr}</strong></div>
+          <div class="mpr-detail-row"><span>Requested</span><strong>${dateStr}</strong></div>
+        </div>
+
+        <div class="mpr-actions">
+          <button class="mpr-btn-approve" onclick="approveBirthdayClaim(${c.id})"><i class="fa-solid fa-check"></i> Approve + DM</button>
+          <button class="mpr-btn-reject" onclick="rejectBirthdayClaim(${c.id})"><i class="fa-solid fa-xmark"></i> Reject</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  } catch (e) {
+    bgcPendingCount = 0;
+    renderPendingBadge();
+    section.style.display = 'none';
+  }
+}
+
+async function approveBirthdayClaim(id) {
+  try {
+    const res = await authFetch(`${API}/birthday/claims/${id}/approve`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      if (data.detail === 'already_gifted') {
+        showToast('Already gifted this year — request closed without extending.', 'success');
+      } else {
+        showToast('Approved! +7 days added & congrats DM sent 🎂', 'success');
+      }
+      loadBirthdayClaims();
+    } else {
+      showToast(data.detail || 'Error approving claim', 'error');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function rejectBirthdayClaim(id) {
+  if (!confirm('Reject this birthday gift request?')) return;
+  try {
+    const res = await authFetch(`${API}/birthday/claims/${id}/reject`, { method: 'POST' });
+    if (res.ok) {
+      showToast('Birthday gift request rejected.', 'success');
+      loadBirthdayClaims();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Error rejecting claim', 'error');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
 }
 
 async function loadPendingRequestsTab() {
@@ -1619,13 +1749,8 @@ async function loadPendingRequestsTab() {
 
     // Update labels and badges
     document.getElementById('mpr-count-label').innerText = `(${data.total})`;
-    const badge = document.getElementById('pending-badge');
-    if (data.counts.pending > 0) {
-      badge.innerText = data.counts.pending;
-      badge.style.display = 'inline-flex';
-    } else {
-      badge.style.display = 'none';
-    }
+    mprPendingCount = (data.counts && data.counts.pending) || 0;
+    renderPendingBadge();
 
     if (data.requests.length === 0) {
       container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">No requests found.</div>`;

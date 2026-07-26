@@ -1390,6 +1390,15 @@
 
             <!-- Tab Content: Pending Requests -->
             <div id="tab-pending-requests" class="tab-panel" style="display:none;">
+
+              <!-- Birthday Gift Requests (7 free days) — approved here, DM sent automatically -->
+              <div id="bgc-section" style="display:none;margin-bottom:30px;">
+                <div class="mpr-filter-bar">
+                  <h3>🎂 Birthday Gift Requests <span id="bgc-count-label" class="mpr-count-label"></span></h3>
+                </div>
+                <div id="bgc-cards-container" class="mpr-cards-grid"></div>
+              </div>
+
               <div class="mpr-filter-bar">
                 <h3>Manual Payment Requests <span id="mpr-count-label" class="mpr-count-label"></span></h3>
                 <select id="mpr-status-filter" onchange="loadPendingRequestsTab()">
@@ -2602,7 +2611,7 @@
   <script src="src/js/utils.js?v=1785484800"></script>
     <script src="src/js/dashboard-new.js?v=1783972000"></script>
   <script src="src/js/i18n.js?v=4"></script>
-  <script src="src/js/team.js?v=1785600000"></script>
+  <script src="src/js/team.js?v=1785610000"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 
