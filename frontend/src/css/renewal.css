@@ -329,6 +329,74 @@ body.renewal-page {
     }
 }
 
+/* فاصل "أو" بين الدفع بالكارت والدفع اليدوي */
+.rn-or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0 12px;
+    color: var(--text-muted);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.rn-or::before,
+.rn-or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.rn-instapay {
+    width: 100%;
+    background: transparent;
+    color: var(--rn-accent-ink);
+    border: 1.5px solid var(--gold-border);
+    border-radius: 12px;
+    padding: 13px;
+    font-family: 'Cairo', sans-serif;
+    font-size: .92rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.rn-instapay:hover {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+    transform: translateY(-1px);
+}
+
+/* ملاحظة الدفع اليدوي — في وضع التجديد المبكّر دي تحذير حقيقي:
+   الموافقة اليدوية بتصفّر الأيام الباقية بدل ما تضيف عليها. */
+.rn-manual-note {
+    margin-top: 10px;
+    font-size: .75rem;
+    line-height: 1.85;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.rn-manual-note b {
+    color: var(--text-secondary);
+    font-weight: 800;
+}
+
+.rn-manual-note i.fa-triangle-exclamation {
+    color: #f59e0b;
+    margin-left: 5px;
+}
+
+.rn-manual-note i.fa-clock {
+    margin-left: 5px;
+}
+
 .rn-actions {
     display: flex;
     flex-wrap: wrap;

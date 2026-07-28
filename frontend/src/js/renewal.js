@@ -165,12 +165,40 @@ function previewBoxHtml() {
   </div>`;
 }
 
+/** رابط الدفع اليدوي (انستاباي) — نفس goManual() في payment.html:
+ *  pay.html بياخد الـ cycle من غير لاحقة العملة. و`intent=renew` بيخلّي
+ *  pay.js يسيب العضو المفعّل يكمّل بدل ما يرميه على الداشبورد. */
+function manualUrl() {
+    const cycle = selectedPlan.replace(/_(egp|usd)$/, '');
+    return `/pay?plan=${encodeURIComponent(cycle)}` + (mode === 'renew' ? '&intent=renew' : '');
+}
+
 function payButtonHtml(label) {
+    // ⚠️ الموافقة اليدوية في الباك إند بتحسب end_at = وقت الموافقة + مدة الباقة
+    //    (مش بتمدّد من end_at الحالي زي Kashier)، فالعضو اللي لسه معاه أيام
+    //    لازم يعرف إنه ممكن يخسرها لو دفع انستاباي.
+    const manualNote = mode === 'renew'
+        ? `<div class="rn-manual-note">
+         <i class="fa-solid fa-triangle-exclamation"></i>
+         انستاباي بيتراجع يدويًا، والاشتراك بيتحسب من <b>يوم الموافقة</b> —
+         يعني الأيام الباقية معاك دلوقتي مش هتتضاف عليه. لو عايز الأيام تتجمّع، ادفع بالكارت.
+       </div>`
+        : `<div class="rn-manual-note">
+         <i class="fa-solid fa-clock"></i>
+         انستاباي محتاج مراجعة يدوية من الفريق، فالتفعيل مش فوري زي الكارت.
+       </div>`;
+
     return `<button type="button" class="rn-pay" id="rnPayBtn">
     <span class="rn-spinner"></span>
     <span class="rn-pay-text">${label}</span>
   </button>
-  <div class="rn-secure"><i class="fa-solid fa-lock"></i> الدفع آمن 100% عبر Kashier</div>`;
+  <div class="rn-secure"><i class="fa-solid fa-lock"></i> الدفع آمن 100% عبر Kashier</div>
+  <div class="rn-or"><span>أو</span></div>
+  <button type="button" class="rn-instapay" id="rnManualBtn">
+    <i class="fa-solid fa-wallet"></i>
+    <span>ادفع عبر انستاباي</span>
+  </button>
+  ${manualNote}`;
 }
 
 function renderLocked() {
@@ -299,6 +327,8 @@ function bindCard() {
     }
     const payBtn = document.getElementById('rnPayBtn');
     if (payBtn) payBtn.addEventListener('click', pay);
+    const manualBtn = document.getElementById('rnManualBtn');
+    if (manualBtn) manualBtn.addEventListener('click', () => { window.location.href = manualUrl(); });
     bindLogout();
 }
 

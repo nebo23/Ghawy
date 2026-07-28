@@ -16,10 +16,15 @@ const PLAN_PRICES = {
 const selectedPlanKey = (new URLSearchParams(location.search).get('plan') || 'monthly').toLowerCase();
 const selectedPlan = PLAN_PRICES[selectedPlanKey] || null;
 
+// An active member who came here on purpose to renew early (from /renewal)
+// must be allowed to stay — otherwise the Instapay option is unreachable for
+// anyone whose subscription hasn't lapsed yet.
+const renewIntent = (new URLSearchParams(location.search).get('intent') || '') === 'renew';
+
 const token = localStorage.getItem('token');
 if (!token) {
     localStorage.removeItem('user'); window.location.href = '/login';
-} else {
+} else if (!renewIntent) {
     // If user is already active, redirect them away from the payment screen
     fetch(`${API}/profile/me?_t=`, {
         headers: { 'Authorization': `Bearer ${token}` }
