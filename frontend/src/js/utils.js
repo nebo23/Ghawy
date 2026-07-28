@@ -171,18 +171,16 @@ async function enforceAuthGuard() {
     }
 
     if (res.status === 402) {
-      // Subscription expired — clear session and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Subscription expired — keep the session and send them to the in-app
+      // renewal page. /renewal needs the token to read the subscription and
+      // create the payment, so DON'T clear it here.
+      window.location.href = '/renewal';
       return;
     }
 
     if (res.status === 403) {
-      // User exists but not active — redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Logged in but not allowed through — same in-app renewal flow, token kept
+      window.location.href = '/renewal';
       return;
     }
 
@@ -190,9 +188,8 @@ async function enforceAuthGuard() {
       const u = await res.json();
       localStorage.setItem('user', JSON.stringify(u));
       if (!u.is_active) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Still logged in — renew inside the platform instead of being kicked out
+        window.location.href = '/renewal';
         return;
       }
       // If active but onboarding not yet completed — redirect there
@@ -235,15 +232,14 @@ async function requireActiveUser() {
     }
 
     if (res.status === 402) {
-      // Subscription expired — clear session and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Subscription expired — keep the token; /renewal needs it to read the
+      // subscription and start the payment.
+      window.location.href = '/renewal';
       return null;
     }
 
     if (res.status === 403) {
-      window.location.href = 'index.html';
+      window.location.href = '/renewal';
       return null;
     }
 
@@ -253,7 +249,7 @@ async function requireActiveUser() {
     localStorage.setItem('user', JSON.stringify(user));
 
     if (!user.is_active) {
-      window.location.href = '/login';
+      window.location.href = '/renewal';
       return null;
     }
 

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <script>/* early theme init — prevents light-mode flash (FOUC) */(function () { try { var t = localStorage.getItem('theme') || 'dark'; if (t === 'system') { t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { } })();</script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>تجديد الاشتراك — Ghawy</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <!-- Icons (self-hosted) -->
+    <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
+    <link rel="icon" type="image/png" href="./imgs/g-icon-logo.png" />
+
+    <!-- Styles — نفس ستايل المنصة عشان النسخة المموّهة تبقى مطابقة -->
+    <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=16" />
+    <link rel="stylesheet" href="src/css/renewal.css?v=1" />
+
+    <!-- ⚠️ مفيش auth guard هنا بقصد: دي وجهة كل الحُرّاس التانية،
+         فأي حارس هنا معناه لوب لا نهائي. الفحص كله جوّه renewal.js. -->
+</head>
+
+<body class="dashboard-page renewal-page">
+
+    <!-- ═══════════════════════════════════════════════════
+         (1) نسخة ديكورية ثابتة من الداشبورد — مموّهة ومقفولة.
+         مفيش أي طلب بيانات وراها: كل APIs الأعضاء بترجّع 402
+         للمستخدم المنتهي، فالخلفية شكلية بالكامل.
+    ═══════════════════════════════════════════════════ -->
+    <div class="dash-layout renewal-ghost" aria-hidden="true" inert tabindex="-1">
+
+        <aside class="dash-sidebar">
+            <div class="sidebar-logo">
+                <img src="./imgs/community-logo.png" alt="" />
+                <span>Ghawy</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <span class="nav-item active">
+                    <span class="nav-icon-wrap nav-icon-white"><i class="fa-solid fa-table-cells-large"></i></span>
+                    <span>Dashboard</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-blue"><i class="fa-solid fa-chalkboard-user"></i></span>
+                    <span>Courses</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-blue"><i class="fa-solid fa-comments"></i></span>
+                    <span>Community Chat</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-gray"><i class="fa-solid fa-envelope"></i></span>
+                    <span>Direct Messages</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-green"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                    <span>AI Updates</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-green"><i class="fa-solid fa-circle-play"></i></span>
+                    <span>Build With Me</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-yellow"><i class="fa-solid fa-star"></i></span>
+                    <span>Guest of Honors</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-purple"><i class="fa-solid fa-trophy"></i></span>
+                    <span>Achievements</span>
+                </span>
+
+                <div style="margin-top:24px;margin-bottom:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px">
+                </div>
+
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-gray"><i class="fa-solid fa-gear"></i></span>
+                    <span>Settings</span>
+                </span>
+                <span class="nav-item">
+                    <span class="nav-icon-wrap nav-icon-gray"><i class="fa-solid fa-circle-question"></i></span>
+                    <span>Help center</span>
+                </span>
+            </nav>
+
+            <div class="sb-profile-card">
+                <div class="sb-profile-row">
+                    <span class="sb-avatar"><i class="fa-solid fa-user"></i></span>
+                    <div class="sb-user-info">
+                        <div class="sb-name">—</div>
+                        <div class="sb-badge">Member</div>
+                    </div>
+                </div>
+                <span class="sb-streak-row">
+                    <span class="sb-streak-fire">🔥</span>
+                    <span><strong>0</strong> Days Streak</span>
+                    <span class="sb-streak-sub">Keep going!</span>
+                </span>
+            </div>
+        </aside>
+
+        <div class="dash-main">
+            <header class="dash-topbar">
+                <div class="topbar-welcome">
+                    <span>
+                        <small class="welcome-label">Welcome back,</small>
+                        <strong>— 👋</strong>
+                    </span>
+                    <small>Let's continue building, learning, and leveling up.</small>
+                </div>
+                <div class="topbar-actions">
+                    <span class="topbar-icon"><i class="fa-solid fa-bell"></i></span>
+                    <span class="topbar-icon"><i class="fa-solid fa-message"></i></span>
+                    <span class="topbar-user">
+                        <span class="topbar-user-avatar"><i class="fa-solid fa-user"
+                                style="font-size:12px"></i></span>
+                        <span class="topbar-user-name">—</span>
+                    </span>
+                </div>
+            </header>
+
+            <div class="dash-content">
+                <div class="stats-row">
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                    <div class="stat-card skeleton-card">
+                        <div class="sk-line sk-w60"></div>
+                        <div class="sk-line sk-w40 sk-sm"></div>
+                    </div>
+                </div>
+
+                <div class="dash-grid">
+                    <div class="dash-grid-main">
+                        <div class="section-header">
+                            <span class="section-title">Your Courses</span>
+                            <span class="section-link">View All</span>
+                        </div>
+                        <div class="courses-grid">
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                            <div class="course-card skeleton-card">
+                                <div class="sk-thumb"></div>
+                                <div class="sk-body">
+                                    <div class="sk-line sk-w80"></div>
+                                    <div class="sk-line sk-w50 sk-sm"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-header" style="margin-top:8px">
+                            <span class="section-title">Guest of Honors</span>
+                            <span class="section-link">View All</span>
+                        </div>
+                        <div class="goh-row">
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                            <div class="goh-skeleton"></div>
+                        </div>
+
+                        <div class="section-header" style="margin-top:24px">
+                            <span class="section-title">New AI Updates</span>
+                            <span class="section-link">View All</span>
+                        </div>
+                        <div class="ai-updates-grid">
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                            <div class="update-card skeleton-card">
+                                <div class="sk-line sk-w40 sk-sm"></div>
+                                <div class="sk-line sk-w80"></div>
+                                <div class="sk-line sk-w60 sk-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-grid-side">
+                        <div class="side-card skeleton-card" style="height:160px;margin-bottom:16px"></div>
+                        <div class="side-card skeleton-card" style="height:130px"></div>
+                        <div class="side-card skeleton-card" style="height:230px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         (2) الـ Overlay — مالوش زرار قفل ولا بيتخطّى.
+         محتواه بيتبني في renewal.js حسب حالة الاشتراك.
+    ═══════════════════════════════════════════════════ -->
+    <div class="renewal-overlay" id="renewalOverlay" role="dialog" aria-modal="true" aria-labelledby="rnTitle">
+        <div class="renewal-card" id="renewalCard">
+            <img class="rn-logo" src="./imgs/community-logo.png" alt="Ghawy" />
+            <div class="rn-loading">
+                <div class="rn-spinner"></div>
+                <span>بنجيب تفاصيل اشتراكك...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/renewal.js?v=1"></script>
+</body>
+
+</html>

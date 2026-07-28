@@ -115,7 +115,7 @@
                 if (uStr) {
                     var u = JSON.parse(uStr);
                     if (u && (u.is_active === false || u.subscription_type === 'none')) {
-                        window.location.replace("/payment.html?reason=access_required");
+                        window.location.replace("/renewal");
                     }
                 }
             } catch (e) { }
@@ -353,7 +353,7 @@
 
 
                                 <!-- Renew Button -->
-                                <a id="subRenewBtn" href="#" target="_blank"
+                                <a id="subRenewBtn" href="/renewal?intent=renew"
                                     style="display:flex;align-items:center;justify-content:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 20px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;transition:all .2s;"
                                     onmouseover="this.style.background='#2d7ef0'"
                                     onmouseout="this.style.background='#3f8ff9'">
@@ -371,7 +371,7 @@
                                     Expired</div>
                                 <div style="font-size:.82rem;color:#6b7280;margin-bottom:16px;">Subscribe now to access all
                                     content</div>
-                                <a id="subInactiveBtn" href="payment.html"
+                                <a id="subInactiveBtn" href="/renewal"
                                     style="display:inline-flex;align-items:center;gap:8px;background:#3f8ff9;color:#fff;padding:11px 24px;border-radius:8px;font-weight:700;font-size:.88rem;text-decoration:none;">
                                     <i class="fa-solid fa-crown"></i>
                                     Subscribe Now
@@ -540,7 +540,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1785484800"></script>
+    <script src="src/js/utils.js?v=1785600000"></script>
     <script src="src/js/i18n.js?v=4"></script>
     <script src="src/js/profile.js?v=5"></script>
 
@@ -565,16 +565,10 @@
 
     <script>
         // ═══ SUBSCRIPTION INFO ═══
-        const KASHIER_RENEWAL_URL = "https://ghawy.ai/index.html#payment";
-
-        const PLAN_RENEWAL_URLS = {
-            "monthly_egp": KASHIER_RENEWAL_URL,
-            "quarterly_egp": KASHIER_RENEWAL_URL,
-            "yearly_egp": KASHIER_RENEWAL_URL,
-            "monthly_usd": KASHIER_RENEWAL_URL,
-            "quarterly_usd": KASHIER_RENEWAL_URL,
-            "yearly_usd": KASHIER_RENEWAL_URL,
-        };
+        // Renewing now happens in-app on /renewal (it reads the live subscription,
+        // shows what the extension buys, and creates the Kashier order itself),
+        // instead of dumping the member on the public landing page.
+        const RENEWAL_URL = "/renewal?intent=renew";
 
         const PLAN_DURATIONS = {
             "monthly_egp": 30, "quarterly_egp": 90, "yearly_egp": 365,
@@ -665,8 +659,7 @@
                     // Renew button
                     const renewBtn = document.getElementById('subRenewBtn');
                     if (renewBtn) {
-                        const renewUrl = PLAN_RENEWAL_URLS[data.plan_key] || 'payment.html';
-                        renewBtn.href = renewUrl;
+                        renewBtn.href = RENEWAL_URL;
                         renewBtn.style.display = data.subscription_end ? 'flex' : 'none';
                     }
 
@@ -725,7 +718,7 @@
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=1783972000"></script>
+    <script src="src/js/dashboard-new.js?v=1785600000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

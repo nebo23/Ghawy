@@ -46,7 +46,7 @@
                 if (uStr) {
                     var u = JSON.parse(uStr);
                     if (u && (u.is_active === false || u.subscription_type === 'none')) {
-                        window.location.replace("/payment.html?reason=access_required");
+                        window.location.replace("/renewal");
                     }
                 }
             } catch (e) { }
@@ -373,7 +373,7 @@
     </script>
 
     <!-- utils.js — provides API, buildAvatarHtml, etc. -->
-    <script src="src/js/utils.js?v=1785484800"></script>
+    <script src="src/js/utils.js?v=1785600000"></script>
 
     <!-- Inline: load user profile for this page -->
     <script>

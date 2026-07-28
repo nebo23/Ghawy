@@ -45,7 +45,7 @@
                 if (uStr) {
                     var u = JSON.parse(uStr);
                     if (u && (u.is_active === false || u.subscription_type === 'none')) {
-                        window.location.replace("/payment.html?reason=access_required");
+                        window.location.replace("/renewal");
                         return;
                     }
                     if (u && u.onboarding_completed === false) {
@@ -435,8 +435,8 @@
         });
     </script>
 
-    <script src="src/js/utils.js?v=1785484800"></script>
-    <script src="src/js/dashboard-new.js?v=1783972000"></script>
+    <script src="src/js/utils.js?v=1785600000"></script>
+    <script src="src/js/dashboard-new.js?v=1785600000"></script>
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 
     <!-- ── Hamburger / Sidebar Toggle ── -->

@@ -39,7 +39,7 @@
                 if (uStr) {
                     var u = JSON.parse(uStr);
                     if (u && (u.is_active === false || u.subscription_type === 'none')) {
-                        window.location.replace("/payment.html?reason=access_required");
+                        window.location.replace("/renewal");
                     }
                 }
             } catch (e) { }
@@ -552,14 +552,14 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1785484800"></script>
+    <script src="src/js/utils.js?v=1785600000"></script>
     <script src="src/js/i18n.js?v=4"></script>
     <script src="src/js/goh.js?v=2"></script>
     <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" defer onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=1783972000"></script>
+    <script src="src/js/dashboard-new.js?v=1785600000"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

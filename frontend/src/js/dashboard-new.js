@@ -32,11 +32,11 @@ async function api(path, opts = {}) {
         throw new Error('Unauthorized');
     }
     if (res.status === 402) {
-        // Subscription expired — clear session and redirect to login
-        if (!window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('login')) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+        // Subscription expired — keep the session and renew inside the platform.
+        // /renewal needs the token to read the subscription and create the payment.
+        const p = window.location.pathname;
+        if (!p.endsWith('login.html') && !p.endsWith('login') && !p.endsWith('renewal.html') && !p.endsWith('renewal')) {
+            window.location.href = '/renewal';
         }
         throw new Error('PaymentRequired');
     }

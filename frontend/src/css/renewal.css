@@ -1,0 +1,503 @@
+/* ══════════════════════════════════════════════════════════
+   renewal.css — صفحة تجديد الاشتراك (/renewal)
+   وضعين:  (1) قفل — الاشتراك خلص، الداشبورد مموّه ورا overlay
+           (2) تجديد مبكّر — الاشتراك شغّال والمستخدم جاي يجدّد
+   بتعتمد على متغيّرات dashboard.css / dashboard-new.css عشان
+   الثيم (dark/light) يشتغل من غير أي كود زيادة.
+══════════════════════════════════════════════════════════ */
+
+/* لون الـ "حبر" المميّز: الأخضر النيون واضح على الأسود، وبيتقل شوية
+   في الوضع الفاتح عشان يفضل مقروء على أبيض. */
+body.renewal-page {
+    --rn-accent-ink: var(--gold);
+    --rn-danger: #ef4444;
+    overflow: hidden;
+}
+
+:root[data-theme="light"] body.renewal-page {
+    --rn-accent-ink: #4d7c0f;
+}
+
+/* ── (1) نسخة الداشبورد الديكورية ─────────────────────────
+   ثابتة بالكامل: مفيش أي fetch وراها. القفل الحقيقي server-side
+   (كل APIs الأعضاء بترجّع 402) — دي طبقة UX بس. */
+.renewal-ghost {
+    filter: blur(7px) saturate(.75);
+    -webkit-filter: blur(7px) saturate(.75);
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    /* تكبير بسيط يخفي الحواف الشفافة اللي الـ blur بيسيبها */
+    transform: scale(1.03);
+    transform-origin: center center;
+}
+
+/* الطبقة دي مجرد ديكور — مش لازم تفضل تنبض وتاكل CPU */
+.renewal-ghost .skeleton-card,
+.renewal-ghost .goh-skeleton {
+    animation: none;
+}
+
+/* ── (2) الـ Overlay ─────────────────────────────────────── */
+.renewal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 16px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, .74);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+:root[data-theme="light"] .renewal-overlay {
+    background: rgba(15, 23, 42, .5);
+}
+
+.renewal-card {
+    width: 100%;
+    max-width: 720px;
+    /* margin:auto بدل align-items لوحدها — عشان لو المحتوى أطول من
+       الشاشة مايتقصّش من فوق وقت الـ scroll */
+    margin: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 30px;
+    box-shadow: 0 30px 90px -20px rgba(0, 0, 0, .75);
+    text-align: center;
+    animation: rnFadeUp .35s ease both;
+}
+
+@keyframes rnFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ── الهيدر (أيقونة + عنوان + سطر توضيحي) ────────────────── */
+.rn-icon {
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--gold-subtle);
+    border: 1px solid var(--gold-border);
+    color: var(--rn-accent-ink);
+}
+
+.rn-icon.danger {
+    background: rgba(239, 68, 68, .1);
+    border-color: rgba(239, 68, 68, .28);
+    color: var(--rn-danger);
+}
+
+.rn-title {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.rn-sub {
+    font-size: .92rem;
+    color: var(--text-secondary);
+    line-height: 1.9;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+/* ── شريط حالة الاشتراك (وضع التجديد المبكّر) ─────────────── */
+.rn-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.rn-stat {
+    flex: 1 1 160px;
+    min-width: 150px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+}
+
+.rn-stat-label {
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.rn-stat-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.rn-stat-value.big {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--rn-accent-ink);
+    line-height: 1.2;
+}
+
+.rn-stat-value.big small {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+/* ── كروت الباقات ─────────────────────────────────────────── */
+.rn-plans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 26px 0 18px;
+}
+
+.rn-plan {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 12px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .2s, background .2s, transform .2s, box-shadow .2s;
+    font-family: inherit;
+    width: 100%;
+    display: block;
+}
+
+.rn-plan:hover {
+    border-color: var(--gold-border);
+    transform: translateY(-2px);
+}
+
+.rn-plan.active {
+    border-color: var(--gold);
+    background: var(--gold-subtle);
+    box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.rn-plan:focus-visible {
+    outline: 2px solid var(--rn-accent-ink);
+    outline-offset: 2px;
+}
+
+.rn-plan-badge {
+    position: absolute;
+    top: -11px;
+    right: 50%;
+    transform: translateX(50%);
+    background: var(--gold);
+    color: #000;
+    font-size: .65rem;
+    font-weight: 800;
+    padding: 3px 11px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.rn-plan-name {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.rn-plan-price {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: var(--rn-accent-ink);
+    line-height: 1;
+    font-family: 'IBM Plex Mono', 'Cairo', monospace;
+}
+
+.rn-plan-price span {
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'Cairo', sans-serif;
+    display: block;
+    margin-top: 6px;
+}
+
+.rn-plan-note {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.rn-plan.active .rn-plan-note {
+    color: var(--text-secondary);
+}
+
+/* ── صندوق المعاينة ───────────────────────────────────────── */
+.rn-preview {
+    background: var(--gold-subtle);
+    border: 1px solid var(--gold-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: .88rem;
+    line-height: 2;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+}
+
+.rn-preview b {
+    color: var(--rn-accent-ink);
+    font-weight: 800;
+}
+
+.rn-preview i.fa-solid {
+    color: var(--rn-accent-ink);
+    margin-left: 6px;
+}
+
+/* ── الأزرار ──────────────────────────────────────────────── */
+.rn-pay {
+    width: 100%;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+}
+
+.rn-pay:hover:not(:disabled) {
+    background: var(--gold-light);
+    box-shadow: 0 0 28px var(--gold-glow);
+    transform: translateY(-2px);
+}
+
+.rn-pay:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.rn-spinner {
+    width: 17px;
+    height: 17px;
+    border: 2.5px solid rgba(0, 0, 0, .25);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: rnSpin .7s linear infinite;
+    display: none;
+}
+
+.rn-pay.loading .rn-spinner {
+    display: block;
+}
+
+@keyframes rnSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.rn-ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: 'Cairo', sans-serif;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+}
+
+.rn-ghost-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.rn-ghost-btn.danger:hover {
+    color: var(--rn-danger);
+    border-color: rgba(239, 68, 68, .4);
+    background: rgba(239, 68, 68, .07);
+}
+
+.rn-secure {
+    margin-top: 16px;
+    font-size: .74rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* ── التنبيهات ────────────────────────────────────────────── */
+.rn-alert {
+    display: none;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: .84rem;
+    font-weight: 600;
+    line-height: 1.7;
+    margin-bottom: 14px;
+}
+
+.rn-alert.show {
+    display: block;
+}
+
+.rn-alert.error {
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .3);
+    color: #f87171;
+}
+
+.rn-alert.success {
+    background: var(--gold-subtle);
+    border: 1px solid var(--gold-border);
+    color: var(--rn-accent-ink);
+}
+
+/* ── حالة التحميل ─────────────────────────────────────────── */
+.rn-loading {
+    padding: 24px 0;
+    color: var(--text-muted);
+    font-size: .9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.rn-loading .rn-spinner {
+    display: block;
+    width: 28px;
+    height: 28px;
+    border-color: var(--border);
+    border-top-color: var(--gold);
+}
+
+/* الشعار فوق الكارت */
+.rn-logo {
+    height: 36px;
+    width: auto;
+    margin: 0 auto 18px;
+    opacity: .9;
+}
+
+/* ── موبايل ───────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .renewal-overlay {
+        padding: 16px 12px;
+        align-items: flex-start;
+    }
+
+    .renewal-card {
+        padding: 24px 18px;
+        border-radius: 16px;
+    }
+
+    .rn-title {
+        font-size: 1.2rem;
+    }
+
+    .rn-sub {
+        font-size: .85rem;
+    }
+
+    .rn-plans {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 20px 0 16px;
+    }
+
+    .rn-plan {
+        padding: 18px 14px 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: right;
+    }
+
+    .rn-plan-badge {
+        top: -10px;
+        right: 14px;
+        transform: none;
+    }
+
+    .rn-plan-name {
+        margin-bottom: 0;
+    }
+
+    .rn-plan-price {
+        font-size: 1.4rem;
+        text-align: left;
+    }
+
+    .rn-plan-price span {
+        margin-top: 3px;
+    }
+
+    /* على الموبايل الملاحظة تحت الكارت كلها بعرض كامل */
+    .rn-plan-note {
+        flex-basis: 100%;
+        order: 3;
+        text-align: center;
+    }
+
+    .rn-stat {
+        flex-basis: 100%;
+    }
+
+    .rn-actions .rn-ghost-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}

@@ -32,9 +32,11 @@
       return;
     }
 
-    // User not active — redirect to payment
+    // Not active — renew inside the platform (token stays put).
+    // NOTE: a 402 here is deliberately left alone so an expired user who
+    // opens /login on purpose can still sign into another account.
     if (profileRes.status === 403) {
-      window.location.href = 'payment.html';
+      window.location.href = '/renewal';
       return;
     }
 
@@ -42,7 +44,7 @@
 
     const profile = await profileRes.json();
     if (!profile.is_active) {
-      window.location.href = 'payment.html';
+      window.location.href = '/renewal';
       return;
     }
 
@@ -93,7 +95,7 @@ async function login() {
         // Second: determine based on account state
         if (data.user) {
           if (!data.user.is_active) {
-            redirect = 'payment.html';
+            redirect = '/renewal';
           } else if (data.user.onboarding_completed) {
             redirect = 'dashboard.html';
           }
