@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pay with Instapay — Ghawy</title>
+  <title data-i18n="payPageTitle">الدفع عبر انستاباي — Ghawy</title>
   <link rel="icon" type="image/png" href="./imgs/community-logo.png">
 
   <!-- Fonts & Icons -->
@@ -15,7 +15,34 @@
   <link rel="stylesheet" href="src/css/main.css">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260630c">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260804">
+
+  <style>
+    /* Language toggle — same look as the landing page button */
+    .lang-toggle {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .lang-toggle:hover {
+      border-color: #3f8ff9;
+      color: #3f8ff9;
+    }
+
+    .pay-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  </style>
 </head>
 
 <body>
@@ -27,9 +54,14 @@
   <!-- Header -->
   <header class="pay-header">
     <img src="./imgs/g-icon-logo.png" alt="Ghawy Logo" class="pay-logo">
-    <a href="index.html" class="pay-back-link">
-      <i data-lucide="arrow-left"></i> Back to Home
-    </a>
+    <div class="pay-header-actions">
+      <button class="lang-toggle" id="langToggleBtn" onclick="toggleLanguage()">
+        <span id="langToggleText">English</span>
+      </button>
+      <a href="index.html" class="pay-back-link">
+        <i data-lucide="arrow-left"></i> <span data-i18n="backToHome">رجوع للرئيسية</span>
+      </a>
+    </div>
   </header>
 
   <main class="pay-container">
@@ -37,58 +69,63 @@
     <!-- Step 1 & 2 Wrapper (Form View) -->
     <div id="pay-form-view">
       <div class="pay-title-section text-center">
-        <h1>Join Ghawy via Instapay</h1>
-        <p>Complete your payment securely and submit your receipt to get instant access.</p>
+        <h1 data-i18n="payTitle">انضم لـ Ghawy عبر انستاباي</h1>
+        <p data-i18n="paySubtitle">اتمّم الدفع بأمان وارفع إيصال التحويل عشان تدخل على طول.</p>
       </div>
 
       <div class="pay-steps-grid">
 
         <!-- Step 1: Transfer Info -->
         <div class="pay-card step-card">
-          <div class="step-badge">Step 1</div>
-          <h2>Transfer the amount</h2>
-          <p class="step-desc">Send the exact amount via Instapay to the number below. Keep the receipt screenshot.</p>
+          <div class="step-badge" data-i18n="payStep1">الخطوة 1</div>
+          <h2 data-i18n="payStep1Title">حوّل المبلغ</h2>
+          <p class="step-desc" data-i18n="payStep1Desc">ابعت المبلغ بالظبط عبر انستاباي على الرقم اللي تحت، واحتفظ
+            بسكرين شوت الإيصال.</p>
 
           <div class="payment-info-box">
-            <div class="pi-label">Amount Due <span id="display-plan" class="pi-plan-tag"></span></div>
+            <div class="pi-label"><span data-i18n="payAmountDue">المبلغ المطلوب</span> <span id="display-plan"
+                class="pi-plan-tag"></span></div>
             <div class="pi-amount"><span id="display-price">600</span> <span class="pi-currency">EGP</span><span
                 id="display-period" class="pi-period"></span></div>
           </div>
 
           <div class="payment-info-box">
-            <div class="pi-label">Instapay Number</div>
+            <div class="pi-label" data-i18n="payInstapayNumber">رقم انستاباي</div>
             <div class="pi-copy-wrap">
-              <div class="pi-number" id="display-instapay">https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU</div>
+              <!-- The Instapay handle/link stays LTR in both languages -->
+              <div class="pi-number" id="display-instapay" dir="ltr">
+                https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU</div>
               <button class="pi-copy-btn" id="copy-instapay-btn" onclick="copyInstapay()">
-                <i data-lucide="copy"></i> Copy
+                <i data-lucide="copy"></i> <span data-i18n="payCopy">نسخ</span>
               </button>
             </div>
           </div>
 
           <a href="https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU" target="_blank" rel="noopener"
             class="pi-instapay-link" id="pi-instapay-link">
-            <i data-lucide="wallet"></i> Pay now via Instapay
+            <i data-lucide="wallet"></i> <span data-i18n="payNowInstapay">ادفع دلوقتي عبر انستاباي</span>
           </a>
 
           <div class="pi-warning">
-            <i data-lucide="info"></i> Please make sure to screenshot the successful transfer screen.
+            <i data-lucide="info"></i> <span data-i18n="payScreenshotWarn">خد بالك: لازم تصوّر شاشة نجاح
+              التحويل.</span>
           </div>
         </div>
 
         <!-- Step 2: Upload Receipt -->
         <div class="pay-card step-card">
-          <div class="step-badge">Step 2</div>
-          <h2>Submit your receipt</h2>
-          <p class="step-desc">Fill in your details and upload the payment screenshot.</p>
+          <div class="step-badge" data-i18n="payStep2">الخطوة 2</div>
+          <h2 data-i18n="payStep2Title">ارفع الإيصال</h2>
+          <p class="step-desc" data-i18n="payStep2Desc">اكتب بياناتك وارفع صورة الإيصال.</p>
 
           <form id="pay-submit-form" onsubmit="event.preventDefault(); submitPayment();">
 
             <div class="form-group">
-              <label>Receipt Screenshot *</label>
+              <label data-i18n="payReceiptLabel">صورة الإيصال *</label>
               <div class="file-drop-area" id="file-drop-area" onclick="document.getElementById('pay-receipt').click()">
                 <i data-lucide="upload-cloud" class="upload-icon"></i>
-                <div class="upload-text">Click or drag receipt here</div>
-                <div class="upload-hint">JPG, PNG, PDF (Max 5MB)</div>
+                <div class="upload-text" data-i18n="payDropHere">اضغط أو اسحب الإيصال هنا</div>
+                <div class="upload-hint" data-i18n="payFileHint">JPG أو PNG أو PDF (5 ميجا كحد أقصى)</div>
                 <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf"
                   hidden>
 
@@ -104,7 +141,7 @@
             </div>
 
             <button type="submit" class="pay-submit-btn" id="pay-submit-btn">
-              <span>Submit Payment</span>
+              <span data-i18n="paySubmit">إرسال الطلب</span>
               <div class="btn-spinner" id="btn-spinner" style="display:none;"></div>
             </button>
 
@@ -119,20 +156,20 @@
       <div class="success-icon-wrap">
         <i data-lucide="check-circle" class="success-icon"></i>
       </div>
-      <h2>Request Submitted!</h2>
-      <p>Thank you for your payment. Our team will review your receipt shortly.</p>
+      <h2 data-i18n="paySuccessTitle">تم إرسال الطلب!</h2>
+      <p data-i18n="paySuccessDesc">شكراً لدفعك. فريقنا هيراجع الإيصال في أقرب وقت.</p>
 
       <div class="success-details">
-        <p><strong>Reference ID:</strong> <span id="success-ref">---</span></p>
-        <p>Once approved, we will send an email confirmation and your account will be activated instantly.</p>
-        <p class="success-support">Need help? Contact support on
+        <p><strong data-i18n="payRefId">رقم الطلب:</strong> <span id="success-ref" dir="ltr">---</span></p>
+        <p data-i18n="payAfterApproval">بعد الموافقة هنبعتلك إيميل تأكيد وحسابك هيتفعّل على طول.</p>
+        <p class="success-support"><span data-i18n="payNeedHelp">محتاج مساعدة؟ كلّم الدعم على</span>
           <a href="tel:01033903334" dir="ltr">01033903334</a>
         </p>
       </div>
 
-      <p class="success-footer">Usually takes less than 12 hours.</p>
+      <p class="success-footer" data-i18n="payUsuallyTakes">عادةً بياخد أقل من 12 ساعة.</p>
 
-      <a href="index.html" class="pay-home-btn">Return to Homepage</a>
+      <a href="index.html" class="pay-home-btn" data-i18n="payReturnHome">الرجوع للصفحة الرئيسية</a>
     </div>
 
   </main>
@@ -142,8 +179,9 @@
 
   <!-- Scripts -->
   <script src="src/js/utils.js?v=1785600000"></script>
+  <script src="src/js/i18n.js?v=20260804"></script>
 
-  <script src="src/js/pay.js?v=20260728"></script>
+  <script src="src/js/pay.js?v=20260804"></script>
   <script>
     window.lucide && window.lucide.createIcons();
   </script>

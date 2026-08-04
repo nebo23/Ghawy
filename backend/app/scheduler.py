@@ -181,18 +181,20 @@ async def check_5day_expiry():
 def _send_birthday_emails() -> None:
     """Sync body — runs in a thread (DB + SMTP).
     بيبعت تهنئة عيد ميلاد + هدية 7 أيام للمشتركين اللي عيد ميلادهم النهاردة —
-    مرة واحدة في السنة (guard: birthday_email_sent_year). بنبعت بس للي عندهم
-    اشتراك مدفوع قبل كده (عشان الهدية 'على الباقة الحالية')."""
+    مرة واحدة في السنة (guard: birthday_email_sent_year).
+
+    الأهلية = اشتراك شغال دلوقتي (is_active + end_at في المستقبل)، مش وجود
+    Payment بحالة CONFIRMED. كان الفلتر القديم بيتطلب دفعة مؤكدة، وده كان
+    بيستبعد أغلب الأعضاء الفعليين (legacy_promo / manual_payment / أي تفعيل
+    من الأدمن مبيسيبش صف دفع مؤكد) — فالإيميل كان عملياً مبيوصلش لحد.
+    كمان الهدية نفسها بتمدّد end_at، فمنطقي إنها تبقى لصاحب اشتراك شغال."""
     from app.services.email_service import send_birthday_email
 
     db = SessionLocal()
     try:
         today = datetime.now(timezone.utc).astimezone().date()
         year = today.year
-
-        paid_user_ids = db.query(Payment.user_id).filter(
-            Payment.status == PaymentStatus.CONFIRMED
-        )
+        now = datetime.utcnow()  # end_at متخزّن naive UTC
 
         candidates = db.query(User).filter(
             User.birth_date.isnot(None),
@@ -200,18 +202,22 @@ def _send_birthday_emails() -> None:
             extract("day", User.birth_date) == today.day,
             User.email.isnot(None),
             (User.birthday_email_sent_year.is_(None)) | (User.birthday_email_sent_year != year),
-            User.id.in_(paid_user_ids),
+            User.is_active.is_(True),
+            User.end_at.isnot(None),
+            User.end_at > now,
         ).all()
 
         logger.info("🎂 Found %s birthday(s) today", len(candidates))
         sent = 0
         for user in candidates:
             try:
+                # سنة ميلاد غلط (تواريخ زي 1111-11-11 أو سنة النهاردة) موجودة
+                # فعلاً في الداتا — لو العمر مش منطقي بنبعت الصيغة اللي من غير سن.
                 age = year - user.birth_date.year
                 send_birthday_email(
                     to_email=user.email,
                     full_name=user.full_name,
-                    age=age if age > 0 else 0,
+                    age=age if 8 <= age <= 90 else 0,
                     user_id=user.id,
                     year=year,
                 )

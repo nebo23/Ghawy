@@ -917,6 +917,40 @@ textarea.form-control {
   margin-bottom: 16px;
 }
 
+/* "Load older updates" — the feed is a paginated archive, not a 7-day window */
+.ai-load-more {
+  display: none;              /* JS flips this to flex when more pages exist */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.ai-load-more:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--gold-border);
+  color: var(--text-primary);
+}
+
+.ai-load-more:disabled { opacity: 0.6; cursor: default; }
+
+.ai-load-more i { width: 18px; height: 18px; }
+
+.ai-load-more .spin { animation: ai-spin 0.9s linear infinite; }
+
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
 .skeleton-card {
   background: var(--bg-card);
   border: 1px solid var(--border);

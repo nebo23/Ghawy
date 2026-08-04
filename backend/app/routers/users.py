@@ -15,7 +15,8 @@ import threading
 from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email
-from app.services.disposable_emails import is_disposable_email
+from app.services.disposable_emails import is_disposable_email, is_fake_email_pattern
+from app.services.name_utils import compose_full_name
 from app.services.turnstile import verify_turnstile
 from jose import JWTError
 
@@ -69,6 +70,10 @@ def send_verification_email_bg(email: str, code: str) -> None:
 # in-memory يكفي: worker واحد في production، والكود نفسه صلاحيته 15 دقيقة.
 _verify_attempts: dict[str, int] = {}
 
+# Shown to anyone signing up with a throwaway mailbox or an obviously fake
+# local part (test@, 123@, aaaa@ …) — 5-10 of those land every day.
+FAKE_EMAIL_MESSAGE = "من فضلك سجّل بإيميل حقيقي — الإيميلات المؤقتة أو التجريبية مش مقبولة."
+
 # ─── Register ────────────────────────────────────────────────
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(data: UserRegister, request: Request, db: Session = Depends(get_db)):
@@ -84,10 +89,13 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
 
     # Block throwaway / temporary mailboxes: real members use real inboxes, and
     # disposable providers are what the account-flood swarm registers through.
-    if is_disposable_email(data.email):
+    if is_disposable_email(data.email) or is_fake_email_pattern(data.email):
+        raise HTTPException(status_code=422, detail=FAKE_EMAIL_MESSAGE)
+
+    if len(data.first_name.strip()) < 2 or len(data.last_name.strip()) < 2:
         raise HTTPException(
             status_code=422,
-            detail="Please sign up with a permanent email address (temporary/disposable emails are not allowed).",
+            detail="من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).",
         )
 
     existing_user = db.query(User).filter(User.email == data.email).first()
@@ -99,7 +107,9 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
         if existing_user.is_verified:
             raise HTTPException(status_code=400, detail="This Email Is Already Exists")
 
-        existing_user.full_name = data.full_name
+        existing_user.first_name = data.first_name.strip()
+        existing_user.last_name = data.last_name.strip()
+        existing_user.full_name = compose_full_name(data.first_name, data.last_name)
         existing_user.hashed_password = hash_password(data.password)
         existing_user.phone = None
         existing_user.country = data.country
@@ -109,7 +119,9 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
         user = existing_user
     else:
         user = User(
-            full_name=data.full_name,
+            full_name=compose_full_name(data.first_name, data.last_name),
+            first_name=data.first_name.strip(),
+            last_name=data.last_name.strip(),
             email=data.email,
             hashed_password=hash_password(data.password),
             phone=None,

@@ -1,7 +1,36 @@
-// ═══ LANGUAGE SYSTEM ═══
-// Supports two attribute systems:
-//   1. data-ar / data-en            (used by index.html)
-//   2. data-i18n / data-i18n-placeholder  (used by login, register, payment)
+// ═══ LANGUAGE SYSTEM — single source of truth ═══
+//
+// This file is THE language engine for the whole site (landing page, auth
+// funnel, payment pages, community pages). It used to be duplicated as an
+// inline <script> inside index.html with its own storage key, which meant a
+// language picked on the landing page never reached the register page (and
+// vice-versa). Everything now lives here.
+//
+// Storage key: 'ghawy_lang' — the ONLY key. The legacy 'ghawy_lang_pref' is
+// migrated once on load so users who already picked a language keep it.
+//
+// Default: Arabic on every page, with no per-page exceptions. An explicit user
+// choice (the toggle button) always wins over the default.
+//
+// Supported markup:
+//   data-ar / data-en                 → text swap        (landing-page style)
+//   data-ar-placeholder / -en-        → placeholder swap
+//   data-html="true"                  → use innerHTML instead of textContent
+//   data-i18n="key"                   → text from i18nDict (auth/funnel style)
+//   data-i18n-html="true"             → that key's value is HTML
+//   data-i18n-placeholder="key"       → placeholder from i18nDict
+//   data-i18n-title="key"             → title attribute from i18nDict
+
+// ─── One-time migration off the old key ─────────────────────
+(function migrateLegacyLangKey() {
+    try {
+        const legacy = localStorage.getItem('ghawy_lang_pref');
+        if (legacy === 'ar' || legacy === 'en') {
+            localStorage.setItem('ghawy_lang', legacy);
+        }
+        if (legacy !== null) localStorage.removeItem('ghawy_lang_pref');
+    } catch (e) { /* private mode / storage disabled — defaults still work */ }
+})();
 
 const translations = {
     ar: {
@@ -20,136 +49,276 @@ const translations = {
 
 // ─── Translation dictionary for data-i18n keys ──────────────
 const i18nDict = {
-    // login.html
-    loginTitle:       { ar: 'تسجيل الدخول',              en: 'Sign In' },
-    email:            { ar: 'البريد الإلكتروني',           en: 'Email' },
+    // ── login.html ──
+    loginPageTitle:   { ar: 'تسجيل الدخول — Ghawy',        en: 'Sign In — Ghawy' },
+    loginTitle:       { ar: 'تسجيل <span class="cyan">الدخول</span>', en: 'Sign <span class="cyan">In</span>' },
+    backHome:         { ar: 'رجوع',                        en: 'Back' },
+    email:            { ar: 'البريد الإلكتروني',            en: 'Email' },
     emailPlaceholder: { ar: 'example@gmail.com',           en: 'example@gmail.com' },
-    currentPassword:  { ar: 'كلمة المرور',                en: 'Password' },
-    passwordPlaceholder:{ ar: '••••••••',                 en: '••••••••' },
-    enterBtn:         { ar: 'دخول',                       en: 'Sign In' },
-    orDivider:        { ar: 'أو',                         en: 'or' },
-    googleLogin:      { ar: 'الدخول باستخدام جوجل',       en: 'Continue with Google' },
-    dontHaveAccount:  { ar: 'مش عندك حساب؟',             en: "Don't have an account?" },
-    registerNow:      { ar: 'سجّل الآن',                  en: 'Register Now' },
-    // register.html
-    register:         { ar: 'إنشاء حساب',                 en: 'Create Account' },
+    currentPassword:  { ar: 'كلمة المرور',                 en: 'Password' },
+    passwordPlaceholder: { ar: '••••••••',                 en: '••••••••' },
+    showPassword:     { ar: 'إظهار كلمة المرور',           en: 'Show password' },
+    enterBtn:         { ar: 'دخول',                        en: 'Sign In' },
+    orDivider:        { ar: 'أو',                          en: 'or' },
+    googleLogin:      { ar: 'الدخول باستخدام جوجل',        en: 'Continue with Google' },
+    dontHaveAccount:  { ar: 'مش عندك حساب؟',              en: "Don't have an account?" },
+    registerNow:      { ar: 'سجّل دلوقتي',                 en: 'Register Now' },
+    okLoggedIn:       { ar: 'تم تسجيل الدخول ✅ جاري التحويل...', en: 'Logged in successfully! ✅ Redirecting...' },
+
+    // ── register.html ──
+    registerPageTitle: { ar: 'إنشاء حساب — Ghawy',         en: 'Create Your Account — Ghawy' },
+    register:         { ar: 'إنشاء حساب',                  en: 'Create Account' },
     createAccountSub: { ar: 'سجّل الآن وابدأ رحلتك مع الـ AI', en: 'Register now and start your AI journey' },
-    alreadyHaveAccount:{ ar: 'عندك حساب بالفعل؟',        en: 'Already have an account?' },
-    loginNow:         { ar: 'سجّل دخولك',                 en: 'Sign In' },
-    // payment.html
-    logout:           { ar: 'تسجيل الخروج',               en: 'Logout' },
-    subscriptionPlan: { ar: 'خطة الاشتراك',               en: 'Subscription Plan' },
+    setYourPassword:  { ar: 'اختار كلمة المرور',           en: 'Set Your Password' },
+    setYourPasswordSub: { ar: 'أهلاً بيك تاني! اختار كلمة مرور عشان تكمّل حسابك.', en: 'Welcome back! Set a password to complete your account setup.' },
+    firstName:        { ar: 'الاسم الأول',                 en: 'First Name' },
+    firstNamePlaceholder: { ar: 'مثلا: محمد',              en: 'e.g. Mohamed' },
+    lastName:         { ar: 'الاسم الأخير',                en: 'Last Name' },
+    lastNamePlaceholder:  { ar: 'مثلا: احمد',              en: 'e.g. Ahmed' },
+    emailAddress:     { ar: 'البريد الإلكتروني',            en: 'Email Address' },
+    emailAddressPlaceholder: { ar: 'اكتب بريدك الإلكتروني', en: 'Enter your email address' },
+    password:         { ar: 'كلمة المرور',                 en: 'Password' },
+    passwordCreatePlaceholder: { ar: 'اختر كلمة مرور قوية', en: 'Create a strong password' },
+    passwordStrength: { ar: 'قوة كلمة المرور:',            en: 'Password Strength:' },
+    strengthWeak:     { ar: 'ضعيفة',                       en: 'Weak' },
+    strengthMedium:   { ar: 'متوسطة',                      en: 'Medium' },
+    strengthStrong:   { ar: 'قوية',                        en: 'Strong' },
+    checkLength:      { ar: '8 حروف على الأقل',            en: 'At least 8 characters' },
+    checkCase:        { ar: 'حروف كبيرة وصغيرة',           en: 'Contains uppercase and lowercase letters' },
+    checkNumber:      { ar: 'رقم أو رمز خاص',              en: 'Contains number or special character' },
+    agreeTerms:       {
+        ar: 'أوافق على <a href="terms.html" target="_blank" class="text-brand hover:underline mx-1"><u>الشروط والأحكام</u></a> و<a href="privacy.html" target="_blank" class="text-brand hover:underline mx-1"><u>سياسة الخصوصية</u></a>',
+        en: 'I agree to the <a href="terms.html" target="_blank" class="text-brand hover:underline mx-1"><u>Terms &amp; Conditions</u></a> and <a href="privacy.html" target="_blank" class="text-brand hover:underline mx-1"><u>Privacy Policy</u></a>'
+    },
+    signUpNow:        {
+        ar: 'إنشاء الحساب <i class="fa-solid fa-arrow-left" style="margin-inline-start:6px"></i>',
+        en: 'Sign Up Now <i class="fa-solid fa-arrow-right" style="margin-inline-start:6px"></i>'
+    },
+    orDividerCaps:    { ar: 'أو',                          en: 'OR' },
+    googleSignUp:     { ar: 'التسجيل باستخدام جوجل',       en: 'Sign in with Google' },
+    alreadyHaveAccount: { ar: 'عندك حساب بالفعل؟',        en: 'Already have an account?' },
+    loginNow:         { ar: 'سجّل دخولك',                  en: 'Sign In' },
+    // register.js runtime messages
+    errWeakPassword:  { ar: 'من فضلك اختر كلمة مرور قوية.', en: 'Please create a strong password.' },
+    errTermsRequired: { ar: 'لازم توافق على الشروط والأحكام.', en: 'You must agree to the Terms and Conditions.' },
+    errNameRequired:  { ar: 'من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).', en: 'Please enter your first and last name (at least 2 characters each).' },
+    errCaptcha:       { ar: "من فضلك أكمل التحقق من إنك مش روبوت.", en: "Please complete the 'I'm not a robot' verification." },
+    errGeneric:       { ar: 'حصل خطأ. حاول تاني.',         en: 'An error occurred. Please try again.' },
+    errFakeEmail:     { ar: 'من فضلك سجّل بإيميل حقيقي — الإيميلات المؤقتة أو التجريبية مش مقبولة.', en: 'Please sign up with a real email — temporary or test addresses are not accepted.' },
+    errFillAllFields: { ar: 'من فضلك املا كل الخانات.',    en: 'Please fill all fields' },
+    errWrongCredentials: { ar: 'إيميل أو باسورد غلط',      en: 'Wrong email or password' },
+    errNoConnection:  { ar: 'مفيش اتصال بالسيرفر.',        en: 'No connection to the server.' },
+    okAccountCreated: { ar: 'تم إنشاء الحساب بنجاح! جاري التحويل...', en: 'Account created successfully! Redirecting...' },
+    okSetupComplete:  { ar: 'تم! جاري التحويل...',         en: 'Setup complete! Redirecting...' },
+    inviteInvalid:    { ar: 'لينك الدعوة مش صالح أو انتهت صلاحيته.', en: 'Invalid or expired invite link' },
+    inviteFailed:     { ar: 'مقدرناش نتأكد من لينك الدعوة.', en: 'Failed to verify invite link' },
+    welcomeName:      { ar: 'أهلاً',                       en: 'Welcome' },
+    inviteWelcomeSub: { ar: 'اختار كلمة مرور عشان تكمّل تسجيلك', en: 'Choose a password to complete your registration' },
+    completeRegistration: { ar: 'إكمال التسجيل',           en: 'Complete Registration' },
+
+    // ── pay.html (Instapay) ──
+    payPageTitle:     { ar: 'الدفع عبر انستاباي — Ghawy',   en: 'Pay with Instapay — Ghawy' },
+    backToHome:       { ar: 'رجوع للرئيسية',               en: 'Back to Home' },
+    payTitle:         { ar: 'انضم لـ Ghawy عبر انستاباي',   en: 'Join Ghawy via Instapay' },
+    paySubtitle:      { ar: 'اتمّم الدفع بأمان وارفع إيصال التحويل عشان تدخل على طول.', en: 'Complete your payment securely and submit your receipt to get instant access.' },
+    payStep1:         { ar: 'الخطوة 1',                    en: 'Step 1' },
+    payStep1Title:    { ar: 'حوّل المبلغ',                 en: 'Transfer the amount' },
+    payStep1Desc:     { ar: 'ابعت المبلغ بالظبط عبر انستاباي على الرقم اللي تحت، واحتفظ بسكرين شوت الإيصال.', en: 'Send the exact amount via Instapay to the number below. Keep the receipt screenshot.' },
+    payAmountDue:     { ar: 'المبلغ المطلوب',              en: 'Amount Due' },
+    payInstapayNumber:{ ar: 'رقم انستاباي',                en: 'Instapay Number' },
+    payCopy:          { ar: 'نسخ',                         en: 'Copy' },
+    payCopied:        { ar: 'اتنسخ',                       en: 'Copied' },
+    payNowInstapay:   { ar: 'ادفع دلوقتي عبر انستاباي',    en: 'Pay now via Instapay' },
+    payScreenshotWarn:{ ar: 'خد بالك: لازم تصوّر شاشة نجاح التحويل.', en: 'Please make sure to screenshot the successful transfer screen.' },
+    payStep2:         { ar: 'الخطوة 2',                    en: 'Step 2' },
+    payStep2Title:    { ar: 'ارفع الإيصال',                en: 'Submit your receipt' },
+    payStep2Desc:     { ar: 'اكتب بياناتك وارفع صورة الإيصال.', en: 'Fill in your details and upload the payment screenshot.' },
+    payReceiptLabel:  { ar: 'صورة الإيصال *',              en: 'Receipt Screenshot *' },
+    payDropHere:      { ar: 'اضغط أو اسحب الإيصال هنا',    en: 'Click or drag receipt here' },
+    payFileHint:      { ar: 'JPG أو PNG أو PDF (5 ميجا كحد أقصى)', en: 'JPG, PNG, PDF (Max 5MB)' },
+    paySubmit:        { ar: 'إرسال الطلب',                 en: 'Submit Payment' },
+    paySuccessTitle:  { ar: 'تم إرسال الطلب!',             en: 'Request Submitted!' },
+    paySuccessDesc:   { ar: 'شكراً لدفعك. فريقنا هيراجع الإيصال في أقرب وقت.', en: 'Thank you for your payment. Our team will review your receipt shortly.' },
+    payRefId:         { ar: 'رقم الطلب:',                  en: 'Reference ID:' },
+    payAfterApproval: { ar: 'بعد الموافقة هنبعتلك إيميل تأكيد وحسابك هيتفعّل على طول.', en: 'Once approved, we will send an email confirmation and your account will be activated instantly.' },
+    payNeedHelp:      { ar: 'محتاج مساعدة؟ كلّم الدعم على', en: 'Need help? Contact support on' },
+    payUsuallyTakes:  { ar: 'عادةً بياخد أقل من 12 ساعة.',  en: 'Usually takes less than 12 hours.' },
+    payReturnHome:    { ar: 'الرجوع للصفحة الرئيسية',      en: 'Return to Homepage' },
+    // pay.js runtime strings
+    planMonthly:      { ar: 'شهري',                        en: 'Monthly' },
+    planQuarterly:    { ar: '3 شهور',                      en: '3 Months' },
+    planYearly:       { ar: 'سنوي',                        en: 'Yearly' },
+    periodMonthly:    { ar: '/ شهر',                       en: '/ month' },
+    periodQuarterly:  { ar: '/ 3 شهور',                    en: '/ 3 months' },
+    periodYearly:     { ar: '/ سنة',                       en: '/ year' },
+    payErrLoadConfig: { ar: 'حصلت مشكلة في تحميل بيانات الدفع', en: 'Error loading payment information' },
+    payCopiedToast:   { ar: 'تم نسخ رقم انستاباي!',        en: 'Instapay number copied!' },
+    payCopyFailed:    { ar: 'مقدرناش ننسخ النص',           en: 'Failed to copy text' },
+    payErrFileType:   { ar: 'نوع الملف مش مدعوم. ارفع JPG أو PNG أو WebP أو PDF.', en: 'Invalid file type. Please upload a JPG, PNG, WebP, or PDF.' },
+    payErrFileSize:   { ar: 'الملف كبير أوي. الحد الأقصى 5 ميجا.', en: 'File too large. Maximum size is 5MB.' },
+    payErrNoReceipt:  { ar: 'من فضلك ارفع صورة الإيصال',   en: 'Please upload your receipt screenshot' },
+    payErrSubmit:     { ar: 'مقدرناش نبعت الطلب',          en: 'Failed to submit request' },
+
+    // ── payment.html ──
+    logout:           { ar: 'تسجيل الخروج',                en: 'Logout' },
+    subscriptionPlan: { ar: 'خطة الاشتراك',                en: 'Subscription Plan' },
     oneSubOpensAll:   { ar: 'اشتراك واحد يفتح لك جميع المحتويات', en: 'One subscription unlocks all content' },
     accessAll:        { ar: 'وصول لجميع الكورسات والشروحات', en: 'Access to all courses and content' },
-    hours:            { ar: '60+ ساعة من المحتوى الحصري', en: '60+ hours of exclusive content' },
-    community:        { ar: 'مجتمع ومتابعة شخصية',        en: 'Community & personal mentoring' },
-    newContent:       { ar: 'محتوى جديد بإستمرار',        en: 'Constantly updated content' },
-    subscribeNow:     { ar: 'انضم الآن 🚀',               en: 'Join Now 🚀' },
+    hours:            { ar: '60+ ساعة من المحتوى الحصري',  en: '60+ hours of exclusive content' },
+    community:        { ar: 'مجتمع ومتابعة شخصية',         en: 'Community & personal mentoring' },
+    newContent:       { ar: 'محتوى جديد بإستمرار',         en: 'Constantly updated content' },
+    subscribeNow:     { ar: 'انضم الآن 🚀',                en: 'Join Now 🚀' },
     securePay:        { ar: '🔒 الدفع آمن 100% عبر Kashier', en: '🔒 100% secure payment via Kashier' },
-    // profile-settings.html → Preferences
-    preferences:      { ar: 'التفضيلات',                  en: 'Preferences' },
-    language:         { ar: 'اللغة',                      en: 'Language' },
-    appearance:       { ar: 'المظهر',                     en: 'Appearance' },
-    dark:             { ar: 'داكن',                       en: 'Dark' },
-    light:            { ar: 'فاتح',                       en: 'Light' },
-    // courses.html
-    courses:          { ar: 'الكورسات',                   en: 'Courses' },
-    allCourses:       { ar: 'جميع الكورسات',              en: 'All Courses' },
+
+    // ── profile-settings.html → Preferences ──
+    preferences:      { ar: 'التفضيلات',                   en: 'Preferences' },
+    language:         { ar: 'اللغة',                       en: 'Language' },
+    appearance:       { ar: 'المظهر',                      en: 'Appearance' },
+    dark:             { ar: 'داكن',                        en: 'Dark' },
+    light:            { ar: 'فاتح',                        en: 'Light' },
+
+    // ── courses.html ──
+    courses:          { ar: 'الكورسات',                    en: 'Courses' },
+    allCourses:       { ar: 'جميع الكورسات',               en: 'All Courses' },
 };
 
+// ─── Helpers ────────────────────────────────────────────────
+
+/** The language currently applied to the document. */
+function currentLang() {
+    return document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar';
+}
+
+/** Look a key up in the current language — for strings built in JS. */
+function t(key, fallback) {
+    const entry = i18nDict[key];
+    if (!entry) return fallback !== undefined ? fallback : key;
+    return entry[currentLang()] || entry.ar;
+}
+
+function setNodeText(el, value, asHtml) {
+    if (value == null) return;
+    if (asHtml) el.innerHTML = value;
+    else el.textContent = value;
+}
+
+// ─── Apply ──────────────────────────────────────────────────
+// `persist` is false on the automatic page-load pass so a page default never
+// silently overwrites a choice the user hasn't made yet.
 function applyLanguage(lang, persist = true) {
     const config = translations[lang];
     if (!config) return;
     const html = document.getElementById('htmlRoot') || document.documentElement;
 
-    // 1. Set direction and lang attribute
+    // 1. Direction + lang attribute
     html.setAttribute('dir', config.dir);
     html.setAttribute('lang', config.lang);
 
-    // 2. data-ar / data-en (index.html style)
+    // 2. data-ar / data-en (landing-page style, honours data-html)
     document.querySelectorAll('[data-ar]').forEach(el => {
-        el.textContent = lang === 'ar'
-            ? el.getAttribute('data-ar')
-            : el.getAttribute('data-en');
+        const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
+        setNodeText(el, text, el.getAttribute('data-html') === 'true');
     });
 
-    // 3. data-ar-placeholder (index.html style)
+    // 3. data-ar-placeholder / data-en-placeholder
     document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
-        el.placeholder = lang === 'ar'
+        const ph = lang === 'ar'
             ? el.getAttribute('data-ar-placeholder')
             : el.getAttribute('data-en-placeholder');
+        if (ph != null) el.placeholder = ph;
     });
 
-    // 4. data-i18n (login / register / payment style)
+    // 4. data-i18n (dictionary style, honours data-i18n-html)
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        const entry = i18nDict[key];
+        const entry = i18nDict[el.getAttribute('data-i18n')];
         if (!entry) return;
-        // loginTitle has an inner <span> — use innerHTML to preserve styling
-        if (key === 'loginTitle') {
-            el.innerHTML = lang === 'ar'
-                ? 'تسجيل <span class="cyan">الدخول</span>'
-                : 'Sign <span class="cyan">In</span>';
-        } else {
-            el.textContent = entry[lang] || entry['ar'];
-        }
+        setNodeText(el, entry[lang] || entry.ar, el.getAttribute('data-i18n-html') === 'true');
     });
 
-    // 5. data-i18n-placeholder (login / register style)
+    // 5. data-i18n-placeholder / data-i18n-title
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        const entry = i18nDict[key];
-        if (entry) el.placeholder = entry[lang] || entry['ar'];
+        const entry = i18nDict[el.getAttribute('data-i18n-placeholder')];
+        if (entry) el.placeholder = entry[lang] || entry.ar;
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const entry = i18nDict[el.getAttribute('data-i18n-title')];
+        if (entry) el.setAttribute('title', entry[lang] || entry.ar);
     });
 
-    // 6. Update toggle button (desktop + mobile)
+    // 6. Toggle button label (desktop + mobile)
     const toggleText = document.getElementById('langToggleText');
     if (toggleText) toggleText.textContent = config.toggleBtn;
-
     const mobileToggleText = document.getElementById('mobileLangToggleText');
     if (mobileToggleText) mobileToggleText.textContent = config.toggleBtn;
 
-    // 7. Force reflow for flex containers (fix RTL/LTR layout shift)
+    // 7. Force reflow for flex containers (fixes RTL/LTR layout shift).
+    //    No-op on pages that don't have these sections.
     document.querySelectorAll('.hero-split, .features-section, .pricing-section, .main-nav').forEach(el => {
         el.style.display = 'none';
-        el.offsetHeight;
+        el.offsetHeight; // trigger reflow
         el.style.display = '';
     });
 
-    // 8. Save preference — only when the user explicitly picks a language,
-    //    never on the automatic page-load apply (so a page's default never
-    //    silently overwrites another area's default).
-    if (persist) localStorage.setItem('ghawy_lang', lang);
+    // 8. Courses carousel: set the container dir first, then rebuild so Swiper
+    //    re-reads it (changeLanguageDirection is unreliable with loop mode).
+    //    Skipped entirely on pages without the carousel.
+    const swiperEl = document.getElementById('coursesSwiper');
+    if (swiperEl) {
+        swiperEl.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        if (typeof window.rebuildCoursesSwiper === 'function') {
+            window.rebuildCoursesSwiper();
+        }
+        // Re-translate the freshly-created loop clones.
+        swiperEl.querySelectorAll('[data-ar]').forEach(el => {
+            const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
+            setNodeText(el, text, el.getAttribute('data-html') === 'true');
+        });
+    }
+
+    // 9. Re-apply pricing currency so dynamic price copy follows the language.
+    if (typeof window.applyPricingCurrency === 'function') {
+        const pricingSection = document.getElementById('payment');
+        if (pricingSection) {
+            window.applyPricingCurrency(pricingSection.dataset.pricingCurrency || 'EGP');
+        }
+    }
+
+    // 10. Let page scripts re-render anything they built in JS.
+    document.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
+
+    // 11. Persist the explicit choice.
+    if (persist) {
+        try { localStorage.setItem('ghawy_lang', lang); } catch (e) { /* ignore */ }
+    }
 }
 
-// Per-page default language: the public landing page + the auth/payment
-// funnel stay Arabic-first, while the logged-in community pages default to
-// English. An explicit user choice (below) always overrides this.
-function pageDefaultLang() {
-    const page = (location.pathname.split('/').pop() || '').toLowerCase();
-    const arabicFirst = ['', 'index.html', 'login.html', 'register.html', 'payment.html', 'verify-email.html', 'pay.html'];
-    return arabicFirst.includes(page) ? 'ar' : 'en';
-}
-
-// Explicit, user-chosen language. Persists across every page and wins over
-// any per-page default. Called by the Settings → Preferences toggle.
+/** Explicit, user-chosen language — persists and wins on every page. */
 function setLanguagePref(lang) {
     if (lang !== 'ar' && lang !== 'en') return;
-    localStorage.setItem('ghawy_lang_pref', lang);
     applyLanguage(lang, true);
 }
 
 function toggleLanguage() {
-    const current = localStorage.getItem('ghawy_lang_pref')
-        || document.documentElement.getAttribute('lang')
-        || pageDefaultLang();
-    const next = current === 'ar' ? 'en' : 'ar';
+    const next = currentLang() === 'ar' ? 'en' : 'ar';
     setLanguagePref(next);
 }
 
-// On every page load — apply the explicit choice if the user made one,
-// otherwise this page's default. The apply does NOT persist.
+function storedLang() {
+    try {
+        const v = localStorage.getItem('ghawy_lang');
+        return (v === 'ar' || v === 'en') ? v : null;
+    } catch (e) { return null; }
+}
+
+// Expose for inline handlers and page scripts.
+window.applyLanguage = applyLanguage;
+window.setLanguagePref = setLanguagePref;
+window.toggleLanguage = toggleLanguage;
+window.currentLang = currentLang;
+window.i18nT = t;
+
+// On every page load — the user's explicit choice, otherwise Arabic.
+// The automatic pass never persists.
 (function () {
-    const lang = localStorage.getItem('ghawy_lang_pref') || pageDefaultLang();
-    applyLanguage(lang, false);
+    applyLanguage(storedLang() || 'ar', false);
 })();

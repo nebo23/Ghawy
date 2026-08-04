@@ -23,6 +23,7 @@ from app.database import get_db
 from app.models import LegacyEmail, User
 from app.routers.users import create_token, hash_password
 from app.services.email_service import send_legacy_otp_email
+from app.services.name_utils import split_full_name
 
 logger = logging.getLogger(__name__)
 
@@ -130,9 +131,12 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
 
     hashed_pwd = hash_password(password)
 
+    legacy_first, legacy_last = split_full_name(full_name)
     if user is None:
         user = User(
             full_name=full_name,
+            first_name=legacy_first,
+            last_name=legacy_last,
             email=email,
             hashed_password=hashed_pwd,
             is_active=True,
@@ -144,6 +148,8 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     else:
         # Update existing inactive user
         user.full_name = full_name
+        user.first_name = legacy_first
+        user.last_name = legacy_last
         user.hashed_password = hashed_pwd
         user.onboarding_completed = False  # Must complete onboarding first
 

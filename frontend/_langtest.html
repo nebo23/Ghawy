@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>lang test</title></head>
+<body>
+<script>
+  // Temporary QA helper: seed the language preference, then bounce to the page
+  // under test.  /_langtest.html?lang=en&to=/register
+  var p = new URLSearchParams(location.search);
+  var lang = p.get('lang');
+  if (lang === 'clear') localStorage.removeItem('ghawy_lang');
+  else if (lang) localStorage.setItem('ghawy_lang', lang);
+  location.replace(p.get('to') || '/');
+</script>
+</body>
+</html>

@@ -1,3 +1,8 @@
+// Localised string helper — i18n.js exposes window.i18nT (Arabic by default).
+function t(key, fallback) {
+  return (typeof window.i18nT === 'function') ? window.i18nT(key, fallback) : (fallback || key);
+}
+
 let isPasswordStrong = false;
 let isTermsAgreed = false;
 let dialCodeValue = '';
@@ -50,14 +55,14 @@ document.getElementById('password').addEventListener('input', function (e) {
     isPasswordStrong = false;
   } else if (score === 1) {
     b1.classList.add('active', 'weak');
-    sText.innerText = 'Weak';
-    sText.className = 'text-[10px] font-medium w-12 text-right text-red-500';
+    sText.innerText = t('strengthWeak');
+    sText.className = 'text-[10px] font-medium w-12 text-end text-red-500';
     isPasswordStrong = false;
   } else if (score === 2) {
     b1.classList.add('active', 'medium');
     b2.classList.add('active', 'medium');
-    sText.innerText = 'Medium';
-    sText.className = 'text-[10px] font-medium w-12 text-right text-yellow-500';
+    sText.innerText = t('strengthMedium');
+    sText.className = 'text-[10px] font-medium w-12 text-end text-yellow-500';
     isPasswordStrong = false;
   } else if (score === 3) {
     b1.classList.add('active', 'strong');
@@ -69,8 +74,8 @@ document.getElementById('password').addEventListener('input', function (e) {
       b4.classList.add('active', 'strong');
     }
 
-    sText.innerText = 'Strong';
-    sText.className = 'text-[10px] font-medium w-12 text-right text-brand';
+    sText.innerText = t('strengthStrong');
+    sText.className = 'text-[10px] font-medium w-12 text-end text-brand';
     isPasswordStrong = true;
   }
 
@@ -145,6 +150,11 @@ async function initInviteFlow() {
   const urlParams = new URLSearchParams(window.location.search);
   inviteToken = urlParams.get('token');
 
+  // The Google callback bounces fake/disposable signups back here.
+  if (urlParams.get('error') === 'fake_email') {
+    showFormMessage(t('errFakeEmail'), 'error');
+  }
+
   if (!inviteToken) {
     getGeoLocation();
     return; // Normal flow
@@ -157,22 +167,27 @@ async function initInviteFlow() {
     const data = await res.json();
 
     if (!res.ok) {
-      showFormMessage(data.detail || 'Invalid or expired invite link', 'error');
+      showFormMessage(data.detail || t('inviteInvalid'), 'error');
       // Disable form
       document.getElementById('registerForm').style.pointerEvents = 'none';
       document.getElementById('registerForm').style.opacity = '0.5';
       return;
     }
 
-    // Prefill data
-    const nameInput = document.getElementById('fullName');
+    // Prefill data — the invite carries a single full_name, so split it across
+    // the first/last inputs on the first space.
+    const firstInput = document.getElementById('firstName');
+    const lastInput = document.getElementById('lastName');
     const emailInput = document.getElementById('email');
-    
-    nameInput.value = data.full_name;
+
+    const parts = splitFullName(data.full_name);
+    firstInput.value = parts.first;
+    lastInput.value = parts.last;
     emailInput.value = data.email;
-    
+
     // HIDE name and phone, KEEP email visible but disabled
-    if (nameInput.closest('.mb-4')) nameInput.closest('.mb-4').style.display = 'none';
+    const nameSection = document.getElementById('name-section');
+    if (nameSection) nameSection.style.display = 'none';
     
     emailInput.disabled = true;
     emailInput.style.opacity = '0.6';
@@ -182,7 +197,8 @@ async function initInviteFlow() {
     if (emailIcon && emailIcon.tagName === 'I') {
        emailIcon.style.display = 'none';
     }
-    document.getElementById('phone-section').style.display = 'none';
+    const phoneSection = document.getElementById('phone-section');
+    if (phoneSection) phoneSection.style.display = 'none';
     document.getElementById('social-divider').style.display = 'none';
     document.getElementById('google-btn').style.display = 'none';
     document.getElementById('login-footer').style.display = 'none';
@@ -197,17 +213,20 @@ async function initInviteFlow() {
     welcomeEl.innerHTML = `
       <div style="text-align:center; margin-bottom:24px;">
         <div style="font-size:32px; margin-bottom:8px;">🎉</div>
-        <h2 style="color:#fff; margin:0 0 4px;">Welcome ${data.full_name}!</h2>
-        <p style="color:#888; margin:0;">Choose a password to complete your registration</p>
+        <h2 style="color:#fff; margin:0 0 4px;">${t('welcomeName')} ${data.full_name}!</h2>
+        <p style="color:#888; margin:0;">${t('inviteWelcomeSub')}</p>
       </div>
     `;
     document.getElementById('registerForm').prepend(welcomeEl);
     
-    document.getElementById('password-label').innerText = 'Password';
-    document.getElementById('submitRegBtn').querySelector('span').innerHTML = 'Complete Registration &rarr;';
+    document.getElementById('password-label').innerText = t('password');
+    const submitSpan = document.getElementById('submitRegBtn').querySelector('span');
+    submitSpan.removeAttribute('data-i18n');       // stop applyLanguage overwriting the invite label
+    submitSpan.removeAttribute('data-i18n-html');
+    submitSpan.innerHTML = t('completeRegistration') + ' &rarr;';
 
   } catch (err) {
-    showFormMessage('Failed to verify invite link', 'error');
+    showFormMessage(t('inviteFailed'), 'error');
   }
 }
 
@@ -228,15 +247,22 @@ function showFormMessage(msg, type) {
 
 async function submitRegister() {
   if (!isPasswordStrong) {
-    showFormMessage('Please create a strong password.', 'error');
+    showFormMessage(t('errWeakPassword'), 'error');
     return;
   }
   if (!isTermsAgreed) {
-    showFormMessage('You must agree to the Terms and Conditions.', 'error');
+    showFormMessage(t('errTermsRequired'), 'error');
     return;
   }
 
-  const fullName = document.getElementById('fullName').value.trim();
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  // Both names are required. The invite flow hides them and posts to a
+  // different endpoint, so it is exempt.
+  if (!inviteToken && (firstName.length < 2 || lastName.length < 2)) {
+    showFormMessage(t('errNameRequired'), 'error');
+    return;
+  }
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const country = document.getElementById('country').value.trim();
@@ -268,7 +294,7 @@ async function submitRegister() {
       const data = await res.json();
 
       if (res.ok) {
-        showFormMessage('Setup complete! Redirecting...', 'success');
+        showFormMessage(t('okSetupComplete'), 'success');
         // Save token and go straight to onboarding
         if (data.access_token) {
           localStorage.setItem('token', data.access_token);
@@ -280,7 +306,7 @@ async function submitRegister() {
           setTimeout(() => { localStorage.removeItem('user'); window.location.href = '/login'; }, 1200);
         }
       } else {
-        showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
+        showFormMessage(data.detail || t('errGeneric'), 'error');
         btn.disabled = false;
       }
     } else {
@@ -290,7 +316,7 @@ async function submitRegister() {
         : (document.querySelector('[name="cf-turnstile-response"]')?.value || '');
       const captchaPresent = !!document.querySelector('.cf-turnstile');
       if (captchaPresent && !captchaToken) {
-        showFormMessage("Please complete the 'I'm not a robot' verification.", 'error');
+        showFormMessage(t('errCaptcha'), 'error');
         btn.disabled = false;
         spinner.classList.add('hidden');
         btnText.classList.remove('opacity-0');
@@ -301,7 +327,8 @@ async function submitRegister() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
           email,
           password,
           country,
@@ -313,11 +340,11 @@ async function submitRegister() {
       const data = await res.json();
 
       if (res.ok) {
-        showFormMessage('Account created successfully! Redirecting...', 'success');
+        showFormMessage(t('okAccountCreated'), 'success');
         const nextUrl = `verify-email.html?email=${encodeURIComponent(email)}`;
         setTimeout(() => { window.location.href = nextUrl; }, 1200);
       } else {
-        showFormMessage(data.detail || 'An error occurred. Please try again.', 'error');
+        showFormMessage(data.detail || t('errGeneric'), 'error');
         btn.disabled = false;
         // Turnstile tokens are single-use — reset so the user can retry.
         if (window.turnstile && typeof turnstile.reset === 'function') turnstile.reset();
@@ -325,7 +352,7 @@ async function submitRegister() {
     }
 
   } catch (e) {
-    showFormMessage('No connection to the server.', 'error');
+    showFormMessage(t('errNoConnection'), 'error');
     btn.disabled = false;
     if (window.turnstile && typeof turnstile.reset === 'function') turnstile.reset();
   } finally {
@@ -341,6 +368,20 @@ function onTurnstileSuccess() {
   if (alertBox && alertBox.textContent.includes('robot')) alertBox.classList.add('hidden');
 }
 function onTurnstileExpired() { /* token auto-cleared by the widget; submit will re-prompt */ }
+
+/** Split a display name on the first space: "محمد أحمد علي" -> { first: 'محمد', last: 'أحمد علي' } */
+function splitFullName(name) {
+  const clean = (name || '').trim().replace(/\s+/g, ' ');
+  const idx = clean.indexOf(' ');
+  if (idx === -1) return { first: clean, last: '' };
+  return { first: clean.slice(0, idx), last: clean.slice(idx + 1) };
+}
+
+// The strength label is written by JS — re-render it when the language flips.
+document.addEventListener('languagechange', () => {
+  const pwd = document.getElementById('password');
+  if (pwd && pwd.value) pwd.dispatchEvent(new Event('input'));
+});
 
 function googleSignIn() {
   // Trigger google sign in flow

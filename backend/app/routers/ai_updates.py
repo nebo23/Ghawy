@@ -163,9 +163,9 @@ def list_posts(
         joinedload(AiUpdatePost.poll).joinedload(AiUpdatePoll.votes)
     )
 
-    # The feed only shows this week's updates; pinned posts stay visible regardless.
-    week_ago = datetime.utcnow() - timedelta(days=7)
-    q = q.filter((AiUpdatePost.created_at >= week_ago) | (AiUpdatePost.is_pinned == True))
+    # The feed is a full archive — every post stays reachable through pagination.
+    # (It used to hide anything older than 7 days, which made posts vanish from
+    # the feed while the sidebar rails still linked to them.)
 
     cat = (category or "").strip().lower()
     if cat and cat != "all" and cat in VALID_CATEGORIES:

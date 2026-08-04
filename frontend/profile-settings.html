@@ -122,7 +122,7 @@
         })();
     </script>
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=16" />
-    <script src="src/js/community-i18n.js?v=1784332800"></script>
+    <script src="src/js/community-i18n.js?v=20260804"></script>
 </head>
 
 <body>
@@ -541,7 +541,7 @@
     </div>
 
     <script src="src/js/utils.js?v=1785600000"></script>
-    <script src="src/js/i18n.js?v=4"></script>
+    <script src="src/js/i18n.js?v=20260804"></script>
     <script src="src/js/profile.js?v=5"></script>
 
     <!-- Preferences → language toggle (theme toggle is wired by utils.js) -->
@@ -597,7 +597,7 @@
                     // Plan label + amount
                     const planLabel = document.getElementById('subPlanLabel');
                     const amount = document.getElementById('subAmount');
-                    const uiLangEarly = localStorage.getItem('ghawy_lang_pref')
+                    const uiLangEarly = localStorage.getItem('ghawy_lang')
                         || document.documentElement.getAttribute('lang') || 'en';
                     // Free members (no confirmed payment) → show "Free / مجاني", never a price
                     const isFreeMember = data.is_free || data.amount == null;
@@ -619,7 +619,7 @@
                     // Dates
                     const startDate = document.getElementById('subStartDate');
                     const endDate = document.getElementById('subEndDate');
-                    const uiLang = localStorage.getItem('ghawy_lang_pref')
+                    const uiLang = localStorage.getItem('ghawy_lang')
                         || document.documentElement.getAttribute('lang') || 'en';
                     const dateLocale = uiLang === 'ar' ? 'ar-EG' : 'en-US';
                     const formatDate = (d) => {
@@ -685,7 +685,7 @@
         (function birthdayGiftNotice() {
             const gift = new URLSearchParams(window.location.search).get('gift');
             if (!gift) return;
-            const uiLang = localStorage.getItem('ghawy_lang_pref')
+            const uiLang = localStorage.getItem('ghawy_lang')
                 || document.documentElement.getAttribute('lang') || 'ar';
             const ar = uiLang === 'ar';
             const MAP = {

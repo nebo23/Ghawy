@@ -4,6 +4,7 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.services.name_utils import split_full_name
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
 from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password
@@ -145,6 +146,8 @@ def update_my_profile(
 ):
     if data.full_name is not None:
         current_user.full_name = data.full_name
+        # Keep the split columns in step with the display name.
+        current_user.first_name, current_user.last_name = split_full_name(data.full_name)
     if data.bio is not None:
         current_user.bio = data.bio
     if data.avatar_url is not None:

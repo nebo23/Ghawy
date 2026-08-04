@@ -4,6 +4,9 @@ let currentCategory = 'all';
 let currentSort = 'latest';
 let editingPostId = null;        // set while the create modal is in "edit" mode
 const postCache = {};            // id -> post object, used to prefill the edit modal
+let feedPage = 1;                // current feed page (the feed is a paginated archive)
+let feedPages = 1;               // total pages reported by the API
+let feedLoading = false;         // guards double-clicks / double scroll triggers
 
 // ── Category metadata (badge label + accent color per editorial category) ──
 const CATEGORY_META = {
@@ -129,7 +132,10 @@ document.addEventListener('visibilitychange', () => {
 // ── Feed ──────────────────────────────────────────────────
 async function loadFeed(page = 1) {
     const feed = document.getElementById('aiFeed');
+    if (feedLoading && page > 1) return;   // page 1 (filter/sort change) always wins
+    feedLoading = true;
     if (page === 1) feed.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    updateLoadMore(true);
 
     try {
         const params = new URLSearchParams({ page, limit: 20, sort: currentSort });
@@ -144,27 +150,34 @@ async function loadFeed(page = 1) {
 
         if (page === 1) feed.innerHTML = '';
 
+        feedPage = data.page || page;
+        feedPages = data.pages || 1;
+
         if (data.posts.length === 0 && page === 1) {
             const isFiltered = currentCategory && currentCategory !== 'all';
             feed.innerHTML = `
                 <div class="ai-empty-state">
                     <i data-lucide="sparkles"></i>
-                    <h3>${isFiltered ? 'Nothing here yet' : 'No updates this week yet'}</h3>
-                    <p>${isFiltered ? 'No posts in this category this week. Try another filter.' : 'The feed shows each week\'s new updates — check back soon.'}</p>
+                    <h3>${isFiltered ? 'Nothing here yet' : 'No updates yet'}</h3>
+                    <p>${isFiltered ? 'No posts in this category yet. Try another filter.' : 'New AI updates land here as soon as they are published — check back soon.'}</p>
                 </div>
             `;
             window.lucide && window.lucide.createIcons();
+            updateLoadMore(false);
             return;
         }
 
         data.posts.forEach(post => {
             feed.appendChild(createPostElement(post));
         });
-        
+
+        updateLoadMore(false);
         window.lucide && window.lucide.createIcons();
 
-        // Handle scrolling to a specific post if a hash is present
-        if (page === 1 && window.location.hash) {
+        // Handle scrolling to a specific post if a hash is present. Deep links can
+        // point at an older post that lives on a later page — keep paging until it
+        // shows up (or we run out of pages).
+        if (window.location.hash) {
             const targetId = window.location.hash.substring(1); // remove the '#'
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
@@ -177,6 +190,10 @@ async function loadFeed(page = 1) {
                         targetEl.style.boxShadow = '';
                     }, 2000);
                 }, 100);
+            } else if (feedPage < feedPages) {
+                feedLoading = false;
+                await loadFeed(feedPage + 1);
+                return;
             }
         }
 
@@ -185,7 +202,35 @@ async function loadFeed(page = 1) {
         if (page === 1) {
             feed.innerHTML = `<div class="ai-empty-state"><p style="color:#ef4444;">Error loading feed. Please try again.</p></div>`;
         }
+        updateLoadMore(false);
+    } finally {
+        feedLoading = false;
     }
+}
+
+// "Load more" control under the feed — the feed is a paginated archive, so
+// nothing older than the first page is lost, it just needs another page.
+function updateLoadMore(isLoading) {
+    const feed = document.getElementById('aiFeed');
+    if (!feed) return;
+
+    let btn = document.getElementById('aiLoadMoreBtn');
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'aiLoadMoreBtn';
+        btn.type = 'button';
+        btn.className = 'ai-load-more';
+        btn.addEventListener('click', () => loadFeed(feedPage + 1));
+        feed.parentElement.appendChild(btn);
+    }
+
+    const hasMore = feedPage < feedPages;
+    btn.style.display = hasMore ? 'flex' : 'none';
+    btn.disabled = !!isLoading;
+    btn.innerHTML = isLoading
+        ? '<i data-lucide="loader-2" class="spin"></i> Loading…'
+        : '<i data-lucide="chevron-down"></i> Load older updates';
+    window.lucide && window.lucide.createIcons();
 }
 
 // ── Rendering ─────────────────────────────────────────────

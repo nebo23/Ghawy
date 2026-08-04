@@ -73,7 +73,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    # full_name stays the display source of truth (read in emails, chat, DMs,
+    # admin, the team dashboard…) and is always recomposed from first + last.
     full_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=True)   # nullable: pre-split accounts
+    last_name = Column(String, nullable=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     phone = Column(String, unique=True, nullable=True)

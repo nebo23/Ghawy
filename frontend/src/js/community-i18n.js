@@ -1,6 +1,6 @@
 /* ═══ COMMUNITY i18n — Arabic layer for logged-in community pages ONLY ═══
  *
- * Reads the same explicit preference key (ghawy_lang_pref) written by
+ * Reads the same explicit preference key (ghawy_lang) written by
  * Settings → Preferences. Community default stays English; this file does
  * nothing unless the user explicitly chose Arabic. The public landing page
  * and the auth/payment funnel are NOT touched (they never load this file).
@@ -705,7 +705,7 @@
     ];
 
     var ATTRS = ['placeholder', 'title', 'aria-label', 'alt', 'data-tooltip'];
-    var LS_KEY = 'ghawy_lang_pref';
+    var LS_KEY = 'ghawy_lang';
 
     var active = false;            // Arabic currently applied to the DOM?
     var textOrig = new WeakMap();  // TextNode -> original English value
@@ -867,7 +867,9 @@
     var pref = null;
     try { pref = localStorage.getItem(LS_KEY); } catch (e) { /* private mode */ }
 
-    if (pref === 'ar') {
+    // Arabic is the site-wide default now — only an explicit English choice
+    // keeps the community pages in English.
+    if (pref !== 'en') {
         // Flip direction immediately (script is in <head>) to avoid an LTR flash.
         setDir('ar');
         if (document.readyState === 'loading') {

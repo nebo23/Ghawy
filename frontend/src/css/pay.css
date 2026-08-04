@@ -88,7 +88,7 @@ body {
 .step-badge {
     position: absolute;
     top: -12px;
-    left: 32px;
+    inset-inline-start: 32px;
     background: #3f8ff9;
     color: #000;
     font-size: 12px;
@@ -145,13 +145,13 @@ body {
     font-size: 15px;
     color: #777;
     font-weight: 600;
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
 
 .pi-plan-tag {
     color: #3f8ff9;
     font-weight: 700;
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
   
 .pi-copy-wrap {
@@ -353,7 +353,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-left: auto;
+    margin-inline-start: auto;
     transition: background 0.2s;
 }
   
@@ -445,7 +445,7 @@ body {
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
-    text-align: left;
+    text-align: start;
 }
   
 .success-details p {

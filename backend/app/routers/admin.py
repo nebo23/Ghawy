@@ -18,6 +18,7 @@ from app.models import (
     Course, Lesson, UserProgress, UserCourseProgress, Certificate, Exam, ExamAttempt,
 )
 from app.routers.users import get_current_user
+from app.services.name_utils import split_full_name
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -176,8 +177,11 @@ def add_user(
         if existing_phone:
             raise HTTPException(status_code=400, detail="Phone number already exists")
 
+    admin_first, admin_last = split_full_name(data.full_name)
     new_user = User(
         full_name=data.full_name,
+        first_name=admin_first,
+        last_name=admin_last,
         email=data.email,
         hashed_password=pwd_context.hash(data.password),
         phone=data.phone,

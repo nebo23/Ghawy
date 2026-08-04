@@ -5,11 +5,18 @@
 
 let selectedFile = null;
 
-// EGP plans for the Instapay flow. Keyed by the ?plan= cycle passed from the pricing page.
+// Localised string helper — i18n.js exposes window.i18nT (Arabic by default).
+function t(key, fallback) {
+    return (typeof window.i18nT === 'function') ? window.i18nT(key, fallback) : (fallback || key);
+}
+
+// EGP plans for the Instapay flow. Keyed by the ?plan= cycle passed from the
+// pricing page. Label/period are dictionary keys resolved at render time so the
+// language toggle can re-render them.
 const PLAN_PRICES = {
-    monthly: { amount: 600, label: 'Monthly', period: '/ month' },
-    quarterly: { amount: 1200, label: '3 Months', period: '/ 3 months' },
-    yearly: { amount: 4000, label: 'Yearly', period: '/ year' },
+    monthly: { amount: 600, labelKey: 'planMonthly', periodKey: 'periodMonthly' },
+    quarterly: { amount: 1200, labelKey: 'planQuarterly', periodKey: 'periodQuarterly' },
+    yearly: { amount: 4000, labelKey: 'planYearly', periodKey: 'periodYearly' },
 };
 
 // Resolve the selected plan from the URL (defaults to monthly).
@@ -65,16 +72,26 @@ async function loadPaymentConfig() {
         // Price/period follow the chosen plan; fall back to the backend default (monthly).
         if (selectedPlan) {
             document.getElementById('display-price').innerText = selectedPlan.amount;
-            document.getElementById('display-period').innerText = selectedPlan.period;
-            document.getElementById('display-plan').innerText = `• ${selectedPlan.label}`;
+            renderPlanLabels();
         } else {
             document.getElementById('display-price').innerText = config.subscription_price;
         }
     } catch (error) {
         console.error("Error loading payment config:", error);
-        showToast("Error loading payment information", "error");
+        showToast(t('payErrLoadConfig'), "error");
     }
 }
+
+// Plan name + billing period are written by JS, so re-render them on toggle.
+function renderPlanLabels() {
+    if (!selectedPlan) return;
+    const period = document.getElementById('display-period');
+    const plan = document.getElementById('display-plan');
+    if (period) period.innerText = t(selectedPlan.periodKey);
+    if (plan) plan.innerText = `• ${t(selectedPlan.labelKey)}`;
+}
+
+document.addEventListener('languagechange', renderPlanLabels);
 
 // Copy to clipboard
 function copyInstapay() {
@@ -82,10 +99,10 @@ function copyInstapay() {
     if (text === "---") return;
 
     navigator.clipboard.writeText(text).then(() => {
-        showToast("Instapay number copied!", "success");
+        showToast(t('payCopiedToast'), 'success');
         const btn = document.getElementById('copy-instapay-btn');
         const originalHtml = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check"></i> Copied`;
+        btn.innerHTML = `<i data-lucide="check"></i> ${t('payCopied')}`;
         window.lucide && window.lucide.createIcons();
         setTimeout(() => {
             btn.innerHTML = originalHtml;
@@ -93,7 +110,7 @@ function copyInstapay() {
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy: ', err);
-        showToast("Failed to copy text", "error");
+        showToast(t('payCopyFailed'), 'error');
     });
 }
 
@@ -143,13 +160,13 @@ function setupDragAndDrop() {
 function handleFile(file) {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-        showToast("Invalid file type. Please upload a JPG, PNG, WebP, or PDF.", "error");
+        showToast(t('payErrFileType'), 'error');
         return;
     }
 
     // 5MB limit
     if (file.size > 5 * 1024 * 1024) {
-        showToast("File too large. Maximum size is 5MB.", "error");
+        showToast(t('payErrFileSize'), 'error');
         return;
     }
 
@@ -169,7 +186,7 @@ async function submitPayment() {
     const amount = document.getElementById('display-price').innerText;
 
     if (!selectedFile) {
-        showToast("Please upload your receipt screenshot", "error");
+        showToast(t('payErrNoReceipt'), 'error');
         return;
     }
 
@@ -205,7 +222,7 @@ async function submitPayment() {
         const data = await res.json();
 
         if (!res.ok) {
-            throw new Error(data.detail || "Failed to submit request");
+            throw new Error(data.detail || t('payErrSubmit'));
         }
 
         // Show success screen

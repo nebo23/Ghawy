@@ -6,7 +6,10 @@ from app.models import PaymentMethod, PaymentStatus, ChannelType, MessageType, M
 # ─── User Schemas ───────────────────────────────────────────
 
 class UserRegister(BaseModel):
-    full_name: str
+    # The signup form collects the name in two fields; full_name is derived
+    # server-side (see app.services.name_utils) and stays the display name.
+    first_name: str
+    last_name: str
     email: EmailStr
     password: str
     country: Optional[str] = None

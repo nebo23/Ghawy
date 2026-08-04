@@ -5,6 +5,8 @@ from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
+from ..services.name_utils import split_full_name
+from ..services.disposable_emails import is_disposable_email, is_fake_email_pattern
 import os, secrets
 from jose import jwt
 from datetime import datetime, timedelta
@@ -42,6 +44,12 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     
     user = db.query(User).filter(User.email == email).first()
     if not user:
+        # Same fake-signup filter as /auth/register — a Google account is no
+        # guarantee of a real member (test@gmail.com signs in just fine).
+        # Only brand-new signups are checked; existing users are never re-tested.
+        if is_disposable_email(email) or is_fake_email_pattern(email):
+            return RedirectResponse("https://ghawy.ai/register.html?error=fake_email")
+
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
             ip = forwarded.split(",")[0].strip()
@@ -84,8 +92,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         if not governorate:
             governorate = "Unknown"
 
+        google_first, google_last = split_full_name(name)
         user = User(
             full_name=name,
+            first_name=google_first,
+            last_name=google_last,
             email=email,
             hashed_password="google_oauth_" + secrets.token_hex(16),
             phone=None,
@@ -169,8 +180,11 @@ def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db))
         raise HTTPException(status_code=400, detail="Email already registered")
         
     # Create User
+    invite_first, invite_last = split_full_name(req.full_name)
     new_user = User(
         full_name=req.full_name,
+        first_name=invite_first,
+        last_name=invite_last,
         email=req.email,
         hashed_password=hash_password(data.password),
         phone=req.phone,

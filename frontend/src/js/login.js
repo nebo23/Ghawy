@@ -54,12 +54,17 @@
   }
 })();
 
+// Localised string helper — i18n.js exposes window.i18nT (Arabic by default).
+function tr(key, fallback) {
+  return (typeof window.i18nT === 'function') ? window.i18nT(key, fallback) : (fallback || key);
+}
+
 async function login() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
   if (!email || !password) {
-    showAlert('Please fill all fields', 'error');
+    showAlert(tr('errFillAllFields'), 'error');
     return;
   }
 
@@ -82,7 +87,7 @@ async function login() {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      showAlert('Logged in successfully! ✅ Redirecting...', 'success');
+      showAlert(tr('okLoggedIn'), 'success');
 
       let redirect = 'onboarding.html';
       
@@ -104,11 +109,11 @@ async function login() {
 
       setTimeout(() => { window.location.href = redirect; }, 1200);
     } else {
-      showAlert(data.detail || 'Invalid email or password', 'error');
+      showAlert(data.detail || tr('errWrongCredentials'), 'error');
     }
 
   } catch {
-    showAlert('No connection to server', 'error');
+    showAlert(tr('errNoConnection'), 'error');
   } finally {
     setLoading('loginBtn', false);
   }
