@@ -9,7 +9,7 @@ const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'applicati
 // Get course ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const courseId = urlParams.get('id');
-if (!courseId) window.location.href = 'courses.html';
+if (!courseId) window.location.href = 'dashboard-courses.html';
 
 let selectedVideoFile = null;
 let pollingTimers = {};

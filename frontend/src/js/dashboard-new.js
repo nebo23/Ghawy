@@ -266,17 +266,21 @@ async function loadStatsCards() {
 // ═══════════════════════════════════════════════════════
 
 function renderCourses(courses) {
-    // Only run on dashboard page — courses.html has its own loader (courses.js)
-    // Note: nginx strips .html so pathname may be /courses or /courses.html
+    // Only run on the dashboard page — the member courses page (dashboard-courses)
+    // has its own loader (courses.js) and must not be double-rendered.
+    // Note: nginx strips .html, so the path may be /dashboard-courses OR
+    // /dashboard-courses.html. Match the dashboard page specifically: the PUBLIC
+    // marketing page lives at /courses and never loads this script, so a bare
+    // `endsWith('/courses')` check would be both wrong and misleading here.
     const path = window.location.pathname;
-    if (path.endsWith('/courses') || path.includes('courses.html')) return;
+    if (path.endsWith('/dashboard-courses') || path.includes('dashboard-courses.html')) return;
     const grid = document.getElementById('coursesGrid');
     if (!grid) return;
 
     if (!courses || courses.length === 0) {
         grid.innerHTML = `<div class="empty-state-new" style="grid-column:1/-1">
             <i class="fa-solid fa-book-open"></i>
-            <p>No courses enrolled yet. <a href="courses.html" style="color:var(--accent-gold)">Browse courses →</a></p>
+            <p>No courses enrolled yet. <a href="dashboard-courses.html" style="color:var(--accent-gold)">Browse courses →</a></p>
         </div>`;
         return;
     }
@@ -827,10 +831,10 @@ async function loadContinueLearning() {
         } else if (data.courses && data.courses[0]) {
             btn.href = `course-detail.html?id=${data.courses[0].id}`;
         } else {
-            btn.href = 'courses.html';
+            btn.href = 'dashboard-courses.html';
         }
     } catch (e) {
-        btn.href = 'courses.html';
+        btn.href = 'dashboard-courses.html';
     }
 }
 

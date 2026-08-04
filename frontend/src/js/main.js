@@ -107,17 +107,8 @@
         else { video.requestPictureInPicture?.(); }
     });
 
-    // Watch Intro button — scroll into view / play
-    const watchBtn = document.getElementById('watchIntroBtn');
-    if (watchBtn) {
-        watchBtn.addEventListener('click', () => {
-            video.closest('.vsl-player-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            video.muted = false;
-            video.currentTime = 0;
-            video.play();
-            if (unmuteBtn) { unmuteBtn.classList.add('hide'); setTimeout(() => unmuteBtn.style.display = 'none', 300); }
-        });
-    }
+    // (The "Watch Intro" button and its handler are gone — the hero's second
+    //  CTA is "Browse Courses" and links straight to /courses.)
 
     // Seek bar click
     if (seekWrap) {
@@ -350,8 +341,16 @@ setInterval(fetchLastPurchase, 10000);
         };
     };
 
+    // Counters that are still waiting on GET /stats/public carry
+    // [data-stat-pending] and are skipped here; loadPublicStats() clears the
+    // attribute once the real target is in place and calls this again. That
+    // ordering matters — without it a counter would animate up to the
+    // placeholder number and then jump when the API answered.
+    // [data-counter-bound] stops the second call re-observing the first batch.
     window.initCounterUp = function () {
-        const counters = document.querySelectorAll('.counter-value');
+        const counters = document.querySelectorAll(
+            '.counter-value:not([data-stat-pending]):not([data-counter-bound])'
+        );
         if (!counters.length) return;
 
         const animateCounter = (counter) => {
@@ -385,7 +384,54 @@ setInterval(fetchLastPurchase, 10000);
             });
         }, { threshold: 0.5 });
 
-        counters.forEach(counter => observer.observe(counter));
+        counters.forEach(counter => {
+            counter.setAttribute('data-counter-bound', '1');
+            observer.observe(counter);
+        });
+    };
+
+    // ── Live member count ────────────────────────────────────────
+    // Fills every [data-stat="members"] counter on the page from the public
+    // stats endpoint, so the hero card and the stats bar can never disagree.
+    // The endpoint is cached server-side for 5 minutes; this is one request
+    // per page load.
+    const MEMBERS_FALLBACK = 1000;   // shown if the API is slow, down or new
+    const MEMBERS_TIMEOUT_MS = 4000;
+
+    window.loadPublicStats = async function () {
+        const targets = document.querySelectorAll('[data-stat="members"]');
+        if (!targets.length) return;
+
+        let total = null;
+        try {
+            const base = (typeof API !== 'undefined' && API) ? API : '/api';
+            // AbortController rather than a bare fetch: a hanging request must
+            // not leave the skeleton shimmering forever.
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), MEMBERS_TIMEOUT_MS);
+            try {
+                const res = await fetch(`${base}/stats/public`, { signal: ctrl.signal });
+                if (res.ok) {
+                    const data = await res.json();
+                    const n = Number(data && data.total_members);
+                    if (Number.isFinite(n) && n > 0) total = Math.floor(n);
+                }
+            } finally {
+                clearTimeout(timer);
+            }
+        } catch (e) {
+            // Deliberately silent. The endpoint is decorative — a stat must
+            // never put an error in a visitor's console.
+        }
+
+        const value = total !== null ? total : MEMBERS_FALLBACK;
+        targets.forEach(el => {
+            el.setAttribute('data-target', String(value));
+            el.removeAttribute('data-stat-pending');   // reveals it, hides the skeleton
+        });
+
+        // Now — and only now — let the counter animation observe them.
+        if (window.initCounterUp) window.initCounterUp();
     };
 })();
 
@@ -395,7 +441,10 @@ setInterval(fetchLastPurchase, 10000);
 document.addEventListener("DOMContentLoaded", () => {
     if (window.initReviewsCarousel) window.initReviewsCarousel();
     if (window.initCoursesCarousel) window.initCoursesCarousel();
+    // Static counters start immediately; the member counters are held back
+    // until loadPublicStats() has a real number for them.
     if (window.initCounterUp) window.initCounterUp();
+    if (window.loadPublicStats) window.loadPublicStats();
 });
 
 // ═══════════════════════════════════════════

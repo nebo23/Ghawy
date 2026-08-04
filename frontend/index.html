@@ -82,7 +82,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260629">
+    <link rel="stylesheet" href="src/css/main.css?v=20260804">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -292,88 +292,13 @@
 <body>
 
     <!-- ════════════════════════════════════════
-     GLOBAL NAVIGATION
+     GLOBAL NAVIGATION + MOBILE DRAWER
+     Injected from src/js/layout.js — the single source shared with
+     /courses, /tracks, /reviews and /pricing. Do not paste the markup
+     back in here; edit layout.js instead.
     ════════════════════════════════════════ -->
-    <nav class="main-nav" id="mainNav">
-        <a href="#top" class="nav-logo" id="navLogo">
-            <img src="./imgs/ghawy-new-logo-transparent.png" alt="Ghawy" />
-        </a>
-        <ul class="nav-links" id="navLinks">
-            <li><a href="#reviews" data-ar="الاراء" data-en="Reviews">الاراء</a></li>
-            <li><a href="#modules" data-ar="الكورسات" data-en="Courses">الكورسات</a></li>
-            <li><a href="#features" data-ar="المميزات" data-en="Features">المميزات</a></li>
-            <li><a href="#payment" data-ar="السعر" data-en="Pricing">السعر</a></li>
-        </ul>
-        <div class="nav-auth" id="navAuth">
-            <button id="langToggleBtn" onclick="toggleLanguage()" style="
-    background: none;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    transition: all 0.2s;
-  " onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
-                onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'">
-                <span id="langToggleText">English</span>
-            </button>
-            <!-- Logged out state (default) -->
-            <div id="navLoggedOut">
-                <a href="login.html" class="nav-auth-btn ghost" style="text-decoration: none;" data-ar="تسجيل الدخول"
-                    data-en="Login">تسجيل الدخول</a>
-                <a href="register.html" class="nav-auth-btn primary" style="text-decoration: none;" data-ar="ابدا الان"
-                    data-en="Start Now">ابدا الان</a>
-            </div>
-            <!-- Logged in state -->
-            <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
-                <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل
-                    الخروج</button>
-            </div>
-        </div>
-        <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
-            <span></span><span></span><span></span>
-        </button>
-    </nav>
-
-    <!-- Mobile Drawer -->
-    <div class="mobile-drawer" id="mobileDrawer">
-        <a href="#features" onclick="closeDrawer()" data-ar="المميزات" data-en="Features">المميزات</a>
-        <a href="#reviews" onclick="closeDrawer()" data-ar="الاراء" data-en="Reviews">الاراء</a>
-        <a href="#modules" onclick="closeDrawer()" data-ar="الكورسات" data-en="Courses">الكورسات</a>
-        <a href="#payment" onclick="closeDrawer()" data-ar="السعر" data-en="Pricing">السعر</a>
-        <div id="mobileAuthLoggedOut">
-            <a href="login.html" onclick="closeDrawer()"
-                style="color:var(--gold); display: block; text-align: center; text-decoration: none; padding: 12px; font-weight: 700;"
-                data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
-        </div>
-        <div id="mobileAuthLoggedIn" style="display:none">
-            <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج"
-                data-en="Logout">تسجيل الخروج</button>
-        </div>
-        <div style="display: flex; justify-content: center; padding: 8px 0;">
-            <button id="mobileLangToggleBtn" onclick="toggleLanguage()" style="
-                background: none;
-                border: 1px solid rgba(255,255,255,0.2);
-                color: #fff;
-                padding: 8px 20px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-                font-family: inherit;
-                transition: all 0.2s;
-                width: 100%;
-            ">
-                <i class="fa-solid fa-globe" style="margin-left: 6px; margin-right: 6px;"></i>
-                <span id="mobileLangToggleText">English</span>
-            </button>
-        </div>
-        <a href="javascript:void(0)" class="mobile-cta" onclick="closeDrawer(); handleKashierPayment()"
-            data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
-    </div>
+    <div id="siteHeader"></div>
+    <script src="src/js/layout.js?v=20260804"></script>
 
     <!-- ════════════════════════════════════════
      AUTH MODALS
@@ -689,51 +614,18 @@
                             العربي</span>
                     </div>
 
-                    <!-- Main Headline -->
-                    <h1 class="hero-heading-split">
-                        <span class="line-white" data-ar="احترف الـ AI." data-en="Master AI.">احترف الـ AI.</span>
-                        <span class="line-white" data-ar="ابني نفوذ." data-en="Build Leverage.">ابني نفوذ.</span>
-                        <span class="line-green" data-ar="اصنع حريتك." data-en="Create Freedom."
-                            style="white-space: nowrap;">اصنع حريتك.</span>
-                    </h1>
+                    <!-- Main Headline — one sentence now (was three stacked lines) -->
+                    <h1 class="hero-heading-split hero-heading-single"
+                        data-ar="تعلّم كل مجالات الـ AI مع أفضل المدربين. كورسات بتتحدّث باستمرار، باشتراك واحد فقط."
+                        data-en="Learn every field of AI with the best instructors. Continuously updated courses, on a single subscription.">
+                        تعلّم كل مجالات الـ AI مع أفضل المدربين. كورسات بتتحدّث باستمرار، باشتراك واحد فقط.</h1>
 
                     <!-- Sub-headline -->
                     <p class="hero-sub"
-                        data-ar="كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي."
-                        data-en="Practical courses, real projects and a powerful community to help you master AI and build real income.">
-                        كورسات عملية، مشاريع حقيقية ومجتمع قوي يساعدك تحترف الـ AI وتبني دخل حقيقي.</p>
-
-                    <!-- Stats Row -->
-                    <div class="hero-stats-inline">
-                        <div class="hero-stat-inline">
-                            <i class="fa-solid fa-video"></i>
-                            <div>
-                                <span class="stat-num-inline">8+</span>
-                                <span class="stat-lbl-inline" data-ar="كورسات" data-en="Courses">كورسات</span>
-                            </div>
-                        </div>
-                        <div class="hero-stat-inline">
-                            <i class="fa-solid fa-code-fork"></i>
-                            <div>
-                                <span class="stat-num-inline">25+</span>
-                                <span class="stat-lbl-inline" data-ar="مشاريع" data-en="Projects">مشاريع</span>
-                            </div>
-                        </div>
-                        <div class="hero-stat-inline">
-                            <i class="fa-solid fa-users"></i>
-                            <div>
-                                <span class="stat-num-inline">500+</span>
-                                <span class="stat-lbl-inline" data-ar="أعضاء" data-en="Members">أعضاء</span>
-                            </div>
-                        </div>
-                        <div class="hero-stat-inline">
-                            <i class="fa-solid fa-circle-play"></i>
-                            <div>
-                                <span class="stat-num-inline" data-ar="لايف" data-en="Live">لايف</span>
-                                <span class="stat-lbl-inline" data-ar="جلسات" data-en="Sessions">جلسات</span>
-                            </div>
-                        </div>
-                    </div>
+                        data-ar="ايا كان مجالك, تعلم AI او استغله في مجالك الاساسي بدورات عملية, مشاريع حقيقية, من الأساسيات لأحدث التطورات في المجال"
+                        data-en="Whatever your field, learn AI or put it to work in the field you already know — practical courses and real projects, from the fundamentals to the latest developments.">
+                        ايا كان مجالك, تعلم AI او استغله في مجالك الاساسي بدورات عملية, مشاريع حقيقية, من الأساسيات
+                        لأحدث التطورات في المجال</p>
 
                     <!-- CTA Buttons -->
                     <div class="hero-cta-row">
@@ -741,17 +633,59 @@
                             <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span>
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
-                        <button class="btn-cta-ghost" id="watchIntroBtn">
-                            <i class="fa-regular fa-circle-play"></i>
-                            <span data-ar="شاهد المقدمة" data-en="Watch Intro">شاهد المقدمة</span>
-                        </button>
-                    </div>
-                    <!-- INSTAPAY OPTION -->
-                    <div style="margin-top: 16px; display: flex; justify-content: flex-start;">
-                        <a href="javascript:void(0)" onclick="window.location.href='pay.html'"
-                            style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
-                            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+                        <a href="/courses" class="btn-cta-ghost">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span data-ar="تصفح الكورسات" data-en="Browse Courses">تصفح الكورسات</span>
                         </a>
+                    </div>
+
+                    <!-- Stats — moved BELOW the buttons and rebuilt as cards.
+                         The member count is filled from GET /stats/public; see
+                         loadPublicStats() in src/js/main.js. -->
+                    <div class="hero-stats-cards">
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span class="hero-stat-value" data-ar="تحديث مستمر"
+                                data-en="Always updated">تحديث مستمر</span>
+                        </div>
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-layer-group"></i>
+                            <span class="hero-stat-value" data-ar="تخصصات AI لكل المجالات"
+                                data-en="AI tracks for every field">تخصصات AI لكل المجالات</span>
+                        </div>
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span class="hero-stat-value" data-ar="أكثر من 10 دورات AI"
+                                data-en="More than 10 AI courses">أكثر من 10 دورات AI</span>
+                        </div>
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-code-fork"></i>
+                            <span class="hero-stat-value">
+                                <span class="hero-stat-num">25+</span>
+                                <span class="hero-stat-lbl" data-ar="مشروع عملي"
+                                    data-en="Hands-on projects">مشروع عملي</span>
+                            </span>
+                        </div>
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-users"></i>
+                            <span class="hero-stat-value">
+                                <span class="hero-stat-num">
+                                    <span class="counter-value stat-members" data-stat="members"
+                                        data-stat-pending="1" data-target="1000">0</span><span
+                                        class="stat-plus">+</span>
+                                    <span class="stat-skeleton" aria-hidden="true"></span>
+                                </span>
+                                <span class="hero-stat-lbl" data-ar="عضو" data-en="Members">عضو</span>
+                            </span>
+                        </div>
+                        <div class="hero-stat-card">
+                            <i class="fa-solid fa-circle-play"></i>
+                            <span class="hero-stat-value">
+                                <span class="hero-stat-num" data-ar="لايف" data-en="Live">لايف</span>
+                                <span class="hero-stat-lbl" data-ar="جلسات مباشرة"
+                                    data-en="Live sessions">جلسات مباشرة</span>
+                            </span>
+                        </div>
                     </div>
 
                 </div><!-- /hero-left -->
@@ -1128,8 +1062,12 @@
             <div class="stats-grid">
                 <div class="stat-item">
                     <div class="stat-num">
+                        <!-- Same source as the hero card (GET /stats/public) — the
+                             page must never show two different member counts. -->
                         <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-users"></i><span
-                                class="counter-value" data-target="500">0</span>+</span>
+                                class="counter-value stat-members" data-stat="members" data-stat-pending="1"
+                                data-target="1000">0</span><span class="stat-plus">+</span><span class="stat-skeleton"
+                                aria-hidden="true"></span></span>
                     </div>
                     <div class="stat-label">عدد الطلاب</div>
                 </div>
@@ -2597,86 +2535,10 @@
     </section>
 
     <!-- ════════════════════════════════════════
-     FOOTER
+     FOOTER — injected from src/js/layout.js (shared with every public page)
     ════════════════════════════════════════ -->
-    <footer style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px;">
-        <div class="container">
-            <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
-                <!-- Brand Info -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;" data-ar="عن غاوي"
-                        data-en="About Ghawy">عن غاوي</h3>
-                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;"
-                        data-ar="منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة."
-                        data-en="Ghawy is the best place to learn AI and build your own agency step by step.">
-                        منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
-                    </p>
-                </div>
-
-                <!-- Quick Links -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
-                        data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
-                    <a href="index.html#modules" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="الكورسات" data-en="Courses">الكورسات</a>
-                    <a href="index.html#reviews" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="آراء المشتركين" data-en="Reviews">آراء المشتركين</a>
-                    <a href="index.html#features" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="المميزات" data-en="Features">المميزات</a>
-                    <a href="index.html#checkout" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="الأسعار" data-en="Pricing">الأسعار</a>
-                </div>
-
-                <!-- Legal / Policies -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
-                        data-ar="الشروط والسياسات" data-en="Terms & Policies">الشروط والسياسات
-                    </h3>
-                    <a href="terms.html" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="الشروط والأحكام" data-en="Terms & Conditions">الشروط والأحكام</a>
-                    <a href="terms.html#privacy" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="سياسة الخصوصية" data-en="Privacy Policy">سياسة الخصوصية</a>
-                </div>
-
-                <!-- Contact -->
-                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;" data-ar="تواصل معنا"
-                        data-en="Contact Us">تواصل معنا</h3>
-                    <a href="tel:+201033903334"
-                        style="color: #9ca3af; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: color 0.3s; width: fit-content;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">
-                        <i class="fa-solid fa-phone"></i> <span dir="ltr">01033903334</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Bottom Bar -->
-            <div class="footer-bottom">
-                <p class="footer-copy" data-ar="© 2026 Ghawy. جميع الحقوق محفوظة."
-                    data-en="© 2026 Ghawy. All rights reserved.">
-                    © 2026 Ghawy. جميع الحقوق محفوظة.
-                </p>
-                <div class="social-icons">
-                    <a href="https://instagram.com/ghawy_official" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-instagram" style="font-size: 1.2rem;"></i>
-                    </a>
-                    <a href="https://facebook.com/ghawyofficial" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-facebook-f" style="font-size: 1.2rem;"></i>
-                    </a>
-                    <a href="https://tiktok.com/@ghawy_official" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-tiktok" style="font-size: 1.2rem;"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <div id="siteFooter"></div>
+    <script>GhawyLayout.mountFooter();</script>
 
     <!-- ════════════════════════════════════════
      JAVASCRIPT
@@ -2688,19 +2550,22 @@
          Arabic by default). Loads before main.js so the carousel is built from
          already-translated markup. -->
     <script src="src/js/i18n.js?v=20260804"></script>
-    <script src="src/js/main.js?v=20260629"></script>
-    <script src="src/js/utils.js?v=1785600000"></script>
+    <script src="src/js/main.js?v=20260804"></script>
+    <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
+         top-level `const API`, so loading both threw "Identifier 'API' has
+         already been declared" on every visit — a SyntaxError, which meant
+         utils.js never executed a single line anyway. Removing the tag clears
+         the console error and changes no behaviour. The landing page gets API,
+         getToken, logout and showAlert from main.js; the standalone marketing
+         pages load utils.js on its own, where there is no clash. -->
 
     <script>
         /* ═══════════════════════════════════════════
            Navigation & Auth Integration
         ═══════════════════════════════════════════ */
 
-        // --- Scroll-aware nav ---
-        const mainNav = document.getElementById('mainNav');
-        window.addEventListener('scroll', () => {
-            mainNav.classList.toggle('scrolled', window.scrollY > 60);
-        }, { passive: true });
+        // Scroll-aware nav, hamburger/drawer and the active-link state now live
+        // in src/js/layout.js so every public page gets them from one place.
 
         // --- Pricing Toggle (Monthly / Yearly) ---
         const pricingToggle = document.getElementById('pricingToggle');
@@ -2741,34 +2606,9 @@
             if (labelMonthly) labelMonthly.classList.add('active');
         }
 
-        // --- Active nav link highlight ---
-        const navSections = document.querySelectorAll('section[id], header[id]');
-        const navAnchors = document.querySelectorAll('.nav-links a');
-        const observerNav = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    navAnchors.forEach(a => a.classList.remove('active'));
-                    const match = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
-                    if (match) match.classList.add('active');
-                }
-            });
-        }, { threshold: 0, rootMargin: '-30% 0px -60% 0px' });
-        navSections.forEach(s => observerNav.observe(s));
-
-        // --- Hamburger ---
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        const mobileDrawer = document.getElementById('mobileDrawer');
-        function toggleDrawer() {
-            hamburgerBtn.classList.toggle('active');
-            mobileDrawer.classList.toggle('open');
-            document.body.style.overflow = mobileDrawer.classList.contains('open') ? 'hidden' : '';
-        }
-        function closeDrawer() {
-            hamburgerBtn.classList.remove('active');
-            mobileDrawer.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-        hamburgerBtn.addEventListener('click', toggleDrawer);
+        // The scroll-spy that highlighted #anchor nav links is gone with them —
+        // the header links are real pages now, and layout.js marks the active
+        // one from the URL (home has no active link).
 
         // --- Auth State ---
         async function updateAuthUI() {

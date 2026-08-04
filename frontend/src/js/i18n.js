@@ -177,7 +177,7 @@ const i18nDict = {
     dark:             { ar: 'داكن',                        en: 'Dark' },
     light:            { ar: 'فاتح',                        en: 'Light' },
 
-    // ── courses.html ──
+    // ── dashboard-courses.html ──
     courses:          { ar: 'الكورسات',                    en: 'Courses' },
     allCourses:       { ar: 'جميع الكورسات',               en: 'All Courses' },
 };
