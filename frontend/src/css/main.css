@@ -5522,11 +5522,36 @@ footer a:hover {
 h1.hero-heading-single {
     display: block;
     font-size: clamp(1.65rem, 2.9vw, 2.7rem);
-    line-height: 1.35;
+    line-height: 1.3;
     letter-spacing: -0.01em;
     color: #fff;
-    text-wrap: balance;
     max-width: 100%;
+}
+
+/* The headline is two sentences, one per line, split at the full stop.
+   `display: block` on the children rather than a <br> in the markup: the
+   Arabic and the English break at different points, and each line owns its
+   own data-ar/data-en. `text-wrap: balance` is applied per line so a line
+   that does have to wrap on narrow screens wraps evenly instead of leaving
+   one orphaned word. */
+h1.hero-heading-single>span {
+    display: block;
+    text-wrap: balance;
+}
+
+.hero-heading-lead {
+    color: #fff;
+}
+
+/* Second line: lighter weight and the brand green, so the two lines read as
+   a headline plus its promise rather than one heavy slab of text. */
+.hero-heading-tail {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.72em;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--gold, #c1ff11);
 }
 
 /* Sub */
@@ -5578,13 +5603,19 @@ h1.hero-heading-single {
     margin-top: 2px;
 }
 
-/* ── Hero stat cards (current design) ─────────────────────── */
+/* ── Hero stat cards (current design) ─────────────────────────
+   These live OUTSIDE .hero-split now — a centred band spanning the whole
+   hero, below the text column and the video, above the rating row. The
+   max-width keeps them from stretching into six thin strips on wide
+   monitors; the per-breakpoint values are in the responsive block at the
+   end of this file. */
 .hero-stats-cards {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
     width: 100%;
-    margin-top: 8px;
+    max-width: 1000px;
+    margin: 56px auto 0;
 }
 
 .hero-stat-card {
@@ -5743,6 +5774,10 @@ h1.hero-heading-single {
     align-items: center;
     gap: 12px;
     align-self: center;
+    /* Was an inline `margin-top: 80px` on the element. The stat cards now sit
+       between the hero grid and this row, so the gap is balanced here (and in
+       the breakpoint blocks) instead. */
+    margin-top: 56px;
 }
 
 .hero-avatars {
@@ -5879,7 +5914,16 @@ h1.hero-heading-single {
     pointer-events: none;
 }
 
-/* -- Custom Controls Bar -- */
+/* -- Custom Controls Bar --
+   Always LTR, in both site languages. Every video player in the world lays
+   its transport controls out left-to-right, and more importantly the seek
+   logic depends on it: `.vsl-seek-fill` grows with `width` (which fills from
+   the inline start) while the click handler in main.js maps
+   `(clientX - rect.left) / rect.width` — an LTR mapping. Letting the bar
+   inherit the page's RTL made the fill grow from the right while a click
+   still resolved from the left, so the two disagreed and seeking jumped to
+   the mirrored position. It also flipped the "current / total" time via
+   bidi reordering. Pinning the direction here fixes all three at once. */
 .vsl-controls {
     position: absolute;
     bottom: 0;
@@ -5887,6 +5931,7 @@ h1.hero-heading-single {
     right: 0;
     z-index: 20;
     display: flex;
+    direction: ltr;
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
@@ -5915,6 +5960,10 @@ h1.hero-heading-single {
     white-space: nowrap;
     flex-shrink: 0;
     font-family: monospace;
+    /* Belt and braces with the bar's own `direction` above: this element is
+       written as "current / total" and must never be reordered. */
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
 .vsl-seek-bar-wrap {
@@ -7799,12 +7848,13 @@ html[dir="rtl"] .hero-left {
     overflow-wrap: break-word;
 }
 
-/* The stat row is full-width inside the hero column in both directions —
-   the hero-left alignment rules would otherwise shrink-wrap it. */
+/* The band is full-width and centred in both directions. It is no longer a
+   child of .hero-left, so nothing shrink-wraps it — but the explicit rule is
+   kept so a future RTL alignment rule can't quietly re-introduce that. */
 html[dir="rtl"] .hero-stats-cards,
 html[dir="ltr"] .hero-stats-cards {
     width: 100%;
-    align-self: stretch;
+    margin-inline: auto;
 }
 
 /* XL desktop */
@@ -7814,7 +7864,8 @@ html[dir="ltr"] .hero-stats-cards {
     }
 
     .hero-stats-cards {
-        gap: 14px;
+        gap: 16px;
+        max-width: 1120px;
     }
 }
 
@@ -7823,18 +7874,24 @@ html[dir="ltr"] .hero-stats-cards {
     h1.hero-heading-single {
         font-size: 2.15rem;
     }
+
+    .hero-stats-cards {
+        max-width: 1000px;
+    }
 }
 
-/* Small laptop — the hero column gets tight here, so drop to two columns
-   rather than squeezing three. */
+/* Small laptop — the band spans the page now, so three across still fits
+   comfortably (it used to be two, back when it lived in the hero column). */
 @media (min-width: 1025px) and (max-width: 1279px) {
     h1.hero-heading-single {
         font-size: 2.05rem;
     }
 
     .hero-stats-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        max-width: 940px;
+        margin-top: 48px;
     }
 
     .hero-stat-card {
@@ -7842,8 +7899,8 @@ html[dir="ltr"] .hero-stats-cards {
     }
 }
 
-/* Tablet — hero is single-column and centred, so the cards get the full
-   container width and can go back to three across. */
+/* Tablet — two columns: three across at this width squeezes the longer
+   labels ("تخصصات AI لكل المجالات") onto three cramped lines. */
 @media (min-width: 769px) and (max-width: 1024px) {
     h1.hero-heading-single {
         font-size: clamp(1.9rem, 3.6vw, 2.3rem);
@@ -7852,9 +7909,10 @@ html[dir="ltr"] .hero-stats-cards {
     }
 
     .hero-stats-cards {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        max-width: 720px;
-        margin-inline: auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        max-width: 660px;
+        margin-top: 44px;
     }
 }
 
@@ -7869,8 +7927,8 @@ html[dir="ltr"] .hero-stats-cards {
     .hero-stats-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-        max-width: 460px;
-        margin-inline: auto;
+        max-width: 520px;
+        margin-top: 36px;
     }
 
     .hero-stat-card {
@@ -7907,8 +7965,8 @@ html[dir="ltr"] .hero-stats-cards {
     .hero-stats-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
-        max-width: 380px;
-        margin-inline: auto;
+        max-width: 420px;
+        margin-top: 32px;
     }
 
     .hero-stat-card {

@@ -110,12 +110,16 @@
     // (The "Watch Intro" button and its handler are gone — the hero's second
     //  CTA is "Browse Courses" and links straight to /courses.)
 
-    // Seek bar click
+    // Seek bar click.
+    // This maps left→right, which matches `.vsl-seek-fill` growing with
+    // `width`. Both are only ever consistent because `.vsl-controls` is
+    // pinned to `direction: ltr` in main.css — do not remove that rule, or
+    // clicking in Arabic will seek to the mirrored point again.
     if (seekWrap) {
         seekWrap.addEventListener('click', (e) => {
             if (!video.duration) return;
             const rect = seekWrap.getBoundingClientRect();
-            const ratio = (e.clientX - rect.left) / rect.width;
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
             video.currentTime = ratio * video.duration;
         });
     }

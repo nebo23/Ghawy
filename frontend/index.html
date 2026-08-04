@@ -82,7 +82,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260804">
+    <link rel="stylesheet" href="src/css/main.css?v=20260804b">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -614,11 +614,24 @@
                             العربي</span>
                     </div>
 
-                    <!-- Main Headline — one sentence now (was three stacked lines) -->
-                    <h1 class="hero-heading-split hero-heading-single"
-                        data-ar="تعلّم كل مجالات الـ AI مع أفضل المدربين. كورسات بتتحدّث باستمرار، باشتراك واحد فقط."
-                        data-en="Learn every field of AI with the best instructors. Continuously updated courses, on a single subscription.">
-                        تعلّم كل مجالات الـ AI مع أفضل المدربين. كورسات بتتحدّث باستمرار، باشتراك واحد فقط.</h1>
+                    <!-- Main Headline — the same sentence pair as before, now split
+                         at the full stop into two elements instead of one block of
+                         text. Two elements (not a <br>) because Arabic and English
+                         break in completely different places; each line carries its
+                         own data-ar/data-en so the split follows the language.
+                         NOTE: the <h1> itself deliberately has NO data-ar/data-en —
+                         applyLanguage() writes textContent on any element that has
+                         them, which would wipe the two spans. -->
+                    <h1 class="hero-heading-split hero-heading-single">
+                        <span class="hero-heading-lead"
+                            data-ar="تعلّم كل مجالات الـ AI مع أفضل المدربين."
+                            data-en="Learn every field of AI with the best instructors.">تعلّم كل مجالات الـ AI مع
+                            أفضل المدربين.</span>
+                        <span class="hero-heading-tail"
+                            data-ar="كورسات بتتحدّث باستمرار، باشتراك واحد فقط."
+                            data-en="Continuously updated courses, on a single subscription.">كورسات بتتحدّث
+                            باستمرار، باشتراك واحد فقط.</span>
+                    </h1>
 
                     <!-- Sub-headline -->
                     <p class="hero-sub"
@@ -637,55 +650,6 @@
                             <i class="fa-solid fa-graduation-cap"></i>
                             <span data-ar="تصفح الكورسات" data-en="Browse Courses">تصفح الكورسات</span>
                         </a>
-                    </div>
-
-                    <!-- Stats — moved BELOW the buttons and rebuilt as cards.
-                         The member count is filled from GET /stats/public; see
-                         loadPublicStats() in src/js/main.js. -->
-                    <div class="hero-stats-cards">
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                            <span class="hero-stat-value" data-ar="تحديث مستمر"
-                                data-en="Always updated">تحديث مستمر</span>
-                        </div>
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-layer-group"></i>
-                            <span class="hero-stat-value" data-ar="تخصصات AI لكل المجالات"
-                                data-en="AI tracks for every field">تخصصات AI لكل المجالات</span>
-                        </div>
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-graduation-cap"></i>
-                            <span class="hero-stat-value" data-ar="أكثر من 10 دورات AI"
-                                data-en="More than 10 AI courses">أكثر من 10 دورات AI</span>
-                        </div>
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-code-fork"></i>
-                            <span class="hero-stat-value">
-                                <span class="hero-stat-num">25+</span>
-                                <span class="hero-stat-lbl" data-ar="مشروع عملي"
-                                    data-en="Hands-on projects">مشروع عملي</span>
-                            </span>
-                        </div>
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-users"></i>
-                            <span class="hero-stat-value">
-                                <span class="hero-stat-num">
-                                    <span class="counter-value stat-members" data-stat="members"
-                                        data-stat-pending="1" data-target="1000">0</span><span
-                                        class="stat-plus">+</span>
-                                    <span class="stat-skeleton" aria-hidden="true"></span>
-                                </span>
-                                <span class="hero-stat-lbl" data-ar="عضو" data-en="Members">عضو</span>
-                            </span>
-                        </div>
-                        <div class="hero-stat-card">
-                            <i class="fa-solid fa-circle-play"></i>
-                            <span class="hero-stat-value">
-                                <span class="hero-stat-num" data-ar="لايف" data-en="Live">لايف</span>
-                                <span class="hero-stat-lbl" data-ar="جلسات مباشرة"
-                                    data-en="Live sessions">جلسات مباشرة</span>
-                            </span>
-                        </div>
                     </div>
 
                 </div><!-- /hero-left -->
@@ -723,7 +687,7 @@
                             <button class="vsl-ctrl-btn" id="vslSkipBtn" title="Skip">
                                 <i class="fa-solid fa-forward-step"></i>
                             </button>
-                            <div class="vsl-time" id="vslTime">0:00 / 0:00</div>
+                            <div class="vsl-time" id="vslTime" dir="ltr">0:00 / 0:00</div>
                             <div class="vsl-seek-bar-wrap">
                                 <div class="vsl-seek-track">
                                     <div class="vsl-seek-fill" id="vslSeekFill"></div>
@@ -744,8 +708,54 @@
 
             </div><!-- /hero-split -->
 
+            <!-- Stats — full-width band under the WHOLE hero (they used to sit
+                 inside .hero-left, squeezed into half the page). Same six cards,
+                 same order, same copy. The member count is still filled from
+                 GET /stats/public; see loadPublicStats() in src/js/main.js. -->
+            <div class="hero-stats-cards">
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span class="hero-stat-value" data-ar="تحديث مستمر" data-en="Always updated">تحديث مستمر</span>
+                </div>
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="hero-stat-value" data-ar="تخصصات AI لكل المجالات"
+                        data-en="AI tracks for every field">تخصصات AI لكل المجالات</span>
+                </div>
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span class="hero-stat-value" data-ar="أكثر من 10 دورات AI"
+                        data-en="More than 10 AI courses">أكثر من 10 دورات AI</span>
+                </div>
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-code-fork"></i>
+                    <span class="hero-stat-value">
+                        <span class="hero-stat-num">25+</span>
+                        <span class="hero-stat-lbl" data-ar="مشروع عملي" data-en="Hands-on projects">مشروع عملي</span>
+                    </span>
+                </div>
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-users"></i>
+                    <span class="hero-stat-value">
+                        <span class="hero-stat-num">
+                            <span class="counter-value stat-members" data-stat="members" data-stat-pending="1"
+                                data-target="1000">0</span><span class="stat-plus">+</span>
+                            <span class="stat-skeleton" aria-hidden="true"></span>
+                        </span>
+                        <span class="hero-stat-lbl" data-ar="عضو" data-en="Members">عضو</span>
+                    </span>
+                </div>
+                <div class="hero-stat-card">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="hero-stat-value">
+                        <span class="hero-stat-num" data-ar="لايف" data-en="Live">لايف</span>
+                        <span class="hero-stat-lbl" data-ar="جلسات مباشرة" data-en="Live sessions">جلسات مباشرة</span>
+                    </span>
+                </div>
+            </div>
+
             <!-- Avatars + Rating Centered Below -->
-            <div class="hero-rating" style="margin-top: 80px;">
+            <div class="hero-rating">
                 <div class="hero-avatars">
                     <img class="hero-av" src="./imgs/avatars/review1.jpg" alt="" />
                     <img class="hero-av" src="./imgs/avatars/review2.jpg" alt="" />
@@ -2550,7 +2560,7 @@
          Arabic by default). Loads before main.js so the carousel is built from
          already-translated markup. -->
     <script src="src/js/i18n.js?v=20260804"></script>
-    <script src="src/js/main.js?v=20260804"></script>
+    <script src="src/js/main.js?v=20260804b"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant

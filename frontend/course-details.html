@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<!-- Arabic-first like every other public page; i18n.js re-applies the
+     visitor's stored choice on load. -->
+<html lang="ar" dir="rtl" id="htmlRoot">
 
 <head>
     <!-- CACHE BUSTER -->
@@ -15,63 +17,14 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
-    <link rel="stylesheet" href="src/css/main.css" />
+    <link rel="stylesheet" href="src/css/main.css?v=20260804b" />
 
 </head>
 
 <body>
-    <!-- ════════════════════════════════════════
-     HEADER / NAV
-    ════════════════════════════════════════ -->
-    <nav class="main-nav" id="mainNav">
-        <a href="index.html" class="nav-logo">
-            <img src="./imgs/ghawi-logo.png" alt="Ghawi" />
-        </a>
-        <ul class="nav-links">
-            <li><a href="index.html#features" data-ar="المميزات" data-en="Features">المميزات</a></li>
-            <li><a href="index.html#reviews" data-ar="الاراء" data-en="Reviews">الاراء</a></li>
-            <li><a href="index.html#modules" data-ar="الكورسات" data-en="Courses">الكورسات</a></li>
-            <li><a href="index.html#payment" data-ar="السعر" data-en="Pricing">السعر</a></li>
-        </ul>
-        <div class="nav-auth" id="navLoggedOut" style="align-items:center; gap:12px;">
-            <button id="langToggleBtn" onclick="toggleLanguage()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all 0.2s;"
-                onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
-                onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'">
-                <span id="langToggleText">English</span>
-            </button>
-            <button class="nav-auth-btn ghost" onclick="window.location.href='login.html'" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</button>
-            <button class="nav-auth-btn primary" onclick="window.location.href='index.html#payment'" data-ar="ابدأ الآن" data-en="Start Now">ابدأ الآن</button>
-        </div>
-        <div class="nav-auth" id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
-            <button id="langToggleBtn2" onclick="toggleLanguage()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all 0.2s;"
-                onmouseover="this.style.borderColor='#3f8ff9'; this.style.color='#3f8ff9'"
-                onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#fff'">
-                <span id="langToggleText2">English</span>
-            </button>
-            <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
-        </div>
-        <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
-            <span></span><span></span><span></span>
-        </button>
-    </nav>
-
-    <div class="mobile-drawer" id="mobileDrawer">
-        <button class="close-drawer" onclick="closeDrawer()">✕</button>
-        <div class="drawer-links">
-            <a href="index.html#features" onclick="closeDrawer()" data-ar="المميزات" data-en="Features">المميزات</a>
-            <a href="index.html#reviews" onclick="closeDrawer()" data-ar="الاراء" data-en="Reviews">الاراء</a>
-            <a href="index.html#modules" onclick="closeDrawer()" data-ar="الكورسات" data-en="Courses">الكورسات</a>
-            <a href="index.html#payment" onclick="closeDrawer()" data-ar="السعر" data-en="Pricing">السعر</a>
-            <button onclick="toggleLanguage()" class="nav-login" style="cursor:pointer;"><span id="mobileLangToggleText">English</span></button>
-        </div>
-        <div class="drawer-auth" id="mobileAuthLoggedOut">
-            <a href="login.html" class="nav-login" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
-            <a href="#payment" class="nav-signup btn-glow" onclick="closeDrawer()" data-ar="ابدأ الآن" data-en="Start Now">ابدأ الآن</a>
-        </div>
-        <div class="drawer-auth" id="mobileAuthLoggedIn" style="display: none">
-            <button class="nav-login danger" onclick="logout(); closeDrawer();" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
-        </div>
-    </div>
+    <!-- Shared navbar + drawer — single source in src/js/layout.js -->
+    <div id="siteHeader"></div>
+    <script src="src/js/layout.js?v=20260804"></script>
 
     <!-- ════════════════════════════════════════
      COURSE DETAILS CONTENT
@@ -152,91 +105,16 @@
         </div>
     </section>
 
-    <!-- ════════════════════════════════════════
-     FOOTER
-    ════════════════════════════════════════ -->
-    <footer
-        style="background-color: #0a0a0a; padding: 60px 0 20px; border-top: 1px solid #222; margin-top: 40px;">
-        <div class="container">
-            <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
-                <!-- Brand Info -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
-                        data-ar="عن غاوي" data-en="About Ghawy">عن غاوي</h3>
-                    <p style="color: #9ca3af; font-size: 0.95rem; line-height: 1.6;"
-                        data-ar="منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة."
-                        data-en="Ghawy is the best place to learn AI and build your own agency step by step.">
-                        منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
-                    </p>
-                </div>
+    <!-- Shared footer — single source in src/js/layout.js -->
+    <div id="siteFooter"></div>
+    <script>GhawyLayout.mountFooter();</script>
 
-                <!-- Quick Links -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
-                        data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
-                    <a href="index.html#modules" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'" data-ar="الكورسات" data-en="Courses">الكورسات</a>
-                    <a href="index.html#reviews" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="آراء المشتركين" data-en="Reviews">آراء المشتركين</a>
-                    <a href="index.html#features" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'" data-ar="المميزات" data-en="Features">المميزات</a>
-                    <a href="index.html#checkout" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'"
-                        onmouseout="this.style.color='#9ca3af'" data-ar="الأسعار" data-en="Pricing">الأسعار</a>
-                </div>
-
-                <!-- Legal / Policies -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;"
-                        data-ar="الشروط والسياسات" data-en="Terms & Policies">الشروط والسياسات
-                    </h3>
-                    <a href="terms.html" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="الشروط والأحكام" data-en="Terms & Conditions">الشروط والأحكام</a>
-                    <a href="terms.html#privacy" style="color: #9ca3af; text-decoration: none; transition: color 0.3s;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'"
-                        data-ar="سياسة الخصوصية" data-en="Privacy Policy">سياسة الخصوصية</a>
-                </div>
-
-                <!-- Contact -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0;"
-                        data-ar="تواصل معنا" data-en="Contact Us">تواصل معنا</h3>
-                    <a href="tel:+201033903334"
-                        style="color: #9ca3af; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: color 0.3s; width: fit-content;"
-                        onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='#9ca3af'">
-                        <i class="fa-solid fa-phone"></i> <span dir="ltr">01033903334</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Bottom Bar -->
-            <div class="footer-bottom">
-                <p class="footer-copy" data-ar="© 2026 Ghawy. جميع الحقوق محفوظة."
-                    data-en="© 2026 Ghawy. All rights reserved.">
-                    © 2026 Ghawy. جميع الحقوق محفوظة.
-                </p>
-                <div class="social-icons">
-                    <a href="https://instagram.com/ghawy_official" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-instagram" style="font-size: 1.2rem;"></i>
-                    </a>
-                    <a href="https://facebook.com/ghawyofficial" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-facebook-f" style="font-size: 1.2rem;"></i>
-                    </a>
-                    <a href="https://tiktok.com/@ghawy_official" target="_blank" class="social-icon">
-                        <i class="fa-brands fa-tiktok" style="font-size: 1.2rem;"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <script src="src/js/utils.js?v=1785600000"></script>
-    <script src="src/js/main.js"></script>
+    <!-- Language engine — same file, same load position, as every other page.
+         It must come before the inline script below, which renders the course
+         content in whatever language i18n.js has just applied. -->
+    <script src="src/js/i18n.js?v=20260804"></script>
+    <script src="src/js/utils.js?v=20260804"></script>
+    <script src="src/js/main.js?v=20260804b"></script>
     <script>
         // ═══════════════════════════════════════
         //   Course Data Store
@@ -537,7 +415,10 @@
             const slug = params.get('course') || 'prompt-engineering';
             const course = COURSES[slug];
 
-            const lang = localStorage.getItem('ghawy_lang') || 'ar';
+            // Read the language off the document (what i18n.js actually
+            // applied), not off storage — storage is empty until the visitor
+            // makes an explicit choice.
+            const lang = window.currentLang ? window.currentLang() : 'ar';
 
             if (!course) {
                 document.querySelector('.cd-info-area').innerHTML =
@@ -604,43 +485,22 @@
         }
 
         // ═══════════════════════════════════════
-        //   Language System (shares 'ghawy_lang' with the landing page)
+        //   Language
         // ═══════════════════════════════════════
-        function applyLanguage(lang) {
-            if (lang !== 'ar' && lang !== 'en') lang = 'ar';
-            const html = document.documentElement;
-            html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-            html.setAttribute('lang', lang);
-
-            // Static chrome (nav, sidebar, comparison headings, footer …)
-            document.querySelectorAll('[data-ar]').forEach(el => {
-                const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
-                if (text === null) return;
-                if (el.getAttribute('data-html') === 'true') el.innerHTML = text;
-                else el.textContent = text;
-            });
-
-            // Toggle button labels (desktop + mobile)
-            const toggleLabel = lang === 'ar' ? 'English' : 'عربي';
-            ['langToggleText', 'langToggleText2', 'mobileLangToggleText'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = toggleLabel;
-            });
-
-            localStorage.setItem('ghawy_lang', lang);
-
-            // Re-render the dynamic course content in the chosen language
+        // The language engine is src/js/i18n.js (loaded at the bottom of this
+        // page) — the same one every other page uses. This page used to carry
+        // its own private copy of applyLanguage()/toggleLanguage(), which meant
+        // a second, divergent language system on the site. All that is left
+        // here is re-rendering the JS-built course content when the language
+        // changes; i18n.js fires `languagechange` for exactly this.
+        document.addEventListener('languagechange', () => {
             renderCourse();
             if (window.lucide) lucide.createIcons();
-        }
+        });
 
-        function toggleLanguage() {
-            const current = localStorage.getItem('ghawy_lang') || 'ar';
-            applyLanguage(current === 'ar' ? 'en' : 'ar');
-        }
-
-        // Initial render + apply saved language preference
-        applyLanguage(localStorage.getItem('ghawy_lang') || 'ar');
+        // First paint. i18n.js has already set <html lang/dir> by the time this
+        // runs, so renderCourse() reads the right language.
+        renderCourse();
 
         // ═══════════════════════════════════════
         //   Standard Page Setup
@@ -656,55 +516,22 @@
         }, { threshold: 0.08 });
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-        // Auth state
-        async function updateAuthUI() {
+        // Auth state. The nav itself (logged-in vs logged-out, scroll state,
+        // hamburger, drawer) is owned by layout.js; the only thing added here
+        // is dropping a token the API has already rejected.
+        (async function verifyToken() {
             const token = getToken();
-            const out = document.getElementById('navLoggedOut');
-            const inn = document.getElementById('navLoggedIn');
-            if (token) {
-                if (out) out.style.display = 'none';
-                if (inn) inn.style.display = 'flex';
-
-                try {
-                    const res = await fetch(`${API}/profile/me`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (res.status === 401) {
-                        localStorage.removeItem('token');
-                        if (out) out.style.display = '';
-                        if (inn) inn.style.display = 'none';
-                    }
-                } catch (e) { }
-            } else {
-                if (out) out.style.display = '';
-                if (inn) inn.style.display = 'none';
-            }
-        }
-        updateAuthUI();
-
-        // Scroll-aware nav
-        const mainNav = document.getElementById('mainNav');
-        if (mainNav) {
-            window.addEventListener('scroll', () => {
-                mainNav.classList.toggle('scrolled', window.scrollY > 60);
-            }, { passive: true });
-        }
-
-        // Hamburger
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        const mobileDrawer = document.getElementById('mobileDrawer');
-        function closeDrawer() {
-            if (hamburgerBtn) hamburgerBtn.classList.remove('active');
-            if (mobileDrawer) mobileDrawer.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-        if (hamburgerBtn) {
-            hamburgerBtn.addEventListener('click', () => {
-                hamburgerBtn.classList.toggle('active');
-                mobileDrawer.classList.toggle('open');
-                document.body.style.overflow = mobileDrawer.classList.contains('open') ? 'hidden' : '';
-            });
-        }
+            if (!token) return;
+            try {
+                const res = await fetch(`${API}/profile/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    GhawyLayout.updateNavAuth();
+                }
+            } catch (e) { /* offline — leave the nav as it is */ }
+        })();
     </script>
 
 
