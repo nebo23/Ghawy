@@ -27,79 +27,55 @@
     <script src="src/js/layout.js?v=20260804"></script>
 
     <!-- ════════════════════════════════════════
-     COURSE DETAILS CONTENT
+     COURSE PREVIEW
+     Everything on this page is rendered from src/js/catalog.js — the page
+     used to carry its own private copy of all six courses (descriptions,
+     lesson lists, before/after copy) which had already drifted from the
+     platform. The long sales copy and the subscribe button are gone: this
+     is a preview, and the track it belongs to is the onward link.
     ════════════════════════════════════════ -->
-    <section class="course-details-section">
+    <section class="cd-page">
         <div class="container">
 
-            <!-- Back Button -->
-            <a href="index.html#modules" class="cd-back-btn">
-                <i class="fa-solid fa-arrow-right"></i> <span data-ar="العودة للكورسات" data-en="Back to Courses">العودة للكورسات</span>
+            <a href="/courses" class="cd-back-btn">
+                <i class="fa-solid fa-arrow-right cd-back-icon"></i>
+                <span data-ar="كل الكورسات" data-en="All courses">كل الكورسات</span>
             </a>
 
-            <!-- Course Header Info (above the grid) -->
-            <div class="cd-info-area reveal">
+            <div class="cd-head">
                 <h1 class="cd-title" id="cdTitle"></h1>
-
-                <div class="cd-meta-row" id="cdMeta"></div>
-
-                <div class="cd-level-badge">
-                    <span class="cd-level-dot"></span> <span id="cdLevel"></span>
-                </div>
-
-                <div class="cd-course-name" id="cdCourseName"></div>
+                <!-- "ضمن مسار الاوتوميشن" → /tracks -->
+                <div class="cd-trackline" id="cdTrack"></div>
             </div>
 
-            <!-- MAIN ROW: Video + Sidebar -->
+            <!-- Video and lesson list sit side by side. Which side the video
+                 lands on is decided by the document direction alone: it is the
+                 first child, so it takes the start edge — right in Arabic,
+                 left in English — with no per-language CSS. -->
             <div class="cd-layout">
+                <div class="cd-video-col" id="cdVideo"></div>
 
-                <!-- RIGHT: Video Thumbnail -->
-                <div class="cd-video-area reveal">
-                    <div class="cd-video-thumb">
-                        <img id="cdHeroImg" src="" alt=""
-                            style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;" />
-                        <div class="cd-play-overlay">
-                            <i class="fa-solid fa-circle-play"></i>
-                        </div>
-                        <div class="cd-video-gradient"></div>
+                <div class="cd-lessons-col">
+                    <div class="cd-lessons-head">
+                        <h2 class="cd-lessons-title" data-ar="محتوى الكورس" data-en="Course content">محتوى الكورس</h2>
+                        <div class="cd-lessons-meta" id="cdMeta"></div>
                     </div>
-                    <p class="cd-description" id="cdDescription" style="margin-top: 24px; padding: 0 10px;"></p>
+
+                    <ul class="cd-lessons-list" id="cdLessonsList"></ul>
+
+                    <p class="cd-locked-note">
+                        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        <span data-ar="الدروس مقفولة — الاشتراك بيفتح كل الكورسات مع بعض."
+                              data-en="Lessons are locked — one subscription opens every course.">الدروس مقفولة — الاشتراك بيفتح كل الكورسات مع بعض.</span>
+                    </p>
                 </div>
-
-                <!-- LEFT: Sidebar -->
-                <div class="cd-sidebar reveal" style="animation-delay: 0.2s;">
-                    <h3><i class="fa-solid fa-list"></i> <span data-ar="محتويات الكورس" data-en="Course Contents">محتويات الكورس</span></h3>
-
-                    <ul class="cd-lessons-list" id="cdLessonsList">
-                        <!-- Dynamically populated -->
-                    </ul>
-
-                    <p class="cd-sidebar-note" data-ar="اشترك للوصول لجميع الفيديوهات" data-en="Subscribe to access all videos">اشترك للوصول لجميع الفيديوهات</p>
-
-                    <a href="index.html#payment" class="btn-cta cd-subscribe-btn" data-ar="اشترك الآن" data-en="Subscribe Now">
-                        اشترك الآن
-                    </a>
-                </div>
-
             </div>
 
-            <!-- Before / After Comparison -->
-            <div class="cd-comparison-area reveal">
-                <h3 class="cd-learn-title" data-ar="مقارنة: قبل وبعد الكورس" data-en="Comparison: Before & After the Course">مقارنة: قبل وبعد الكورس</h3>
-                <div class="cd-comparison-table">
-                    <div class="cd-comp-col before-col">
-                        <h4><i class="fa-solid fa-xmark"></i> <span data-ar="قبل الكورس" data-en="Before the Course">قبل الكورس</span></h4>
-                        <ul class="cd-comp-list" id="cdBeforeList">
-                            <!-- Dynamically populated -->
-                        </ul>
-                    </div>
-                    <div class="cd-comp-col after-col">
-                        <h4><i class="fa-solid fa-check"></i> <span data-ar="بعد الكورس" data-en="After the Course">بعد الكورس</span></h4>
-                        <ul class="cd-comp-list" id="cdAfterList">
-                            <!-- Dynamically populated -->
-                        </ul>
-                    </div>
-                </div>
+            <!-- The instructor bar — same component as the course cards, in
+                 its `full` variant. -->
+            <div class="cd-instructor">
+                <h2 class="cd-section-title" data-ar="مدرّب الكورس" data-en="Course instructor">مدرّب الكورس</h2>
+                <div id="cdInstructor"></div>
             </div>
 
         </div>
@@ -113,409 +89,139 @@
          It must come before the inline script below, which renders the course
          content in whatever language i18n.js has just applied. -->
     <script src="src/js/i18n.js?v=20260804"></script>
+    <!-- The single source for course + instructor data. -->
+    <script src="src/js/catalog.js?v=20260804"></script>
     <script src="src/js/utils.js?v=20260804"></script>
-    <script src="src/js/main.js?v=20260804b"></script>
     <script>
         // ═══════════════════════════════════════
-        //   Course Data Store
+        //   Render the course from the catalog
         // ═══════════════════════════════════════
-        const COURSES = {
-            'prompt-engineering': {
-                title: 'Prompt Engineering',
-                image: './imgs/course3.jpg',
-                videoCount: 4,
-                duration: '5h 3min',
-                description: 'كورس Prompt Engineering معمول للي عايز يتقن فن كتابة البرومبتات الاحترافية. هتتعلم إزاي تتحكم في نماذج الذكاء الاصطناعي وتطلّع منها أفضل نتائج ممكنة. من الأساسيات لغاية Context Engineering المتقدم وبناء System Prompts احترافية.',
-                lessons: [
-                    { title: 'Prompting Part 1', duration: '2h' },
-                    { title: 'Prompting Part 2', duration: '53min' },
-                    { title: 'Prompting Part 3', duration: '35min' },
-                    { title: 'Context Engineering', duration: '19min' },
-                ],
-                beforeCourse: [
-                    'بتعاني عشان تطلع نتائج دقيقة ومفيدة من أدوات الذكاء الاصطناعي.',
-                    'مش فاهم إزاي الموديلز بتفكر أو إزاي توجهها صح.',
-                    'بتستخدم أدوات الذكاء الاصطناعي لاستخدامات سطحية وبسيطة.',
-                    'مش عارف تحمي تطبيقاتك من التلاعب أو الـ Prompt Injection.',
-                    'مش بتعرف تدمج النصوص مع الصور للوصول لأفضل نتيجة.'
-                ],
-                afterCourse: [
-                    'كتابة برومبتات احترافية تطلّع أفضل نتائج.',
-                    'فهم تقنيات Few-Shot و Chain of Thought.',
-                    'بناء System Prompts لأي تطبيق ذكاء اصطناعي.',
-                    'التعامل مع Multi-Modal Prompts (صور + نص).',
-                    'حماية التطبيقات من Prompt Injection.',
-                ]
-            },
-            'aaa-core': {
-                title: 'AAA Core',
-                image: './imgs/course2.jpg',
-                category: 'Business',
-                videoCount: 7,
-                duration: '12h 11min',
-                description: 'كورس AAA Core هو خريطة الطريق الكاملة لبناء وكالة AI Automation من الصفر. من الموديل للتسعير للتنفيذ والتسويق. هتتعلم كل حاجة محتاجها عشان تبدأ بزنس حقيقي في مجال الـ AI Automation.',
-                lessons: [
-                    { title: 'AI Automation Agency Model', duration: '1h 29min' },
-                    { title: 'Golden Opportunity', duration: '1h 42min' },
-                    { title: 'Sucess Formula', duration: '2h 8min' },
-                    { title: 'AI Solution Landscape', duration: '1h 20min' },
-                    { title: 'Niching & Scoping', duration: '2h 19min' },
-                    { title: 'Pricing', duration: '2h 36min' },
-                    { title: 'Costs and how to start AAA', duration: '36min' },
-                ],
-                beforeCourse: [
-                    'مش عارف إزاي تبدأ وكالة AI Automation من الصفر.',
-                    'بتواجه مشكلة في تسعير خدماتك بشكل يضمن لك ربح عالي.',
-                    'مش عارف إزاي تدير العملاء والمشاريع باحترافية.',
-                    'عندك مشكلة في إيجاد عملاء مهتمين بخدمات الذكاء الاصطناعي.',
-                    'بتعاني في تنفيذ المشاريع وتسليمها بجودة ترضي العميل.'
-                ],
-                afterCourse: [
-                    'بناء وكالة AI Automation كاملة من الصفر.',
-                    'تسعير خدماتك بشكل احترافي.',
-                    'إدارة العملاء والمشاريع بفعالية.',
-                    'التسويق وجلب العملاء بطرق عملية.',
-                    'تنفيذ المشاريع وتسليمها بجودة عالية.',
-                ]
-            },
-            'ai-foundations': {
-                title: 'AI Foundations',
-                image: './imgs/course1.jpg',
-                category: 'AI Theory',
-                videoCount: 10,
-                duration: '12h 3min',
-                description: 'كورس AI Foundations هو نقطة البداية الحقيقية لفهم الذكاء الاصطناعي. من تاريخ الـ AI لغاية بناء AI Agent من الصفر. هتفهم الـ Neural Networks والـ LLMs وإزاي التكنولوجيا دي بتشتغل من جوه.',
-                lessons: [
-                    { title: 'AI Basics', duration: '1h 24min' },
-                    { title: 'AI Landscape', duration: '1h 30m' },
-                    { title: 'Language Models & Neural Networks', duration: '49min' },
-                    { title: 'Tokens & Embeddings', duration: '1h 17min' },
-                    { title: 'Transformers & GPT Family', duration: '1h 16min' },
-                    { title: 'QMR', duration: '1h 12min' },
-                    { title: 'RAG', duration: '1h 13min' },
-                    { title: 'LLM History & Traits', duration: '1h 23min' },
-                    { title: 'AI Agents', duration: '37min' },
-                    { title: 'API & Requests', duration: '1h 19m' },
-                ],
-                beforeCourse: [
-                    'مجال الذكاء الاصطناعي يبدو معقد ومش فاهم أساسياته.',
-                    'بتسمع عن الـ Neural Networks بس مش فاهمها.',
-                    'مش عارف إزاي الـ LLMs بتشتغل من جوه.',
-                    'متعرفش إزاي تبني AI Agent أو إيه المبادئ اللي بيقوم عليها.'
-                ],
-                afterCourse: [
-                    'فهم تاريخ الذكاء الاصطناعي وتطوره.',
-                    'شرح عمل الـ Neural Networks بالتفصيل.',
-                    'فهم الـ Large Language Models (LLMs).',
-                    'بناء AI Agent عملي من الصفر.',
-                ]
-            },
-            'ai-automation-lab': {
-                title: 'AI Automation Lab',
-                image: './imgs/course4.jpg',
-                category: 'AI Automation',
-                videoCount: 11,
-                duration: '10h 36min',
-                description: 'كورس AI Automation Lab معمول للي عايز يتعلّم إزاي يبني أنظمة أوتوميشن متكاملة باستخدام أدوات No-Code مثل n8n و Make. سنقوم بتنفيذ مشاريع حقيقية مثل روبوتات خدمة العملاء، وتأهيل العملاء المحتملين (Lead Qualification)، وربط تطبيقات مختلفة ببعضها باستخدام الذكاء الاصطناعي. فهم كامل للـ Automation وتطبيقاته العملية.',
-                lessons: [
-                    { title: 'AI Automation Analogy', duration: '25 دقيقة' },
-                    { title: 'n8n Basics', duration: '1h 15m' },
-                    { title: 'n8n Nodes', duration: '2h 30m' },
-                    { title: 'n8n api', duration: '3h 05m' },
-                    { title: 'JSON & DATA', duration: '2h 32m' },
-                    { title: 'AI Agent & RAG', duration: '2h 32m' },
-                    { title: 'MCP', duration: '2h 32m' },
-                    { title: 'System Handling', duration: '2h 32m' },
-                    { title: 'Hosting', duration: '2h 32m' },
-                    { title: 'n8n vs make comparison', duration: '2h 32m' },
-                    { title: 'manychat', duration: '2h 32m' },
-                ],
-                beforeCourse: [
-                    'بتعمل مهامك اليومية بشكل يدوي وبياخد منك وقت طويل.',
-                    'مش بتعرف تستخدم أدوات الـ No-Code زي n8n أو Make.',
-                    'معندكش خبرة في ربط التطبيقات ببعضها أو استخدام الـ APIs.',
-                    'مش عارف إزاي تبني Customer Support Bot يرد على العملاء.',
-                    'بتعاني في ترتيب ومعالجة البيانات أو الإيميلات بشكل آلي.'
-                ],
-                afterCourse: [
-                    'تصميم سير عمل أوتوماتيكي معقد.',
-                    'دمج نماذج اللغات (LLMs) في عملياتك اليومية.',
-                    'معالجة البيانات وتصنيفها بشكل آلي.',
-                    'إنشاء مساعدين ذكيين قادرين على اتخاذ القرارات.',
-                    'بناء Customer Support Bot من الصفر.',
-                ]
-            },
-            'client-acquisition': {
-                title: 'Client Acquisition',
-                image: './imgs/course6.jpg',
-                category: 'Business & Sales',
-                videoCount: 6,
-                duration: '7h 30mins',
-                description: 'كورس Client Acquisition معمول للي عايز يتعلم إزاي يجيب عملاء بشكل منهجي واحترافي باستخدام الذكاء الاصطناعي. هتتعلم إزاي تحدد جمهورك المستهدف، وتبني قوائم عملاء محتملين، وتكتب رسائل تواصل مؤثرة، وتستخدم AI لأتمتة عملية الحصول على العملاء وتحويلهم لعملاء دفعوا.',
-                lessons: [
-                    { title: 'Acquisition & psychology', duration: '2h' },
-                    { title: 'Acquisition System Diagnosis', duration: '2h' },
-                    { title: 'AI Consulting & Auditing', duration: '2h' },
-                    { title: 'Value & Offer', duration: '1h 18min' },
-                    { title: 'Outreach', duration: '1h 5min' },
-                ],
-                beforeCourse: [
-                    'مش بتعرف إزاي تجيب عملاء بشكل منهجي.',
-                    'بتضيع وقت في التواصل مع ناس مش محتاجين خدمتك.',
-                    'رسائلك للعملاء مش بتلاقي استجابة.',
-                    'مش عارف إزاي تستخدم AI في عملية الـ Sales.',
-                    'صعب عليك تحول Lead لعميل فعلي دفع فلوس.',
-                ],
-                afterCourse: [
-                    'بناء قائمة عملاء محتملين مستهدفة بدقة.',
-                    'كتابة رسائل Outreach تجيب ردود حقيقية.',
-                    'أتمتة عملية الحصول على العملاء بالـ AI.',
-                    'تحديد وتأهيل العملاء المحتملين بسرعة.',
-                    'تحويل العملاء المحتملين لعملاء يدفعوا.',
-                ]
-            },
-            'practical-ai-systems': {
-                title: 'Practical AI Systems',
-                image: './imgs/course5.jpg',
-                category: 'AI Engineering',
-                videoCount: 3,
-                duration: '4h 35mins',
-                description: 'كورس Practical AI Systems معمول للي عايز يبني أنظمة ذكاء اصطناعي عملية وحقيقية من الصفر للتشغيل. هتتعلم إزاي تصمم وتركّب وتدمج أنظمة AI كاملة تشتغل في بيئة حقيقية، وتربطها بأدواتك وبياناتك، وتطلعها لمرحلة الإنتاج بشكل موثوق.',
-                lessons: [
-                    { title: 'Customer Support Chatbot', duration: '2h 34min' },
-                    { title: 'Lead Qualifcation', duration: '55min' },
-                    { title: 'integrations & analytics', duration: '1h 13min' },
+        // No course data lives on this page any more. Titles, thumbnails,
+        // durations, tracks and instructors all come from src/js/catalog.js,
+        // and the lesson list comes from the public course endpoint through
+        // it — so the lessons shown here are the ones actually published.
+        const C = window.GhawyCatalog;
 
-                ],
-                beforeCourse: [
-                    'بتعرف أدوات AI متفرقة بس مش عارف تجمعها في نظام كامل.',
-                    'مش عارف إزاي تنقل نموذج أو workflow لمرحلة الإنتاج.',
-                    'بتلاقي صعوبة في ربط أنظمة الـ AI ببياناتك وأدواتك.',
-                    'أنظمتك بتقع أو بتبوظ أول ما تشتغل على بيانات حقيقية.',
-                ],
-                afterCourse: [
-                    'تصميم أنظمة AI كاملة من الفكرة للتشغيل.',
-                    'ربط الـ AI بمصادر بياناتك وأدواتك بسهولة.',
-                    'نشر الأنظمة في الإنتاج بشكل موثوق.',
-                    'مراقبة وتوسيع أنظمتك وهي شغّالة.',
-                ]
-            }
-        };
+        function slugFromURL() {
+            return new URLSearchParams(location.search).get('course') || '';
+        }
 
-        // ═══════════════════════════════════════
-        //   English translations for course content
-        //   (title / category / lessons are already English)
-        // ═══════════════════════════════════════
-        const COURSES_EN = {
-            'prompt-engineering': {
-                description: "Prompt Engineering is built for anyone who wants to master the art of writing professional prompts. You'll learn how to control AI models and get the best possible results out of them — from the fundamentals to advanced Context Engineering and building professional System Prompts.",
-                beforeCourse: [
-                    'You struggle to get accurate, useful results from AI tools.',
-                    "You don't understand how the models think or how to steer them correctly.",
-                    'You only use AI tools for shallow, basic tasks.',
-                    "You can't protect your apps from manipulation or Prompt Injection.",
-                    "You don't know how to combine text with images for the best result.",
-                ],
-                afterCourse: [
-                    'Write professional prompts that produce the best results.',
-                    'Understand Few-Shot and Chain of Thought techniques.',
-                    'Build System Prompts for any AI application.',
-                    'Work with Multi-Modal Prompts (images + text).',
-                    'Protect applications from Prompt Injection.',
-                ],
-            },
-            'aaa-core': {
-                description: 'AAA Core is the complete roadmap to building an AI Automation agency from scratch — from the model to pricing, delivery and marketing. You will learn everything you need to start a real business in the AI Automation space.',
-                beforeCourse: [
-                    "You don't know how to start an AI Automation agency from scratch.",
-                    'You struggle to price your services in a way that ensures high profit.',
-                    "You don't know how to manage clients and projects professionally.",
-                    'You have trouble finding clients interested in AI services.',
-                    'You struggle to deliver projects at a quality clients are happy with.',
-                ],
-                afterCourse: [
-                    'Build a complete AI Automation agency from scratch.',
-                    'Price your services professionally.',
-                    'Manage clients and projects effectively.',
-                    'Market and acquire clients with practical methods.',
-                    'Execute and deliver projects at high quality.',
-                ],
-            },
-            'ai-foundations': {
-                description: 'AI Foundations is the real starting point for understanding artificial intelligence — from the history of AI to building an AI Agent from scratch. You will understand Neural Networks and LLMs and how this technology actually works under the hood.',
-                beforeCourse: [
-                    "The AI field feels complex and you don't understand its fundamentals.",
-                    "You hear about Neural Networks but don't understand them.",
-                    "You don't know how LLMs work under the hood.",
-                    "You don't know how to build an AI Agent or the principles behind it.",
-                ],
-                afterCourse: [
-                    'Understand the history of AI and how it evolved.',
-                    'Explain how Neural Networks work in detail.',
-                    'Understand Large Language Models (LLMs).',
-                    'Build a practical AI Agent from scratch.',
-                ],
-            },
-            'ai-automation-lab': {
-                description: 'AI Automation Lab is built for anyone who wants to learn how to build complete automation systems using No-Code tools like n8n and Make. We will build real projects such as customer support bots, lead qualification, and connecting different apps together using AI — a full understanding of automation and its practical applications.',
-                beforeCourse: [
-                    'You do your daily tasks manually and they take a long time.',
-                    "You don't know how to use No-Code tools like n8n or Make.",
-                    'You have no experience connecting apps together or using APIs.',
-                    "You don't know how to build a Customer Support Bot that replies to clients.",
-                    'You struggle to organize and process data or emails automatically.',
-                ],
-                afterCourse: [
-                    'Design complex automated workflows.',
-                    'Integrate language models (LLMs) into your daily operations.',
-                    'Process and classify data automatically.',
-                    'Create smart assistants capable of making decisions.',
-                    'Build a Customer Support Bot from scratch.',
-                ],
-            },
-            'client-acquisition': {
-                description: 'Client Acquisition is built for anyone who wants to learn how to get clients in a systematic, professional way using AI. You will learn how to define your target audience, build prospect lists, write compelling outreach messages, and use AI to automate acquiring clients and converting them into paying customers.',
-                beforeCourse: [
-                    "You don't know how to get clients systematically.",
-                    "You waste time reaching out to people who don't need your service.",
-                    'Your outreach messages get no responses.',
-                    "You don't know how to use AI in the sales process.",
-                    "It's hard for you to turn a lead into an actual paying client.",
-                ],
-                afterCourse: [
-                    'Build a precisely targeted list of prospects.',
-                    'Write outreach messages that get real replies.',
-                    'Automate client acquisition with AI.',
-                    'Identify and qualify leads quickly.',
-                    'Convert leads into paying clients.',
-                ],
-            },
-            'practical-ai-systems': {
-                description: 'Practical AI Systems is built for anyone who wants to build real, practical AI systems from scratch to production. You will learn how to design, assemble and integrate complete AI systems that run in a real environment, connect them to your tools and data, and ship them to production reliably.',
-                beforeCourse: [
-                    "You know scattered AI tools but can't combine them into a complete system.",
-                    "You don't know how to move a model or workflow to production.",
-                    'You find it hard to connect AI systems to your data and tools.',
-                    'Your systems crash or break the moment they run on real data.',
-                ],
-                afterCourse: [
-                    'Design complete AI systems from idea to operation.',
-                    'Connect AI to your data sources and tools easily.',
-                    'Deploy systems to production reliably.',
-                    'Monitor and scale your systems while they run.',
-                ],
-            },
-        };
+        function notFound() {
+            const t = { ar: 'الكورس ده مش موجود', en: 'This course does not exist' };
+            const sub = {
+                ar: 'يمكن اللينك قديم أو الكورس اتشال. شوف كل الكورسات المتاحة.',
+                en: 'The link may be old, or the course was removed. Browse all available courses.'
+            };
+            document.getElementById('cdTitle').textContent = C.L(t);
+            document.getElementById('cdTrack').innerHTML = '';
+            document.querySelector('.cd-layout').innerHTML = `
+                <div class="gc-empty">
+                    <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+                    <p ${C.i18nAttrs(sub)}>${C.esc(C.L(sub))}</p>
+                    <a class="gc-btn" href="/courses" data-ar="كل الكورسات" data-en="All courses">كل الكورسات</a>
+                </div>`;
+            document.querySelector('.cd-instructor').style.display = 'none';
+        }
 
-        // ═══════════════════════════════════════
-        //   Render Course Details
-        // ═══════════════════════════════════════
+        function lessonRowHTML(l) {
+            // NOTE: deliberately not `.lesson-row` — that class belongs to the
+            // member course page and carries behaviour we do not want here.
+            return `
+            <li class="cd-lesson-item">
+                <span class="cd-lesson-title">
+                    <i class="fa-solid fa-circle-play" aria-hidden="true"></i>
+                    ${C.esc(l.title)}
+                </span>
+                <span class="cd-lesson-right">
+                    <span class="cd-lesson-dur">${C.esc(l.duration)}</span>
+                    <i class="fa-solid fa-lock cd-lesson-lock" aria-hidden="true"></i>
+                </span>
+            </li>`;
+        }
+
         function renderCourse() {
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('course') || 'prompt-engineering';
-            const course = COURSES[slug];
+            const slug = slugFromURL();
 
-            // Read the language off the document (what i18n.js actually
-            // applied), not off storage — storage is empty until the visitor
-            // makes an explicit choice.
-            const lang = window.currentLang ? window.currentLang() : 'ar';
+            return C.courseBySlug(slug).then(course => {
+                if (!course) { notFound(); return; }
 
-            if (!course) {
-                document.querySelector('.cd-info-area').innerHTML =
-                    '<h1 class="cd-title">' + (lang === 'en' ? 'Course not found' : 'الكورس مش موجود') + '</h1>';
-                return;
-            }
+                const title = C.L(course.title);
+                document.title = `${title} — Ghawy`;
+                document.getElementById('cdTitle').textContent = title;
 
-            // Pick localized fields (falls back to Arabic when no English provided)
-            const tr = (lang === 'en' && typeof COURSES_EN !== 'undefined' && COURSES_EN[slug]) ? COURSES_EN[slug] : null;
-            const description = tr && tr.description ? tr.description : course.description;
-            const beforeCourse = tr && tr.beforeCourse ? tr.beforeCourse : course.beforeCourse;
-            const afterCourse = tr && tr.afterCourse ? tr.afterCourse : course.afterCourse;
-            const videoWord = lang === 'en' ? 'videos' : 'فيديو';
+                // Track line → /tracks
+                const tr = C.track(course.track);
+                const trackEl = document.getElementById('cdTrack');
+                if (tr) {
+                    const within = { ar: 'ضمن', en: 'Part of' };
+                    trackEl.innerHTML = `
+                        <span class="cd-track-pre" ${C.i18nAttrs(within)}>${C.esc(C.L(within))}</span>
+                        <a class="cd-track-link" href="/tracks#${C.esc(tr.slug)}" ${C.i18nAttrs(tr.name)}>${C.esc(C.L(tr.name))}</a>`;
+                } else {
+                    trackEl.innerHTML = '';
+                }
 
-            // Title tag
-            document.title = `${course.title} — Ghawy`;
+                // Intro video (placeholder until the client sends the files)
+                document.getElementById('cdVideo').innerHTML = C.courseVideoHTML(course);
 
-            // Hero image
-            const heroImg = document.getElementById('cdHeroImg');
-            heroImg.src = course.image;
-            heroImg.alt = course.title;
+                // Lesson count + total duration
+                const lessonsWord = {
+                    ar: `${course.lessons} درس`,
+                    en: `${course.lessons} lessons`,
+                };
+                document.getElementById('cdMeta').innerHTML = `
+                    <span class="cd-meta-item">
+                        <i class="fa-solid fa-list" aria-hidden="true"></i>
+                        <span ${C.i18nAttrs(lessonsWord)}>${C.esc(C.L(lessonsWord))}</span>
+                    </span>
+                    <span class="cd-meta-item">
+                        <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                        <span>${C.esc(course.duration)}</span>
+                    </span>`;
 
-            // Title
-            document.getElementById('cdTitle').textContent = course.title;
+                // Instructor bar — the shared component, full variant
+                document.getElementById('cdInstructor').innerHTML =
+                    C.instructorBarHTML(C.instructor(course.instructor), { variant: 'full' });
 
-            // Meta
-            document.getElementById('cdMeta').innerHTML = `
-                <span><i data-lucide="play-circle" class="nav-icon"></i> ${course.videoCount} ${videoWord}</span>
-                <span class="cd-meta-dot">•</span>
-                <span><i class="fa-regular fa-clock"></i> ${course.duration}</span>
-            `;
+                // Lessons: skeleton rows until the endpoint answers.
+                const list = document.getElementById('cdLessonsList');
+                list.innerHTML = Array.from({ length: Math.min(course.lessons || 4, 8) },
+                    () => '<li class="cd-lesson-item cd-lesson-skeleton"><span class="gc-sk gc-sk-line"></span></li>').join('');
 
-            // Level
-            document.getElementById('cdLevel').textContent = course.level;
-
-            // Course name / Category tag (Replacing the old course title with category pill)
-            document.getElementById('cdCourseName').innerHTML = `<span class="cd-category-tag">${course.category}</span>`;
-
-            // Description
-            document.getElementById('cdDescription').textContent = description;
-
-            // Lessons sidebar
-            const lessonsList = document.getElementById('cdLessonsList');
-            lessonsList.innerHTML = course.lessons.map(l => `
-                <li class="cd-lesson-item">
-                    <span class="cd-lesson-title"><i data-lucide="play-circle" class="nav-icon"></i> ${l.title}</span>
-                    <div class="cd-lesson-right">
-                        <span class="cd-lesson-dur">${l.duration}</span>
-                        <i class="fa-solid fa-lock cd-lesson-lock"></i>
-                    </div>
-                </li>
-            `).join('');
-
-            // Before & After
-            const beforeList = document.getElementById('cdBeforeList');
-            beforeList.innerHTML = beforeCourse.map(item => `
-                <li>${item}</li>
-            `).join('');
-
-            const afterList = document.getElementById('cdAfterList');
-            afterList.innerHTML = afterCourse.map(item => `
-                <li>${item}</li>
-            `).join('');
+                return C.lessonsFor(course).then(lessons => {
+                    if (!lessons.length) {
+                        // The endpoint failed or the course has no ready
+                        // videos — say so rather than leaving grey bars.
+                        const none = {
+                            ar: 'قايمة الدروس مش متاحة دلوقتي.',
+                            en: 'The lesson list is not available right now.'
+                        };
+                        list.innerHTML = `<li class="cd-lesson-none" ${C.i18nAttrs(none)}>${C.esc(C.L(none))}</li>`;
+                        return;
+                    }
+                    list.innerHTML = lessons.map(lessonRowHTML).join('');
+                });
+            });
         }
 
         // ═══════════════════════════════════════
         //   Language
         // ═══════════════════════════════════════
-        // The language engine is src/js/i18n.js (loaded at the bottom of this
-        // page) — the same one every other page uses. This page used to carry
-        // its own private copy of applyLanguage()/toggleLanguage(), which meant
-        // a second, divergent language system on the site. All that is left
-        // here is re-rendering the JS-built course content when the language
-        // changes; i18n.js fires `languagechange` for exactly this.
-        document.addEventListener('languagechange', () => {
-            renderCourse();
-            if (window.lucide) lucide.createIcons();
-        });
+        // The language engine is src/js/i18n.js (loaded above) — the same one
+        // every other page uses. This page used to carry its own private copy
+        // of applyLanguage()/toggleLanguage(), which meant a second, divergent
+        // language system on the site. All that is left here is re-rendering
+        // the JS-built content when the language changes; i18n.js fires
+        // `languagechange` for exactly this.
+        document.addEventListener('languagechange', renderCourse);
 
-        // First paint. i18n.js has already set <html lang/dir> by the time this
-        // runs, so renderCourse() reads the right language.
+        // First paint. i18n.js has already set <html lang/dir> by the time
+        // this runs, so renderCourse() reads the right language.
         renderCourse();
 
         // ═══════════════════════════════════════
         //   Standard Page Setup
         // ═══════════════════════════════════════
-        // Scroll reveal
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    revealObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.08 });
-        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-
         // Auth state. The nav itself (logged-in vs logged-out, scroll state,
         // hamburger, drawer) is owned by layout.js; the only thing added here
         // is dropping a token the API has already rejected.
@@ -533,9 +239,6 @@
             } catch (e) { /* offline — leave the nav as it is */ }
         })();
     </script>
-
-
-    <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 </body>
 
 </html>

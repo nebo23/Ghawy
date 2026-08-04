@@ -259,21 +259,10 @@ function applyLanguage(lang, persist = true) {
         el.style.display = '';
     });
 
-    // 8. Courses carousel: set the container dir first, then rebuild so Swiper
-    //    re-reads it (changeLanguageDirection is unreliable with loop mode).
-    //    Skipped entirely on pages without the carousel.
-    const swiperEl = document.getElementById('coursesSwiper');
-    if (swiperEl) {
-        swiperEl.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-        if (typeof window.rebuildCoursesSwiper === 'function') {
-            window.rebuildCoursesSwiper();
-        }
-        // Re-translate the freshly-created loop clones.
-        swiperEl.querySelectorAll('[data-ar]').forEach(el => {
-            const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
-            setNodeText(el, text, el.getAttribute('data-html') === 'true');
-        });
-    }
+    // 8. (The courses carousel used to be rebuilt here so Swiper would pick up
+    //    the new direction. The carousel is gone — the courses section is a
+    //    plain grid rendered from src/js/catalog.js, which re-renders itself
+    //    off the `languagechange` event dispatched in step 10.)
 
     // 9. Re-apply pricing currency so dynamic price copy follows the language.
     if (typeof window.applyPricingCurrency === 'function') {

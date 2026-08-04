@@ -44,16 +44,25 @@
                 <p class="page-shell-lead" data-ar="كل كورسات الـ AI في مكان واحد — من الأساسيات لأحدث التطورات، وبتتحدّث باستمرار." data-en="Every AI course in one place — from the fundamentals to the latest developments, updated continuously.">كل كورسات الـ AI في مكان واحد — من الأساسيات لأحدث التطورات، وبتتحدّث باستمرار.</p>
             </header>
 
-            <!-- Placeholder — the real content of this page ships in a later phase. -->
-            <section class="page-shell-placeholder">
-                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-                <h2 data-ar="الصفحة دي لسه بتتجهّز" data-en="This page is still being built">الصفحة دي لسه بتتجهّز</h2>
-                <p data-ar="المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية."
-                   data-en="The full content of this page ships in a later phase. Until then, you can see a preview of everything on the home page.">
-                    المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية.
-                </p>
-                <a href="/" class="btn-cta-solid page-shell-cta" data-ar="ارجع للصفحة الرئيسية" data-en="Back to home">ارجع للصفحة الرئيسية</a>
-            </section>
+            <!-- Totals across the whole catalog — summed from catalog.js, not
+                 typed in here, so they follow the platform. -->
+            <div class="courses-info-bar is-pending" id="coursesTotals">
+                <div class="info-item">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span><span data-ar="إجمالي الكورسات:" data-en="Total courses:">إجمالي الكورسات:</span>
+                        <strong data-total="courses">—</strong></span>
+                </div>
+                <div class="info-item">
+                    <i class="fa-solid fa-stopwatch"></i>
+                    <span><span data-ar="إجمالي الساعات:" data-en="Total hours:">إجمالي الساعات:</span>
+                        <strong data-total="hours">—</strong></span>
+                </div>
+            </div>
+
+            <!-- The exact same card component the home page uses — one
+                 renderer in catalog.js, never a second copy. Skeleton →
+                 cards → empty state are all handled there. -->
+            <div class="gc-grid" id="coursesGrid"></div>
         </div>
     </main>
 
@@ -62,6 +71,9 @@
     <script>GhawyLayout.mountFooter();</script>
 
     <script src="src/js/i18n.js?v=20260804"></script>
+    <!-- The single source for course + instructor data. It renders
+         #coursesGrid and #coursesTotals above on its own. -->
+    <script src="src/js/catalog.js?v=20260804"></script>
     <script src="src/js/utils.js?v=20260804"></script>
 </body>
 

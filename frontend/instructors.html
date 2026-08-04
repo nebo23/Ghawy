@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- Arabic-first like every other public page; i18n.js re-applies the
+     visitor's stored choice on load. -->
+<html lang="ar" dir="rtl" id="htmlRoot">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>المدربين — Ghawy</title>
+    <meta name="description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
+    <link rel="canonical" href="https://ghawy.ai/instructors" />
+    <meta name="author" content="Nabil Ahmed" />
+
+    <meta property="og:title" content="المدربين — Ghawy" />
+    <meta property="og:description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
+    <meta property="og:image" content="./imgs/community-logo.png" />
+    <meta property="og:url" content="https://ghawy.ai/instructors" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ghawy" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="المدربين — Ghawy" />
+    <meta name="twitter:description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
+    <meta name="twitter:image" content="./imgs/community-logo.png" />
+
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
+    <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="src/css/main.css?v=20260804b">
+</head>
+
+<body>
+
+    <!-- Shared navbar + drawer — single source in src/js/layout.js -->
+    <div id="siteHeader"></div>
+    <script src="src/js/layout.js?v=20260804"></script>
+
+    <!-- ════════════════════════════════════════
+     INSTRUCTORS
+     Two views out of one page, chosen by the `i` query parameter:
+       /instructors            → every instructor
+       /instructors?i=<slug>   → that instructor's own page
+     Both are rendered from src/js/catalog.js, the same file the course
+     cards and the course preview read, so an instructor added there
+     appears here with no change to this page.
+    ════════════════════════════════════════ -->
+    <main class="page-shell">
+        <div class="container">
+            <header class="page-shell-head" id="insHead"></header>
+            <div id="insBody"></div>
+        </div>
+    </main>
+
+    <!-- Shared footer — single source in src/js/layout.js -->
+    <div id="siteFooter"></div>
+    <script>GhawyLayout.mountFooter();</script>
+
+    <script src="src/js/i18n.js?v=20260804"></script>
+    <!-- The single source for course + instructor data. -->
+    <script src="src/js/catalog.js?v=20260804"></script>
+    <script src="src/js/utils.js?v=20260804"></script>
+    <script>
+        const C = window.GhawyCatalog;
+        const head = document.getElementById('insHead');
+        const body = document.getElementById('insBody');
+
+        function slugFromURL() {
+            return new URLSearchParams(location.search).get('i') || '';
+        }
+
+        function setHead(title, lead) {
+            head.innerHTML = `
+                <h1 class="page-shell-title" ${C.i18nAttrs(title)}>${C.esc(C.L(title))}</h1>
+                ${lead ? `<p class="page-shell-lead" ${C.i18nAttrs(lead)}>${C.esc(C.L(lead))}</p>` : ''}`;
+        }
+
+        // ─── List view ───────────────────────────────────────────
+        function renderList() {
+            setHead(
+                { ar: 'المدربين', en: 'Instructors' },
+                {
+                    ar: 'مين بيشرحلك في غاوي — خبرتهم، وشغلهم، والكورسات اللي بيقدموها.',
+                    en: 'Who teaches you at Ghawy — their experience, their work, and the courses they run.'
+                }
+            );
+            const list = C.instructorList();
+            body.innerHTML = list.length
+                ? `<div class="gi-card-grid">${list.map(C.instructorCardHTML).join('')}</div>`
+                : `<div class="gc-empty">
+                       <i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+                       <p data-ar="مفيش مدربين معروضين دلوقتي." data-en="No instructors to show right now.">مفيش مدربين معروضين دلوقتي.</p>
+                   </div>`;
+        }
+
+        // ─── Unknown slug ────────────────────────────────────────
+        // A clear message, never a blank page: the visitor most likely
+        // followed an old link.
+        function renderNotFound(slug) {
+            setHead({ ar: 'المدرّب ده مش موجود', en: 'Instructor not found' }, null);
+            const msg = {
+                ar: `مفيش مدرّب بالاسم "${slug}". يمكن اللينك قديم — دي قايمة كل المدربين.`,
+                en: `There is no instructor called "${slug}". The link may be old — here is the full list.`
+            };
+            body.innerHTML = `
+                <div class="gc-empty">
+                    <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+                    <p ${C.i18nAttrs(msg)}>${C.esc(C.L(msg))}</p>
+                    <a class="gc-btn" href="/instructors" data-ar="كل المدربين" data-en="All instructors">كل المدربين</a>
+                </div>`;
+        }
+
+        // ─── Detail view ─────────────────────────────────────────
+        function renderDetail(inst) {
+            // No page heading here: the instructor bar below already leads
+            // with the photo, the name and the role, and repeating them 200px
+            // apart just reads as a mistake. The head carries the way back
+            // to the list instead.
+            head.innerHTML = `
+                <a href="/instructors" class="cd-back-btn ins-back">
+                    <i class="fa-solid fa-arrow-right cd-back-icon"></i>
+                    <span data-ar="كل المدربين" data-en="All instructors">كل المدربين</span>
+                </a>`;
+
+            // The instructor bar (full variant) carries the photo, the facts,
+            // the client strip and the intro video — the same component the
+            // course preview shows, not a second copy of it.
+            body.innerHTML = `
+                <div class="ins-detail">
+                    ${C.instructorBarHTML(inst, { variant: 'full' })}
+
+                    ${inst.bio ? `
+                    <section class="ins-block">
+                        <h2 class="cd-section-title" data-ar="نبذة" data-en="About">نبذة</h2>
+                        <p class="ins-bio" ${C.i18nAttrs(inst.bio)}>${C.esc(C.L(inst.bio))}</p>
+                    </section>` : ''}
+
+                    ${C.linksHTML(inst) ? `
+                    <section class="ins-block">
+                        <h2 class="cd-section-title" data-ar="لينكاته" data-en="Find them online">لينكاته</h2>
+                        ${C.linksHTML(inst)}
+                    </section>` : ''}
+
+                    <section class="ins-block">
+                        <h2 class="cd-section-title" data-ar="كورساته على غاوي" data-en="Their courses on Ghawy">كورساته على غاوي</h2>
+                        <div class="gc-grid" id="insCourses">${C.skeletonHTML(2)}</div>
+                    </section>
+                </div>`;
+
+            const grid = document.getElementById('insCourses');
+            C.coursesByInstructor(inst.slug).then(courses => {
+                grid.innerHTML = courses.length
+                    ? courses.map(C.courseCardHTML).join('')
+                    : `<div class="gc-empty">
+                           <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+                           <p data-ar="لسه مفيش كورسات للمدرّب ده." data-en="This instructor has no courses yet.">لسه مفيش كورسات للمدرّب ده.</p>
+                       </div>`;
+            });
+        }
+
+        function render() {
+            const slug = slugFromURL();
+            if (!slug) { renderList(); return; }
+            const inst = C.instructor(slug);
+            if (!inst) { renderNotFound(slug); return; }
+            renderDetail(inst);
+            document.title = `${C.L(inst.name)} — Ghawy`;
+        }
+
+        // Re-render on language change, like every other JS-built page.
+        document.addEventListener('languagechange', render);
+        render();
+    </script>
+</body>
+
+</html>

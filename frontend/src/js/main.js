@@ -558,59 +558,18 @@ function logout() {
 }
 
 // ═══════════════════════════════════════════
-//   Premium Course Catalog — Swiper + Accordion
+//   Course catalog section
 // ═══════════════════════════════════════════
+// The Swiper carousel that used to live here is gone: there are only six
+// courses, and a grid shows all of them at once instead of hiding two thirds
+// behind arrows. Everything the section renders now comes from
+// src/js/catalog.js — including the totals bar, which is summed from the
+// catalog rather than being two numbers typed into the HTML.
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Swiper Infinite Carousel
-    if (document.querySelector('.coursesSwiper')) {
-        let coursesSwiper = null;
-
-        // Build (or rebuild) the swiper. Swiper auto-detects RTL/LTR from the
-        // container's `dir` attribute at construction time, so to switch
-        // direction reliably we destroy and recreate it.
-        function buildCoursesSwiper() {
-            if (coursesSwiper) {
-                coursesSwiper.destroy(true, true);
-                coursesSwiper = null;
-            }
-            // Remove any leftover loop clones so rebuilding (on language switch)
-            // doesn't accumulate duplicate cards / clone-of-clone garbage.
-            document.querySelectorAll('.coursesSwiper .swiper-slide-duplicate')
-                .forEach(el => el.remove());
-            coursesSwiper = new Swiper('.coursesSwiper', {
-                slidesPerView: 3,
-                spaceBetween: 15,
-                loop: true,
-                grabCursor: true,
-                centeredSlides: false,
-                speed: 500,
-                preventClicks: false,
-                preventClicksPropagation: false,
-                breakpoints: {
-                    0: { slidesPerView: 1, spaceBetween: 10 },
-                    600: { slidesPerView: 2, spaceBetween: 15 },
-                    1024: { slidesPerView: 3, spaceBetween: 30 }
-                }
-            });
-        }
-
-        buildCoursesSwiper();
-        // Exposed so the language toggle (in index.html) can rebuild with the
-        // correct direction after updating the container's `dir` attribute.
-        window.rebuildCoursesSwiper = buildCoursesSwiper;
-
-        const prevBtn = document.getElementById('cPrevBtn');
-        const nextBtn = document.getElementById('cNextBtn');
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => coursesSwiper && coursesSwiper.slidePrev());
-            prevBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper && coursesSwiper.slidePrev(); });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => coursesSwiper && coursesSwiper.slideNext());
-            nextBtn.addEventListener('touchend', (e) => { e.preventDefault(); coursesSwiper && coursesSwiper.slideNext(); });
-        }
-    }
+    // 1. The course grid and its totals bar render themselves — catalog.js
+    //    picks up #coursesGrid / #coursesTotals on any page that has them,
+    //    so the home page and /courses share one code path.
 
     // 2. Logo Shine Effect
     const navLogo = document.querySelector('.nav-logo');
@@ -622,51 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => navLogo.classList.remove('logo-shine'), 700);
         });
     }
-
-    // 3. Accordion — كل كارت مستقل تماماً ✅
-    document.querySelectorAll('.premium-course-card').forEach(card => {
-        const toggle = card.querySelector('.accordion-toggle');
-        const content = card.querySelector('.accordion-content');
-        const icon = card.querySelector('.toggle-icon');
-
-        if (!toggle || !content) return;
-
-        toggle.addEventListener('click', function (e) {
-            e.stopPropagation();
-            const isOpen = toggle.classList.contains('active');
-
-            // أقفل كل الكروت التانية
-            document.querySelectorAll('.premium-course-card').forEach(otherCard => {
-                if (otherCard === card) return;
-                const t = otherCard.querySelector('.accordion-toggle');
-                const c = otherCard.querySelector('.accordion-content');
-                const ic = otherCard.querySelector('.toggle-icon');
-                if (t) t.classList.remove('active');
-                if (ic) ic.style.transform = 'rotate(0deg)';
-                if (c) c.style.maxHeight = null;
-            });
-
-            // افتح أو أقفل الكارت الحالي
-            if (!isOpen) {
-                toggle.classList.add('active');
-                if (icon) icon.style.transform = 'rotate(180deg)';
-                content.style.maxHeight = content.scrollHeight + 'px';
-            } else {
-                toggle.classList.remove('active');
-                if (icon) icon.style.transform = 'rotate(0deg)';
-                content.style.maxHeight = null;
-            }
-        });
-    });
-
-    // 4. Course Card Click → course-details.html
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.lessons-accordion')) return;
-        const card = e.target.closest('.premium-course-card');
-        if (!card) return;
-        const slug = card.dataset.slug;
-        if (slug) window.location.href = `course-details.html?course=${slug}`;
-    });
 
 });
 // === Logo Click Shine Effect ===
