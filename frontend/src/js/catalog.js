@@ -321,29 +321,29 @@
     }
 
     /**
-     * The instructor bar — the one component used everywhere an instructor is
-     * shown. `compact` is the row inside a course card (photo + name + role);
-     * `full` adds the client strip, the experience line and the intro video,
-     * and is what the course preview and the instructor pages use.
+     * The instructor bar: photo + name + role, linking to their page. Used in
+     * every course card and under the course preview.
+     *
+     * There used to be a second `full` variant that boxed the identity, the
+     * facts, the client strip and the intro video into one card. It was
+     * dropped — the box left a lot of dead space around the video and read
+     * badly. The instructor page now lays those parts out flat down the page
+     * instead, using the individual renderers below.
      */
-    function instructorBarHTML(inst, opts) {
+    function instructorBarHTML(inst) {
         if (!inst) return '';
-        const o = opts || {};
-        const variant = o.variant === 'full' ? 'full' : 'compact';
-        const href = `/instructors?i=${encodeURIComponent(inst.slug)}`;
-        const name = L(inst.name);
-
-        if (variant === 'compact') {
-            return `
-        <a class="gi-bar gi-bar-compact" href="${href}">
+        return `
+        <a class="gi-bar gi-bar-compact" href="/instructors?i=${encodeURIComponent(inst.slug)}">
             ${avatarHTML(inst, 'gi-avatar')}
             <span class="gi-ident">
-                <span class="gi-name">${esc(name)}</span>
+                <span class="gi-name">${esc(L(inst.name))}</span>
                 <span class="gi-role" ${i18nAttrs(inst.role)}>${esc(L(inst.role))}</span>
             </span>
         </a>`;
-        }
+    }
 
+    /** The experience / client-count pills. */
+    function factsHTML(inst) {
         const yearsLine = {
             ar: `خبرة أكتر من ${inst.yearsExperience} سنين`,
             en: `${inst.yearsExperience}+ years of experience`,
@@ -352,34 +352,20 @@
             ar: `اشتغل مع أكتر من ${inst.clientsCount} عميل`,
             en: `Worked with ${inst.clientsCount}+ clients`,
         } : null;
+        return `
+        <div class="gi-facts">
+            <span class="gi-fact" ${i18nAttrs(yearsLine)}>${esc(L(yearsLine))}</span>
+            ${clientsLine ? `<span class="gi-fact" ${i18nAttrs(clientsLine)}>${esc(L(clientsLine))}</span>` : ''}
+        </div>`;
+    }
 
-        const clientChips = (inst.clients || []).map(c => c.logo
+    /** The brands/creators strip. Chips today, images the moment a logo is set. */
+    function clientsHTML(inst) {
+        const chips = (inst.clients || []).map(c => c.logo
             ? `<span class="gi-client"><img src="${esc(c.logo)}" alt="${esc(L(c.name))}" loading="lazy" /></span>`
             : `<span class="gi-client gi-client-text" ${i18nAttrs(c.name)}>${esc(L(c.name))}</span>`
         ).join('');
-
-        return `
-        <div class="gi-bar gi-bar-full">
-            <div class="gi-head">
-                <a class="gi-head-link" href="${href}">${avatarHTML(inst, 'gi-avatar gi-avatar-lg')}</a>
-                <div class="gi-ident">
-                    <a class="gi-name gi-name-lg" href="${href}">${esc(name)}</a>
-                    <span class="gi-role" ${i18nAttrs(inst.role)}>${esc(L(inst.role))}</span>
-                    <span class="gi-facts">
-                        <span class="gi-fact" ${i18nAttrs(yearsLine)}>${esc(L(yearsLine))}</span>
-                        ${clientsLine ? `<span class="gi-fact" ${i18nAttrs(clientsLine)}>${esc(L(clientsLine))}</span>` : ''}
-                    </span>
-                </div>
-            </div>
-
-            ${clientChips ? `
-            <div class="gi-clients">
-                <span class="gi-clients-label" data-ar="اشتغل مع" data-en="Worked with">اشتغل مع</span>
-                <div class="gi-clients-row">${clientChips}</div>
-            </div>` : ''}
-
-            ${o.video === false ? '' : introVideoHTML(inst)}
-        </div>`;
+        return chips ? `<div class="gi-clients-row">${chips}</div>` : '';
     }
 
     /**
@@ -486,7 +472,7 @@
         </a>
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
-            ${instructorBarHTML(inst, { variant: 'compact' })}
+            ${instructorBarHTML(inst)}
             <div class="gc-hours">
                 <i class="fa-regular fa-clock" aria-hidden="true"></i>
                 <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
@@ -595,7 +581,8 @@
         load, courseBySlug, lessonsFor, totals,
         coursesByInstructor, instructorList,
         courseCardHTML, instructorCardHTML, linksHTML,
-        instructorBarHTML, introVideoHTML, courseVideoHTML,
+        instructorBarHTML, factsHTML, clientsHTML,
+        introVideoHTML, courseVideoHTML,
         skeletonHTML, emptyHTML, renderCourseGrid, renderTotals,
         avatarHTML,
     };

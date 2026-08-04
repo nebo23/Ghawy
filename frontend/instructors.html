@@ -115,28 +115,44 @@
 
         // ─── Detail view ─────────────────────────────────────────
         function renderDetail(inst) {
-            // No page heading here: the instructor bar below already leads
-            // with the photo, the name and the role, and repeating them 200px
-            // apart just reads as a mistake. The head carries the way back
-            // to the list instead.
+            // The identity used to sit inside a boxed instructor card. That box
+            // is gone, so the photo, name, role and facts lead the page here as
+            // a plain header, and everything that was crammed in beside them —
+            // the client strip, the intro video — is its own section below.
             head.innerHTML = `
                 <a href="/instructors" class="cd-back-btn ins-back">
                     <i class="fa-solid fa-arrow-right cd-back-icon"></i>
                     <span data-ar="كل المدربين" data-en="All instructors">كل المدربين</span>
-                </a>`;
+                </a>
+                <div class="ins-hero">
+                    ${C.avatarHTML(inst, 'gi-avatar gi-avatar-xl')}
+                    <div class="ins-hero-ident">
+                        <h1 class="ins-hero-name">${C.esc(C.L(inst.name))}</h1>
+                        <p class="ins-hero-role" ${C.i18nAttrs(inst.role)}>${C.esc(C.L(inst.role))}</p>
+                        ${C.factsHTML(inst)}
+                    </div>
+                </div>`;
 
-            // The instructor bar (full variant) carries the photo, the facts,
-            // the client strip and the intro video — the same component the
-            // course preview shows, not a second copy of it.
+            const clients = C.clientsHTML(inst);
+
             body.innerHTML = `
                 <div class="ins-detail">
-                    ${C.instructorBarHTML(inst, { variant: 'full' })}
-
                     ${inst.bio ? `
                     <section class="ins-block">
                         <h2 class="cd-section-title" data-ar="نبذة" data-en="About">نبذة</h2>
                         <p class="ins-bio" ${C.i18nAttrs(inst.bio)}>${C.esc(C.L(inst.bio))}</p>
                     </section>` : ''}
+
+                    ${clients ? `
+                    <section class="ins-block">
+                        <h2 class="cd-section-title" data-ar="اشتغل مع" data-en="Worked with">اشتغل مع</h2>
+                        ${clients}
+                    </section>` : ''}
+
+                    <section class="ins-block">
+                        <h2 class="cd-section-title" data-ar="فيديو تعريفي" data-en="Intro video">فيديو تعريفي</h2>
+                        ${C.introVideoHTML(inst)}
+                    </section>
 
                     ${C.linksHTML(inst) ? `
                     <section class="ins-block">

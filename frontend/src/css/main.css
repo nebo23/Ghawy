@@ -4925,6 +4925,17 @@ footer a:hover {
     max-width: 820px;
 }
 
+/* Inside a card the bar fills the card's width; standing on its own here it
+   would stretch into a very wide, mostly empty pill, so it shrinks to fit. */
+.cd-instructor .gi-bar-compact {
+    width: fit-content;
+    max-width: 100%;
+}
+
+.cd-instructor .gi-facts {
+    margin-top: 12px;
+}
+
 @media (max-width: 899px) {
     .cd-layout {
         grid-template-columns: 1fr;
@@ -5350,42 +5361,11 @@ footer a:hover {
     color: var(--gold);
 }
 
-/* ─── Full: course preview + instructor pages ─── */
-.gi-bar-full {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    padding: 24px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-
-.gi-head {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.gi-head-link {
-    flex-shrink: 0;
-    text-decoration: none;
-}
-
-.gi-bar-full .gi-name-lg {
-    font-size: 1.35rem;
-    font-weight: 900;
-    white-space: normal;
-}
-
-.gi-bar-full .gi-name-lg:hover {
-    color: var(--gold);
-}
-
-.gi-bar-full .gi-role {
-    font-size: 0.9rem;
-}
-
+/* The boxed "full" instructor bar was removed — it wrapped the identity,
+   the facts, the client strip and the intro video in one card and left a
+   lot of dead space around the video. Those parts are rendered separately
+   now: the course preview shows the plain bar plus the fact pills, and the
+   instructor page lays each part out down the page. */
 .gi-facts {
     display: flex;
     flex-wrap: wrap;
@@ -5405,20 +5385,6 @@ footer a:hover {
 
 /* Client strip. Chips today because only names were supplied; the moment a
    `logo` path is set in catalog.js the same chip holds an image instead. */
-.gi-clients {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.gi-clients-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
 .gi-clients-row {
     display: flex;
     flex-wrap: wrap;
@@ -5552,12 +5518,64 @@ footer a:hover {
     width: 100%;
 }
 
-/* The detail view swaps the centred page heading for a back link, so the
-   head block stops being centred and loses its bottom gap. */
+/* The detail view leads with a back link and the instructor's own header
+   rather than the centred page heading the shell pages use. */
 .page-shell-head:has(.ins-back) {
     text-align: start;
     max-width: none;
-    margin-bottom: 24px;
+    margin-bottom: 46px;
+}
+
+@media (max-width: 599px) {
+    .ins-hero {
+        gap: 16px;
+    }
+
+    .gi-avatar-xl {
+        width: 72px;
+        height: 72px;
+        font-size: 1.4rem;
+    }
+}
+
+/* The instructor identity, flat on the page rather than inside a card. */
+.ins-hero {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-top: 8px;
+}
+
+.gi-avatar-xl {
+    width: 96px;
+    height: 96px;
+    font-size: 1.8rem;
+}
+
+.ins-hero-ident {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.ins-hero-name {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    margin: 0;
+}
+
+.ins-hero-role {
+    font-size: 1.02rem;
+    color: var(--muted-light);
+    margin: 0;
+}
+
+.ins-hero .gi-facts {
+    margin-top: 6px;
 }
 
 .ins-detail {
@@ -5566,8 +5584,8 @@ footer a:hover {
     gap: 46px;
 }
 
-.ins-detail .gi-bar-full {
-    max-width: 820px;
+.ins-block .gi-video {
+    margin: 0;
 }
 
 .ins-bio {
@@ -5590,16 +5608,6 @@ footer a:hover {
     .gc-grid {
         grid-template-columns: 1fr;
         gap: 18px;
-    }
-
-    .gi-head {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .gi-bar-full {
-        padding: 18px;
     }
 
     .gi-avatar-lg {

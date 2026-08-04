@@ -180,8 +180,10 @@
                     </span>`;
 
                 // Instructor bar — the shared component, full variant
-                document.getElementById('cdInstructor').innerHTML =
-                    C.instructorBarHTML(C.instructor(course.instructor), { variant: 'full' });
+                const inst = C.instructor(course.instructor);
+                document.getElementById('cdInstructor').innerHTML = inst
+                    ? C.instructorBarHTML(inst) + C.factsHTML(inst)
+                    : '';
 
                 // Lessons: skeleton rows until the endpoint answers.
                 const list = document.getElementById('cdLessonsList');
