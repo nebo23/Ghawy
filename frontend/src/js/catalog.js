@@ -869,7 +869,6 @@
         <a class="gc-media" href="${href}" tabindex="-1" aria-hidden="true">
             <img src="${esc(course.image)}" alt="" loading="lazy" />
         </a>
-        <span class="gc-accent" aria-hidden="true"></span>
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
             <div class="gc-meta">
@@ -1156,7 +1155,6 @@
             out += `
     <article class="gc-card gc-card-skeleton" aria-hidden="true">
         <div class="gc-media gc-sk"></div>
-        <span class="gc-accent"></span>
         <div class="gc-body">
             <div class="gc-sk gc-sk-line gc-sk-title"></div>
             <div class="gc-sk-meta">

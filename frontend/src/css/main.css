@@ -1089,85 +1089,135 @@ a {
 }
 
 /* ════════════════════════════════════════════════════════
-        STORY SECTION
+        WHY GHAWY SECTION
+        Replaced the founder's origin story (a wall of prose beside a
+        portrait). Two panels set the market's problems against what the
+        platform does about them, so the argument reads in one pass instead of
+        four paragraphs.
+        Green is an accent here and nowhere near a background: the tick icons,
+        a tinted hairline on the right-hand panel, and that is it.
       ════════════════════════════════════════════════════════ */
-.story-section {
+.why-section {
     padding: 90px 0;
     background: var(--bg-card);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
 
-.story-flex {
+/* Two equal columns that collapse to one on narrow screens. `gap` and the
+   grid do all the placement, so there is not a single left/right rule to
+   mirror — the panels swap sides with the document direction on their own. */
+.why-cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+    align-items: start;
+}
+
+.why-col {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 30px 26px;
+    height: 100%;
+}
+
+/* The problems panel stays deliberately quiet — it is the setup, not the
+   pitch, and it should not compete with the panel next to it. */
+.why-col--problem {
+    opacity: 0.92;
+}
+
+.why-col--ghawy {
+    border-color: rgba(193, 255, 17, 0.22);
+}
+
+.why-col-head {
     display: flex;
-    flex-wrap: wrap;
-    gap: 50px;
-    margin-top: 50px;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 22px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -0.2px;
 }
 
-.story-content {
-    flex: 1;
-    min-width: 300px;
-}
-
-.story-body {
-    font-size: 0.93rem;
+.why-col--problem .why-col-head i {
     color: var(--muted-light);
-    line-height: 1.85;
-    margin-bottom: 20px;
 }
 
-.story-body strong {
-    color: var(--off-white);
-    font-weight: 700;
+.why-col--ghawy .why-col-head i {
+    color: var(--gold);
 }
 
-.pain-points {
+.why-list {
     list-style: none;
-    margin: 24px 0;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 18px;
 }
 
-.pain-point {
+.why-item {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    font-size: 0.9rem;
+    font-size: 0.93rem;
+    line-height: 1.8;
     color: var(--muted-light);
 }
 
-.pain-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    color: var(--red);
-    font-size: 0.7rem;
+.why-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 3px;
+    font-size: 0.78rem;
 }
 
-.story-img-box {
-    flex: 1;
-    min-width: 280px;
-    position: relative;
+.why-col--problem .why-icon {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--muted-light);
 }
 
-.story-img-box img {
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-gold);
-    box-shadow:
-        0 0 20px var(--gold-glow),
-        0 30px 60px rgba(0, 0, 0, 0.6);
-    margin: 0 auto;
-    width: 100%;
-    max-width: 420px;
+.why-col--ghawy .why-icon {
+    background: rgba(193, 255, 17, 0.09);
+    border: 1px solid rgba(193, 255, 17, 0.25);
+    color: var(--gold);
+}
+
+.why-col--ghawy .why-item {
+    color: var(--off-white);
+}
+
+.why-close {
+    margin: 34px auto 0;
+    max-width: 70ch;
+    text-align: center;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.8;
+    color: var(--off-white);
+}
+
+@media (max-width: 900px) {
+    .why-cols {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin-top: 34px;
+    }
+
+    .why-col {
+        padding: 26px 20px;
+    }
 }
 
 .img-badge {
@@ -2895,13 +2945,7 @@ footer a:hover {
         gap: 16px;
     }
 
-    .story-flex {
-        gap: 36px;
-    }
 
-    .story-img-box img {
-        max-width: 340px;
-    }
 
     .offer-items {
         padding: 0 28px;
@@ -2985,15 +3029,7 @@ footer a:hover {
         gap: 14px;
     }
 
-    .story-flex {
-        flex-direction: column-reverse;
-        gap: 28px;
-    }
 
-    .story-img-box {
-        width: 100%;
-        min-width: unset;
-    }
 
     .img-badge {
         position: static;
@@ -3174,7 +3210,7 @@ footer a:hover {
     }
 
     .reviews-section,
-    .story-section,
+    .why-section,
     .chapters-section,
     .offer-section,
     .screenshots-section,
@@ -3254,15 +3290,7 @@ footer a:hover {
         font-size: 0.85rem;
     }
 
-    .story-flex {
-        flex-direction: column-reverse;
-        gap: 24px;
-    }
 
-    .story-img-box {
-        width: 100%;
-        min-width: unset;
-    }
 
     .img-badge {
         position: static;
@@ -3270,13 +3298,7 @@ footer a:hover {
         display: inline-block;
     }
 
-    .story-body {
-        font-size: 0.86rem;
-    }
 
-    .pain-point {
-        font-size: 0.83rem;
-    }
 
     .offer-box {
         border-radius: 16px;
@@ -5067,16 +5089,17 @@ footer a:hover {
     align-items: stretch;
 }
 
-/* The card's layout came from a reference the client sent: a green band
-   across the top, a big title, and the instructor and the runtime on opposite
-   edges of one row. The reference was white and the card was built white; the
-   client then asked for the surface to go back to dark like the rest of the
-   site.
+/* The card's layout came from a reference the client sent: a big title, and
+   the instructor and the runtime on opposite edges of one row. The reference
+   was white and the card was built white; the client then asked for the
+   surface to go back to dark like the rest of the site.
    Going dark does NOT mean going back to the card before all this. That one
    had a green glow on hover, a green-tinted thumbnail, a green-filled button
    and a green avatar, which is what "the green is taking everything" was
-   about. Green here is the band and the clock icon, full stop — the hover is
-   a plain lift and a slightly brighter border. */
+   about. There used to be a 10px green band between the thumbnail and the
+   body too; the client asked for it off, so the seam is now the hairline on
+   .gc-media. Green here is the clock icon, full stop — the hover is a plain
+   lift and a slightly brighter border. */
 .gc-card {
     display: flex;
     flex-direction: column;
@@ -5094,13 +5117,20 @@ footer a:hover {
 }
 
 /* Thumbnail. Fixed aspect ratio so a mix of image sizes still lines the
-   cards up on the grid. */
+   cards up on the grid.
+   The bottom border is the seam that the green band used to be: without any
+   separation a dark photo bleeds straight into the dark card body and the two
+   read as one smudge. It is deliberately stronger than --border (0.08): that
+   is tuned for a line between a card and the page background, and against a
+   near-black thumbnail on a near-black body it disappeared. Neutral white at
+   low alpha keeps the edge legible without putting colour back on the card. */
 .gc-media {
     display: block;
     position: relative;
     aspect-ratio: 16 / 9;
     background: #0d0d0d;
     overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .gc-media img {
@@ -5112,14 +5142,6 @@ footer a:hover {
 
 .gc-card:hover .gc-media img {
     transform: scale(1.04);
-}
-
-/* The one strong colour on the card, and the seam between the thumbnail and
-   the body. */
-.gc-accent {
-    display: block;
-    height: 10px;
-    background: var(--gold);
 }
 
 .gc-body {
@@ -7605,460 +7627,230 @@ h1.hero-heading-single>span {
 }
 
 /* ════════════════════════════════════════
-   PREMIUM REVIEWS SECTION
+   MEMBER REVIEWS — rendered from src/js/reviews.js
+
+   This replaced a rotating stack: one card was promoted to a "hero" with a
+   Wistia play button buried inside it and three shrunken cards fanned behind,
+   cycling on a timer. The client's report was that people could not tell it
+   was interactive at all, so nobody ever opened a review. What is here now is
+   an ordinary grid — every card shows the name, the rating and the start of
+   the quote up front, and a labelled button opens the rest in place.
    ════════════════════════════════════════ */
-.premium-reviews-section {
-    position: relative;
-    width: 100%;
-    padding: 100px 0;
-    background-color: var(--bg);
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.04"/></svg>');
-    overflow: hidden;
+.rv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    /* `start`, not `stretch`: an opened card grows on its own instead of
+       dragging the height of everything else on its row. */
+    align-items: start;
+    margin-top: 48px;
 }
 
-.pr-parallax-bg {
-    position: absolute;
-    top: -20%;
-    left: 0;
-    width: 100%;
-    height: 140%;
-    background: radial-gradient(circle at 80% 50%, rgba(193, 255, 17, 0.03) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.pr-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 60px;
-    position: relative;
-    z-index: 10;
-}
-
-.pr-title-area {
-    max-width: 650px;
-}
-
-.pr-eyebrow {
-    color: var(--muted);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 12px;
-    display: block;
-    letter-spacing: 1px;
-}
-
-.pr-title {
-    font-size: 2.3rem;
-    font-weight: 900;
-    color: #fff;
-    margin-bottom: 18px;
-    line-height: 1.3;
-}
-
-.pr-gradient-text {
-    background: linear-gradient(90deg, #c1ff11, #ffeb3b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.pr-subtitle {
-    color: #aaaaaa;
-    font-size: 1rem;
-    line-height: 1.8;
-    font-weight: 400;
-}
-
-.pr-badge {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 14px 28px;
-    border-radius: 100px;
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.pr-layout {
-    position: relative;
-    height: 600px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    z-index: 10;
-    direction: ltr;
-    /* use absolute positioning so LTR/RTL doesn't mess up math, we will handle it via right/left */
-}
-
-.pr-halo {
-    position: absolute;
-    top: 50%;
-    right: 30%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(193, 255, 17, 0.15) 0%, transparent 60%);
-    transform: translate(50%, -50%);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.pr-card {
-    position: absolute;
-    background: rgba(15, 18, 12, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 24px;
-    overflow: hidden;
-    transition: all 0.7s cubic-bezier(0.25, 1, 0.3, 1);
-    cursor: pointer;
-    z-index: 2;
+.rv-card {
     display: flex;
     flex-direction: column;
-    direction: rtl;
+    gap: 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 22px;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-/* States */
-.pr-card.is-hero {
-    right: 0;
-    top: 0;
-    width: 340px;
-    height: 600px;
-    cursor: default;
-    z-index: 5;
-    border: 1px solid rgba(193, 255, 17, 0.4);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(193, 255, 17, 0.1);
+.rv-card:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
-.pr-card.is-stack-1 {
-    right: 380px;
-    top: 0;
-    width: calc(100% - 380px);
-    height: 180px;
-}
-
-.pr-card.is-stack-2 {
-    right: 380px;
-    top: 210px;
-    width: calc(100% - 380px);
-    height: 180px;
-}
-
-.pr-card.is-stack-3 {
-    right: 380px;
-    top: 420px;
-    width: calc(100% - 380px);
-    height: 180px;
-}
-
-.pr-card.is-hidden {
-    right: 380px;
-    top: 420px;
-    width: calc(100% - 380px);
-    height: 180px;
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.9) translateY(20px);
-}
-
-.pr-card:not(.is-hero):hover {
-    transform: scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-    border-color: rgba(193, 255, 17, 0.3);
-    z-index: 6;
-}
-
-.pr-thumb {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.4;
-    transition: opacity 0.5s;
-    z-index: 1;
-}
-
-.pr-card.is-hero .pr-thumb {
-    opacity: 0.6;
-}
-
-.pr-content {
-    position: relative;
-    z-index: 3;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    height: 100%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
-    transition: padding 0.5s;
-}
-
-.pr-card:not(.is-hero) .pr-content {
-    padding: 16px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 100%);
-}
-
-.pr-chip {
+/* Avatar then name, in that order in the markup, so the row reads correctly
+   in both directions without a single left/right rule — the avatar lands on
+   the right in Arabic and on the left in English. */
+.rv-head {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 12px;
+    min-width: 0;
 }
 
-.pr-avatar {
-    width: 44px;
-    height: 44px;
+.rv-avatar {
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
-    background: #ffffff;
-    color: #000;
-    font-weight: 800;
-    display: flex;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+/* Same initials-on-the-brand-gradient placeholder the instructor cards use.
+   Real photos of the people quoted have not been delivered; `photo` in
+   reviews.js swaps this for an <img> the moment one is. */
+.rv-avatar-fallback {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
-    box-shadow: 0 4px 10px rgba(193, 255, 17, 0.3);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: #000;
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: -0.02em;
 }
 
-.pr-card:not(.is-hero) .pr-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
-}
-
-.pr-details {
+.rv-ident {
     display: flex;
     flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
-.pr-name {
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.1rem;
+.rv-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.pr-card:not(.is-hero) .pr-name {
+.rv-city {
+    font-size: 0.82rem;
+    color: var(--muted-light);
+}
+
+.rv-stars {
     font-size: 0.95rem;
-}
-
-.pr-city {
-    color: var(--muted);
-    font-size: 0.85rem;
-}
-
-.pr-stars {
-    color: #ffdd00;
-    font-size: 0.95rem;
-    margin-right: auto;
     letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
 }
 
-.pr-quote {
-    color: #aaaaaa;
-    font-size: 0.95rem;
-    line-height: 1.6;
+/* The achievement chip. Green as an accent — a tinted hairline and the icon,
+   never a filled green block. */
+.rv-win {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 6px 12px;
+    border: 1px solid rgba(193, 255, 17, 0.28);
+    border-radius: 999px;
+    background: rgba(193, 255, 17, 0.06);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--off-white);
+}
+
+.rv-win i {
+    color: var(--gold);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Clamped until the card is opened. reviews.js measures scrollHeight against
+   clientHeight after paint and only shows the toggle on the cards that are
+   actually cut off — a "read the full review" button under a review that is
+   already fully visible is its own small confusion.
+   Two lines, not three: at three, six of the seven quotes fitted whole and the
+   section had no visible interaction left at all on Arabic desktop. Two keeps
+   the cards an even height to scan and gives every card with more to say a
+   real control. */
+.rv-quote {
+    margin: 0;
+    font-size: 0.97rem;
+    line-height: 1.85;
+    color: var(--muted-light);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    transition: all 0.5s;
 }
 
-.pr-card.is-hero .pr-quote {
-    font-size: 1.2rem;
-    color: #ffffff;
-    -webkit-line-clamp: 4;
-    line-height: 1.8;
+.rv-card.is-open .rv-quote {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
 }
 
-.pr-pulse {
-    position: absolute;
-    top: 24px;
-    left: 24px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    padding: 8px 16px;
-    border-radius: 100px;
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: flex;
+/* A real <button>: pointer cursor, keyboard focus, Enter/Space and touch all
+   come for free, and the label says what it does. That is the entire fix for
+   "nobody could work out how to open one". */
+.rv-toggle {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 4;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.pr-card.is-hero .pr-pulse {
-    opacity: 1;
-}
-
-.pr-dot {
-    width: 8px;
-    height: 8px;
-    background: #c1ff11;
-    border-radius: 50%;
-    animation: pulseGreen 1.5s infinite;
-}
-
-@keyframes pulseGreen {
-    0% {
-        box-shadow: 0 0 0 0 rgba(193, 255, 17, 0.7);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(193, 255, 17, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(193, 255, 17, 0);
-    }
-}
-
-.pr-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.05);
-    opacity: 0;
-    z-index: 4;
-}
-
-.pr-card.is-hero .pr-progress {
-    opacity: 1;
-}
-
-.pr-progress-fill {
-    height: 100%;
-    background: #c1ff11;
-    width: 0%;
-    box-shadow: 0 0 10px #c1ff11;
-}
-
-.pr-quotes-icon {
-    position: absolute;
-    top: 10%;
-    right: 5%;
-    font-size: 160px;
-    color: rgba(255, 255, 255, 0.03);
-    font-family: Arial, sans-serif;
-    pointer-events: none;
-    z-index: 2;
-    opacity: 0;
-    line-height: 1;
-}
-
-.pr-card.is-hero .pr-quotes-icon {
-    opacity: 1;
-}
-
-.pr-play-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70px;
-    height: 70px;
-    background: #c1ff11;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #000;
-    font-size: 1.5rem;
-    z-index: 4;
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(193, 255, 17, 0.4);
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: var(--gold);
+    transition: opacity 0.2s;
 }
 
-.pr-card.is-hero .pr-play-btn {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.pr-card.is-hero .pr-play-btn:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-}
-
-.pr-card.is-hero .pr-play-btn i {
-    margin-left: 5px;
-}
-
-.pr-wistia-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 5;
-    background: #000;
+/* `display: inline-flex` above beats the UA stylesheet's `[hidden] {display:none}`,
+   so without this every card kept a "read the full review" button — including
+   the ones whose quote was already fully visible. Class+attribute outranks the
+   bare class, so no !important is needed. */
+.rv-toggle[hidden] {
     display: none;
 }
 
-@media(max-width: 1000px) {
-    .pr-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 20px;
-        margin-bottom: 40px;
+.rv-toggle:hover {
+    opacity: 0.75;
+}
+
+.rv-toggle:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.rv-toggle i {
+    font-size: 0.72rem;
+    transition: transform 0.25s;
+}
+
+.rv-card.is-open .rv-toggle i {
+    transform: rotate(180deg);
+}
+
+.rv-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted-light);
+}
+
+.rv-empty i {
+    font-size: 2rem;
+    color: var(--gold);
+    opacity: 0.5;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.rv-empty p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 1000px) {
+    .rv-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+        margin-top: 34px;
+    }
+}
+
+@media (max-width: 680px) {
+    .rv-grid {
+        grid-template-columns: 1fr;
     }
 
-    .pr-title {
-        font-size: 2.4rem;
-    }
-
-    .pr-layout {
-        height: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        direction: rtl;
-    }
-
-    .pr-card {
-        position: relative;
-        width: 100% !important;
-        right: auto !important;
-        top: auto !important;
-    }
-
-    .pr-card.is-hero {
-        height: 450px;
-        order: 1;
-    }
-
-    .pr-card.is-stack-1 {
-        height: 150px;
-        order: 2;
-    }
-
-    .pr-card.is-stack-2 {
-        height: 150px;
-        order: 3;
-    }
-
-    .pr-card.is-stack-3 {
-        height: 150px;
-        order: 4;
-    }
-
-    .pr-card.is-hidden {
-        display: none;
+    .rv-card {
+        padding: 20px 18px;
     }
 }
 
@@ -8837,7 +8629,6 @@ body {
 .pricing-grid,
 .courses-header-wrapper,
 .courses-carousel-wrapper,
-.pr-header,
 .footer-bottom {
     min-width: 0;
 }
@@ -8890,7 +8681,6 @@ html[dir="ltr"] .pricing-features li i {
 html[dir="rtl"] .hero-left,
 html[dir="rtl"] .feature-card,
 html[dir="rtl"] .pricing-card,
-html[dir="rtl"] .pr-title-area,
 html[dir="rtl"] .footer-col {
     text-align: right;
 }
@@ -8898,7 +8688,6 @@ html[dir="rtl"] .footer-col {
 html[dir="ltr"] .hero-left,
 html[dir="ltr"] .feature-card,
 html[dir="ltr"] .pricing-card,
-html[dir="ltr"] .pr-title-area,
 html[dir="ltr"] .footer-col {
     text-align: left;
 }
@@ -9000,8 +8789,7 @@ html[dir="ltr"] .hero-sub {
         justify-content: center;
     }
 
-    .courses-header-wrapper,
-    .pr-header {
+    .courses-header-wrapper {
         align-items: center;
         text-align: center;
     }
@@ -9126,7 +8914,6 @@ html[dir="ltr"] .hero-sub {
     }
 
     .courses-main-title,
-    .pr-title,
     .section-title,
     .vs-main-title {
         font-size: clamp(1.65rem, 8vw, 2.1rem);

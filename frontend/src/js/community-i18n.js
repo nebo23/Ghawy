@@ -19,6 +19,24 @@
 (function () {
     'use strict';
 
+    /* ─── Legacy storage key migration ──────────────────────────
+       The preference key was renamed 'ghawy_lang_pref' → 'ghawy_lang'. The
+       migration used to live only in i18n.js, which SIX of the community pages
+       never load (dashboard, chat, ai-updates, direct-messages, course-detail,
+       help-center). On those pages the read below saw no 'ghawy_lang' at all,
+       so everyone who had picked English under the old key was dropped back to
+       the Arabic default on every load — and the choice could never stick,
+       because nothing here writes the new key either.
+       Same keys, same semantics as i18n.js, and idempotent — whichever file
+       runs first migrates, the other one no-ops. */
+    try {
+        var legacyPref = localStorage.getItem('ghawy_lang_pref');
+        if (legacyPref === 'ar' || legacyPref === 'en') {
+            localStorage.setItem('ghawy_lang', legacyPref);
+        }
+        if (legacyPref !== null) localStorage.removeItem('ghawy_lang_pref');
+    } catch (e) { /* private mode / storage disabled — defaults still work */ }
+
     /* ─── Dictionary ─────────────────────────────────────────────── */
     var DICT = {
         /* ── Sidebar / nav / topbar (shared chrome) ── */
@@ -869,13 +887,36 @@
 
     // Arabic is the site-wide default now — only an explicit English choice
     // keeps the community pages in English.
+    //
+    // The decision is made twice on purpose. This file runs in <head>, but the
+    // pages that also load i18n.js load it at the END of <body> — so between
+    // the read above and DOMContentLoaded another engine can legitimately set
+    // the language (i18n.js migrating the legacy key and applying English is
+    // exactly that case). Firing the head-time decision blindly on
+    // DOMContentLoaded stomped that English back to Arabic *after* the page
+    // had already rendered in English, which is what "I pick English, refresh,
+    // and it comes back Arabic" looked like from the outside.
+    function initApply() {
+        var now = null;
+        try { now = localStorage.getItem(LS_KEY); } catch (e) { /* ignore */ }
+        // setDir('ar') below already put lang=ar on <html>, so finding 'en'
+        // here means somebody deliberately switched it after we ran — honour
+        // that instead of overwriting it.
+        if (now === 'en' || document.documentElement.getAttribute('lang') === 'en') {
+            active = false;
+            setDir('en');
+            return;
+        }
+        applyArabic();
+    }
+
     if (pref !== 'en') {
         // Flip direction immediately (script is in <head>) to avoid an LTR flash.
         setDir('ar');
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', applyArabic);
+            document.addEventListener('DOMContentLoaded', initApply);
         } else {
-            applyArabic();
+            initApply();
         }
     }
 })();

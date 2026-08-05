@@ -296,37 +296,9 @@ setInterval(fetchLastPurchase, 10000);
 })();
 
 // ═══════════════════════════════════════════
-//   Reviews Carousel (Video Testimonials)
+//   Courses Carousel
 // ═══════════════════════════════════════════
 (function () {
-    window.initReviewsCarousel = function () {
-        const track = document.getElementById("carouselTrack");
-        const nextBtn = document.getElementById("nextBtn");
-        const prevBtn = document.getElementById("prevBtn");
-        if (!track || !nextBtn || !prevBtn) return;
-
-        const originalCards = Array.from(track.children);
-        if (track.children.length < originalCards.length * 3) {
-            originalCards.forEach((card) => track.appendChild(card.cloneNode(true)));
-            originalCards.forEach((card) => track.appendChild(card.cloneNode(true)));
-        }
-
-        setTimeout(() => {
-            const singleSetWidth = track.scrollWidth / 3;
-            track.scrollLeft = -singleSetWidth;
-            nextBtn.onclick = () => {
-                const card = track.querySelector(".review-video-card");
-                if (!card) return;
-                track.scrollBy({ left: -(card.offsetWidth + 12), behavior: "smooth" });
-            };
-            prevBtn.onclick = () => {
-                const card = track.querySelector(".review-video-card");
-                if (!card) return;
-                track.scrollBy({ left: card.offsetWidth + 12, behavior: "smooth" });
-            };
-        }, 300);
-    };
-
     window.initCoursesCarousel = function () {
         const track = document.getElementById("coursesCarouselTrack");
         const nextBtn = document.getElementById("coursesNextBtn");
@@ -443,7 +415,6 @@ setInterval(fetchLastPurchase, 10000);
 //   DOMContentLoaded — Init All Components
 // ═══════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
-    if (window.initReviewsCarousel) window.initReviewsCarousel();
     if (window.initCoursesCarousel) window.initCoursesCarousel();
     // Static counters start immediately; the member counters are held back
     // until loadPublicStats() has a real number for them.
@@ -593,191 +564,6 @@ if (navLogo) {
     });
 }
 
-// ════════════════════════════════════════
-//   PREMIUM REVIEWS LOGIC
-// ════════════════════════════════════════
-const reviewsData = [
-    {
-        id: 'oqg0kwtp2y', name: 'عمر عماد', city: 'الإسكندرية', cityEn: 'Alexandria', initial: 'ع',
-        quote: 'وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه',
-        quoteEn: 'Halfway through the course, I landed my first client — a dental clinic. They paid well.'
-    },
-    {
-        id: 'p6kqa3edvy', name: 'كريم طارق', city: 'القاهرة', cityEn: 'Cairo', initial: 'ك',
-        quote: 'خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها',
-        quoteEn: 'Finished the course — it covers everything. One of the best courses I\'ve ever taken.'
-    },
-    {
-        id: 'vj9ymlhi7z', name: 'زياد تامر', city: 'القاهرة', cityEn: 'Cairo', initial: 'ز',
-        quote: 'سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته',
-        quoteEn: 'Left media buying and pivoted my career. Mohamed\'s course was the best I\'ve ever seen.'
-    },
-    {
-        id: 'f19iov9z3o', name: 'منذر', city: 'الغربية', cityEn: 'Al-Gharbia', initial: 'م',
-        quote: 'أسست وكالة stirx.ai, أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في كورس واحد',
-        quoteEn: 'Founded stirx.ai. I\'ve taken courses on Udemy and Coursera — never seen this much value in a single course.'
-    },
-    {
-        id: 'lh58056wkw', name: 'يوسف دسوقي', city: 'القاهرة', cityEn: 'Cairo', initial: 'ي',
-        quote: 'مفيش كورس متكامل بالشكل ده في الوطن العربي',
-        quoteEn: 'There is no other course this complete in the Arab world.'
-    },
-    {
-        id: 'sn2k9l641c', name: 'ياسين مصطفى', city: 'الجيزة', cityEn: 'Giza', initial: 'ي',
-        quote: 'جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين',
-        quoteEn: 'Got my first client just two weeks after finishing the course.'
-    },
-    {
-        id: '8n571cb98s', name: 'معتز', city: 'القاهرة', cityEn: 'Cairo', initial: 'م',
-        quote: 'لما دخلت الكورس لقيت حاجات عمري ما سمعت عنها, أنت مش بتشتري كورس، أنت بتشتري باكج كاملة فيها مجتمع ومتابعة شخصية',
-        quoteEn: 'Joined and found things I\'d never heard of before. You\'re not buying a course — you\'re buying a complete package with community and personal mentoring.'
-    }
-];
-
-let currentHeroIdx = 0;
-let reviewCycleInterval;
-let progressStartTime;
-const CYCLE_DURATION = 6000;
-let isVideoPlaying = false;
-
-function initReviews() {
-    const layout = document.getElementById('prLayout');
-    if (!layout) return;
-
-    // Generate all cards
-    const lang = localStorage.getItem('ghawy_lang') || 'ar';
-    layout.innerHTML = reviewsData.map((rev, i) => `
-        <div class="pr-card" id="prCard-${i}" onclick="promoteToHero(${i})">
-            <img src="https://fast.wistia.com/embed/medias/${rev.id}/swatch" class="pr-thumb" alt="${rev.name}" />
-
-            <div class="pr-quotes-icon">«</div>
-
-            <div class="pr-pulse"><div class="pr-dot"></div> ${lang === 'ar' ? 'جاري المشاهدة' : 'Watching now'}</div>
-
-            <div class="pr-play-btn" onclick="playWistiaVideo(event, ${i}, '${rev.id}')">
-                <i class="fa-solid fa-play"></i>
-            </div>
-
-            <div class="pr-wistia-wrapper" id="prWistia-${i}"></div>
-
-            <div class="pr-content">
-                <div class="pr-chip">
-                    <div class="pr-avatar">${rev.initial}</div>
-                    <div class="pr-details">
-                        <span class="pr-name">${rev.name}</span>
-                        <span class="pr-city">${lang === 'ar' ? rev.city : (rev.cityEn || rev.city)}</span>
-                    </div>
-                    <div class="pr-stars">★★★★★</div>
-                </div>
-                <div class="pr-quote">${lang === 'ar' ? rev.quote : (rev.quoteEn || rev.quote)}</div>
-            </div>
-
-            <div class="pr-progress"><div class="pr-progress-fill" id="prProg-${i}"></div></div>
-        </div>
-    `).join('');
-
-    updateReviewClasses();
-    startReviewCycle();
-}
-
-function updateReviewClasses() {
-    reviewsData.forEach((_, i) => {
-        const card = document.getElementById(`prCard-${i}`);
-        card.className = 'pr-card is-hidden'; // reset
-
-        // Stop any playing video if it's not hero anymore
-        const wistiaWrap = document.getElementById(`prWistia-${i}`);
-        if (wistiaWrap) wistiaWrap.style.display = 'none';
-
-        // Reset progress bar
-        const prog = document.getElementById(`prProg-${i}`);
-        if (prog) {
-            prog.style.transition = 'none';
-            prog.style.width = '0%';
-        }
-    });
-
-    // Assign hero
-    document.getElementById(`prCard-${currentHeroIdx}`).className = 'pr-card is-hero';
-
-    // Assign stack
-    for (let j = 1; j <= 3; j++) {
-        let stackIdx = (currentHeroIdx + j) % reviewsData.length;
-        document.getElementById(`prCard-${stackIdx}`).className = `pr-card is-stack-${j}`;
-    }
-}
-
-function promoteToHero(idx) {
-    if (idx === currentHeroIdx) return;
-    currentHeroIdx = idx;
-    isVideoPlaying = false; // reset play state
-    updateReviewClasses();
-    resetReviewCycle();
-}
-
-function playWistiaVideo(e, idx, videoId) {
-    e.stopPropagation(); // prevent promoteToHero
-    if (idx !== currentHeroIdx) return;
-
-    isVideoPlaying = true;
-    clearInterval(reviewCycleInterval); // stop cycling
-
-    const wrapper = document.getElementById(`prWistia-${idx}`);
-    wrapper.style.display = 'block';
-    wrapper.innerHTML = `
-        <iframe src="https://fast.wistia.net/embed/iframe/${videoId}?autoPlay=true&seo=false&videoFoam=true" 
-                title="Wistia Video" 
-                allowtransparency="true" 
-                frameborder="0" 
-                scrolling="no" 
-                class="wistia_embed" 
-                name="wistia_embed" 
-                allow="autoplay; fullscreen" 
-                allowfullscreen mozallowfullscreen webkitallowfullscreen oallowfullscreen msallowfullscreen 
-                width="100%" height="100%" 
-                style="width:100%; height:100%; border:none;">
-        </iframe>
-    `;
-}
-
-function animateProgressBar() {
-    if (isVideoPlaying) return;
-    const prog = document.getElementById(`prProg-${currentHeroIdx}`);
-    if (!prog) return;
-
-    const elapsed = Date.now() - progressStartTime;
-    let percent = (elapsed / CYCLE_DURATION) * 100;
-    if (percent > 100) percent = 100;
-
-    prog.style.transition = 'width 0.1s linear';
-    prog.style.width = percent + '%';
-}
-
-function startReviewCycle() {
-    progressStartTime = Date.now();
-    reviewCycleInterval = setInterval(() => {
-        if (!isVideoPlaying) {
-            currentHeroIdx = (currentHeroIdx + 1) % reviewsData.length;
-            updateReviewClasses();
-            progressStartTime = Date.now();
-        }
-    }, CYCLE_DURATION);
-
-    // Animation loop for progress bar
-    requestAnimationFrame(function loop() {
-        animateProgressBar();
-        requestAnimationFrame(loop);
-    });
-}
-
-function resetReviewCycle() {
-    clearInterval(reviewCycleInterval);
-    if (!isVideoPlaying) {
-        startReviewCycle();
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initReviews);
 
 // ═══════════════════════════════════════════
 //   Geolocation Auto-fill
