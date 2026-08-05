@@ -367,7 +367,7 @@
         {
             slug: 'aaa-core',
             courseId: 6,
-            title: { ar: 'AAA Core', en: 'AAA Core' },
+            title: { ar: 'بيزنس وكالة الاوتوميشن', en: 'AAA Core' },
             image: './imgs/course2.jpg',
             lessons: 7,
             duration: '12h 11m',
@@ -377,7 +377,7 @@
         {
             slug: 'prompt-engineering',
             courseId: 7,
-            title: { ar: 'Prompt Engineering', en: 'Prompt Engineering' },
+            title: { ar: 'هندسة البرومبت', en: 'Prompt Engineering' },
             image: './imgs/course3.jpg',
             lessons: 4,
             duration: '5h 3m',
@@ -387,7 +387,7 @@
         {
             slug: 'ai-automation-lab',
             courseId: 8,
-            title: { ar: 'AI Automation Lab', en: 'AI Automation Lab' },
+            title: { ar: 'اوتوميشن الذكاء الاصطناعي', en: 'AI Automation Lab' },
             image: './imgs/course4.jpg',
             lessons: 11,
             duration: '9h 36m',
@@ -397,7 +397,7 @@
         {
             slug: 'practical-ai-systems',
             courseId: 10,
-            title: { ar: 'Practical AI Systems', en: 'Practical AI Systems' },
+            title: { ar: 'مشاريع AI عملية', en: 'Practical AI Systems' },
             image: './imgs/course5.jpg',
             lessons: 3,
             duration: '4h 7m',
@@ -407,10 +407,31 @@
         {
             slug: 'client-acquisition',
             courseId: 9,
-            title: { ar: 'Client Acquisition', en: 'Client Acquisition' },
+            title: { ar: 'اكتساب العملاء', en: 'Client Acquisition' },
             image: './imgs/course6.jpg',
             lessons: 6,
             duration: '7h 47m',
+            track: 'automation',
+            instructor: 'mohamed-salah',
+        },
+        // Published in the platform since July but never listed here, so the
+        // public site did not know it existed. Numbers, thumbnail and lesson
+        // list all came from the platform (course id 12).
+        //
+        // Track: `automation`. The lessons are CLAUDE.md, context management,
+        // MCPs, Skills, Agents and "Use Cases & Build" — that is building
+        // systems that run themselves, which is what the automation track
+        // says it teaches. It is not Foundations (that track is "no
+        // background required" and this one assumes you already work with
+        // AI). The client has not confirmed the placement — see the note on
+        // prompt-engineering and client-acquisition.
+        {
+            slug: 'claude-code',
+            courseId: 12,
+            title: { ar: 'كلود كود', en: 'Claude Code' },
+            image: './imgs/course7.jpg',
+            lessons: 7,
+            duration: '5h 56m',
             track: 'automation',
             instructor: 'mohamed-salah',
         },
@@ -639,8 +660,10 @@
     }
 
     /**
-     * The instructor bar: photo + name + role, linking to their page. Used in
-     * every course card and under the course preview.
+     * The instructor bar: photo + name + role, linking to their page. Used
+     * under the course preview and on the track pages. The course card no
+     * longer uses it — its reference wants the instructor flat on one edge of
+     * a row, not in a pill with a role line, so it has `cardInstructorHTML`.
      *
      * There used to be a second `full` variant that boxed the identity, the
      * facts, the client strip and the intro video into one card. It was
@@ -773,27 +796,65 @@
     </article>`;
     }
 
-    /** One course card. The same markup on the home page and on /courses. */
+    /**
+     * The instructor line on a course card: name, then the round photo.
+     *
+     * This is deliberately not `instructorBarHTML`. That one is a pill with
+     * the role printed under the name, sized for the dark pages. On the card
+     * the instructor has to sit flat on one edge of a row with the runtime on
+     * the other, so it is name + avatar and nothing else.
+     */
+    function cardInstructorHTML(inst) {
+        if (!inst) return '<span></span>';   // keeps the runtime on its own edge
+        return `
+            <a class="gc-inst" href="/instructors?i=${encodeURIComponent(inst.slug)}">
+                <span class="gc-inst-name">${esc(L(inst.name))}</span>
+                ${avatarHTML(inst, 'gc-avatar')}
+            </a>`;
+    }
+
+    /**
+     * One course card — the same markup on the home page, on /courses and on
+     * an instructor's page. There is never a second copy.
+     *
+     * The client sent a reference for this: a light card, a thick green band
+     * across the top, a big dark title, and one row under it with the
+     * instructor on one side and the runtime on the other. The card it
+     * replaces was black with a green glow, a green button and a green-tinted
+     * thumbnail — "the green is taking everything". Here green is the band and
+     * the clock, and the white surface is what makes the section breathe
+     * against the dark page.
+     *
+     * The reference has no course thumbnail; the client asked separately to
+     * keep it, so it stays on top and the green band doubles as the seam
+     * between it and the white body. Dropping the image later means deleting
+     * the `.gc-media` anchor and nothing else.
+     */
     function courseCardHTML(course) {
         const inst = instructor(course.instructor);
         const href = `/course-details?course=${encodeURIComponent(course.slug)}`;
         const title = L(course.title);
-        const hours = {
-            ar: `${course.duration} من الفيديوهات`,
-            en: `${course.duration} of video`,
-        };
+        // The reference writes the runtime as whole hours ("12 ساعة"), not as
+        // the platform's "12h 3m". `hoursWord` handles the Arabic dual/plural.
+        const mins = durationToMinutes(course.duration);
+        const hours = mins
+            ? hoursWord(Math.round(mins / 60))
+            : { ar: course.duration, en: course.duration };
 
         return `
     <article class="gc-card">
         <a class="gc-media" href="${href}" tabindex="-1" aria-hidden="true">
             <img src="${esc(course.image)}" alt="" loading="lazy" />
         </a>
+        <span class="gc-accent" aria-hidden="true"></span>
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
-            ${instructorBarHTML(inst)}
-            <div class="gc-hours">
-                <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
+            <div class="gc-meta">
+                ${cardInstructorHTML(inst)}
+                <span class="gc-hours">
+                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                    <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
+                </span>
             </div>
             <a class="gc-btn" href="${href}" data-ar="محتوى الكورس" data-en="Course content">محتوى الكورس</a>
         </div>
@@ -1072,10 +1133,13 @@
             out += `
     <article class="gc-card gc-card-skeleton" aria-hidden="true">
         <div class="gc-media gc-sk"></div>
+        <span class="gc-accent"></span>
         <div class="gc-body">
             <div class="gc-sk gc-sk-line gc-sk-title"></div>
-            <div class="gc-sk gc-sk-inst"></div>
-            <div class="gc-sk gc-sk-line gc-sk-short"></div>
+            <div class="gc-sk-meta">
+                <div class="gc-sk gc-sk-inst"></div>
+                <div class="gc-sk gc-sk-line gc-sk-short"></div>
+            </div>
             <div class="gc-sk gc-sk-btn"></div>
         </div>
     </article>`;
@@ -1103,15 +1167,26 @@
         el.classList.add('gc-grid');
         el.innerHTML = skeletonHTML(o.limit || COURSES.length);
 
+        // Most of the card is written in the current language by `L()` at
+        // render time, but the "محتوى الكورس" button and the empty state are
+        // plain data-ar/data-en markup like the rest of the site. i18n.js has
+        // already made its page-load pass by the time this paints, so those
+        // two have to be handed to it explicitly or they stay Arabic on the
+        // English site.
+        const paint = html => {
+            el.innerHTML = html;
+            if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+        };
+
         return load().then(list => {
             const shown = o.limit ? list.slice(0, o.limit) : list;
-            el.innerHTML = shown.length ? shown.map(courseCardHTML).join('') : emptyHTML();
+            paint(shown.length ? shown.map(courseCardHTML).join('') : emptyHTML());
             if (!el.dataset.langBound) {
                 el.dataset.langBound = '1';
                 document.addEventListener('languagechange', () => {
                     load().then(l2 => {
                         const s2 = o.limit ? l2.slice(0, o.limit) : l2;
-                        el.innerHTML = s2.length ? s2.map(courseCardHTML).join('') : emptyHTML();
+                        paint(s2.length ? s2.map(courseCardHTML).join('') : emptyHTML());
                     });
                 });
             }

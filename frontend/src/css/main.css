@@ -26,6 +26,16 @@
     --muted-light: #aaaaaa;
     --border: rgba(255, 255, 255, 0.08);
     --border-gold: rgba(193, 255, 17, 0.2);
+    /* The light course card. The page stays dark; these are the only tokens
+       for the white surfaces on it, so the ink colours are picked against
+       #fff: --card-ink is 19:1 and --card-ink-soft 6:1, both past AA.
+       --gold-ink is the brand green darkened until it clears 3:1 on white —
+       plain --gold is all but invisible there. */
+    --card-surface: #ffffff;
+    --card-ink: #0b0f19;
+    --card-ink-soft: #5b6472;
+    --card-line: rgba(11, 15, 25, 0.09);
+    --gold-ink: #6f9500;
     --radius: 14px;
     --radius-lg: 22px;
     --radius-xl: 32px;
@@ -707,69 +717,10 @@ a {
     }
 }
 
-/* Hero Rating */
-.hero-rating {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 32px;
-}
-
-.hero-avatars {
-    display: flex;
-    align-items: center;
-    direction: ltr;
-    /* Ensure overlap direction is consistent */
-}
-
-.hero-avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    font-weight: 800;
-    border: 2px solid var(--bg);
-    margin-left: -12px;
-}
-
-.hero-avatar-circle:first-child {
-    margin-left: 0;
-}
-
-.hero-rating-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    /* since RTL, it aligns nicely */
-}
-
-.hero-stars {
-    color: var(--green);
-    font-size: 1rem;
-    letter-spacing: 2px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    direction: ltr;
-}
-
-.hero-rating-num {
-    color: var(--white);
-    font-weight: 800;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 1.1rem;
-    letter-spacing: 0;
-}
-
-.hero-rating-text {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-weight: 600;
-}
+/* The hero rating row — six review avatars, "5.0 from 30+ reviews" and five
+   stars — was removed from index.html; the client did not want it. This is
+   where its first (already superseded) set of rules lived. The review avatar
+   files are still in imgs/avatars/ for the reviews section. */
 
 /* ════════════════════════════════════════════════════════
         SECTION HEADERS
@@ -4988,11 +4939,14 @@ footer a:hover {
     margin: 0;
 }
 
+/* Neutral border. It used to be green, which — next to green cards, a green
+   button and a green eyebrow — was most of what the client meant by the
+   section being all green. The numbers inside stay green; that is the accent. */
 .courses-info-bar {
     display: flex;
     gap: 20px;
     background: var(--bg-card);
-    border: 1px solid rgba(193, 255, 17, 0.2);
+    border: 1px solid var(--border);
     padding: 12px 24px;
     border-radius: 100px;
 }
@@ -5123,20 +5077,25 @@ footer a:hover {
     align-items: stretch;
 }
 
+/* A light card on a dark page, per the client's reference: white surface,
+   one thick green band, a big dark title, and the instructor and the runtime
+   on opposite edges of a single row. The card used to be black with a green
+   border-glow on hover, a green-tinted thumbnail and a green button — that is
+   the "green is taking everything" this replaces. Green survives as the band
+   and the clock icon; the lift on hover is now a plain shadow. */
 .gc-card {
     display: flex;
     flex-direction: column;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: var(--card-surface);
+    border: 1px solid var(--card-line);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .gc-card:hover {
-    border-color: rgba(193, 255, 17, 0.45);
     transform: translateY(-6px);
-    box-shadow: 0 0 30px rgba(193, 255, 17, 0.12), 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* Thumbnail. Fixed aspect ratio so a mix of image sizes still lines the
@@ -5145,7 +5104,7 @@ footer a:hover {
     display: block;
     position: relative;
     aspect-ratio: 16 / 9;
-    background: linear-gradient(135deg, rgba(193, 255, 17, 0.15) 0%, #111 100%);
+    background: #0d0d0d;
     overflow: hidden;
 }
 
@@ -5153,41 +5112,103 @@ footer a:hover {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.85;
-    transition: transform 0.4s, opacity 0.3s;
+    transition: transform 0.4s;
 }
 
 .gc-card:hover .gc-media img {
     transform: scale(1.04);
-    opacity: 1;
+}
+
+/* The one strong colour on the card, and the seam between the thumbnail and
+   the white body. */
+.gc-accent {
+    display: block;
+    height: 10px;
+    background: var(--gold);
 }
 
 .gc-body {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 18px;
+    gap: 18px;
+    padding: 22px 20px 20px;
     flex: 1;
 }
 
 .gc-title {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 1.35rem;
+    font-weight: 900;
     line-height: 1.4;
-    color: var(--white);
+    color: var(--card-ink);
+}
+
+/* Instructor on one edge, runtime on the other. `space-between` on a flex row
+   mirrors itself with the document direction, so this needs no [dir] rule —
+   in Arabic the instructor lands on the right and the clock on the left. */
+.gc-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.gc-inst {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.gc-inst-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--card-ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.25s;
+}
+
+.gc-inst:hover .gc-inst-name {
+    color: var(--card-ink);
+}
+
+.gc-avatar {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--card-line);
+}
+
+/* Until the real photos land: initials in ink, not on the brand gradient the
+   dark pages use. The card gets one green element and that is the band. */
+.gc-avatar.gi-avatar-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-ink);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.72rem;
+    border: none;
 }
 
 .gc-hours {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    color: var(--muted-light);
+    gap: 7px;
+    flex-shrink: 0;
+    color: var(--card-ink-soft);
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .gc-hours i {
-    color: var(--gold);
+    color: var(--gold-ink);
 }
 
 /* Pushed to the bottom so the button sits on one line across the row even
@@ -5211,6 +5232,20 @@ footer a:hover {
     box-shadow: 0 0 24px rgba(193, 255, 17, 0.3);
 }
 
+/* Scoped to the course card only. `.gc-btn` is shared with the instructor
+   cards and the track pages, which are still dark and still want the green
+   fill. On the white card a green button would put the colour straight back
+   into the section it was taken out of, so the CTA is ink here. */
+.gc-card .gc-btn {
+    background: var(--card-ink);
+    color: #fff;
+}
+
+.gc-card .gc-btn:hover {
+    background: #1d2534;
+    box-shadow: none;
+}
+
 /* ─── Skeleton ─── */
 .gc-card-skeleton {
     pointer-events: none;
@@ -5230,6 +5265,26 @@ footer a:hover {
     background: none;
 }
 
+/* `.gc-sk` shimmers in white because everywhere else it sits on a dark
+   surface (the tracks page, the lesson list). The whole course card is white
+   now, thumbnail placeholder included, so the shimmer is inverted here —
+   scoped to this card so the other users of `.gc-sk` keep the light one. */
+.gc-card-skeleton .gc-sk {
+    background: linear-gradient(90deg,
+            rgba(11, 15, 25, 0.06) 25%,
+            rgba(11, 15, 25, 0.14) 37%,
+            rgba(11, 15, 25, 0.06) 63%);
+    background-size: 400% 100%;
+}
+
+/* Mirrors `.gc-meta` so the skeleton has the real card's height. */
+.gc-sk-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .gc-sk-line {
     height: 1em;
 }
@@ -5243,8 +5298,11 @@ footer a:hover {
     width: 45%;
 }
 
+/* Sits on one edge of `.gc-sk-meta` opposite the runtime line, so it is the
+   height of the avatar rather than of the old boxed instructor bar. */
 .gc-sk-inst {
-    height: 46px;
+    height: 34px;
+    width: 45%;
     border-radius: 100px;
 }
 
@@ -6814,9 +6872,14 @@ footer a:hover {
 }
 
 /* -- Hero Split Layout -- */
+/* `min-height: 100vh` + `align-items: center` means any content the hero
+   loses turns into space at BOTH ends. Taking the rating row out left a band
+   of nothing between the stat cards and the courses section, so the bottom
+   padding comes down to meet it (see the note on `.hero-stats-cards`). The
+   top stays at 80px — the fixed nav sits over it. */
 .hero {
     padding-top: 80px;
-    padding-bottom: 80px;
+    padding-bottom: 40px;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -6981,13 +7044,20 @@ h1.hero-heading-single>span {
    max-width keeps them from stretching into six thin strips on wide
    monitors; the per-breakpoint values are in the responsive block at the
    end of this file. */
+/* The stat band is the last thing in the hero now that the rating row is
+   gone. The hero is `min-height: 100vh` and centres its content, so losing
+   that row left ~130px of dead space between the stats and the courses
+   section on desktop; the extra top margin puts it back inside the hero
+   where it reads as breathing room instead of a gap. Every breakpoint from
+   the small-laptop one down sets its own margin-top, so this is desktop
+   only — the narrow layouts never had the gap. */
 .hero-stats-cards {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
     width: 100%;
     max-width: 1000px;
-    margin: 56px auto 0;
+    margin: 120px auto 0;
 }
 
 .hero-stat-card {
@@ -7139,73 +7209,10 @@ h1.hero-heading-single>span {
     color: #ffffff;
 }
 
-/* Rating Row */
-.hero-rating {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    align-self: center;
-    /* Was an inline `margin-top: 80px` on the element. The stat cards now sit
-       between the hero grid and this row, so the gap is balanced here (and in
-       the breakpoint blocks) instead. */
-    margin-top: 56px;
-}
-
-.hero-avatars {
-    display: flex;
-    justify-content: center;
-    direction: ltr;
-}
-
-.hero-av {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: 3px solid #000;
-    margin-left: -18px;
-    object-fit: cover;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
-.hero-av:first-child {
-    margin-left: 0;
-}
-
-.hero-rating-info {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    text-align: center;
-}
-
-.hero-stars {
-    color: #f5a623;
-    font-size: 1.3rem;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.star {
-    color: #f5a623;
-}
-
-.hero-rating-num {
-    color: #fff;
-    font-weight: 800;
-    font-size: 1.2rem;
-    margin-left: 4px;
-}
-
-.hero-rating-text {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #ddd;
-}
+/* The rating row that used to close the hero is gone (see the note further
+   up). The stat cards are the last thing in the hero now; the space the row
+   used to fill is absorbed by `.hero-stats-cards`'s top margin and the hero's
+   own bottom padding, both adjusted above. */
 
 /* -- RIGHT: Video Player Box -- */
 .hero-right {
@@ -7512,28 +7519,6 @@ h1.hero-heading-single>span {
         max-width: 100%;
     }
 
-    .hero-av {
-        width: 38px;
-        height: 38px;
-        margin-left: -12px;
-        border-width: 2px;
-    }
-
-    .hero-stars {
-        font-size: 1.1rem;
-    }
-
-    .hero-rating-text {
-        font-size: 0.9rem;
-    }
-
-    .hero-rating-num {
-        font-size: 1rem;
-    }
-
-    .hero-rating {
-        margin-top: 40px !important;
-    }
 }
 
 
