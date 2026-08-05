@@ -48,7 +48,14 @@
     </div>
     <div class="field">
       <label data-i18n="currentPassword">كلمة المرور</label>
-      <div style="position: relative;">
+      <!-- dir="ltr" on the WRAPPER is load-bearing, not decoration.
+           The input is forced dir="ltr" (passwords are Latin), so its
+           `padding-inline-start: 40px` reserves space on the LEFT. Without a
+           direction here the wrapper inherits the page's, so in Arabic the
+           button's `inset-inline-start` resolved to the RIGHT — the gap was
+           left empty and the eye sat directly on top of the password dots.
+           One direction for both, and the two agree in either language. -->
+      <div style="position: relative;" dir="ltr">
         <input type="password" id="password" data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••"
           dir="ltr" class="cyan-focus" style="padding-inline-start: 40px; width: 100%; box-sizing: border-box;" />
         <button type="button" onclick="togglePassword()"
