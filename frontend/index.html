@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260805g">
+    <link rel="stylesheet" href="src/css/main.css?v=20260805h">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -803,9 +803,12 @@
         <div class="container">
             <div class="courses-header-wrapper">
                 <div class="courses-title-area">
-                    <span class="neon-subtitle" data-ar="المسارات" data-en="Tracks">المسارات</span>
-                    <h2 class="courses-main-title" data-ar="إنت داخل منين؟" data-en="Which door is yours?">إنت داخل
-                        منين؟</h2>
+                    <!-- The eyebrow used to read "المسارات" too. The heading
+                         carries that word now, so it says where the courses
+                         sit instead of repeating it. -->
+                    <span class="neon-subtitle" data-ar="الكورسات مترتبة إزاي"
+                        data-en="How the courses are organised">الكورسات مترتبة إزاي</span>
+                    <h2 class="courses-main-title" data-ar="المسارات" data-en="Tracks">المسارات</h2>
                 </div>
             </div>
 
@@ -2430,7 +2433,7 @@
     <script src="src/js/i18n.js?v=20260805a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260805d"></script>
+    <script src="src/js/catalog.js?v=20260805h"></script>
     <script src="src/js/main.js?v=20260804b"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has

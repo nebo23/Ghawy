@@ -66,6 +66,16 @@
                 ar: 'مؤسس غاوي ومدرّب AI Automation',
                 en: 'Founder of Ghawy — AI Automation instructor'
             },
+            // The course card gives the role one short line beside a 38px
+            // avatar, and the full `role` above overflows it. This is the
+            // client's wording for that line, not a truncation — `role` stays
+            // untouched for the wider places (instructor page, course
+            // preview, /instructors list). A course card falls back to `role`
+            // for any instructor that has no `roleShort`.
+            roleShort: {
+                ar: 'مؤسس غاوي',
+                en: 'Founder of Ghawy'
+            },
             yearsExperience: 4,
             clientsCount: 35,
             clients: [
@@ -797,19 +807,29 @@
     }
 
     /**
-     * The instructor line on a course card: name, then the round photo.
+     * The instructor line on a course card: the round photo, then the name
+     * with a short role under it.
      *
-     * This is deliberately not `instructorBarHTML`. That one is a pill with
-     * the role printed under the name, sized for the dark pages. On the card
-     * the instructor has to sit flat on one edge of a row with the runtime on
-     * the other, so it is name + avatar and nothing else.
+     * The photo comes FIRST in the markup, which is what puts it on the right
+     * in Arabic and on the left in English — a flex row already follows the
+     * document direction, so reading order is the only thing that has to be
+     * right and there is no `left`/`right` rule anywhere.
+     *
+     * This is deliberately not `instructorBarHTML`. That one is a bordered
+     * pill carrying the full role, sized for the wider layouts. On the card
+     * the instructor sits flat on one edge of a row with the runtime on the
+     * other, and the role line has to be the short version.
      */
     function cardInstructorHTML(inst) {
         if (!inst) return '<span></span>';   // keeps the runtime on its own edge
+        const role = inst.roleShort || inst.role;
         return `
             <a class="gc-inst" href="/instructors?i=${encodeURIComponent(inst.slug)}">
-                <span class="gc-inst-name">${esc(L(inst.name))}</span>
                 ${avatarHTML(inst, 'gc-avatar')}
+                <span class="gc-inst-ident">
+                    <span class="gc-inst-name">${esc(L(inst.name))}</span>
+                    <span class="gc-inst-role" ${i18nAttrs(role)}>${esc(L(role))}</span>
+                </span>
             </a>`;
     }
 
@@ -817,18 +837,21 @@
      * One course card — the same markup on the home page, on /courses and on
      * an instructor's page. There is never a second copy.
      *
-     * The client sent a reference for this: a light card, a thick green band
-     * across the top, a big dark title, and one row under it with the
-     * instructor on one side and the runtime on the other. The card it
-     * replaces was black with a green glow, a green button and a green-tinted
-     * thumbnail — "the green is taking everything". Here green is the band and
-     * the clock, and the white surface is what makes the section breathe
-     * against the dark page.
+     * The layout came from a reference the client sent: a green band across
+     * the top, a big title, and one row under it with the instructor on one
+     * side and the runtime on the other. That reference was a white card and
+     * the card was built white; the client then asked for the surface to go
+     * back to dark like the rest of the site.
+     *
+     * What the white surface was solving — "the green is taking everything" —
+     * is still solved without it: the band and the clock icon are the only
+     * green on the card. The version this replaced had a green glow on hover,
+     * a green-tinted thumbnail, a green-filled button and a green avatar too.
      *
      * The reference has no course thumbnail; the client asked separately to
      * keep it, so it stays on top and the green band doubles as the seam
-     * between it and the white body. Dropping the image later means deleting
-     * the `.gc-media` anchor and nothing else.
+     * between it and the body. Dropping the image later means deleting the
+     * `.gc-media` anchor and nothing else.
      */
     function courseCardHTML(course) {
         const inst = instructor(course.instructor);

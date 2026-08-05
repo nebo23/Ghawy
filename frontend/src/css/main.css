@@ -26,16 +26,6 @@
     --muted-light: #aaaaaa;
     --border: rgba(255, 255, 255, 0.08);
     --border-gold: rgba(193, 255, 17, 0.2);
-    /* The light course card. The page stays dark; these are the only tokens
-       for the white surfaces on it, so the ink colours are picked against
-       #fff: --card-ink is 19:1 and --card-ink-soft 6:1, both past AA.
-       --gold-ink is the brand green darkened until it clears 3:1 on white —
-       plain --gold is all but invisible there. */
-    --card-surface: #ffffff;
-    --card-ink: #0b0f19;
-    --card-ink-soft: #5b6472;
-    --card-line: rgba(11, 15, 25, 0.09);
-    --gold-ink: #6f9500;
     --radius: 14px;
     --radius-lg: 22px;
     --radius-xl: 32px;
@@ -5077,25 +5067,30 @@ footer a:hover {
     align-items: stretch;
 }
 
-/* A light card on a dark page, per the client's reference: white surface,
-   one thick green band, a big dark title, and the instructor and the runtime
-   on opposite edges of a single row. The card used to be black with a green
-   border-glow on hover, a green-tinted thumbnail and a green button — that is
-   the "green is taking everything" this replaces. Green survives as the band
-   and the clock icon; the lift on hover is now a plain shadow. */
+/* The card's layout came from a reference the client sent: a green band
+   across the top, a big title, and the instructor and the runtime on opposite
+   edges of one row. The reference was white and the card was built white; the
+   client then asked for the surface to go back to dark like the rest of the
+   site.
+   Going dark does NOT mean going back to the card before all this. That one
+   had a green glow on hover, a green-tinted thumbnail, a green-filled button
+   and a green avatar, which is what "the green is taking everything" was
+   about. Green here is the band and the clock icon, full stop — the hover is
+   a plain lift and a slightly brighter border. */
 .gc-card {
     display: flex;
     flex-direction: column;
-    background: var(--card-surface);
-    border: 1px solid var(--card-line);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
 .gc-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
 /* Thumbnail. Fixed aspect ratio so a mix of image sizes still lines the
@@ -5120,7 +5115,7 @@ footer a:hover {
 }
 
 /* The one strong colour on the card, and the seam between the thumbnail and
-   the white body. */
+   the body. */
 .gc-accent {
     display: block;
     height: 10px;
@@ -5140,7 +5135,7 @@ footer a:hover {
     font-size: 1.35rem;
     font-weight: 900;
     line-height: 1.4;
-    color: var(--card-ink);
+    color: var(--white);
 }
 
 /* Instructor on one edge, runtime on the other. `space-between` on a flex row
@@ -5153,6 +5148,9 @@ footer a:hover {
     gap: 12px;
 }
 
+/* Photo then name, in that order in the markup, so the row reads correctly in
+   both directions without a single left/right rule: the avatar ends up on the
+   right in Arabic and on the left in English. */
 .gc-inst {
     display: inline-flex;
     align-items: center;
@@ -5161,40 +5159,58 @@ footer a:hover {
     text-decoration: none;
 }
 
+.gc-inst-ident {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
 .gc-inst-name {
     font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--card-ink-soft);
+    font-weight: 700;
+    color: var(--white);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: color 0.25s;
 }
 
+/* The short role — "مؤسس غاوي". Smaller and grey under the name, which is why
+   `roleShort` exists in catalog.js: the full role wraps at this width. */
+.gc-inst-role {
+    font-size: 0.76rem;
+    color: var(--muted-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .gc-inst:hover .gc-inst-name {
-    color: var(--card-ink);
+    color: var(--gold);
 }
 
 .gc-avatar {
     flex-shrink: 0;
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid var(--card-line);
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-/* Until the real photos land: initials in ink, not on the brand gradient the
-   dark pages use. The card gets one green element and that is the band. */
+/* Until the real photos land: initials on a raised neutral circle rather than
+   the brand gradient the wider instructor bars use — seven gold discs down a
+   course grid is exactly the green creep this card is avoiding. */
 .gc-avatar.gi-avatar-fallback {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--card-ink);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--white);
     font-weight: 800;
-    font-size: 0.72rem;
-    border: none;
+    font-size: 0.74rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .gc-hours {
@@ -5202,13 +5218,13 @@ footer a:hover {
     align-items: center;
     gap: 7px;
     flex-shrink: 0;
-    color: var(--card-ink-soft);
+    color: var(--muted-light);
     font-size: 0.9rem;
     font-weight: 600;
 }
 
 .gc-hours i {
-    color: var(--gold-ink);
+    color: var(--gold);
 }
 
 /* Pushed to the bottom so the button sits on one line across the row even
@@ -5232,17 +5248,21 @@ footer a:hover {
     box-shadow: 0 0 24px rgba(193, 255, 17, 0.3);
 }
 
-/* Scoped to the course card only. `.gc-btn` is shared with the instructor
-   cards and the track pages, which are still dark and still want the green
-   fill. On the white card a green button would put the colour straight back
-   into the section it was taken out of, so the CTA is ink here. */
+/* Scoped to the course card only — `.gc-btn` is shared with the instructor
+   cards and the track pages, which keep the solid green fill.
+   Here it is outlined instead. Seven solid green pills down the course grid
+   was a good part of what the client meant by the green taking over, and that
+   was true on the dark card as much as on the white one, so the surface going
+   back to dark does not bring the fill back with it. */
 .gc-card .gc-btn {
-    background: var(--card-ink);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--white);
 }
 
 .gc-card .gc-btn:hover {
-    background: #1d2534;
+    background: rgba(255, 255, 255, 0.11);
+    border-color: rgba(255, 255, 255, 0.3);
     box-shadow: none;
 }
 
@@ -5263,18 +5283,6 @@ footer a:hover {
 
 .gc-card-skeleton .gc-media {
     background: none;
-}
-
-/* `.gc-sk` shimmers in white because everywhere else it sits on a dark
-   surface (the tracks page, the lesson list). The whole course card is white
-   now, thumbnail placeholder included, so the shimmer is inverted here —
-   scoped to this card so the other users of `.gc-sk` keep the light one. */
-.gc-card-skeleton .gc-sk {
-    background: linear-gradient(90deg,
-            rgba(11, 15, 25, 0.06) 25%,
-            rgba(11, 15, 25, 0.14) 37%,
-            rgba(11, 15, 25, 0.06) 63%);
-    background-size: 400% 100%;
 }
 
 /* Mirrors `.gc-meta` so the skeleton has the real card's height. */
@@ -5301,7 +5309,7 @@ footer a:hover {
 /* Sits on one edge of `.gc-sk-meta` opposite the runtime line, so it is the
    height of the avatar rather than of the old boxed instructor bar. */
 .gc-sk-inst {
-    height: 34px;
+    height: 38px;
     width: 45%;
     border-radius: 100px;
 }
