@@ -49,9 +49,14 @@
         : '/api';
 
     // ─── Instructors ────────────────────────────────────────────
-    // `clients` are the brands/creators they have worked with — shown as the
-    // client strip in the instructor bar. `logo: null` renders the name as a
-    // chip; give it a path and it renders the image instead.
+    // `clients` is what goes under "اشتغل مع" on the instructor page.
+    //
+    // These are CATEGORIES of client, not named brands: the client asked for
+    // the individual names to come off the site and to be described by the
+    // kind of business instead. So `logo` stays null here — there is no logo
+    // for a category. The renderer still supports a logo path (it draws the
+    // image instead of the text chip) for the day a named brand is added back
+    // with permission to show its mark.
     const INSTRUCTORS = {
         'mohamed-salah': {
             slug: 'mohamed-salah',
@@ -64,10 +69,8 @@
             yearsExperience: 4,
             clientsCount: 35,
             clients: [
-                { name: { ar: 'بولتكس', en: 'Poltex' }, logo: null },
-                { name: { ar: 'أبو فولة', en: 'Abo Flah' }, logo: null },
-                { name: { ar: 'مروان ريحان', en: 'Marwan Rayhan' }, logo: null },
-                { name: { ar: 'بشر جيماوي', en: 'Bishr Gemawi' }, logo: null },
+                { name: { ar: 'أكبر الشركات في مصر', en: "Egypt's biggest companies" }, logo: null },
+                { name: { ar: 'أكبر الصيدليات في مصر', en: "Egypt's biggest pharmacies" }, logo: null },
             ],
             links: {
                 instagram: 'https://instagram.com/ghawy_official',
