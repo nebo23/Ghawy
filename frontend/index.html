@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260804b">
+    <link rel="stylesheet" href="src/css/main.css?v=20260805a">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -815,6 +815,41 @@
 
             <div class="courses-bottom-cta">
                 <a href="/courses" class="btn-more-courses" data-ar="المزيد" data-en="See more">المزيد</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+    LEARNING TRACKS — a taster, straight after the courses.
+    The two families with a one-line definition each and the tracks inside
+    them; the full deep-vs-applied comparison deliberately stays on /tracks
+    so this section answers "there are two kinds" and nothing more.
+    The panels are rendered by src/js/catalog.js into #trackFamilies — the
+    home page holds no track data of its own.
+    ════════════════════════════════════════ -->
+    <section class="tracks-intro-section" id="tracks">
+        <div class="container">
+            <div class="courses-header-wrapper">
+                <div class="courses-title-area">
+                    <span class="neon-subtitle" data-ar="المسارات" data-en="Tracks">المسارات</span>
+                    <h2 class="courses-main-title" data-ar="إنت داخل منين؟" data-en="Which door is yours?">إنت داخل
+                        منين؟</h2>
+                </div>
+            </div>
+
+            <p class="tracks-intro-lead"
+                data-ar="الكورسات مترتّبة في مسارات، والمسارات نوعين: نوع بتتعلم فيه الـ AI نفسه، ونوع بتتعلم فيه تستخدم الـ AI في شغلك اللي إنت فيه."
+                data-en="The courses are arranged into tracks, and tracks come in two kinds: one where you learn AI itself, and one where you learn to use AI inside the work you already do.">
+                الكورسات مترتّبة في مسارات، والمسارات نوعين: نوع بتتعلم فيه الـ AI نفسه، ونوع بتتعلم فيه تستخدم الـ AI في
+                شغلك اللي إنت فيه.
+            </p>
+
+            <!-- Skeleton → panels, all handled by catalog.js -->
+            <div id="trackFamilies"></div>
+
+            <div class="courses-bottom-cta">
+                <a href="/tracks" class="btn-more-courses" data-ar="شوف كل المسارات" data-en="See all tracks">شوف كل
+                    المسارات</a>
             </div>
         </div>
     </section>
@@ -2420,10 +2455,10 @@
     <!-- Language engine — shared with every other page (single 'ghawy_lang' key,
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
-    <script src="src/js/i18n.js?v=20260804"></script>
+    <script src="src/js/i18n.js?v=20260805a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260804"></script>
+    <script src="src/js/catalog.js?v=20260805a"></script>
     <script src="src/js/main.js?v=20260804b"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has

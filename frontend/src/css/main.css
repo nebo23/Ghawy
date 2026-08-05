@@ -5596,6 +5596,1165 @@ footer a:hover {
     font-size: 1.02rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   LEARNING TRACKS — /tracks, /tracks?t=<slug> and the home teaser
+   Rendered by src/js/catalog.js. Same rule as the course catalog above:
+   these components appear on more than one page, so nothing here may
+   depend on page context, and everything is written with logical
+   properties because the whole site flips between RTL and LTR.
+
+   ── The accent system ──
+   The single most important job of this page is that a visitor can tell
+   the two FAMILIES of track apart at a glance. So every component that
+   belongs to a family carries `.tr-accent-gold` (deep tracks — you learn
+   AI itself) or `.tr-accent-blue` (applied tracks — you use AI in your
+   own field), and reads its colours from the four variables those two
+   classes set. No component hard-codes a family colour, which is why the
+   card, the chip, the comparison column and the detail header all stay
+   in sync from one class on the wrapper.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Fallback so a component rendered without a family still has colours.
+   This MUST stay above the two accent classes: both are single-class
+   selectors, so they tie on specificity and the later rule wins — with
+   this block below them every component would silently render gold. */
+.tr-card,
+.tr-family,
+.tr-explain,
+.tr-detail,
+.tr-detail-head,
+.tr-cmp-head,
+.tr-cmp-stack {
+    --tr-ink: var(--gold);
+    --tr-soft: var(--gold-subtle);
+    --tr-line: var(--gold-border);
+    --tr-glow: var(--gold-glow);
+}
+
+.tr-accent-gold {
+    --tr-ink: #c1ff11;
+    --tr-soft: rgba(193, 255, 17, 0.07);
+    --tr-line: rgba(193, 255, 17, 0.22);
+    --tr-glow: rgba(193, 255, 17, 0.18);
+}
+
+.tr-accent-blue {
+    --tr-ink: #3f8ff9;
+    --tr-soft: rgba(63, 143, 249, 0.08);
+    --tr-line: rgba(63, 143, 249, 0.26);
+    --tr-glow: rgba(63, 143, 249, 0.2);
+}
+
+/* /tracks carries grids and a comparison table — it needs more room than
+   the 940px reading column the shell pages default to. */
+.tr-container {
+    max-width: 1180px;
+}
+
+.tr-section {
+    margin-bottom: 76px;
+}
+
+.tr-section-title {
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-weight: 900;
+    line-height: 1.35;
+    color: var(--white);
+    margin: 0 0 12px;
+}
+
+.tr-section-lead {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: var(--muted-light);
+    margin: 0 0 30px;
+    max-width: 72ch;
+}
+
+/* ─── A) "What is a deep track / an applied track" ─── */
+.tr-explain-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.tr-explain {
+    padding: 30px 28px;
+    background:
+        radial-gradient(ellipse 90% 60% at 50% 0%, var(--tr-soft) 0%, transparent 70%),
+        var(--bg-card);
+    border: 1px solid var(--tr-line);
+    border-radius: var(--radius-lg);
+}
+
+.tr-explain-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: var(--tr-soft);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    font-size: 1.4rem;
+    margin-bottom: 18px;
+}
+
+.tr-explain-name {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--white);
+    margin: 0 0 10px;
+}
+
+.tr-explain-line {
+    margin: 0 0 14px;
+    color: var(--off-white);
+    line-height: 1.85;
+    font-size: 1.02rem;
+}
+
+/* The concrete "someone like you" line — the one that usually ends the
+   WhatsApp question before it is asked. */
+.tr-explain-eg {
+    margin: 0;
+    padding-inline-start: 14px;
+    border-inline-start: 2px solid var(--tr-line);
+    color: var(--muted-light);
+    font-size: 0.94rem;
+    line-height: 1.75;
+}
+
+/* ─── B) The head-to-head comparison ───
+   Two renderings of the same data: a table for wide screens and one
+   stacked block per family for phones, where a two-column table of long
+   Arabic sentences is unreadable. Exactly one is ever visible. */
+.tr-cmp-scroll {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.tr-cmp {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: start;
+}
+
+.tr-cmp th,
+.tr-cmp td {
+    padding: 20px 22px;
+    vertical-align: top;
+    text-align: start;
+    border-block-end: 1px solid var(--border);
+}
+
+.tr-cmp tbody tr:last-child th,
+.tr-cmp tbody tr:last-child td {
+    border-block-end: none;
+}
+
+.tr-cmp-corner {
+    width: 190px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.tr-cmp-head {
+    width: calc((100% - 190px) / 2);
+    background: var(--tr-soft);
+    border-block-end: 2px solid var(--tr-line) !important;
+}
+
+.tr-cmp-head-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    margin-bottom: 10px;
+}
+
+.tr-cmp-head-name {
+    display: block;
+    font-size: 1.18rem;
+    font-weight: 900;
+    color: var(--white);
+}
+
+.tr-cmp-head-tag {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--tr-ink);
+}
+
+/* The question column. Sticky so the row label stays readable while the
+   table scrolls sideways on narrow tablets. */
+.tr-cmp-label {
+    position: sticky;
+    inset-inline-start: 0;
+    background: var(--bg-raised);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--white);
+    white-space: normal;
+}
+
+.tr-cmp-label i {
+    color: var(--muted-light);
+    margin-inline-end: 8px;
+}
+
+.tr-cmp tbody td {
+    color: var(--muted-light);
+    font-size: 0.96rem;
+    line-height: 1.8;
+}
+
+.tr-cmp tbody tr:hover td {
+    color: var(--off-white);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.tr-cmp-stacked {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tr-cmp-stack {
+    background: var(--bg-card);
+    border: 1px solid var(--tr-line);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+}
+
+.tr-cmp-stack-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-block-end: 18px;
+    margin-block-end: 6px;
+    border-block-end: 1px solid var(--border);
+}
+
+.tr-cmp-stack-list {
+    margin: 0;
+}
+
+.tr-cmp-stack-list dt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.tr-cmp-stack-list dt i {
+    color: var(--tr-ink);
+    opacity: 0.85;
+}
+
+.tr-cmp-stack-list dd {
+    margin: 6px 0 0;
+    padding-inline-start: 24px;
+    color: var(--muted-light);
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+/* ─── The heading above each family's grid ─── */
+.tr-family-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.tr-family-heading .tr-section-lead {
+    margin-bottom: 0;
+}
+
+.tr-family-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    background: var(--tr-soft);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    font-size: 1.3rem;
+}
+
+/* ─── Track cards ───
+   Both families use this card unchanged — same size, same slots, same
+   order — so the two grids can be compared by eye. Only the accent
+   variables differ. */
+.tr-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: stretch;
+}
+
+.tr-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.tr-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--tr-line);
+    box-shadow: 0 0 30px var(--tr-glow), 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.tr-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    flex: 1;
+}
+
+.tr-card-title {
+    font-size: 1.28rem;
+    font-weight: 900;
+    line-height: 1.35;
+    color: var(--white);
+}
+
+.tr-card-short {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--muted-light);
+}
+
+.tr-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-top: 2px;
+}
+
+.tr-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.86rem;
+    color: var(--muted-light);
+    unicode-bidi: isolate;
+}
+
+.tr-meta-item i {
+    color: var(--tr-ink);
+}
+
+/* "قريباً". Deliberately loud rather than hidden: an empty track is part
+   of the message that the platform is still growing, so it is a designed
+   state and not something to apologise for. */
+.tr-badge-soon {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--tr-ink);
+    background: var(--tr-soft);
+    border: 1px dashed var(--tr-line);
+    padding: 5px 14px;
+    border-radius: 100px;
+}
+
+.tr-badge-soon::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--tr-ink);
+    opacity: 0.8;
+}
+
+.tr-card-cta {
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--tr-ink);
+}
+
+.tr-card-cta::after {
+    content: "\f177";
+    /* fa-arrow-left — forward in RTL */
+    font-family: "Font Awesome 6 Free", "Font Awesome 7 Free";
+    font-weight: 900;
+    font-size: 0.78em;
+    margin-inline-start: 8px;
+    display: inline-block;
+    transition: transform 0.25s;
+}
+
+[dir="ltr"] .tr-card-cta::after {
+    transform: scaleX(-1);
+}
+
+.tr-card:hover .tr-card-cta::after {
+    transform: translateX(-4px);
+}
+
+[dir="ltr"] .tr-card:hover .tr-card-cta::after {
+    transform: scaleX(-1) translateX(-4px);
+}
+
+.tr-card-skeleton {
+    pointer-events: none;
+}
+
+/* ─── Track artwork ───
+   `image: null` in catalog.js lands here: a blueprint-grid panel tinted
+   by the family, with the track's icon on it. Setting a real path in
+   catalog.js swaps in <img> and none of this applies — no HTML or CSS
+   change is needed when the artwork arrives. */
+.tr-thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--bg-raised);
+}
+
+.tr-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tr-thumb-ph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 85% 75% at 50% 12%, var(--tr-glow) 0%, transparent 72%),
+        linear-gradient(145deg, #0e0e0e 0%, #000000 65%);
+}
+
+.tr-thumb-ph::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--tr-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--tr-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.32;
+    -webkit-mask-image: radial-gradient(ellipse 72% 72% at 50% 46%, #000 15%, transparent 78%);
+    mask-image: radial-gradient(ellipse 72% 72% at 50% 46%, #000 15%, transparent 78%);
+}
+
+.tr-thumb-ph i {
+    position: relative;
+    font-size: 2.7rem;
+    color: var(--tr-ink);
+    filter: drop-shadow(0 0 22px var(--tr-glow));
+}
+
+.tr-card:hover .tr-thumb-ph i {
+    transform: scale(1.06);
+    transition: transform 0.35s;
+}
+
+.tr-thumb-hero {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--tr-line);
+}
+
+.tr-thumb-hero.tr-thumb-ph i {
+    font-size: 3.6rem;
+}
+
+/* ─── D) "Not sure where to start" ─── */
+.tr-start {
+    padding: 40px 36px;
+    background:
+        radial-gradient(ellipse 70% 100% at 100% 0%, rgba(193, 255, 17, 0.06) 0%, transparent 65%),
+        var(--bg-card);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+}
+
+.tr-start-title {
+    font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+    font-weight: 900;
+    color: var(--white);
+    margin: 0 0 24px;
+}
+
+.tr-start-steps {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    counter-reset: none;
+}
+
+.tr-start-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.tr-start-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #000;
+    font-weight: 900;
+    font-size: 0.92rem;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.tr-start-text {
+    color: var(--muted-light);
+    line-height: 1.85;
+    font-size: 1rem;
+}
+
+.tr-start-cta {
+    display: inline-block;
+    width: auto;
+    padding-inline: 30px;
+}
+
+/* ═══ Track detail — /tracks?t=<slug> ═══
+   Deliberately built from the course preview's vocabulary (.cd-back-btn,
+   .cd-title, .cd-section-title) so moving between a track and a course
+   feels like one site. */
+.tr-detail-head {
+    text-align: start;
+    max-width: 900px;
+}
+
+.page-shell-head:has(.tr-back) {
+    text-align: start;
+    max-width: none;
+    margin-bottom: 40px;
+}
+
+.tr-family-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 16px;
+    padding: 7px 18px;
+    border-radius: 100px;
+    background: var(--tr-soft);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.25s, border-color 0.25s;
+}
+
+.tr-family-pill:hover {
+    border-color: var(--tr-ink);
+}
+
+.tr-family-pill-sep {
+    opacity: 0.5;
+}
+
+.tr-detail-about {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.9;
+    color: var(--muted-light);
+    max-width: 68ch;
+}
+
+.tr-detail-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 40px;
+    align-items: start;
+    margin-bottom: 70px;
+}
+
+.tr-detail-facts {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+/* The totals — summed from the catalog by trackStats(), never typed. */
+.tr-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tr-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 130px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.tr-stat i {
+    color: var(--tr-ink);
+    font-size: 1rem;
+}
+
+.tr-stat-value {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1;
+}
+
+.tr-stat-label {
+    font-size: 0.85rem;
+    color: var(--muted-light);
+}
+
+.tr-stat-soon {
+    flex-basis: 100%;
+    border-style: dashed;
+    border-color: var(--tr-line);
+    color: var(--tr-ink);
+}
+
+.tr-stat-sk {
+    display: block;
+    width: 100%;
+    height: 1.4em;
+}
+
+.tr-detail-dl {
+    margin: 0;
+}
+
+.tr-detail-dl dt {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-top: 18px;
+}
+
+.tr-detail-dl dt:first-child {
+    margin-top: 0;
+}
+
+.tr-detail-dl dd {
+    margin: 6px 0 0;
+    color: var(--muted-light);
+    font-size: 0.97rem;
+    line-height: 1.8;
+}
+
+.tr-block {
+    margin-bottom: 66px;
+}
+
+.tr-block-lead {
+    margin: -10px 0 24px;
+    color: var(--muted-light);
+    font-size: 0.98rem;
+    line-height: 1.8;
+}
+
+/* ─── The ordered course list ───
+   The order is the point of this section, so the step number is a real
+   element and not a ::marker: it has to stay legible next to a thumbnail
+   and it must not flip meaning between RTL and LTR. */
+.tr-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tr-step {
+    position: relative;
+}
+
+/* The connecting line down the timeline — drawn from each step to the
+   next, so the last one has none. */
+.tr-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 43px;
+    width: 2px;
+    height: 14px;
+    background: var(--tr-line);
+}
+
+[dir="ltr"] .tr-step:not(:last-child)::after {
+    inset-inline-start: 43px;
+}
+
+.tr-step-link {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: border-color 0.25s, background 0.25s, transform 0.25s;
+}
+
+.tr-step-link:hover {
+    border-color: var(--tr-line);
+    background: var(--bg-raised);
+    transform: translateY(-2px);
+}
+
+.tr-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--tr-soft);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.tr-step-link:hover .tr-step-num {
+    background: var(--tr-ink);
+    color: #000;
+}
+
+.tr-step-thumb {
+    display: block;
+    flex-shrink: 0;
+    width: 96px;
+    aspect-ratio: 16 / 9;
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--bg-raised);
+}
+
+.tr-step-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.9;
+}
+
+.tr-step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tr-step-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.tr-step-meta {
+    font-size: 0.85rem;
+    color: var(--muted-light);
+    unicode-bidi: isolate;
+}
+
+.tr-step-arrow {
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: color 0.25s, transform 0.25s;
+}
+
+[dir="ltr"] .tr-step-arrow {
+    transform: scaleX(-1);
+}
+
+.tr-step-link:hover .tr-step-arrow {
+    color: var(--tr-ink);
+    transform: translateX(-4px);
+}
+
+[dir="ltr"] .tr-step-link:hover .tr-step-arrow {
+    transform: scaleX(-1) translateX(-4px);
+}
+
+.tr-step-skeleton {
+    pointer-events: none;
+}
+
+.tr-step-skeleton .tr-step-num,
+.tr-step-skeleton .tr-step-thumb {
+    border: none;
+}
+
+.tr-step-skeleton>* {
+    display: flex;
+}
+
+.tr-steps-empty {
+    gap: 0;
+}
+
+/* ─── The designed "coming soon" state ───
+   An empty track must never look like a bug or a blank page: it gets its
+   own panel with a reason and somewhere to go next. */
+.tr-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+    padding: 54px 28px;
+    background:
+        radial-gradient(ellipse 80% 90% at 50% 0%, var(--tr-soft) 0%, transparent 70%),
+        var(--bg-card);
+    border: 1px dashed var(--tr-line);
+    border-radius: var(--radius-lg);
+}
+
+.tr-soon-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: var(--tr-soft);
+    border: 1px solid var(--tr-line);
+    color: var(--tr-ink);
+    font-size: 1.5rem;
+}
+
+.tr-soon-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--white);
+}
+
+.tr-soon-note {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--muted-light);
+    line-height: 1.85;
+}
+
+.tr-soon-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.tr-soon-actions .gc-btn {
+    padding-inline: 28px;
+}
+
+.tr-soon-alt {
+    color: var(--muted-light);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.tr-soon-alt:hover {
+    color: var(--tr-ink);
+}
+
+/* ─── Outcomes ─── */
+.tr-outcomes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.tr-outcome {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--off-white);
+    font-size: 0.97rem;
+    line-height: 1.7;
+}
+
+.tr-outcome i {
+    flex-shrink: 0;
+    margin-top: 4px;
+    color: var(--tr-ink);
+}
+
+.tr-instructor+.tr-instructor {
+    margin-top: 22px;
+}
+
+.tr-instructor .gi-bar-compact {
+    width: fit-content;
+    max-width: 100%;
+}
+
+/* ═══ Home-page teaser (#trackFamilies) ═══ */
+.tracks-intro-section {
+    padding: 20px 0 80px;
+    background: var(--bg);
+    color: var(--white);
+}
+
+.tracks-intro-section .container {
+    max-width: 1350px;
+}
+
+.tracks-intro-lead {
+    max-width: 76ch;
+    margin: -10px 0 34px;
+    color: var(--muted-light);
+    font-size: 1.05rem;
+    line-height: 1.9;
+}
+
+.tr-family-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+}
+
+.tr-family {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 30px 28px;
+    background:
+        radial-gradient(ellipse 90% 60% at 50% 0%, var(--tr-soft) 0%, transparent 70%),
+        var(--bg-card);
+    border: 1px solid var(--tr-line);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.3s, transform 0.3s;
+}
+
+.tr-family:hover {
+    transform: translateY(-4px);
+}
+
+.tr-family-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.tr-family-ident {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.tr-family-name {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--white);
+}
+
+.tr-family-tag {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--tr-ink);
+}
+
+.tr-family-line {
+    margin: 0;
+    color: var(--muted-light);
+    line-height: 1.85;
+    font-size: 1rem;
+}
+
+/* The tracks inside a family, as chips. Each one is already a link to its
+   own page — the visitor does not have to go through /tracks first. */
+.tr-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 4px;
+}
+
+.tr-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    color: var(--off-white);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    unicode-bidi: isolate;
+    transition: color 0.25s, border-color 0.25s, background 0.25s;
+}
+
+.tr-chip:hover {
+    color: var(--tr-ink);
+    border-color: var(--tr-line);
+    background: var(--tr-soft);
+}
+
+.tr-chip.is-soon {
+    border-style: dashed;
+    color: var(--muted-light);
+}
+
+/* ─── Tracks responsive ─── */
+@media (max-width: 1099px) {
+    .tr-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .tr-detail-top {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    .tr-thumb-hero {
+        max-width: 560px;
+    }
+}
+
+@media (max-width: 899px) {
+
+    /* Below this the two-column table stops being readable — the stacked
+       rendering of the same data takes over. */
+    .tr-cmp-scroll {
+        display: none;
+    }
+
+    .tr-cmp-stacked {
+        display: flex;
+    }
+
+    .tr-explain-grid,
+    .tr-family-grid,
+    .tr-outcomes {
+        grid-template-columns: 1fr;
+    }
+
+    .tr-section {
+        margin-bottom: 58px;
+    }
+
+    .tr-start {
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 599px) {
+    .tr-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .tr-family-heading {
+        gap: 14px;
+    }
+
+    .tr-family-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .tr-explain,
+    .tr-family {
+        padding: 24px 20px;
+    }
+
+    .tr-step-link {
+        gap: 12px;
+        padding: 12px 14px;
+    }
+
+    /* The thumbnail is the first thing to go — the number and the title
+       are what carry the ordering. */
+    .tr-step-thumb {
+        display: none;
+    }
+
+    .tr-step:not(:last-child)::after {
+        inset-inline-start: 27px;
+    }
+
+    .tr-stat {
+        flex: 1 1 100%;
+    }
+
+    .tr-soon {
+        padding: 40px 20px;
+    }
+
+    .tr-soon-actions .gc-btn {
+        width: 100%;
+    }
+}
+
 /* ─── Catalog responsive ─── */
 @media (max-width: 1099px) {
     .gc-grid {

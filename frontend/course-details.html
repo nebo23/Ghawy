@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260804b" />
+    <link rel="stylesheet" href="src/css/main.css?v=20260805a" />
 
 </head>
 
@@ -88,9 +88,9 @@
     <!-- Language engine — same file, same load position, as every other page.
          It must come before the inline script below, which renders the course
          content in whatever language i18n.js has just applied. -->
-    <script src="src/js/i18n.js?v=20260804"></script>
+    <script src="src/js/i18n.js?v=20260805a"></script>
     <!-- The single source for course + instructor data. -->
-    <script src="src/js/catalog.js?v=20260804"></script>
+    <script src="src/js/catalog.js?v=20260805a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
     <script>
         // ═══════════════════════════════════════
@@ -149,14 +149,18 @@
                 document.title = `${title} — Ghawy`;
                 document.getElementById('cdTitle').textContent = title;
 
-                // Track line → /tracks
+                // Track line → that track's own page, not the tracks index.
+                // The URL is built by the catalog (C.trackHref) so this page
+                // and /tracks can never disagree about where a track lives.
                 const tr = C.track(course.track);
                 const trackEl = document.getElementById('cdTrack');
                 if (tr) {
-                    const within = { ar: 'ضمن', en: 'Part of' };
+                    const within = { ar: 'ضمن مسار', en: 'Part of the' };
+                    const after = { ar: '', en: 'track' };
                     trackEl.innerHTML = `
                         <span class="cd-track-pre" ${C.i18nAttrs(within)}>${C.esc(C.L(within))}</span>
-                        <a class="cd-track-link" href="/tracks#${C.esc(tr.slug)}" ${C.i18nAttrs(tr.name)}>${C.esc(C.L(tr.name))}</a>`;
+                        <a class="cd-track-link" href="${C.trackHref(tr.slug)}" ${C.i18nAttrs(tr.name)}>${C.esc(C.L(tr.name))}</a>
+                        <span class="cd-track-pre" ${C.i18nAttrs(after)}>${C.esc(C.L(after))}</span>`;
                 } else {
                     trackEl.innerHTML = '';
                 }

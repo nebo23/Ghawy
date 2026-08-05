@@ -5,19 +5,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>المسارات — Ghawy</title>
-    <meta name="description" content="مسارات تعلم الذكاء الاصطناعي على Ghawy — خطة واضحة خطوة بخطوة لكل تخصص." />
+    <meta name="description" content="مسارات تعلم الذكاء الاصطناعي على Ghawy — مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك. المقارنة كاملة والكورسات بترتيبها." />
     <link rel="canonical" href="https://ghawy.ai/tracks" />
     <meta name="author" content="Nabil Ahmed" />
 
     <meta property="og:title" content="المسارات — Ghawy" />
-    <meta property="og:description" content="مسارات تعلم الذكاء الاصطناعي على Ghawy — خطة واضحة خطوة بخطوة لكل تخصص." />
+    <meta property="og:description" content="مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك — والفرق بينهم بالتفصيل." />
     <meta property="og:image" content="./imgs/community-logo.png" />
     <meta property="og:url" content="https://ghawy.ai/tracks" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ghawy" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="المسارات — Ghawy" />
-    <meta name="twitter:description" content="مسارات تعلم الذكاء الاصطناعي على Ghawy — خطة واضحة خطوة بخطوة لكل تخصص." />
+    <meta name="twitter:description" content="مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك — والفرق بينهم بالتفصيل." />
     <meta name="twitter:image" content="./imgs/community-logo.png" />
 
     <meta name="theme-color" content="#000000" />
@@ -28,7 +28,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260804b">
+    <link rel="stylesheet" href="src/css/main.css?v=20260805a">
 </head>
 
 <body>
@@ -37,23 +37,27 @@
     <div id="siteHeader"></div>
     <script src="src/js/layout.js?v=20260804"></script>
 
-    <main class="page-shell">
-        <div class="container">
-            <header class="page-shell-head">
-                <h1 class="page-shell-title" data-ar="المسارات" data-en="Tracks">المسارات</h1>
-                <p class="page-shell-lead" data-ar="مسارات مرتّبة خطوة بخطوة تاخدك من نقطة البداية لحد الاحتراف في التخصص اللي يناسبك." data-en="Step-by-step tracks that take you from day one to mastery in the specialization that fits you.">مسارات مرتّبة خطوة بخطوة تاخدك من نقطة البداية لحد الاحتراف في التخصص اللي يناسبك.</p>
-            </header>
+    <!-- ════════════════════════════════════════
+     TRACKS
+     Two views out of one page, chosen by the `t` query parameter — the
+     same pattern /instructors uses, and for the same reason: nginx serves
+     both extensionless via try_files, and one page means one place where
+     the shared chrome and the language wiring live.
 
-            <!-- Placeholder — the real content of this page ships in a later phase. -->
-            <section class="page-shell-placeholder">
-                <i class="fa-solid fa-route" aria-hidden="true"></i>
-                <h2 data-ar="الصفحة دي لسه بتتجهّز" data-en="This page is still being built">الصفحة دي لسه بتتجهّز</h2>
-                <p data-ar="المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية."
-                   data-en="The full content of this page ships in a later phase. Until then, you can see a preview of everything on the home page.">
-                    المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية.
-                </p>
-                <a href="/" class="btn-cta-solid page-shell-cta" data-ar="ارجع للصفحة الرئيسية" data-en="Back to home">ارجع للصفحة الرئيسية</a>
-            </section>
+       /tracks              → what a track is, the deep-vs-applied
+                              comparison, and both families of tracks
+       /tracks?t=<slug>     → that one track: what it is, its courses in
+                              order, what you walk out with, who teaches it
+
+     Everything is rendered from src/js/catalog.js. This page holds no
+     course list and no track list of its own; in particular the courses
+     inside a track are DERIVED from each course's own `track` field, so
+     the relationship is written exactly once in the whole codebase.
+    ════════════════════════════════════════ -->
+    <main class="page-shell">
+        <div class="container tr-container">
+            <header class="page-shell-head" id="trHead"></header>
+            <div id="trBody"></div>
         </div>
     </main>
 
@@ -61,8 +65,365 @@
     <div id="siteFooter"></div>
     <script>GhawyLayout.mountFooter();</script>
 
-    <script src="src/js/i18n.js?v=20260804"></script>
+    <script src="src/js/i18n.js?v=20260805a"></script>
+    <!-- The single source for course + track + instructor data. -->
+    <script src="src/js/catalog.js?v=20260805a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
+    <script>
+        const C = window.GhawyCatalog;
+        const head = document.getElementById('trHead');
+        const body = document.getElementById('trBody');
+
+        function slugFromURL() {
+            return new URLSearchParams(location.search).get('t') || '';
+        }
+
+        function setHead(title, lead) {
+            head.innerHTML = `
+                <h1 class="page-shell-title" ${C.i18nAttrs(title)}>${C.esc(C.L(title))}</h1>
+                ${lead ? `<p class="page-shell-lead" ${C.i18nAttrs(lead)}>${C.esc(C.L(lead))}</p>` : ''}`;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //   LIST VIEW — the page a visitor who knows nothing lands on
+        // ═══════════════════════════════════════════════════════════
+        // Order is deliberate: explain what the two kinds ARE, put them
+        // side by side so the visitor can decide, and only then show the
+        // tracks themselves. Someone reading top to bottom should never hit
+        // a track name before they know what family it belongs to.
+        function renderList() {
+            document.title = 'المسارات — Ghawy';
+
+            setHead(
+                { ar: 'المسارات', en: 'Tracks' },
+                {
+                    ar: 'في غاوي نوعين مسارات: مسارات بتتعلم فيها الـ AI نفسه، ومسارات بتتعلم فيها تستخدم الـ AI في شغلك. الصفحة دي بتوريك الفرق بينهم وتخليك تعرف تدخل فين.',
+                    en: 'Ghawy has two kinds of track: ones where you learn AI itself, and ones where you learn to use AI inside your own work. This page shows you the difference so you know which door is yours.'
+                }
+            );
+
+            body.innerHTML = `
+            <!-- ── A) What each kind is, then the head-to-head ── -->
+            <section class="tr-section">
+                <h2 class="tr-section-title" data-ar="يعني إيه مسار تخصص ويعني إيه مسار تطبيق؟"
+                    data-en="What is a deep track, and what is an applied track?">يعني إيه مسار تخصص ويعني إيه مسار تطبيق؟</h2>
+                <p class="tr-section-lead"
+                    data-ar="الفرق بينهم مش في الصعوبة — الفرق في إنت رايح فين. اقرا السطرين دول الأول."
+                    data-en="The difference is not difficulty — it is where you are heading. Start with these two.">
+                    الفرق بينهم مش في الصعوبة — الفرق في إنت رايح فين. اقرا السطرين دول الأول.
+                </p>
+                <div class="tr-explain-grid">${C.familyExplainerHTML()}</div>
+            </section>
+
+            <section class="tr-section">
+                <h2 class="tr-section-title" data-ar="أنا أدخل فين؟ — المقارنة كاملة"
+                    data-en="Which one is mine? — the full comparison">أنا أدخل فين؟ — المقارنة كاملة</h2>
+                <p class="tr-section-lead"
+                    data-ar="خمس أسئلة، وإجابتهم للنوعين جنب بعض. لو لقيت نفسك في عمود، ده عمودك."
+                    data-en="Five questions, both answers side by side. If you recognise yourself in a column, that column is yours.">
+                    خمس أسئلة، وإجابتهم للنوعين جنب بعض. لو لقيت نفسك في عمود، ده عمودك.
+                </p>
+                ${C.compareHTML()}
+            </section>
+
+            <!-- ── B) Deep tracks ── -->
+            <section class="tr-section" id="deep">
+                ${familyHeadHTML('deep')}
+                <div id="trDeepGrid"></div>
+            </section>
+
+            <!-- ── C) Applied tracks — same card, same grid, on purpose ── -->
+            <section class="tr-section" id="applied">
+                ${familyHeadHTML('applied')}
+                <div id="trAppliedGrid"></div>
+            </section>
+
+            <!-- ── D) Where a total beginner should start ── -->
+            <section class="tr-start">
+                <h2 class="tr-start-title" data-ar="مش عارف تبدأ منين؟" data-en="Not sure where to start?">مش عارف تبدأ منين؟</h2>
+                <ol class="tr-start-steps">
+                    <li>
+                        <span class="tr-start-num">1</span>
+                        <span class="tr-start-text"
+                            data-ar="ابدأ بمسار الأساسيات. مش مهم إنت رايح تخصص ولا تطبيق — دي الخطوة اللي بتخلي كل اللي بعدها يبقى مفهوم."
+                            data-en="Start with the Foundations track. Deep or applied, it does not matter — this is the step that makes everything after it make sense.">
+                            ابدأ بمسار الأساسيات. مش مهم إنت رايح تخصص ولا تطبيق — دي الخطوة اللي بتخلي كل اللي بعدها يبقى مفهوم.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="tr-start-num">2</span>
+                        <span class="tr-start-text"
+                            data-ar="اسأل نفسك سؤال واحد: عايز الـ AI يبقى شغلي، ولا عايز أحطّه في شغلي الحالي؟ الإجابة دي بتحدد نوع المسار."
+                            data-en="Ask yourself one question: do I want AI to BE my job, or to go INSIDE the job I already have? That answer picks your family.">
+                            اسأل نفسك سؤال واحد: عايز الـ AI يبقى شغلي، ولا عايز أحطّه في شغلي الحالي؟ الإجابة دي بتحدد نوع المسار.
+                        </span>
+                    </li>
+                    <li>
+                        <span class="tr-start-num">3</span>
+                        <span class="tr-start-text"
+                            data-ar="افتح المسار اللي اخترته واتفرّج على الكورسات بترتيبها. الترتيب مش اقتراح — ده الطريق."
+                            data-en="Open the track you picked and look at its courses in order. The order is not a suggestion — it is the road.">
+                            افتح المسار اللي اخترته واتفرّج على الكورسات بترتيبها. الترتيب مش اقتراح — ده الطريق.
+                        </span>
+                    </li>
+                </ol>
+                <a class="gc-btn tr-start-cta" href="/tracks?t=foundations"
+                    data-ar="ابدأ من مسار الأساسيات" data-en="Start with Foundations">ابدأ من مسار الأساسيات</a>
+            </section>`;
+
+            C.renderTrackCards(document.getElementById('trDeepGrid'), 'deep');
+            C.renderTrackCards(document.getElementById('trAppliedGrid'), 'applied');
+        }
+
+        /** The heading above each family's grid — name, tagline, one line. */
+        function familyHeadHTML(slug) {
+            const f = C.family(slug);
+            return `
+            <div class="tr-family-heading tr-accent-${f.accent}">
+                <span class="tr-family-icon" aria-hidden="true"><i class="${C.esc(f.icon)}"></i></span>
+                <div>
+                    <h2 class="tr-section-title" ${C.i18nAttrs(f.name)}>${C.esc(C.L(f.name))}</h2>
+                    <p class="tr-section-lead" ${C.i18nAttrs(f.oneLine)}>${C.esc(C.L(f.oneLine))}</p>
+                </div>
+            </div>`;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //   DETAIL VIEW — /tracks?t=<slug>
+        // ═══════════════════════════════════════════════════════════
+        // Same visual language as the course preview (/course-details): the
+        // back link, the big title, the media-beside-facts row, then plain
+        // sections down the page. A visitor moving between the two pages
+        // should feel one site, not two.
+        function renderDetail(tr) {
+            const f = C.family(tr.family);
+            document.title = `${C.L(tr.name)} — Ghawy`;
+
+            head.innerHTML = `
+                <a href="/tracks" class="cd-back-btn tr-back">
+                    <i class="fa-solid fa-arrow-right cd-back-icon"></i>
+                    <span data-ar="كل المسارات" data-en="All tracks">كل المسارات</span>
+                </a>
+                <div class="tr-detail-head tr-accent-${f.accent}">
+                    <a class="tr-family-pill" href="/tracks#${C.esc(f.slug)}">
+                        <i class="${C.esc(f.icon)}" aria-hidden="true"></i>
+                        <span ${C.i18nAttrs(f.name)}>${C.esc(C.L(f.name))}</span>
+                        <span class="tr-family-pill-sep" aria-hidden="true">·</span>
+                        <span ${C.i18nAttrs(f.tagline)}>${C.esc(C.L(f.tagline))}</span>
+                    </a>
+                    <h1 class="cd-title" ${C.i18nAttrs(tr.name)}>${C.esc(C.L(tr.name))}</h1>
+                    <p class="tr-detail-about" ${C.i18nAttrs(tr.about)}>${C.esc(C.L(tr.about))}</p>
+                </div>`;
+
+            body.innerHTML = `
+            <div class="tr-detail tr-accent-${f.accent}">
+
+                <!-- Artwork + the facts a visitor needs before committing -->
+                <div class="tr-detail-top">
+                    ${C.trackThumbHTML(tr, 'tr-thumb-hero')}
+                    <div class="tr-detail-facts">
+                        <div class="tr-stats" id="trStats">${statsSkeletonHTML()}</div>
+                        <dl class="tr-detail-dl">
+                            <dt data-ar="مناسب لمين؟" data-en="Who is it for?">مناسب لمين؟</dt>
+                            <dd ${C.i18nAttrs(tr.forWho)}>${C.esc(C.L(tr.forWho))}</dd>
+                            <dt data-ar="محتاج تبدأ منين؟" data-en="Where do you start?">محتاج تبدأ منين؟</dt>
+                            <dd ${C.i18nAttrs(tr.startsFrom)}>${C.esc(C.L(tr.startsFrom))}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- The courses, in order. The order IS the content here. -->
+                <section class="tr-block">
+                    <h2 class="cd-section-title" data-ar="الكورسات بترتيبها" data-en="The courses, in order">الكورسات بترتيبها</h2>
+                    <p class="tr-block-lead"
+                        data-ar="اتفرّج عليهم بالترتيب ده بالظبط — كل كورس مبني على اللي قبله."
+                        data-en="Take them in exactly this order — each course builds on the one before it.">
+                        اتفرّج عليهم بالترتيب ده بالظبط — كل كورس مبني على اللي قبله.
+                    </p>
+                    <ol class="tr-steps" id="trSteps">${stepSkeletonHTML(3)}</ol>
+                </section>
+
+                <!-- What you walk out with -->
+                <section class="tr-block">
+                    <h2 class="cd-section-title" data-ar="هتطلع منه قادر تعمل إيه؟" data-en="What will you be able to do?">هتطلع منه قادر تعمل إيه؟</h2>
+                    <ul class="tr-outcomes">
+                        ${(tr.outcomes || []).map(o => `
+                        <li class="tr-outcome">
+                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                            <span ${C.i18nAttrs(o)}>${C.esc(C.L(o))}</span>
+                        </li>`).join('')}
+                    </ul>
+                </section>
+
+                <!-- Who teaches it — the SHARED instructor bar, not a copy -->
+                <section class="tr-block" id="trInstructorBlock" hidden>
+                    <h2 class="cd-section-title" data-ar="مين اللي بيشرحه؟" data-en="Who teaches it?">مين اللي بيشرحه؟</h2>
+                    <div id="trInstructors"></div>
+                </section>
+            </div>`;
+
+            return C.trackStats(tr.slug).then(st => {
+                renderStats(tr, st);
+                renderSteps(tr, st);
+                renderInstructors(st);
+                // These three land after paint() has already run, and the
+                // "coming soon" panel carries plain data-ar/data-en markup —
+                // translate the subtree once more now that it exists.
+                if (typeof applyLanguageTo === 'function') applyLanguageTo(body);
+            });
+        }
+
+        // ─── Detail pieces ───────────────────────────────────────
+
+        function statsSkeletonHTML() {
+            return Array.from({ length: 3 }, () =>
+                '<div class="tr-stat"><span class="gc-sk gc-sk-line tr-stat-sk"></span></div>').join('');
+        }
+
+        function stepSkeletonHTML(n) {
+            return Array.from({ length: n }, () => `
+            <li class="tr-step tr-step-skeleton" aria-hidden="true">
+                <span class="tr-step-num gc-sk"></span>
+                <span class="gc-sk tr-step-thumb"></span>
+                <span class="tr-step-body">
+                    <span class="gc-sk gc-sk-line gc-sk-title"></span>
+                    <span class="gc-sk gc-sk-line gc-sk-short"></span>
+                </span>
+            </li>`).join('');
+        }
+
+        function statHTML(icon, value, label) {
+            return `
+            <div class="tr-stat">
+                <i class="${icon}" aria-hidden="true"></i>
+                <strong class="tr-stat-value">${C.esc(value)}</strong>
+                <span class="tr-stat-label" ${C.i18nAttrs(label)}>${C.esc(C.L(label))}</span>
+            </div>`;
+        }
+
+        // Totals are summed from the catalog, never typed in — an added course
+        // moves these numbers on its own.
+        function renderStats(tr, st) {
+            const el = document.getElementById('trStats');
+            if (st.empty) {
+                const soon = { ar: 'المسار بيتجهّز', en: 'This track is being prepared' };
+                el.innerHTML = `
+                <div class="tr-stat tr-stat-soon">
+                    <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+                    <span class="tr-stat-label" ${C.i18nAttrs(soon)}>${C.esc(C.L(soon))}</span>
+                </div>`;
+                return;
+            }
+            el.innerHTML =
+                statHTML('fa-solid fa-graduation-cap', st.count, { ar: 'كورس', en: 'courses' }) +
+                statHTML('fa-solid fa-list', st.lessons, { ar: 'درس', en: 'lessons' }) +
+                statHTML('fa-regular fa-clock', st.hours, { ar: 'ساعة', en: 'hours' });
+        }
+
+        function stepHTML(course, i) {
+            const href = `/course-details?course=${encodeURIComponent(course.slug)}`;
+            const meta = {
+                ar: `${C.lessonsWord(course.lessons).ar} · ${course.duration}`,
+                en: `${C.lessonsWord(course.lessons).en} · ${course.duration}`
+            };
+            return `
+            <li class="tr-step">
+                <a class="tr-step-link" href="${href}">
+                    <span class="tr-step-num">${i + 1}</span>
+                    <span class="tr-step-thumb"><img src="${C.esc(course.image)}" alt="" loading="lazy" /></span>
+                    <span class="tr-step-body">
+                        <span class="tr-step-title" ${C.i18nAttrs(course.title)}>${C.esc(C.L(course.title))}</span>
+                        <span class="tr-step-meta" ${C.i18nAttrs(meta)}>${C.esc(C.L(meta))}</span>
+                    </span>
+                    <i class="fa-solid fa-arrow-left tr-step-arrow" aria-hidden="true"></i>
+                </a>
+            </li>`;
+        }
+
+        // An empty track gets a designed "coming soon" panel — the client
+        // wants these visible, not hidden and not looking like a bug.
+        function renderSteps(tr, st) {
+            const el = document.getElementById('trSteps');
+            if (st.empty) {
+                const title = { ar: 'كورسات المسار ده قريباً', en: 'This track’s courses are coming soon' };
+                const note = {
+                    ar: 'المسار موجود في الخطة وبيتجهّز دلوقتي. المنصة بتكبر باستمرار، ولما ينزل هتلاقيه هنا بترتيبه كامل.',
+                    en: 'The track is on the roadmap and being built right now. The platform keeps growing — when it lands you will find it here, fully ordered.'
+                };
+                el.classList.add('tr-steps-empty');
+                el.innerHTML = `
+                <li class="tr-soon">
+                    <span class="tr-soon-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></span>
+                    <h3 class="tr-soon-title" ${C.i18nAttrs(title)}>${C.esc(C.L(title))}</h3>
+                    <p class="tr-soon-note" ${C.i18nAttrs(note)}>${C.esc(C.L(note))}</p>
+                    <span class="tr-soon-actions">
+                        <a class="gc-btn" href="/tracks?t=foundations"
+                           data-ar="ابدأ بالأساسيات دلوقتي" data-en="Start with Foundations">ابدأ بالأساسيات دلوقتي</a>
+                        <a class="tr-soon-alt" href="/tracks" data-ar="شوف باقي المسارات" data-en="See the other tracks">شوف باقي المسارات</a>
+                    </span>
+                </li>`;
+                return;
+            }
+            el.classList.remove('tr-steps-empty');
+            el.innerHTML = st.courses.map(stepHTML).join('');
+        }
+
+        // The instructor bar is the Phase 3 component, used as-is. There is no
+        // second copy of it on this page.
+        function renderInstructors(st) {
+            const block = document.getElementById('trInstructorBlock');
+            if (!st.instructors.length) { block.hidden = true; return; }
+            block.hidden = false;
+            document.getElementById('trInstructors').innerHTML = st.instructors.map(inst =>
+                `<div class="tr-instructor">${C.instructorBarHTML(inst)}${C.factsHTML(inst)}</div>`
+            ).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //   Unknown slug — a clear message, never a blank page
+        // ═══════════════════════════════════════════════════════════
+        function renderNotFound(slug) {
+            document.title = 'المسار مش موجود — Ghawy';
+            setHead({ ar: 'المسار ده مش موجود', en: 'This track does not exist' }, null);
+            const msg = {
+                ar: `مفيش مسار بالاسم "${slug}". يمكن اللينك قديم أو المسار اتغيّر اسمه — دي كل المسارات المتاحة.`,
+                en: `There is no track called “${slug}”. The link may be old or renamed — here are all the available tracks.`
+            };
+            body.innerHTML = `
+                <div class="gc-empty">
+                    <i class="fa-solid fa-signs-post" aria-hidden="true"></i>
+                    <p ${C.i18nAttrs(msg)}>${C.esc(C.L(msg))}</p>
+                    <a class="gc-btn" href="/tracks" data-ar="كل المسارات" data-en="All tracks">كل المسارات</a>
+                </div>`;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // Much of this page's markup is written as plain data-ar/data-en
+        // spans inside the templates above rather than piped through C.L() —
+        // it reads far better that way for long prose. But it is injected
+        // AFTER i18n.js has run its automatic pass, so it would keep its
+        // literal Arabic in English. applyLanguageTo() is i18n.js translating
+        // one subtree: same engine, same attributes, no second dictionary.
+        function paint(fn) {
+            fn();
+            if (typeof applyLanguageTo === 'function') {
+                applyLanguageTo(head);
+                applyLanguageTo(body);
+            }
+        }
+
+        function render() {
+            const slug = slugFromURL();
+            if (!slug) { paint(renderList); return; }
+            const tr = C.track(slug);
+            if (!tr) { paint(() => renderNotFound(slug)); return; }
+            paint(() => renderDetail(tr));
+        }
+
+        // Re-render on language change, like every other JS-built page.
+        document.addEventListener('languagechange', render);
+        render();
+    </script>
 </body>
 
 </html>

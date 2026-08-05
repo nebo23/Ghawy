@@ -202,6 +202,62 @@ function setNodeText(el, value, asHtml) {
     else el.textContent = value;
 }
 
+// ─── Translate a subtree ────────────────────────────────────
+// The markup passes, split out of applyLanguage() so they can be pointed at
+// ONE container instead of the whole document.
+//
+// Why that matters: pages that build their markup in JS (/tracks, /instructors,
+// the course preview) inject it AFTER this file has already run its automatic
+// pass, so any data-ar/data-en inside that markup would keep whatever literal
+// text it was written with — Arabic — even in English. Those pages call
+// applyLanguageTo() on the container they just filled. It deliberately does NOT
+// dispatch `languagechange` (the pages re-render on that event, which would
+// loop) and never persists.
+function translateTree(root, lang) {
+    const scope = root || document;
+    // querySelectorAll skips the root itself, so it is handled separately.
+    const each = (sel, fn) => {
+        if (scope.matches && scope.matches(sel)) fn(scope);
+        scope.querySelectorAll(sel).forEach(fn);
+    };
+
+    // data-ar / data-en (landing-page style, honours data-html)
+    each('[data-ar]', el => {
+        const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
+        setNodeText(el, text, el.getAttribute('data-html') === 'true');
+    });
+
+    // data-ar-placeholder / data-en-placeholder
+    each('[data-ar-placeholder]', el => {
+        const ph = lang === 'ar'
+            ? el.getAttribute('data-ar-placeholder')
+            : el.getAttribute('data-en-placeholder');
+        if (ph != null) el.placeholder = ph;
+    });
+
+    // data-i18n (dictionary style, honours data-i18n-html)
+    each('[data-i18n]', el => {
+        const entry = i18nDict[el.getAttribute('data-i18n')];
+        if (!entry) return;
+        setNodeText(el, entry[lang] || entry.ar, el.getAttribute('data-i18n-html') === 'true');
+    });
+
+    // data-i18n-placeholder / data-i18n-title
+    each('[data-i18n-placeholder]', el => {
+        const entry = i18nDict[el.getAttribute('data-i18n-placeholder')];
+        if (entry) el.placeholder = entry[lang] || entry.ar;
+    });
+    each('[data-i18n-title]', el => {
+        const entry = i18nDict[el.getAttribute('data-i18n-title')];
+        if (entry) el.setAttribute('title', entry[lang] || entry.ar);
+    });
+}
+
+/** Translate freshly-injected markup into the language already on the page. */
+function applyLanguageTo(root) {
+    translateTree(root, currentLang());
+}
+
 // ─── Apply ──────────────────────────────────────────────────
 // `persist` is false on the automatic page-load pass so a page default never
 // silently overwrites a choice the user hasn't made yet.
@@ -214,36 +270,8 @@ function applyLanguage(lang, persist = true) {
     html.setAttribute('dir', config.dir);
     html.setAttribute('lang', config.lang);
 
-    // 2. data-ar / data-en (landing-page style, honours data-html)
-    document.querySelectorAll('[data-ar]').forEach(el => {
-        const text = lang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
-        setNodeText(el, text, el.getAttribute('data-html') === 'true');
-    });
-
-    // 3. data-ar-placeholder / data-en-placeholder
-    document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
-        const ph = lang === 'ar'
-            ? el.getAttribute('data-ar-placeholder')
-            : el.getAttribute('data-en-placeholder');
-        if (ph != null) el.placeholder = ph;
-    });
-
-    // 4. data-i18n (dictionary style, honours data-i18n-html)
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const entry = i18nDict[el.getAttribute('data-i18n')];
-        if (!entry) return;
-        setNodeText(el, entry[lang] || entry.ar, el.getAttribute('data-i18n-html') === 'true');
-    });
-
-    // 5. data-i18n-placeholder / data-i18n-title
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const entry = i18nDict[el.getAttribute('data-i18n-placeholder')];
-        if (entry) el.placeholder = entry[lang] || entry.ar;
-    });
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const entry = i18nDict[el.getAttribute('data-i18n-title')];
-        if (entry) el.setAttribute('title', entry[lang] || entry.ar);
-    });
+    // 2–5. Every markup pass, over the whole document.
+    translateTree(document, lang);
 
     // 6. Toggle button label (desktop + mobile)
     const toggleText = document.getElementById('langToggleText');
@@ -301,6 +329,7 @@ function storedLang() {
 
 // Expose for inline handlers and page scripts.
 window.applyLanguage = applyLanguage;
+window.applyLanguageTo = applyLanguageTo;
 window.setLanguagePref = setLanguagePref;
 window.toggleLanguage = toggleLanguage;
 window.currentLang = currentLang;
