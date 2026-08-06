@@ -137,12 +137,20 @@ const i18nDict = {
     payDropHere:      { ar: 'اضغط أو اسحب الإيصال هنا',    en: 'Click or drag receipt here' },
     payFileHint:      { ar: 'JPG أو PNG أو PDF (5 ميجا كحد أقصى)', en: 'JPG, PNG, PDF (Max 5MB)' },
     paySubmit:        { ar: 'إرسال الطلب',                 en: 'Submit Payment' },
+    // The receipt preview. The X that used to sit on the uploaded file read as
+    // an error to people who had just uploaded successfully, so the state is
+    // spelled out instead: the image, then "تم رفع الصورة", then a button that
+    // says what it does.
+    payUploaded:      { ar: 'تم رفع الصورة',               en: 'Image uploaded' },
+    payUploadedFile:  { ar: 'تم رفع الملف',                en: 'File uploaded' },
+    payChangeImage:   { ar: 'تغيير الصورة',                en: 'Change image' },
+    payChangeFile:    { ar: 'تغيير الملف',                 en: 'Change file' },
     paySuccessTitle:  { ar: 'تم إرسال الطلب!',             en: 'Request Submitted!' },
-    paySuccessDesc:   { ar: 'شكراً لدفعك. فريقنا هيراجع الإيصال في أقرب وقت.', en: 'Thank you for your payment. Our team will review your receipt shortly.' },
+    paySuccessDesc:   { ar: 'هنراجع طلبك وهنبعتلك تأكيد على الإيميل.', en: 'We will review your request and send you a confirmation by email.' },
     payRefId:         { ar: 'رقم الطلب:',                  en: 'Reference ID:' },
-    payAfterApproval: { ar: 'بعد الموافقة هنبعتلك إيميل تأكيد وحسابك هيتفعّل على طول.', en: 'Once approved, we will send an email confirmation and your account will be activated instantly.' },
-    payNeedHelp:      { ar: 'محتاج مساعدة؟ كلّم الدعم على', en: 'Need help? Contact support on' },
-    payUsuallyTakes:  { ar: 'عادةً بياخد أقل من 12 ساعة.',  en: 'Usually takes less than 12 hours.' },
+    payReviewWindow:  { ar: 'عادة نقبل طلبك من ثواني إلى 12 ساعة كحد أقصى.', en: 'We usually approve within seconds, and 12 hours at the very most.' },
+    payDelayHelp:     { ar: 'لو اتأخرنا أو حصلت أي مشكلة، تواصل مع الدعم على', en: 'If we are late or anything goes wrong, contact support on' },
+    payOrEmailUs:     { ar: 'أو على الإيميل',              en: 'or by email at' },
     payReturnHome:    { ar: 'الرجوع للصفحة الرئيسية',      en: 'Return to Homepage' },
     // pay.js runtime strings
     planMonthly:      { ar: 'شهري',                        en: 'Monthly' },

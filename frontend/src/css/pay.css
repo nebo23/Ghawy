@@ -315,56 +315,115 @@ body {
     color: #666;
 }
   
+/* ── Receipt preview ──
+   This used to be `position: absolute; inset: 0` — a bar laid over the drop
+   zone showing a generic icon, the file name and a red circular ✕. Someone who
+   had just uploaded their receipt successfully saw a red ✕ and concluded it had
+   failed. It is a normal block now, the drop zone is hidden while it is up,
+   and it shows the receipt itself. */
 .file-preview {
-    position: absolute;
-    inset: 0;
+    margin-top: 12px;
+    padding: 16px;
     background: #1a1a1a;
+    border: 1px solid rgba(193, 255, 17, 0.35);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.file-preview[hidden] {
+    display: none;
+}
+
+.file-preview-media {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.file-preview-img {
+    max-width: 100%;
+    /* tall receipts are the norm — cap the height so the submit button stays
+       on screen instead of being pushed a phone-length down the page */
+    max-height: 320px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    object-fit: contain;
+}
+
+/* A PDF is an accepted upload and cannot be drawn. */
+.file-preview-doc {
+    width: 92px;
+    height: 92px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(193, 255, 17, 0.07);
+    border: 1px solid rgba(193, 255, 17, 0.25);
+    color: #c1ff11;
+}
+
+.file-preview-doc i {
+    width: 34px;
+    height: 34px;
+}
+
+.file-preview-ok {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #c1ff11;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.file-preview-ok i {
+    width: 18px;
+    height: 18px;
+}
+
+.file-preview-name {
+    margin-top: 4px;
+    color: #888;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.file-change-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 20px;
     border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 0 20px;
-    border: 1px solid #3f8ff9;
-}
-  
-.file-preview span {
-    color: #fff;
-    font-weight: 600;
+    border: 1px solid #333;
+    background: rgba(255, 255, 255, 0.04);
+    color: #ccc;
+    font-family: inherit;
     font-size: 14px;
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-  
-.file-preview i {
-    color: #3f8ff9;
-}
-  
-.file-remove-btn {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-weight: 700;
     cursor: pointer;
-    margin-inline-start: auto;
-    transition: background 0.2s;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
-  
-.file-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
+
+.file-change-btn:hover {
+    border-color: #3f8ff9;
+    background: rgba(63, 143, 249, 0.08);
+    color: #fff;
 }
-  
-/* Submit Button */
+
+.file-change-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Submit Button — green, so the last thing on the page reads as "go" rather
+   than as one more blue link like the Instapay button above it. */
 .pay-submit-btn {
     width: 100%;
-    background: #3f8ff9;
+    background: #c1ff11;
     color: #000;
     border: none;
     padding: 16px;
@@ -373,7 +432,7 @@ body {
     font-weight: 700;
     cursor: pointer;
     margin-top: 10px;
-    transition: background 0.2s;
+    transition: background 0.2s, box-shadow 0.2s;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -382,7 +441,8 @@ body {
 }
   
 .pay-submit-btn:hover {
-    background: #2b70d4;
+    background: #d4ff4a;
+    box-shadow: 0 0 26px rgba(193, 255, 17, 0.22);
 }
   
 .pay-submit-btn:disabled {

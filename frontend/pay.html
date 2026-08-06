@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="src/css/main.css">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260804">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260806a">
 
   <style>
     /* Language toggle — same look as the landing page button */
@@ -122,21 +122,37 @@
 
             <div class="form-group">
               <label data-i18n="payReceiptLabel">صورة الإيصال *</label>
+
+              <!-- The preview used to be an absolutely-positioned bar covering
+                   this box: a generic icon, the file name, and a red circular
+                   ✕. People who had just uploaded successfully read the red ✕
+                   as an error and assumed the upload had failed. So the drop
+                   area is hidden once a file is chosen and the preview below
+                   takes over — the actual image, then the words "تم رفع
+                   الصورة", then a button that says what it does. -->
               <div class="file-drop-area" id="file-drop-area" onclick="document.getElementById('pay-receipt').click()">
                 <i data-lucide="upload-cloud" class="upload-icon"></i>
                 <div class="upload-text" data-i18n="payDropHere">اضغط أو اسحب الإيصال هنا</div>
                 <div class="upload-hint" data-i18n="payFileHint">JPG أو PNG أو PDF (5 ميجا كحد أقصى)</div>
-                <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf"
-                  hidden>
+              </div>
 
-                <!-- Preview area (hidden by default) -->
-                <div class="file-preview" id="file-preview" style="display:none;">
-                  <i data-lucide="image"></i>
-                  <span id="file-name-display">filename.jpg</span>
-                  <button type="button" class="file-remove-btn" onclick="event.stopPropagation(); removeFile();">
-                    <i data-lucide="x"></i>
-                  </button>
-                </div>
+              <input type="file" id="pay-receipt" accept="image/jpeg, image/png, image/webp, application/pdf" hidden>
+
+              <div class="file-preview" id="file-preview" hidden>
+                <!-- filled by renderPreview() in pay.js: an <img> for a
+                     screenshot, a file card for a PDF -->
+                <div class="file-preview-media" id="file-preview-media"></div>
+
+                <p class="file-preview-ok">
+                  <i data-lucide="check-circle" aria-hidden="true"></i>
+                  <span id="file-preview-label" data-i18n="payUploaded">تم رفع الصورة</span>
+                </p>
+                <p class="file-preview-name" id="file-name-display"></p>
+
+                <button type="button" class="file-change-btn" id="file-change-btn" onclick="changeFile()">
+                  <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                  <span id="file-change-label" data-i18n="payChangeImage">تغيير الصورة</span>
+                </button>
               </div>
             </div>
 
@@ -157,17 +173,18 @@
         <i data-lucide="check-circle" class="success-icon"></i>
       </div>
       <h2 data-i18n="paySuccessTitle">تم إرسال الطلب!</h2>
-      <p data-i18n="paySuccessDesc">شكراً لدفعك. فريقنا هيراجع الإيصال في أقرب وقت.</p>
+      <p data-i18n="paySuccessDesc">هنراجع طلبك وهنبعتلك تأكيد على الإيميل.</p>
 
       <div class="success-details">
         <p><strong data-i18n="payRefId">رقم الطلب:</strong> <span id="success-ref" dir="ltr">---</span></p>
-        <p data-i18n="payAfterApproval">بعد الموافقة هنبعتلك إيميل تأكيد وحسابك هيتفعّل على طول.</p>
-        <p class="success-support"><span data-i18n="payNeedHelp">محتاج مساعدة؟ كلّم الدعم على</span>
+        <p class="success-window" data-i18n="payReviewWindow">عادة نقبل طلبك من ثواني إلى 12 ساعة كحد أقصى.</p>
+        <p class="success-support">
+          <span data-i18n="payDelayHelp">لو اتأخرنا أو حصلت أي مشكلة، تواصل مع الدعم على</span>
           <a href="tel:01033903334" dir="ltr">01033903334</a>
+          <span data-i18n="payOrEmailUs">أو على الإيميل</span>
+          <a href="mailto:support@ghawy.ai" dir="ltr">support@ghawy.ai</a>
         </p>
       </div>
-
-      <p class="success-footer" data-i18n="payUsuallyTakes">عادةً بياخد أقل من 12 ساعة.</p>
 
       <a href="index.html" class="pay-home-btn" data-i18n="payReturnHome">الرجوع للصفحة الرئيسية</a>
     </div>
@@ -181,7 +198,12 @@
   <script src="src/js/utils.js?v=1785600000"></script>
   <script src="src/js/i18n.js?v=20260806a"></script>
 
-  <script src="src/js/pay.js?v=20260804"></script>
+  <!-- Loaded for its PLANS table only: pay.js reads the amounts from it so this
+       page and the pricing cards can never quote different numbers. Nothing on
+       this page has the containers it renders into, so it draws nothing. -->
+  <script src="src/js/pricing.js?v=20260806a"></script>
+
+  <script src="src/js/pay.js?v=20260806a"></script>
   <script>
     window.lucide && window.lucide.createIcons();
   </script>

@@ -13,11 +13,25 @@ function t(key, fallback) {
 // EGP plans for the Instapay flow. Keyed by the ?plan= cycle passed from the
 // pricing page. Label/period are dictionary keys resolved at render time so the
 // language toggle can re-render them.
+//
+// The AMOUNTS are read from src/js/pricing.js, which pay.html loads for this
+// one reason: this file used to carry its own copy and was still quoting 4000
+// for the yearly plan after it moved to 3500 — so a member sent here from the
+// pricing page saw one number on the card and a different one on the transfer
+// screen. The literals below are only a fallback for pricing.js failing to
+// load, and are not the source of truth.
 const PLAN_PRICES = {
     monthly: { amount: 600, labelKey: 'planMonthly', periodKey: 'periodMonthly' },
     quarterly: { amount: 1200, labelKey: 'planQuarterly', periodKey: 'periodQuarterly' },
-    yearly: { amount: 4000, labelKey: 'planYearly', periodKey: 'periodYearly' },
+    yearly: { amount: 3500, labelKey: 'planYearly', periodKey: 'periodYearly' },
 };
+
+Object.keys(PLAN_PRICES).forEach(key => {
+    const shared = window.GhawyPricing
+        && window.GhawyPricing.PLANS.EGP
+        && window.GhawyPricing.PLANS.EGP[key];
+    if (shared) PLAN_PRICES[key].amount = shared.amount;
+});
 
 // Resolve the selected plan from the URL (defaults to monthly).
 const selectedPlanKey = (new URLSearchParams(location.search).get('plan') || 'monthly').toLowerCase();
@@ -157,6 +171,11 @@ function setupDragAndDrop() {
     });
 }
 
+// The object URL of whatever is on screen, so it can be released before the
+// next one replaces it. Without this every "change image" leaks the previous
+// file for as long as the tab is open.
+let previewURL = null;
+
 function handleFile(file) {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
@@ -171,14 +190,65 @@ function handleFile(file) {
     }
 
     selectedFile = file;
-    document.getElementById('file-name-display').innerText = file.name;
-    document.getElementById('file-preview').style.display = 'flex';
+    renderPreview(file);
 }
 
-function removeFile() {
-    selectedFile = null;
-    document.getElementById('pay-receipt').value = '';
-    document.getElementById('file-preview').style.display = 'none';
+/**
+ * Show what was actually uploaded.
+ *
+ * The old preview was a generic icon, the file name and a red ✕, sitting on
+ * top of the drop zone. People read the ✕ as an error and thought the upload
+ * had failed — so this shows the receipt itself, says "تم رفع الصورة" under
+ * it, and the only button says "تغيير الصورة".
+ *
+ * A PDF is an accepted upload and cannot be drawn, so it gets a file card and
+ * the wording switches from "الصورة" to "الملف" — telling someone who uploaded
+ * a PDF that their image is ready is a small lie that costs trust at exactly
+ * the wrong moment.
+ */
+function renderPreview(file) {
+    const isPDF = file.type === 'application/pdf';
+    const media = document.getElementById('file-preview-media');
+    const preview = document.getElementById('file-preview');
+    const dropArea = document.getElementById('file-drop-area');
+
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    previewURL = null;
+
+    if (isPDF) {
+        media.innerHTML = '<div class="file-preview-doc"><i data-lucide="file-text"></i></div>';
+    } else {
+        previewURL = URL.createObjectURL(file);
+        const img = document.createElement('img');
+        img.className = 'file-preview-img';
+        img.alt = '';
+        img.src = previewURL;
+        media.innerHTML = '';
+        media.appendChild(img);
+    }
+
+    document.getElementById('file-name-display').innerText = file.name;
+
+    const label = document.getElementById('file-preview-label');
+    const changeLabel = document.getElementById('file-change-label');
+    // Point the data-i18n key at the right wording too, so a language switch
+    // after the upload keeps saying "file" for a PDF and "image" for an image.
+    label.setAttribute('data-i18n', isPDF ? 'payUploadedFile' : 'payUploaded');
+    label.innerText = t(isPDF ? 'payUploadedFile' : 'payUploaded');
+    changeLabel.setAttribute('data-i18n', isPDF ? 'payChangeFile' : 'payChangeImage');
+    changeLabel.innerText = t(isPDF ? 'payChangeFile' : 'payChangeImage');
+
+    dropArea.hidden = true;
+    preview.hidden = false;
+
+    // The check-circle and refresh icons are <i data-lucide> placeholders until
+    // this runs; the file card's icon is brand new markup every time.
+    if (window.lucide) window.lucide.createIcons();
+}
+
+/** The button under the preview: reopen the picker, keep the current file. */
+function changeFile() {
+    document.getElementById('pay-receipt').click();
 }
 
 // Submit Form

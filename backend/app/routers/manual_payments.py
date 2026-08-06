@@ -74,7 +74,10 @@ PLAN_DURATION_DAYS = {"monthly": 30, "quarterly": 90, "yearly": 365}
 DEFAULT_PLAN = "monthly"
 
 # Fallback EGP price per plan when the member didn't state an amount.
-PLAN_DEFAULT_AMOUNT_EGP = {"monthly": 600, "quarterly": 1200, "yearly": 4000}
+# Mirrors PLANS.EGP in frontend/src/js/pricing.js — the yearly plan moved from
+# 4000 to 3500 and this was still recording the old figure on any submission
+# that arrived without an amount.
+PLAN_DEFAULT_AMOUNT_EGP = {"monthly": 600, "quarterly": 1200, "yearly": 3500}
 
 
 def _record_manual_payment(db: Session, req: ManualPaymentRequest, user: User, when: datetime):
