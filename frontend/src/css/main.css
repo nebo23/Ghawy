@@ -890,6 +890,132 @@ a {
     padding: 80px 0;
 }
 
+/* ── Screenshot marquee (#reviewsMarquee, built by reviews.js) ──
+   Rows of real chat screenshots drifting in alternating directions. The whole
+   thing is decorative to assistive tech; the readable testimonials are the
+   .rv-card grid underneath. */
+.rvs-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 44px 0 56px;
+    /* the rows are wider than the viewport by design — clip, never scroll */
+    overflow: hidden;
+}
+
+.rvs-row {
+    overflow: hidden;
+    /* Force LTR so the track's origin and the translate direction are the same
+       in Arabic and in English. The screenshots carry their own text
+       direction inside the image, so nothing here needs to flip. */
+    direction: ltr;
+    mask-image: linear-gradient(to right, transparent 0, black 90px, black calc(100% - 90px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 90px, black calc(100% - 90px), transparent 100%);
+}
+
+.rvs-track {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: max-content;
+    will-change: transform;
+}
+
+/* -50% is exactly one copy of the row, which is why the markup emits the
+   images twice — the jump back to 0 lands on an identical frame. */
+@keyframes rvsDriftFwd {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+@keyframes rvsDriftRev {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+}
+
+.rvs-row--fwd .rvs-track { animation: rvsDriftFwd 90s linear infinite; }
+.rvs-row--rev .rvs-track { animation: rvsDriftRev 105s linear infinite; }
+
+/* Stop for anyone who wants to actually read one — pointer or keyboard. */
+.rvs-row:hover .rvs-track,
+.rvs-row:focus-within .rvs-track {
+    animation-play-state: paused;
+}
+
+.rvs-card {
+    flex: 0 0 auto;
+    width: 400px;
+    /* matches the screenshots' own background, so the seam is invisible */
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .3s, transform .3s;
+}
+
+.rvs-card:hover {
+    border-color: var(--gold-border);
+    transform: translateY(-2px);
+}
+
+.rvs-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* holds the row's height before a lazy image has arrived */
+    min-height: 70px;
+}
+
+@media (max-width: 900px) {
+    .rvs-card { width: 320px; }
+    .rvs-wrap { margin: 32px 0 40px; }
+}
+
+@media (max-width: 480px) {
+    .rvs-card { width: 260px; }
+    .rvs-row {
+        mask-image: linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
+    }
+}
+
+/* No animation: lay the screenshots out as a static grid instead of leaving a
+   frozen row with two thirds of it parked off-screen. The duplicates go away
+   so nothing shows twice. */
+@media (prefers-reduced-motion: reduce) {
+    /* The drifting version is full-bleed on purpose; a static grid running into
+       both edges of the window just looks unfinished, so give it gutters. */
+    .rvs-wrap {
+        display: block;
+        padding: 0 24px;
+    }
+
+    .rvs-row {
+        overflow: visible;
+        mask-image: none;
+        -webkit-mask-image: none;
+    }
+
+    .rvs-track {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        width: auto;
+        margin-bottom: 14px;
+    }
+
+    /* The direction classes have to be repeated here. The rule that starts the
+       drift is `.rvs-row--fwd .rvs-track`, and a media query adds no
+       specificity, so a bare `.rvs-track { animation: none }` loses to it and
+       the row keeps sliding for the very people who asked it not to. */
+    .rvs-row--fwd .rvs-track,
+    .rvs-row--rev .rvs-track {
+        animation: none;
+    }
+
+    .rvs-card { width: auto; }
+    .rvs-dup { display: none; }
+}
+
 /* Carousel Wrapper */
 .carousel-wrapper {
     display: flex;

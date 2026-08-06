@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260805i">
+    <link rel="stylesheet" href="src/css/main.css?v=20260806b">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -849,6 +849,14 @@
                 </p>
             </div>
 
+        </div>
+
+        <!-- The scrolling wall of chat screenshots. Full-bleed on purpose, so
+             it sits outside .container. Rows, images and the seamless
+             duplicate all come from SCREENSHOTS in reviews.js. -->
+        <div id="reviewsMarquee"></div>
+
+        <div class="container">
             <!-- Cards, empty state and the expand behaviour all come from reviews.js -->
             <div id="reviewsGrid"></div>
         </div>
@@ -2450,11 +2458,11 @@
     <script src="src/js/i18n.js?v=20260805a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260805i"></script>
+    <script src="src/js/catalog.js?v=20260806a"></script>
     <!-- Member reviews — the single source for the testimonials section.
          Adding a review is one entry in this file. -->
-    <script src="src/js/reviews.js?v=20260805i"></script>
-    <script src="src/js/main.js?v=20260805i"></script>
+    <script src="src/js/reviews.js?v=20260806a"></script>
+    <script src="src/js/main.js?v=20260806a"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant

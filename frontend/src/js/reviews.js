@@ -38,6 +38,19 @@
 // carousel nobody could work out how to open. The section is text cards now,
 // but the media ids are kept in `video` so a card can get its clip back later
 // without hunting for them. The renderer deliberately ignores the field today.
+//
+// ── Screenshots ──
+// SCREENSHOTS (below REVIEWS) is the marquee that scrolls above the cards.
+// Adding one is a single line: the file name of an image in
+// `imgs/reviews/`, nothing else. It lives in this file rather than beside it
+// because both halves feed the same `#reviews` section, and a second file
+// would mean a second <script> and two answers to "where do reviews live?".
+//
+// They are member messages lifted out of the community chat, so the person's
+// name and words are baked into the pixels. That is also why the marquee is
+// `aria-hidden`: the text in a screenshot cannot be read out, and writing an
+// alt that paraphrases someone's testimonial would be putting words in their
+// mouth. Screen readers get the real thing from the REVIEWS cards under it.
 
 (function () {
     'use strict';
@@ -128,6 +141,33 @@
             video: '8n571cb98s',
         },
     ];
+
+    // Screenshots of member messages from the community chat, in
+    // `imgs/reviews/`. One file name per line — order is the order they are
+    // dealt across the marquee rows.
+    //
+    // Kept out on purpose: three shots the client flagged as needing an edit
+    // (their text is cut mid-sentence), the ones carrying a complaint or a
+    // feature request rather than a review, an admin's own message, and one
+    // with language we are not putting on the home page. The image files for
+    // those are not in the repo at all, so nothing here can bring them back by
+    // accident.
+    const SCREENSHOTS = [
+        'chat-01.webp', 'chat-02.webp', 'chat-03.webp', 'chat-04-1.webp',
+        'chat-04-2.webp', 'chat-05.webp', 'chat-06.webp', 'chat-08-1.webp',
+        'chat-08-2.webp', 'chat-08-3.webp', 'chat-08-4.webp', 'chat-08-5.webp',
+        'chat-11-1.webp', 'chat-11-2.webp', 'chat-12.webp', 'chat-13-1.webp',
+        'chat-13-2.webp', 'chat-15.webp', 'chat-16.webp', 'chat-17.webp',
+        'chat-18.webp', 'chat-19.webp', 'chat-20.webp', 'chat-21.webp',
+        'chat-22-1.webp', 'chat-22-2.webp', 'chat-23.webp', 'chat-24.webp',
+        'chat-25.webp', 'chat-26.webp', 'chat-27.webp', 'chat-28.webp',
+        'chat-29.webp', 'chat-30.webp', 'chat-31.webp', 'chat-32.webp',
+        'chat-33.webp', 'chat-34.webp', 'chat-35.webp', 'chat-36.webp',
+        'chat-38.webp', 'chat-40.webp',
+    ];
+
+    const SHOT_DIR = 'imgs/reviews/';
+    const SHOT_ROWS = 3;
 
     // ─── Helpers ────────────────────────────────────────────────
     // Same shapes as catalog.js so the two files read alike. They are copied
@@ -319,10 +359,66 @@
         });
     }
 
+    // ─── Screenshot marquee ─────────────────────────────────────
+
+    /**
+     * Deal the screenshots across `rows` tracks, round-robin.
+     *
+     * Round-robin rather than slicing into thirds so the rows come out roughly
+     * the same height: the shots run from one-liners to ten-line messages and
+     * arrive in no particular order, so consecutive entries land on different
+     * rows instead of stacking every tall one into the same track.
+     */
+    function dealRows(list, rows) {
+        const out = Array.from({ length: rows }, () => []);
+        list.forEach((file, i) => out[i % rows].push(file));
+        return out.filter(r => r.length);
+    }
+
+    /**
+     * One row. The images are emitted twice — the animation translates the
+     * track by exactly -50%, so the second copy is what is on screen by the
+     * time the first has scrolled past and the loop has no seam. The copy is
+     * marked `.rvs-dup` so the reduced-motion rules can drop it and leave a
+     * plain grid with no repeats.
+     */
+    function shotRowHTML(files, index) {
+        const imgs = files.map(f => `
+            <div class="rvs-card">
+                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async" />
+            </div>`).join('');
+        const dup = files.map(f => `
+            <div class="rvs-card rvs-dup">
+                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async" />
+            </div>`).join('');
+        // even rows drift one way, odd rows the other
+        const dir = index % 2 === 0 ? 'rvs-row--fwd' : 'rvs-row--rev';
+        return `<div class="rvs-row ${dir}"><div class="rvs-track">${imgs}${dup}</div></div>`;
+    }
+
+    /**
+     * Fill a container with the scrolling wall of screenshots.
+     *
+     * `aria-hidden` is deliberate — see the note at the top of the file. No
+     * skeleton either: these are static files, not an API list, so there is no
+     * wait to represent. Each <img> is lazy, so only the first screenful is
+     * fetched even though the markup lists every row twice.
+     */
+    function renderScreenshots(el) {
+        if (!el) return;
+        if (!SCREENSHOTS.length) { el.innerHTML = ''; el.hidden = true; return; }
+        el.hidden = false;
+        el.className = 'rvs-wrap';
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML = dealRows(SCREENSHOTS, SHOT_ROWS).map(shotRowHTML).join('');
+    }
+
     // ─── Auto-init ──────────────────────────────────────────────
     // A page wanting the reviews just drops `<div id="reviewsGrid">` into its
-    // markup and loads this file.
+    // markup and loads this file. `<div id="reviewsMarquee">` adds the wall of
+    // chat screenshots above it.
     function autoInit() {
+        renderScreenshots(document.getElementById('reviewsMarquee'));
         renderReviews(document.getElementById('reviewsGrid'));
     }
 
@@ -333,8 +429,8 @@
     }
 
     window.GhawyReviews = {
-        REVIEWS,
+        REVIEWS, SCREENSHOTS,
         L, esc, i18nAttrs,
-        reviewCardHTML, emptyHTML, renderReviews,
+        reviewCardHTML, emptyHTML, renderReviews, renderScreenshots,
     };
 })();
