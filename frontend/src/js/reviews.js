@@ -40,11 +40,18 @@
 // without hunting for them. The renderer deliberately ignores the field today.
 //
 // ── Screenshots ──
-// SCREENSHOTS (below REVIEWS) is the marquee that scrolls above the cards.
-// Adding one is a single line: the file name of an image in
-// `imgs/reviews/`, nothing else. It lives in this file rather than beside it
-// because both halves feed the same `#reviews` section, and a second file
-// would mean a second <script> and two answers to "where do reviews live?".
+// Two arrays of image names, both under `imgs/reviews/`, and adding one is a
+// single line in the right array:
+//
+//   SCREENSHOTS — member messages from the community chat. Scrolls above the
+//                 written cards in `#reviews`.
+//   RATINGS     — the course rating lists (several members and their stars in
+//                 one shot). Feeds the "نتائج بالأرقام" section instead.
+//
+// They are split so the page never shows the same proof twice. Both live in
+// this file rather than beside it because they feed the review sections, and
+// a second file would mean a second <script> and two answers to "where do
+// reviews live?".
 //
 // They are member messages lifted out of the community chat, so the person's
 // name and words are baked into the pixels. That is also why the marquee is
@@ -164,6 +171,21 @@
         'chat-29.webp', 'chat-30.webp', 'chat-31.webp', 'chat-32.webp',
         'chat-33.webp', 'chat-34.webp', 'chat-35.webp', 'chat-36.webp',
         'chat-38.webp', 'chat-40.webp',
+        // Members posting a first result rather than an opinion. Same kind of
+        // shot — a message with a name on it — so they ride the same rows.
+        'win-01.webp', 'win-02.webp',
+    ];
+
+    // The course rating lists — several members with their stars in one shot.
+    // These feed the "نتائج بالأرقام" section, NOT #reviews, so the two walls
+    // of proof never show the same picture twice.
+    //
+    // They are tall single columns rather than chat bubbles, which is why they
+    // get their own row treatment (`rvs-wrap--tall`) instead of being dealt in
+    // with the messages above.
+    const RATINGS = [
+        'ratings-01.webp', 'ratings-02.webp', 'ratings-03.webp',
+        'ratings-04.webp', 'ratings-05.webp', 'ratings-06.webp',
     ];
 
     const SHOT_DIR = 'imgs/reviews/';
@@ -404,21 +426,30 @@
      * wait to represent. Each <img> is lazy, so only the first screenful is
      * fetched even though the markup lists every row twice.
      */
-    function renderScreenshots(el) {
+    function renderScreenshots(el, opts) {
         if (!el) return;
-        if (!SCREENSHOTS.length) { el.innerHTML = ''; el.hidden = true; return; }
+        const o = opts || {};
+        const files = o.files || SCREENSHOTS;
+        if (!files.length) { el.innerHTML = ''; el.hidden = true; return; }
         el.hidden = false;
-        el.className = 'rvs-wrap';
+        el.className = 'rvs-wrap' + (o.modifier ? ' ' + o.modifier : '');
         el.setAttribute('aria-hidden', 'true');
-        el.innerHTML = dealRows(SCREENSHOTS, SHOT_ROWS).map(shotRowHTML).join('');
+        el.innerHTML = dealRows(files, o.rows || SHOT_ROWS).map(shotRowHTML).join('');
     }
 
     // ─── Auto-init ──────────────────────────────────────────────
     // A page wanting the reviews just drops `<div id="reviewsGrid">` into its
     // markup and loads this file. `<div id="reviewsMarquee">` adds the wall of
-    // chat screenshots above it.
+    // chat screenshots above it, and `<div id="ratingsMarquee">` the wall of
+    // course rating lists.
     function autoInit() {
         renderScreenshots(document.getElementById('reviewsMarquee'));
+        // One row, not three: the rating lists are tall columns, so three rows
+        // of them would be a screen and a half of nothing else. Six shots at
+        // ~300px still overrun any viewport, so the -50% loop stays seamless.
+        renderScreenshots(document.getElementById('ratingsMarquee'), {
+            files: RATINGS, rows: 1, modifier: 'rvs-wrap--tall',
+        });
         renderReviews(document.getElementById('reviewsGrid'));
     }
 
@@ -429,7 +460,7 @@
     }
 
     window.GhawyReviews = {
-        REVIEWS, SCREENSHOTS,
+        REVIEWS, SCREENSHOTS, RATINGS,
         L, esc, i18nAttrs,
         reviewCardHTML, emptyHTML, renderReviews, renderScreenshots,
     };

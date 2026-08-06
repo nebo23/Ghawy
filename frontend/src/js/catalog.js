@@ -83,7 +83,7 @@
                 { name: { ar: 'أكبر الصيدليات في مصر', en: "Egypt's biggest pharmacies" }, logo: null },
             ],
             links: {
-                instagram: 'https://instagram.com/ghawy_official',
+                instagram: 'https://www.instagram.com/ghawy.ai/',
                 tiktok: 'https://tiktok.com/@ghawy_official',
                 facebook: 'https://facebook.com/ghawyofficial',
             },
@@ -807,6 +807,118 @@
     }
 
     /**
+     * How many courses this instructor teaches on Ghawy.
+     *
+     * Counted off COURSES rather than `coursesByInstructor`, which is the
+     * async one. Both give the same number — `load()` maps over COURSES and
+     * only ever refreshes the lesson count, runtime and thumbnail of an entry,
+     * so the API can never add or remove a course from the list — and counting
+     * here keeps the instructor card synchronous, which means no skeleton and
+     * no number that changes under the reader a second after it appears.
+     */
+    function courseCountFor(slug) {
+        return COURSES.filter(c => c.instructor === slug).length;
+    }
+
+    /**
+     * The instructor card on the home page.
+     *
+     * The client's ask was "say what this instructor is distinguished at", and
+     * everything that answers it is already in INSTRUCTORS: the role, the
+     * years, the kinds of client they have worked with. So the card composes
+     * that one line out of those fields instead of asking for a new one —
+     * adding a second instructor stays a single entry in this file.
+     *
+     * Different card from `instructorCardHTML`: /instructors is a directory
+     * and its card is deliberately sparse, while this one is doing the
+     * persuading on a landing page and carries the course count, the
+     * distinction line and the social links.
+     */
+    function homeInstructorCardHTML(inst) {
+        const href = `/instructors?i=${encodeURIComponent(inst.slug)}`;
+        const n = courseCountFor(inst.slug);
+        const courses = {
+            ar: `${L(coursesWord(n))} على غاوي`,
+            en: `${L(coursesWord(n))} on Ghawy`,
+        };
+        const years = {
+            ar: `خبرة أكتر من ${inst.yearsExperience} سنين`,
+            en: `${inst.yearsExperience}+ years of experience`,
+        };
+        // What he is known for. The role is already the line under his name,
+        // so this one picks up where that leaves off: who he has actually done
+        // it for. `clients` holds CATEGORIES of client, so it reads as a
+        // description and never as a name-drop. With no clients on file it
+        // falls back to the bio's first sentence rather than repeating the
+        // role a second time.
+        const clientNames = (inst.clients || []).map(c => c.name);
+        const distinction = clientNames.length ? {
+            ar: `اشتغل مع ${clientNames.map(c => c.ar).join(' و')}، وبيشرح على غاوي اللي بيعمله فعلاً في شغله.`,
+            en: `Has worked with ${clientNames.map(c => c.en || c.ar).join(' and ')}, and teaches on Ghawy exactly what he does in that work.`,
+        } : inst.bio;
+
+        return `
+    <article class="hi-card">
+        <a class="hi-top" href="${href}">
+            ${avatarHTML(inst, 'hi-avatar')}
+            <span class="hi-ident">
+                <span class="hi-name">${esc(L(inst.name))}</span>
+                <span class="hi-role" ${i18nAttrs(inst.role)}>${esc(L(inst.role))}</span>
+            </span>
+        </a>
+
+        <p class="hi-distinction" ${i18nAttrs(distinction)}>${esc(L(distinction))}</p>
+
+        <div class="hi-facts">
+            <span class="hi-fact">
+                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+                <span ${i18nAttrs(courses)}>${esc(L(courses))}</span>
+            </span>
+            <span class="hi-fact">
+                <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                <span ${i18nAttrs(years)}>${esc(L(years))}</span>
+            </span>
+        </div>
+
+        <div class="hi-foot">
+            <a class="gc-btn hi-btn" href="${href}"
+               data-ar="صفحة المدرّب" data-en="Instructor page">صفحة المدرّب</a>
+            ${linksHTML(inst)}
+        </div>
+    </article>`;
+    }
+
+    /**
+     * The home page's instructor section. Reads INSTRUCTORS, so the day a
+     * second instructor is added the grid grows on its own.
+     *
+     * With one instructor the grid is a single centred card rather than one
+     * card stranded on the left of a three-column row — `.hi-grid` caps its
+     * own width off the number of cards, so both cases look deliberate.
+     */
+    function renderHomeInstructors(el) {
+        if (!el) return;
+        const list = instructorList();
+        if (!list.length) { el.innerHTML = ''; el.hidden = true; return; }
+        el.hidden = false;
+        el.className = 'hi-grid';
+
+        // Repaint on `languagechange` like the other renderers: the card's
+        // text is picked by L() at render time, so without this it would keep
+        // whichever language was current when the page loaded.
+        // ...and applyLanguageTo for the bits written as a literal with
+        // data-ar/data-en (the button). i18n.js has already made its automatic
+        // pass over the document by the time this markup exists, so without
+        // this call those stay Arabic in English.
+        const paint = () => {
+            el.innerHTML = list.map(homeInstructorCardHTML).join('');
+            if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+        };
+        paint();
+        bindLanguage(el, paint);
+    }
+
+    /**
      * The instructor line on a course card: the round photo, then the name
      * with a short role under it.
      *
@@ -1246,6 +1358,8 @@
         // The home page's tracks teaser — same deal: drop the container in and
         // this fills it, so the home page holds no track data of its own.
         renderFamilyTeaser(document.getElementById('trackFamilies'));
+        // Same deal for the home page's instructor section.
+        renderHomeInstructors(document.getElementById('homeInstructors'));
     }
 
     if (document.readyState === 'loading') {
@@ -1261,11 +1375,12 @@
         durationToMinutes, minutesToDuration,
         instructor, track, family,
         load, courseBySlug, lessonsFor, totals,
-        coursesByInstructor, instructorList,
+        coursesByInstructor, instructorList, courseCountFor,
         familyList, trackList, trackHref,
         coursesInTrack, trackStats, trackListWithStats,
         coursesWord, lessonsWord, hoursWord, SOON,
         courseCardHTML, instructorCardHTML, linksHTML,
+        homeInstructorCardHTML, renderHomeInstructors,
         instructorBarHTML, factsHTML, clientsHTML,
         introVideoHTML, courseVideoHTML,
         trackThumbHTML, trackCardHTML, trackSkeletonHTML,

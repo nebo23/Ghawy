@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260806b">
+    <link rel="stylesheet" href="src/css/main.css?v=20260806d">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -292,7 +292,7 @@
      back in here; edit layout.js instead.
     ════════════════════════════════════════ -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260804"></script>
+    <script src="src/js/layout.js?v=20260806a"></script>
 
     <!-- ════════════════════════════════════════
      AUTH MODALS
@@ -830,6 +830,38 @@
     </section>
 
     <!-- ════════════════════════════════════════
+     INSTRUCTORS
+     Every card — photo, name, how many courses they teach here, experience and
+     social links — is rendered from INSTRUCTORS in catalog.js. The course count
+     is counted off COURSES, so it can never disagree with the catalog above.
+     Adding an instructor is one entry in that file; nothing here changes.
+    ════════════════════════════════════════ -->
+    <section class="instructors-section" id="instructors">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow" data-ar="مين اللي بيشرحلك" data-en="Who Teaches You">مين اللي
+                    بيشرحلك</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title" data-ar="مدربون شغالين في المجال فعلاً"
+                    data-en="Instructors who actually work in the field">مدربون شغالين في المجال فعلاً</h2>
+                <p class="section-sub"
+                    data-ar="مش أكاديميين بيقروا من كتاب — ناس بتشتغل بالـ AI مع عملاء حقيقيين وبتشرحلك اللي بتعمله بنفسها"
+                    data-en="Not academics reading from a book — people who work with AI for real clients and teach you exactly what they do.">
+                    مش أكاديميين بيقروا من كتاب — ناس بتشتغل بالـ AI مع عملاء حقيقيين وبتشرحلك اللي بتعمله بنفسها
+                </p>
+            </div>
+
+            <!-- filled by renderHomeInstructors() in catalog.js -->
+            <div id="homeInstructors"></div>
+
+            <div class="centered" style="margin-top: 34px;">
+                <a href="/instructors" class="btn-more-courses" data-ar="اعرف عن المدربين أكتر"
+                    data-en="More about the instructors">اعرف عن المدربين أكتر</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
      MEMBER REVIEWS
      Cards are rendered from src/js/reviews.js — adding a review is one entry
      in that file, nothing here changes. The id stays `reviews`: the drawer in
@@ -997,253 +1029,250 @@
     </div>
 
     <!-- ════════════════════════════════════════
-     TOOLS STRIPE
+     GHAWY FOR EVERY FIELD
+     Was a small drifting stripe of skill chips ("المهارات اللي هتتقنها"). It
+     said what you would learn but not who it was for, and the client's ask
+     here is availability: whatever your job already is, the platform is open
+     to you. So it is a section with a card per field, and each card says what
+     that person specifically gets out of it.
     ════════════════════════════════════════ -->
-    <div class="full-stripe tools-stripe">
-        <div class="container">
-            <p class="tools-label">المهارات اللي هتتقنها</p>
-        </div>
-        <div class="tools-list">
-            <div class="tools-track">
-                <!-- Copy 1 -->
-                <span class="tool-chip"><span class="icon"><i class="fa-brands fa-openai"></i></span> AI Automation
-                    Agency</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code-fork"></i></span> Workflow
-                    Automation</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code"></i></span> Machine
-                    Learning</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-gem"></i></span> Personal
-                    Branding</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-bullhorn"></i></span> Client
-                    Acquisition</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-pen-fancy"></i></span> Prompt
-                    Engineering</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-microchip"></i></span> AI
-                    Foundations</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-list-check"></i></span> Business
-                    Diagnosis</span>
-                <!-- Copy 2 (seamless loop) -->
-                <span class="tool-chip"><span class="icon"><i class="fa-brands fa-openai"></i></span> AI Automation
-                    Agency</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code-fork"></i></span> Workflow
-                    Automation</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-code"></i></span> Machine
-                    Learning</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-gem"></i></span> Personal
-                    Branding</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-bullhorn"></i></span> Client
-                    Acquisition</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-pen-fancy"></i></span> Prompt
-                    Engineering</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-microchip"></i></span> AI
-                    Foundations</span>
-                <span class="tool-chip"><span class="icon"><i class="fa-solid fa-list-check"></i></span> Business
-                    Diagnosis</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ════════════════════════════════════════
-     WHY CHOOSE US — FEATURES
-    ════════════════════════════════════════ -->
-    <section class="features-section reveal" id="features">
+    <section class="audience-section reveal" id="for-everyone">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow" data-ar="لماذا تختارنا؟" data-en="Why Choose Us?">لماذا تختارنا؟</span>
+                <span class="section-eyebrow" data-ar="غاوي لكل استخدام" data-en="Ghawy for every use">غاوي لكل
+                    استخدام</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title" data-ar="منصة متكاملة تقدم لك كل ما تحتاجه"
-                    data-en="An All-in-One Platform Built for Your Success">منصة متكاملة تقدم لك كل ما تحتاجه</h2>
+                <h2 class="section-title" data-ar="مهما كان مجالك، فيه حتة ليك هنا"
+                    data-en="Whatever your field, there is a place for you here">مهما كان مجالك، فيه حتة ليك هنا</h2>
                 <p class="section-sub"
-                    data-ar="كل اللي محتاجه عشان تبني وكالة AI Automation ناجحة وتحقق دخل حقيقي — في مكان واحد"
-                    data-en="Everything you need to build a successful AI Automation agency and generate real income — in one place.">
-                    كل اللي محتاجه عشان تبني وكالة AI Automation ناجحة وتحقق دخل حقيقي — في مكان واحد
+                    data-ar="الذكاء الاصطناعي مش مجال لوحده — ده أداة بتدخل جوه شغلك اللي انت عامله أصلاً. كل الكورسات متاحة للكل، تختار منها اللي يخدم مجالك"
+                    data-en="AI isn't a field of its own — it's a tool that goes inside the work you already do. Every course is open to everyone; you pick the ones that serve your field.">
+                    الذكاء الاصطناعي مش مجال لوحده — ده أداة بتدخل جوه شغلك اللي انت عامله أصلاً. كل الكورسات متاحة
+                    للكل، تختار منها اللي يخدم مجالك
                 </p>
             </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-brands fa-openai"></i></div>
-                    <h4 data-ar="بناء وكالة AI Automation" data-en="Build an AI Automation Agency">بناء وكالة AI
-                        Automation</h4>
-                    <p data-ar="هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة"
-                        data-en="Learn how to build your own agency from scratch and sell AI services to businesses using proven, practical methods.">
-                        هتتعلم إزاي تبني وكالتك الخاصة من الصفر وتبدأ تبيع خدمات الـ AI للشركات بطريقة عملية ومجربة</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                    <h4 data-ar="هندسة البرومبت" data-en="Prompt Engineering">هندسة البرومبت</h4>
-                    <p data-ar="إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق"
-                        data-en="Master the art of communicating with AI — write professional prompts that produce incredible results in minutes.">
-                        إتقان فن التواصل مع الذكاء الاصطناعي — هتكتب برومبتات احترافية تطلع نتائج مذهلة في دقائق</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-code-fork"></i></div>
-                    <h4 data-ar="أوتوميشن بدون كود" data-en="No-Code Automation">أوتوميشن بدون كود</h4>
-                    <p data-ar="هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد"
-                        data-en="Build complete automation systems using n8n and Make — without writing a single line of code.">
-                        هتبني أنظمة أوتوميشن متكاملة باستخدام n8n وMake — بدون ما تكتب سطر كود واحد</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-bullhorn"></i></div>
-                    <h4 data-ar="جذب العملاء" data-en="Client Acquisition">جذب العملاء</h4>
-                    <p data-ar="هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة"
-                        data-en="Learn how to land your first client and build a steady client base — with clear steps and proven strategies.">
-                        هتتعلم إزاي تجيب أول عميل وتبني قاعدة عملاء ثابتة — بخطوات واضحة واستراتيجيات مجربة</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-microchip"></i></div>
-                    <h4 data-ar="أساسيات الـ AI" data-en="AI Fundamentals">أساسيات الـ AI</h4>
-                    <p data-ar="فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر"
-                        data-en="Deep understanding of the technology — from Neural Networks to LLMs and AI Agents, everything from scratch.">
-                        فهم عميق للتكنولوجيا — من Neural Networks للـ LLMs والـ AI Agents، كل حاجة من الصفر</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-phone"></i></div>
-                    <h4 data-ar="دعم VIP ومتابعة شخصية" data-en="VIP Support & Mentoring">دعم VIP ومتابعة شخصية</h4>
-                    <p data-ar="مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم"
-                        data-en="You won't be alone — 24/7 support group and weekly live calls with Mohamed and the team.">
-                        مش هتكون لوحدك — جروب دعم فني 24/7 ومكالمات أسبوعية مباشرة مع محمد والتيم</p>
-                </div>
+
+            <div class="audience-grid">
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
+                    <h3 data-ar="ميديا باير" data-en="Media buyer">ميديا باير</h3>
+                    <p data-ar="تكتب إعلانات وتطلع كرييتيف بالـ AI في وقت أقل، وتحلّل نتايج الحملات وتطلع منها قرارات بدل ما تقعد تقلّب في الأرقام بإيدك"
+                        data-en="Write ad copy and produce creative with AI in a fraction of the time, and turn campaign data into decisions instead of digging through numbers by hand.">
+                        تكتب إعلانات وتطلع كرييتيف بالـ AI في وقت أقل، وتحلّل نتايج الحملات وتطلع منها قرارات بدل ما
+                        تقعد تقلّب في الأرقام بإيدك</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i></div>
+                    <h3 data-ar="ديزاينر" data-en="Designer">ديزاينر</h3>
+                    <p data-ar="تولّد صور وثامبنيلز وموك أب بجودة شغل حقيقي، وتختصر الشغل المتكرر في التصميم عشان وقتك يروح للفكرة مش للتنفيذ"
+                        data-en="Generate images, thumbnails and mockups at real production quality, and cut the repetitive part of design so your time goes to the idea, not the execution.">
+                        تولّد صور وثامبنيلز وموك أب بجودة شغل حقيقي، وتختصر الشغل المتكرر في التصميم عشان وقتك يروح
+                        للفكرة مش للتنفيذ</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-video" aria-hidden="true"></i></div>
+                    <h3 data-ar="صانع محتوى" data-en="Content creator">صانع محتوى</h3>
+                    <p data-ar="سكريبتات وأفكار وتفريغ وترجمة ومونتاج بمساعدة الـ AI، وتبني نظام يخليك تنزل بانتظام من غير ما تحترق"
+                        data-en="Scripts, ideas, transcription, translation and editing with AI on your side — plus a system that keeps you publishing consistently without burning out.">
+                        سكريبتات وأفكار وتفريغ وترجمة ومونتاج بمساعدة الـ AI، وتبني نظام يخليك تنزل بانتظام من غير ما
+                        تحترق</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i></div>
+                    <h3 data-ar="مسوّق" data-en="Marketer">مسوّق</h3>
+                    <p data-ar="تبني فانلز ورسايل وحملات إيميل تشتغل لوحدها، وتخلي الـ AI يشيل عنك البحث عن العملاء والمتابعة معاهم"
+                        data-en="Build funnels, messaging and email campaigns that run themselves, and let AI take prospect research and follow-up off your plate.">
+                        تبني فانلز ورسايل وحملات إيميل تشتغل لوحدها، وتخلي الـ AI يشيل عنك البحث عن العملاء والمتابعة
+                        معاهم</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-code" aria-hidden="true"></i></div>
+                    <h3 data-ar="مبرمج" data-en="Developer">مبرمج</h3>
+                    <p data-ar="تشتغل بـ Claude Code وأدوات الـ AI جوه الكود نفسه، وتتعلّم تبني AI Agents وتربط APIs وتعمل أنظمة أوتوميشن حقيقية"
+                        data-en="Work with Claude Code and AI tooling inside the codebase itself, and learn to build AI agents, wire up APIs and ship real automation systems.">
+                        تشتغل بـ Claude Code وأدوات الـ AI جوه الكود نفسه، وتتعلّم تبني AI Agents وتربط APIs وتعمل
+                        أنظمة أوتوميشن حقيقية</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-briefcase" aria-hidden="true"></i></div>
+                    <h3 data-ar="صاحب بيزنس" data-en="Business owner">صاحب بيزنس</h3>
+                    <p data-ar="تشوف العمليات اللي بتاكل وقت فريقك وتأتمتها، وتقلّل تكلفة التشغيل من غير ما تكبّر الفريق"
+                        data-en="Find the operations eating your team's time and automate them — lower running costs without growing headcount.">
+                        تشوف العمليات اللي بتاكل وقت فريقك وتأتمتها، وتقلّل تكلفة التشغيل من غير ما تكبّر الفريق</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-seedling" aria-hidden="true"></i></div>
+                    <h3 data-ar="مبتدئ من الصفر" data-en="Starting from zero">مبتدئ من الصفر</h3>
+                    <p data-ar="لسه مالكش مجال محدد؟ كورس الأساسيات بيبدأ معاك من أول خطوة، وبعدها تختار المسار اللي يريحك"
+                        data-en="No field yet? The foundations course starts you at step one, and after it you pick whichever track suits you.">
+                        لسه مالكش مجال محدد؟ كورس الأساسيات بيبدأ معاك من أول خطوة، وبعدها تختار المسار اللي يريحك</p>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-user-tie" aria-hidden="true"></i></div>
+                    <h3 data-ar="فريلانسر" data-en="Freelancer">فريلانسر</h3>
+                    <p data-ar="تضيف خدمات AI لعروضك وتطلب عليها سعر أعلى، وتتعلّم إزاي تجيب العميل وتقفل معاه من غير واسطة"
+                        data-en="Add AI services to what you offer and charge more for them, and learn how to find a client and close them on your own.">
+                        تضيف خدمات AI لعروضك وتطلب عليها سعر أعلى، وتتعلّم إزاي تجيب العميل وتقفل معاه من غير واسطة</p>
+                </article>
             </div>
         </div>
     </section>
 
     <!-- ════════════════════════════════════════
-     OFFER + URGENCY + VALUE STACK
+     FEATURES — "المميزات"
+     This is TWO old sections merged into one. There used to be
+     .features-section#features (six cards about what you learn) followed by
+     .value-stack-section#offer, which was a priced stack: 10,000 for the
+     program, 5,000 / 2,500 / 8,500 / 4,000 for the bonuses and a 30,000
+     anchor with a "free today" badge. The client asked for one section called
+     المميزات with the pricing gone entirely — no amounts, no anchor, no
+     "free today" — so the offer section is deleted and everything real in it
+     moved here as a feature.
+
+     The id stays `features`: the navbar in layout.js links to
+     index.html#features. `#offer` is gone and nothing linked to it.
     ════════════════════════════════════════ -->
-    <section class="value-stack-section" id="offer">
-        <div class="vs-container">
-            <!-- Glow Effect in Background -->
-            <div class="vs-glow-bg"></div>
-
-            <!-- Header -->
-            <div class="vs-header">
-                <h2 class="vs-main-title" data-ar="كل اللي هتمتلكه بمجرد دخولك"
-                    data-en="Everything you'll get upon joining">كل اللي هتمتلكه بمجرد دخولك</h2>
-                <p class="vs-subtitle" data-ar="قيمة حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك"
-                    data-en="Real value that can completely change your career path and multiply your profits">قيمة
-                    حقيقية تقدر تغير مسار شغلك بالكامل وتضاعف أرباحك</p>
+    <section class="features-section reveal" id="features">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow" data-ar="المميزات" data-en="Features">المميزات</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title" data-ar="اشتراك واحد، والمنصة كلها معاك"
+                    data-en="One subscription, the whole platform">اشتراك واحد، والمنصة كلها معاك</h2>
+                <p class="section-sub"
+                    data-ar="مش كورسات مسجلة وخلاص — مجتمع بيشتغل، ولايفات، ومسابقات، وأدوات جاهزة تستخدمها من أول يوم"
+                    data-en="Not just recorded courses — a community that's actually working, live sessions, competitions, and ready-made tools you can use from day one.">
+                    مش كورسات مسجلة وخلاص — مجتمع بيشتغل، ولايفات، ومسابقات، وأدوات جاهزة تستخدمها من أول يوم
+                </p>
             </div>
 
-            <!-- Main Product -->
-            <div class="vs-main-product">
-                <div class="vs-product-info">
-                    <div class="vs-product-icon">
-                        <i data-lucide="presentation" class="nav-icon"></i>
-                    </div>
-                    <div>
-                        <h3 class="vs-product-title" data-ar="البرنامج التدريبي الشامل"
-                            data-en="The Comprehensive Training Program">البرنامج التدريبي الشامل</h3>
-                        <p class="vs-product-desc" data-ar="أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف"
-                            data-en="Over 120 hours of detailed and practical explanation from scratch to professionalism">
-                            أكثر من 120 ساعة شرح تفصيلي وتطبيقي من الصفر للاحتراف</p>
-                    </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-comments"></i></div>
+                    <h4 data-ar="شات المجتمع والدعم" data-en="Community chat &amp; support">شات المجتمع والدعم</h4>
+                    <p data-ar="شات شغال جوه المنصة مع باقي الأعضاء ومع التيم — تسأل، تتناقش، وتلاقي حد يرد عليك بدل ما تفضل قافل على نفسك"
+                        data-en="A live chat inside the platform with the other members and with the team — ask, discuss, and get an answer instead of staying stuck on your own.">
+                        شات شغال جوه المنصة مع باقي الأعضاء ومع التيم — تسأل، تتناقش، وتلاقي حد يرد عليك بدل ما تفضل
+                        قافل على نفسك</p>
                 </div>
-                <div class="vs-product-price" id="vs-price-main" data-ar="10,000 ج.م" data-en="10,000 EGP">10,000 ج.م
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-video"></i></div>
+                    <h4 data-ar="لايفات مباشرة" data-en="Live sessions">لايفات مباشرة</h4>
+                    <p data-ar="جلسات مباشرة مع المدربين تسأل فيها وتتفرج على التطبيق وهو بيحصل قدامك، مش تسجيل قديم"
+                        data-en="Live sessions with the instructors where you ask questions and watch the work happen in front of you — not an old recording.">
+                        جلسات مباشرة مع المدربين تسأل فيها وتتفرج على التطبيق وهو بيحصل قدامك، مش تسجيل قديم</p>
                 </div>
-            </div>
 
-            <!-- Bonus Bundle Container -->
-            <div class="vs-bonus-bundle">
-                <div class="vs-bonus-badge" data-ar="باقات الهدايا (مجاناً اليوم)" data-en="Bonus Bundles (Free Today)">
-                    باقات الهدايا (مجاناً اليوم)</div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-trophy"></i></div>
+                    <h4 data-ar="مسابقات وتحديات" data-en="Competitions &amp; challenges">مسابقات وتحديات</h4>
+                    <p data-ar="مسابقات بين الأعضاء تخليك تطبّق اللي اتعلمته على حاجة حقيقية بدل ما تتفرج وخلاص"
+                        data-en="Competitions between members that push you to apply what you learned to something real, instead of just watching.">
+                        مسابقات بين الأعضاء تخليك تطبّق اللي اتعلمته على حاجة حقيقية بدل ما تتفرج وخلاص</p>
+                </div>
 
-                <div class="vs-bonus-items">
-                    <!-- Item 1 -->
-                    <div class="vs-bonus-item">
-                        <div class="vs-bonus-left">
-                            <div class="vs-bonus-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                            <div class="vs-bonus-text">
-                                <h4 data-ar="أداة Perfect Prompt Generator" data-en="Perfect Prompt Generator Tool">أداة
-                                    Perfect Prompt Generator</h4>
-                                <p data-ar="أداة ذكية لتوليد البرومبتات الاحترافية بضغطة زر"
-                                    data-en="A smart tool to generate professional prompts with a click">أداة ذكية
-                                    لتوليد البرومبتات الاحترافية بضغطة زر</p>
-                            </div>
-                        </div>
-                        <div class="vs-bonus-price" id="vs-price-1" data-ar="5,000 ج.م" data-en="5,000 EGP">5,000 ج.م
-                        </div>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+                    <h4 data-ar="كورسات بتتحدّث أول بأول" data-en="Courses updated continuously">كورسات بتتحدّث أول
+                        بأول</h4>
+                    <p data-ar="المجال بيتغير كل شهر، والكورسات بتتحدّث معاه — بتدخل تلاقي الجديد مضاف، من غير ما تدفع تاني"
+                        data-en="The field changes every month and the courses change with it — you log in and the new material is already there, at no extra cost.">
+                        المجال بيتغير كل شهر، والكورسات بتتحدّث معاه — بتدخل تلاقي الجديد مضاف، من غير ما تدفع تاني</p>
+                </div>
 
-                    <!-- Item 2 -->
-                    <div class="vs-bonus-item">
-                        <div class="vs-bonus-left">
-                            <div class="vs-bonus-icon"><i class="fa-solid fa-layer-group"></i></div>
-                            <div class="vs-bonus-text">
-                                <h4 data-ar="أكثر من 2000+ قالب جاهز لبيئة العمل"
-                                    data-en="Over 2000+ Ready-to-use Templates">أكثر من 2000+ قالب جاهز لبيئة العمل</h4>
-                                <p data-ar="نماذج جاهزة للاستخدام في وكالتك أو مشاريعك"
-                                    data-en="Ready-to-use templates for your agency or projects">نماذج جاهزة للاستخدام
-                                    في وكالتك أو مشاريعك</p>
-                            </div>
-                        </div>
-                        <div class="vs-bonus-price" id="vs-price-2" data-ar="2,500 ج.م" data-en="2,500 EGP">2,500 ج.م
-                        </div>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <h4 data-ar="أداة توليد البرومبت" data-en="Prompt generator tool">أداة توليد البرومبت</h4>
+                    <p data-ar="أداة جوه المنصة بتطلعلك برومبت احترافي بضغطة زر، عشان متقعدش تحاول لوحدك لحد ما توصل للصيغة الصح"
+                        data-en="A tool inside the platform that produces a professional prompt at the press of a button, so you're not guessing your way to the right wording.">
+                        أداة جوه المنصة بتطلعلك برومبت احترافي بضغطة زر، عشان متقعدش تحاول لوحدك لحد ما توصل للصيغة
+                        الصح</p>
+                </div>
 
-                    <!-- Item 3 -->
-                    <div class="vs-bonus-item">
-                        <div class="vs-bonus-left">
-                            <div class="vs-bonus-icon"><i class="fa-solid fa-phone-volume"></i></div>
-                            <div class="vs-bonus-text">
-                                <h4 data-ar="جروب دعم VIP + مكالمة أسبوعية" data-en="VIP Support Group + Weekly Call">
-                                    جروب دعم VIP + مكالمة أسبوعية</h4>
-                                <p data-ar="دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك"
-                                    data-en="Direct technical support and continuous follow-up to answer all your questions">
-                                    دعم فني مباشر ومتابعة مستمرة للإجابة على كل أسئلتك</p>
-                            </div>
-                        </div>
-                        <div class="vs-bonus-price" id="vs-price-3" data-ar="8,500 ج.م" data-en="8,500 EGP">8,500 ج.م
-                        </div>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <h4 data-ar="أكثر من 2000 قالب جاهز" data-en="2000+ ready-made templates">أكثر من 2000 قالب جاهز
+                    </h4>
+                    <p data-ar="قوالب وسير عمل (workflows) جاهزة تنسخها وتشغّلها على طول في شغلك أو عند عميلك، بدل ما تبني كل حاجة من أول وجديد"
+                        data-en="Ready templates and workflows you copy and run straight away in your own work or a client's, instead of building everything from scratch.">
+                        قوالب وسير عمل (workflows) جاهزة تنسخها وتشغّلها على طول في شغلك أو عند عميلك، بدل ما تبني كل حاجة من أول
+                        وجديد</p>
+                </div>
 
-                    <!-- Item 4 -->
-                    <div class="vs-bonus-item">
-                        <div class="vs-bonus-left">
-                            <div class="vs-bonus-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                            <div class="vs-bonus-text">
-                                <h4 data-ar="أكثر من 50 ملف PDF ملخص" data-en="Over 50 Summary PDF Files">أكثر من 50 ملف
-                                    PDF ملخص</h4>
-                                <p data-ar="خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات"
-                                    data-en="Mind maps and comprehensive summaries that save you hundreds of hours">
-                                    خرائط ذهنية وملخصات شاملة توفر عليك مئات الساعات</p>
-                            </div>
-                        </div>
-                        <div class="vs-bonus-price" id="vs-price-4" data-ar="4,000 ج.م" data-en="4,000 EGP">4,000 ج.م
-                        </div>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-newspaper"></i></div>
+                    <h4 data-ar="تحديثات المجال أول بأول" data-en="AI news as it lands">تحديثات المجال أول بأول</h4>
+                    <p data-ar="قسم داخل المنصة بينزل كل جديد في الـ AI — موديل نزل، أداة اتغيرت، حاجة بقت أرخص — تعرفها هنا من غير ما تلف على عشرين مصدر"
+                        data-en="A section inside the platform carrying everything new in AI — a model shipped, a tool changed, something got cheaper — without you chasing twenty sources.">
+                        قسم داخل المنصة بينزل كل جديد في الـ AI — موديل نزل، أداة اتغيرت، حاجة بقت أرخص — تعرفها هنا من
+                        غير ما تلف على عشرين مصدر</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <h4 data-ar="ملخصات وخرائط ذهنية" data-en="Summaries &amp; mind maps">ملخصات وخرائط ذهنية</h4>
+                    <p data-ar="ملفات PDF وخرائط ذهنية بترجعلها بعد ما تخلص الدرس، تفتكر منها بسرعة من غير ما تعيد الفيديو"
+                        data-en="PDF summaries and mind maps you come back to after a lesson, so you can refresh fast without rewatching the video.">
+                        ملفات PDF وخرائط ذهنية بترجعلها بعد ما تخلص الدرس، تفتكر منها بسرعة من غير ما تعيد الفيديو</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-certificate"></i></div>
+                    <h4 data-ar="شهادة إتمام لكل كورس" data-en="A certificate for every course">شهادة إتمام لكل كورس
+                    </h4>
+                    <p data-ar="تخلّص الكورس تاخد شهادة باسمك تحطها في الـ CV أو على لينكدإن"
+                        data-en="Finish a course and get a certificate in your name for your CV or your LinkedIn.">
+                        تخلّص الكورس تاخد شهادة باسمك تحطها في الـ CV أو على لينكدإن</p>
                 </div>
             </div>
 
-            <!-- Pricing Anchor -->
-            <div class="vs-pricing-anchor">
-                <div class="vs-total-value-text" data-ar="القيمة الإجمالية الكاملة للبرنامج والهدايا:"
-                    data-en="Total Value of the Program and Bonuses:">القيمة الإجمالية الكاملة للبرنامج والهدايا:</div>
-                <div class="vs-old-price-wrap">
-                    <span class="vs-old-price" id="vs-price-old" data-ar="30,000 ج.م" data-en="30,000 EGP">30,000
-                        ج.م</span>
-                </div>
-
-
-                <!-- Animated Reveal -->
-
-
-                <!-- CTA Section -->
-                <div class="vs-cta-section">
-                    <a href="#payment" class="vs-cta-btn">
-                        <div class="vs-btn-shimmer"></div>
-                        <span data-ar="احجز مكانك الان بالخصم" data-en="Reserve Your Spot Now with Discount">احجز مكانك
-                            الان بالخصم</span>
-                    </a>
-
-                    <!-- Trust Badges -->
-                    <div class="vs-trust-badges">
-                        <div class="vs-badge">
-                            <i class="fa-solid fa-lock" style="color: #f59e0b;"></i>
-                            <span data-ar="دفع آمن 100%" data-en="100% Secure Payment">دفع آمن 100%</span>
-                        </div>
-                    </div>
-                </div>
+            <!-- ── Risk removal ──
+                 Directly under the features, because the objections it answers
+                 are the ones a visitor has WHILE reading them. -->
+            <div class="risk-block">
+                <h3 class="risk-title" data-ar="ولو قلقان من حاجة فيهم:"
+                    data-en="And if any of it worries you:">ولو قلقان من حاجة فيهم:</h3>
+                <ul class="risk-list">
+                    <li class="risk-item">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        <span data-ar="مش محتاج خبرة سابقة في أي مجال"
+                            data-en="No prior experience in anything required">مش محتاج خبرة سابقة في أي مجال</span>
+                    </li>
+                    <li class="risk-item">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        <span data-ar="بنبدأ معاك من الصفر خالص من خلال كورس الأساسيات"
+                            data-en="We start you at absolute zero with the foundations course">بنبدأ معاك من الصفر
+                            خالص من خلال كورس الأساسيات</span>
+                    </li>
+                    <li class="risk-item">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        <span data-ar="أياً كان مجالك هتعرف تستخدم الذكاء الاصطناعي فيه"
+                            data-en="Whatever your field is, you'll be able to use AI inside it">أياً كان مجالك هتعرف
+                            تستخدم الذكاء الاصطناعي فيه</span>
+                    </li>
+                    <li class="risk-item">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        <span data-ar="تواصل ودعم سريع طول ما انت مشترك"
+                            data-en="Fast support and a way to reach us for as long as you're subscribed">تواصل ودعم
+                            سريع طول ما انت مشترك</span>
+                    </li>
+                    <li class="risk-item">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        <span data-ar="كل الكورسات متاحة باشتراك واحد في أي باقة — مفيش حاجة مقفولة"
+                            data-en="Every course is included in one subscription on any plan — nothing is locked">كل
+                            الكورسات متاحة باشتراك واحد في أي باقة — مفيش حاجة مقفولة</span>
+                    </li>
+                </ul>
             </div>
+        </div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -1252,500 +1281,28 @@
     <section class="screenshots-section">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow" data-ar="نتائج بالأرقام" data-en="Results in Numbers">نتائج
-                    بالأرقام</span>
+                <span class="section-eyebrow" data-ar="تقييمات الكورسات" data-en="Course ratings">تقييمات
+                    الكورسات</span>
                 <h2 class="section-title" data-html="true"
                     data-ar='مجتمعنا لا يتوقف عن <span style="color: var(--gold)">تحقيق النتائج</span>'
                     data-en='Our community never stops <span style="color: var(--gold)">achieving results</span>'>
                     مجتمعنا لا يتوقف عن
                     <span style="color: var(--gold)">تحقيق النتائج</span>
                 </h2>
-                <p class="section-sub" data-ar="آراء حقيقية من أعضاء المجتمع"
-                    data-en="Real reviews from community members">آراء حقيقية من أعضاء المجتمع</p>
+                <p class="section-sub" data-ar="التقييمات اللي الأعضاء سابوها على الكورسات نفسها، زي ما هي"
+                    data-en="The ratings members left on the courses themselves, exactly as they are">التقييمات اللي
+                    الأعضاء سابوها على الكورسات نفسها، زي ما هي</p>
             </div>
         </div>
 
-        <div class="reviews-marquee-wrapper">
-            <!-- Row 1 scrolls LEFT -->
-            <div class="reviews-row row-left">
-                <div class="reviews-track">
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
-                        </div>
-                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
-                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
-                        </div>
-                        <p class="review-achievement">أسس وكالة stirx.ai</p>
-                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
-                            كورس واحد</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
-                        </div>
-                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
-                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
-                        </div>
-                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
-                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
-                            على قيمة موجودة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
-                        </div>
-                        <p class="review-achievement">أحسن كورس شافه</p>
-                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
-                    </div>
-                    <!-- dup -->
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
-                        </div>
-                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
-                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
-                        </div>
-                        <p class="review-achievement">أسس وكالة stirx.ai</p>
-                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
-                            كورس واحد</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
-                        </div>
-                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
-                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
-                        </div>
-                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
-                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
-                            على قيمة موجودة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
-                        </div>
-                        <p class="review-achievement">أحسن كورس شافه</p>
-                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
-                    </div>
-
-                    <!-- dup 2 -->
-
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
-                        </div>
-                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
-                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
-                        </div>
-                        <p class="review-achievement">أسس وكالة stirx.ai</p>
-                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
-                            كورس واحد</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
-                        </div>
-                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
-                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
-                        </div>
-                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
-                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
-                            على قيمة موجودة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
-                        </div>
-                        <p class="review-achievement">أحسن كورس شافه</p>
-                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
-                    </div>
-                    <!-- dup -->
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ع</div><span class="reviewer-name">عمر عماد</span>
-                        </div>
-                        <p class="review-achievement">جبت أول عميل — عيادة أسنان</p>
-                        <p class="review-text">وانا لسه في نص الكورس جبت اول عميل ليا وكانت عيادة اسنان ودفعوا فلوس حلوه
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">منذر</span>
-                        </div>
-                        <p class="review-achievement">أسس وكالة stirx.ai</p>
-                        <p class="review-text">أخدت كورسات على Udemy و Coursera بس الكم ده من المعلومات عمري ما شوفته في
-                            كورس واحد</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">يوسف دسوقي</span>
-                        </div>
-                        <p class="review-achievement">أفضل كورس في الوطن العربي</p>
-                        <p class="review-text">مفيش كورس متكامل بالشكل ده في الوطن العربي — كل حاجة من الصفر للاحتراف
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">O</div><span class="reviewer-name">oweis</span>
-                        </div>
-                        <p class="review-achievement">شروحات مش موجودة في أي مكان</p>
-                        <p class="review-text">انا استفدت من الكميونتي كتير — شروحات مارح تلاقي بسهولة وبسعر اشتراك قليل
-                            على قيمة موجودة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ك</div><span class="reviewer-name">كريم طارق</span>
-                        </div>
-                        <p class="review-achievement">أحسن كورس شافه</p>
-                        <p class="review-text">خلصت الكورس وشامل كل حاجة ومن أحسن الكورسات اللي شوفتها على الإطلاق</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 2 scrolls RIGHT -->
-            <div class="reviews-row row-right">
-                <div class="reviews-track">
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
-                        </div>
-                        <p class="review-achievement">كارير شيفت ناجح</p>
-                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
-                        </div>
-                        <p class="review-achievement">الشرح بسيط وعملي</p>
-                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
-                            ومبسطة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
-                        </div>
-                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
-                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
-                        </div>
-                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
-                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
-                            والتيوتوريال</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
-                        </div>
-                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
-                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
-                            مجتمع ومتابعة شخصية</p>
-                    </div>
-                    <!-- dup -->
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
-                        </div>
-                        <p class="review-achievement">كارير شيفت ناجح</p>
-                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
-                        </div>
-                        <p class="review-achievement">الشرح بسيط وعملي</p>
-                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
-                            ومبسطة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
-                        </div>
-                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
-                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
-                        </div>
-                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
-                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
-                            والتيوتوريال</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
-                        </div>
-                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
-                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
-                            مجتمع ومتابعة شخصية</p>
-                    </div>
-
-                    <!-- dup 2 -->
-
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
-                        </div>
-                        <p class="review-achievement">كارير شيفت ناجح</p>
-                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
-                        </div>
-                        <p class="review-achievement">الشرح بسيط وعملي</p>
-                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
-                            ومبسطة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
-                        </div>
-                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
-                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
-                        </div>
-                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
-                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
-                            والتيوتوريال</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
-                        </div>
-                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
-                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
-                            مجتمع ومتابعة شخصية</p>
-                    </div>
-                    <!-- dup -->
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ز</div><span class="reviewer-name">زياد تامر</span>
-                        </div>
-                        <p class="review-achievement">كارير شيفت ناجح</p>
-                        <p class="review-text">سبت الميديا باينج وقررت اعمل كارير شيفت وكورس محمد كان احسن كورس انا شفته
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mohamed</span>
-                        </div>
-                        <p class="review-achievement">الشرح بسيط وعملي</p>
-                        <p class="review-text">من اول فيديو الدنيا وضحت والحاجات دي مش صعبة — بتوصل المعلومة بطريقة سهلة
-                            ومبسطة</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ي</div><span class="reviewer-name">ياسين مصطفى</span>
-                        </div>
-                        <p class="review-achievement">أول عميل بعد أسبوعين</p>
-                        <p class="review-text">جبت أول عميل ليا بعد ما خلصت الكورس بأسبوعين فقط — النتائج أسرع مما توقعت
-                        </p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">R</div><span class="reviewer-name">reda</span>
-                        </div>
-                        <p class="review-achievement">قيمة أكبر من السعر بكتير</p>
-                        <p class="review-text">الشرح وافي جدا وكل شرح بينزل بادقه — السعر والله ميجيش على عدد الساعات
-                            والتيوتوريال</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">م</div><span class="reviewer-name">معتز</span>
-                        </div>
-                        <p class="review-achievement">باكج كاملة مش مجرد كورس</p>
-                        <p class="review-text">لقيت حاجات عمري ما سمعت عنها — مش بتشتري كورس أنت بتشتري باكج كاملة فيها
-                            مجتمع ومتابعة شخصية</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 3 scrolls LEFT (slower) -->
-            <div class="reviews-row row-left-slow">
-                <div class="reviews-track">
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mahmoud</span>
-                        </div>
-                        <p class="review-achievement">كمية جهد مش طبيعي</p>
-                        <p class="review-text">شهاده لله — شوفت كميه جهد وتعب مش طبيعي واقسم بالله حب الكميونيتي بتاعتك
-                            ودي شهاده قدام ربنا</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">Y</div><span class="reviewer-name">yosuff</span>
-                        </div>
-                        <p class="review-achievement">شرح عملي مش كوبي بيست</p>
-                        <p class="review-text">شرحك جميل وبسيط وبتعيد الحاجة اكتر من مره — مش بس تطبيق كوبي بيست ده غير
-                            اللي عملته معايا</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">أ</div><span class="reviewer-name">أحمد سمير</span>
-                        </div>
-                        <p class="review-achievement">بدأ يحقق دخل محترم</p>
-                        <p class="review-text">الكورس غير حياتي بالكامل — بقيت فاهم كل حاجة وبدأت اشتغل مع عملاء فعليين
-                            وبحقق دخل</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">س</div><span class="reviewer-name">سارة محمد</span>
-                        </div>
-                        <p class="review-achievement">دعم ومتابعة مستمرة</p>
-                        <p class="review-text">الدعم والمتابعة في الكميونيتي حاجة مش طبيعية — أي سؤال بيتجاوب عليه بسرعة
-                            والمجتمع بيساعد بعضه</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ط</div><span class="reviewer-name">طارق حسن</span>
-                        </div>
-                        <p class="review-achievement">أول كورس حسيت حد عايزني أنجح</p>
-                        <p class="review-text">جربت كورسات كتير بس ده أول كورس حسيت فيه إن حد فعلاً عايزني أنجح — الشرح
-                            واضح والخطوات مرتبة</p>
-                    </div>
-                    <!-- dup -->
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">M</div><span class="reviewer-name">mahmoud</span>
-                        </div>
-                        <p class="review-achievement">كمية جهد مش طبيعي</p>
-                        <p class="review-text">شهاده لله — شوفت كميه جهد وتعب مش طبيعي واقسم بالله حب الكميونيتي بتاعتك
-                            ودي شهاده قدام ربنا</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">Y</div><span class="reviewer-name">yosuff</span>
-                        </div>
-                        <p class="review-achievement">شرح عملي مش كوبي بيست</p>
-                        <p class="review-text">شرحك جميل وبسيط وبتعيد الحاجة اكتر من مره — مش بس تطبيق كوبي بيست ده غير
-                            اللي عملته معايا</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">أ</div><span class="reviewer-name">أحمد سمير</span>
-                        </div>
-                        <p class="review-achievement">بدأ يحقق دخل محترم</p>
-                        <p class="review-text">الكورس غير حياتي بالكامل — بقيت فاهم كل حاجة وبدأت اشتغل مع عملاء فعليين
-                            وبحقق دخل</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">س</div><span class="reviewer-name">سارة محمد</span>
-                        </div>
-                        <p class="review-achievement">دعم ومتابعة مستمرة</p>
-                        <p class="review-text">الدعم والمتابعة في الكميونيتي حاجة مش طبيعية — أي سؤال بيتجاوب عليه بسرعة
-                            والمجتمع بيساعد بعضه</p>
-                    </div>
-                    <div class="text-review-card">
-                        <div class="review-stars">★★★★★</div>
-                        <div class="reviewer-header">
-                            <div class="reviewer-avatar">ط</div><span class="reviewer-name">طارق حسن</span>
-                        </div>
-                        <p class="review-achievement">أول كورس حسيت حد عايزني أنجح</p>
-                        <p class="review-text">جربت كورسات كتير بس ده أول كورس حسيت فيه إن حد فعلاً عايزني أنجح — الشرح
-                            واضح والخطوات مرتبة</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- The wall of rating screenshots, from RATINGS in reviews.js. This
+             used to be three rows of hand-written .text-review-card copies of
+             what members said; the client asked for the real screenshots
+             instead. #reviews above uses the chat shots, this one uses the
+             rating lists, so no picture appears in both. -->
+        <div id="ratingsMarquee"></div>
     </section>
 
-    <!-- ═══════════════════════════════════
-         PAYMENT SECTION — Original Ghawy Pricing Cards
-    ═══════════════════════════════════ -->
     <section class="pricing-section" id="payment" data-pricing-currency="EGP">
         <style>
             #payment .ghawy-pricing-cards {
@@ -2458,11 +2015,11 @@
     <script src="src/js/i18n.js?v=20260805a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260806a"></script>
+    <script src="src/js/catalog.js?v=20260806e"></script>
     <!-- Member reviews — the single source for the testimonials section.
          Adding a review is one entry in this file. -->
-    <script src="src/js/reviews.js?v=20260806a"></script>
-    <script src="src/js/main.js?v=20260806a"></script>
+    <script src="src/js/reviews.js?v=20260806c"></script>
+    <script src="src/js/main.js?v=20260806c"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant
@@ -2895,7 +2452,7 @@
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // Add reveal class to major sections dynamically
-        document.querySelectorAll('.reviews-section, .why-section, .chapters-section, .offer-section, .screenshots-section, .faq-section, .final-cta-section, .payment-section').forEach(s => {
+        document.querySelectorAll('.reviews-section, .instructors-section, .why-section, .chapters-section, .audience-section, .screenshots-section, .faq-section, .final-cta-section, .payment-section').forEach(s => {
             s.classList.add('reveal');
             revealObserver.observe(s);
         });
@@ -2908,38 +2465,18 @@
             const priceCurrency = document.querySelector('.pricing-currency');
             const finalCta = document.querySelector('.final-cta-section .btn-cta');
 
-            const vsMain = document.getElementById('vs-price-main');
-            const vs1 = document.getElementById('vs-price-1');
-            const vs2 = document.getElementById('vs-price-2');
-            const vs3 = document.getElementById('vs-price-3');
-            const vs4 = document.getElementById('vs-price-4');
-            const vsOld = document.getElementById('vs-price-old');
-            const vsNew = document.getElementById('vs-price-new');
-
+            // The #vs-price-* elements are gone with the value stack section:
+            // the client asked for no amount to appear outside the pricing
+            // cards, so there is nothing left here to convert but the plan
+            // price itself.
             if (currency === 'USD') {
                 if (priceAmount) priceAmount.innerText = '600';
                 if (priceCurrency) priceCurrency.innerText = 'USD';
                 if (finalCta) finalCta.innerHTML = 'انضم الآن — 60$ فقط';
-
-                if (vsMain) vsMain.innerText = '200 $';
-                if (vs1) vs1.innerText = '100 $';
-                if (vs2) vs2.innerText = '50 $';
-                if (vs3) vs3.innerText = '170 $';
-                if (vs4) vs4.innerText = '80 $';
-                if (vsOld) vsOld.innerText = '600 $';
-                if (vsNew) vsNew.innerHTML = '60 <span>$</span>';
             } else {
                 if (priceAmount) priceAmount.innerText = '600';
                 if (priceCurrency) priceCurrency.innerText = 'ج.م';
                 if (finalCta) finalCta.innerHTML = 'انضم الآن — ج.م 600 فقط';
-
-                if (vsMain) vsMain.innerText = '10,000 ج.م';
-                if (vs1) vs1.innerText = '5,000 ج.م';
-                if (vs2) vs2.innerText = '2,500 ج.م';
-                if (vs3) vs3.innerText = '8,500 ج.م';
-                if (vs4) vs4.innerText = '4,000 ج.م';
-                if (vsOld) vsOld.innerText = '30,000 ج.م';
-                if (vsNew) vsNew.innerHTML = '600 <span>ج.م</span>';
             }
         }
         setupDynamicPricing();

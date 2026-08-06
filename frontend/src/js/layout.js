@@ -160,7 +160,7 @@ ${navLinks(true)}
                 <p class="footer-copy" data-ar="© 2026 Ghawy. جميع الحقوق محفوظة."
                     data-en="© 2026 Ghawy. All rights reserved.">© 2026 Ghawy. جميع الحقوق محفوظة.</p>
                 <div class="social-icons">
-                    <a href="https://instagram.com/ghawy_official" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
+                    <a href="https://www.instagram.com/ghawy.ai/" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
                         <i class="fa-brands fa-instagram"></i>
                     </a>
                     <a href="https://facebook.com/ghawyofficial" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook">

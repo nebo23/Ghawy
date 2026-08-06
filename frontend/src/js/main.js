@@ -464,7 +464,7 @@ const fadeObserver = new IntersectionObserver(
     { threshold: 0.12 },
 );
 
-document.querySelectorAll(".chapter-card, .text-review-card, .screenshot-card")
+document.querySelectorAll(".chapter-card, .screenshot-card")
     .forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(24px)";
@@ -726,30 +726,11 @@ window.applyCurrencyUI = function (currency) {
         }
     }
 
-    const vsElements = [
-        { id: 'vs-price-main', egp: '10,000 ج.م', usd: '200 USD' },
-        { id: 'vs-price-1', egp: '5,000 ج.م', usd: '100 USD' },
-        { id: 'vs-price-2', egp: '2,500 ج.م', usd: '50 USD' },
-        { id: 'vs-price-3', egp: '8,500 ج.م', usd: '170 USD' },
-        { id: 'vs-price-4', egp: '4,000 ج.م', usd: '80 USD' },
-        { id: 'vs-price-old', egp: '30,000 ج.م', usd: '600 USD' }
-    ];
-
-    vsElements.forEach(item => {
-        const el = document.getElementById(item.id);
-        if (el) {
-            el.innerText = isUSD ? item.usd : item.egp;
-        }
-    });
-
-    const vsPriceNew = document.getElementById('vs-price-new');
-    if (vsPriceNew) {
-        if (isUSD) {
-            vsPriceNew.innerHTML = '60 <span>USD</span>';
-        } else {
-            vsPriceNew.innerHTML = '2,999 <span>ج.م</span>';
-        }
-    }
+    // The #vs-price-* elements this used to rewrite belonged to the value
+    // stack (10,000 for the program, a 30,000 anchor, four priced bonuses).
+    // The client asked for that section to go and for no amount to appear
+    // outside the pricing cards, so the section — and this currency table with
+    // it — is gone. Only the real plan prices are converted now.
 
     document.querySelectorAll('*').forEach(el => {
         if (el.children.length === 0 && el.textContent) {
