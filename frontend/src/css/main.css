@@ -2550,6 +2550,15 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     }
 }
 
+/* The final CTA reuses the methods row from under the pricing cards. */
+.final-cta-methods {
+    margin-top: 34px;
+}
+
+.final-cta-title .stat-members {
+    color: var(--gold);
+}
+
 /* ── Accepted payment methods ── */
 .pricing-methods-block {
     margin-top: 46px;
@@ -8627,11 +8636,82 @@ h1.hero-heading-single>span {
     color: var(--green, #c1ff11);
 }
 
-.footer-phone {
+/* The contact column: WhatsApp then email, each an icon and its value. */
+.footer-contact-link {
     display: flex;
     align-items: center;
     gap: 8px;
     width: fit-content;
+}
+
+.footer-contact-link i {
+    width: 18px;
+    text-align: center;
+    color: var(--gold);
+}
+
+/* ── "Join us as an instructor" ──
+   Its own row at the very bottom rather than a line in the quick links: it is
+   a different kind of ask (write to us with your CV) and reads as a nav item
+   if it sits among page links. */
+.footer-join {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 34px;
+    padding: 22px 26px;
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+    background: var(--gold-subtle);
+}
+
+.footer-join-body {
+    min-width: 260px;
+    flex: 1;
+}
+
+.footer-join-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--off-white);
+    margin-bottom: 6px;
+}
+
+.footer-join-text {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: var(--muted-light);
+    margin: 0;
+}
+
+.footer-join-btn {
+    flex-shrink: 0;
+    padding: 12px 26px;
+    border-radius: 100px;
+    background: var(--gold);
+    color: #000;
+    font-weight: 800;
+    font-size: 0.88rem;
+    text-decoration: none;
+    transition: filter 0.25s, transform 0.25s;
+}
+
+.footer-join-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+    .footer-join {
+        padding: 20px;
+    }
+
+    .footer-join-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 .social-icon i {

@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260806g">
+    <link rel="stylesheet" href="src/css/main.css?v=20260806h">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -268,7 +268,7 @@
      back in here; edit layout.js instead.
     ════════════════════════════════════════ -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260806a"></script>
+    <script src="src/js/layout.js?v=20260806b"></script>
 
     <!-- ════════════════════════════════════════
      AUTH MODALS
@@ -1349,44 +1349,48 @@
     <!-- ════════════════════════════════════════
      FINAL CTA
     ════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════
+     FINAL CTA
+     Both numbers in the headline are real and neither is typed here: the
+     member count is the same GET /stats/public the hero reads (so the page can
+     never show two different figures), and the course count is
+     GhawyCatalog.COURSES.length. The old copy carried a hardcoded "+350
+     مشترك" alongside a hero already showing a live number.
+
+     Gone with it: "ضمان 3 أيام" — there is no refund window under the current
+     policy, so advertising one was telling visitors something untrue at the
+     moment they decide — and "دعم مدي الحياة", which contradicts access
+     ending when a subscription lapses.
+    ════════════════════════════════════════ -->
     <section class="final-cta-section" id="checkout">
         <div class="container">
             <div class="centered">
                 <span class="section-eyebrow" data-ar="الخطوة الأخيرة" data-en="Final Step">الخطوة الأخيرة</span>
                 <div class="section-divider"></div>
-                <h2 class="section-title" style="max-width: 600px; margin-inline: auto"
-                    data-ar="القرار ده ممكن يكون أهم قرار بتاخده في 2026, يا هتبدأ دلوقتي, يا كأن مفيش حاجه حصلت"
-                    data-en="This decision could be the most important one you make in 2026. Either you start now, or it's as if nothing happened">
-                    القرار ده ممكن يكون أهم قرار بتاخده في 2026, يا هتبدأ دلوقتي, يا كأن
-                    مفيش حاجه حصلت
+
+                <h2 class="section-title final-cta-title" id="finalCtaTitle"
+                    style="max-width: 720px; margin-inline: auto">
+                    <!-- filled by the script below; the markup here is the
+                         skeleton state, not a number anyone should read -->
                 </h2>
+
                 <p class="section-sub" style="margin: 0 auto 36px"
-                    data-ar="سوق الـ AI بينمو بشكل تاريخي كأسرع سوق واكبر ثورة تكنولوجيه في التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية والوقت فات."
-                    data-en="The AI market is growing historically as the fastest market and biggest technological revolution in history. Those who start today win. Those who delay will face fierce competition when it's too late.">
-                    سوق الـ AI بينمو بشكل تاريخي كأسرع سوق واكبر ثورة تكنولوجيه في
-                    التاريخ, اللي يبدأ النهاردة يكسب. واللي يتأخر هيلاقي المنافسة قوية
-                    والوقت فات.
+                    data-ar="سوق الـ AI بينمو أسرع من أي مجال تاني — واللي يبدأ دلوقتي بيلحق. اختار باقتك وابدأ من أول درس النهاردة."
+                    data-en="AI is growing faster than any other field, and the people who start now are the ones who keep up. Pick your plan and start from the first lesson today.">
+                    سوق الـ AI بينمو أسرع من أي مجال تاني — واللي يبدأ دلوقتي بيلحق. اختار باقتك وابدأ من أول درس
+                    النهاردة.
                 </p>
+
                 <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta"
-                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px" data-ar="انضم الآن — EGP 600 فقط"
-                    data-en="Join Now — Only EGP 600">
-                    انضم الآن — EGP 600 فقط
-                </a>
-                <!-- The "pay via Instapay / Vodafone Cash" shortcut that sat here
-                     is gone. It jumped straight to pay.html, skipping the step
-                     that tells you Instapay is manual and that access is not
-                     immediate — which is the one thing someone choosing it has
-                     to be told first. Every route to a payment now goes through
-                     the plan cards and their checkout step. -->
-                <div class="cta-sub-note" style="margin-top: 18px">
-                    <span class="note-item"><i class="fa-solid fa-users"></i> <span data-ar="+350 مشترك"
-                            data-en="+350 Members">+350 مشترك</span></span>
-                    <span class="note-item"><i class="fa-solid fa-circle-check"></i> <span data-ar="ضمان 3 أيام"
-                            data-en="3 Days Guarantee">ضمان 3 أيام</span></span>
-                    <span class="note-item"><i class="fa-solid fa-bolt"></i> <span data-ar="وصول فوري"
-                            data-en="Instant Access">وصول فوري</span></span>
-                    <span class="note-item"><i class="fa-solid fa-infinity"></i> <span data-ar="دعم مدي الحياة"
-                            data-en="Lifetime Support">دعم مدي الحياة</span></span>
+                    style="font-size: clamp(1.1rem, 3vw, 1.4rem); padding: 20px 52px"
+                    data-ar="اشترك الآن" data-en="Subscribe now">اشترك الآن</a>
+
+                <!-- Same row as under the pricing cards, from METHODS in
+                     src/js/pricing.js — one list, rendered twice. -->
+                <div class="final-cta-methods">
+                    <p class="pay-methods-label" data-ar="طرق الدفع المتاحة" data-en="Accepted payment methods">طرق
+                        الدفع المتاحة</p>
+                    <div data-pay-methods></div>
                 </div>
             </div>
         </div>
@@ -1418,7 +1422,7 @@
     <script src="src/js/pricing.js?v=20260806a"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
     <script src="src/js/faq.js?v=20260806a"></script>
-    <script src="src/js/main.js?v=20260806d"></script>
+    <script src="src/js/main.js?v=20260806e"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant

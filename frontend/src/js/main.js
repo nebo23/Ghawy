@@ -414,8 +414,57 @@ setInterval(fetchLastPurchase, 10000);
 // ═══════════════════════════════════════════
 //   DOMContentLoaded — Init All Components
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//   Final CTA headline
+// ═══════════════════════════════════════════
+/**
+ * "انضم الآن لأكثر من N عضو وابدأ رحلتك في الذكاء الاصطناعي مع أكثر من M كورس"
+ *
+ * Neither number is written into the page. M is GhawyCatalog.COURSES.length,
+ * so it moves the day a course is added. N is a `.counter-value[data-stat=
+ * "members"]` span exactly like the hero's — which means loadPublicStats()
+ * picks it up in the same pass and fills both from ONE call to /stats/public.
+ * That is the point: the previous copy said "+350 مشترك" a screen below a hero
+ * already showing the live figure, and the two disagreed.
+ *
+ * Built here rather than written in the markup because the sentence wraps
+ * around the count, so the Arabic and the English need different word order
+ * around it and neither can be produced by swapping one <span>.
+ */
+window.renderFinalCtaTitle = function () {
+    const el = document.getElementById('finalCtaTitle');
+    if (!el) return;
+
+    const courses = (window.GhawyCatalog && window.GhawyCatalog.COURSES)
+        ? window.GhawyCatalog.COURSES.length : 0;
+    if (!courses) return;   // no invented number if catalog.js didn't load
+
+    const lang = localStorage.getItem('ghawy_lang') === 'en' ? 'en' : 'ar';
+    // data-stat-pending keeps the skeleton up until the real count lands; the
+    // data-target here is only what it counts to if the endpoint never answers.
+    const members = '<span class="counter-value stat-members" data-stat="members"'
+        + ' data-stat-pending="1" data-target="1000">0</span>'
+        + '<span class="stat-plus">+</span>'
+        + '<span class="stat-skeleton" aria-hidden="true"></span>';
+
+    el.innerHTML = lang === 'en'
+        ? `Join more than ${members} members and start your journey into AI with more than ${courses} courses`
+        : `انضم الآن لأكثر من ${members} عضو وابدأ رحلتك في الذكاء الاصطناعي مع أكثر من ${courses} كورس`;
+};
+
+document.addEventListener('languagechange', () => {
+    if (!window.renderFinalCtaTitle) return;
+    window.renderFinalCtaTitle();
+    // The rebuilt span is a fresh node with no data-counter-bound, so it needs
+    // the number put back and the observer re-attached.
+    if (window.loadPublicStats) window.loadPublicStats();
+});
+
 document.addEventListener("DOMContentLoaded", () => {
     if (window.initCoursesCarousel) window.initCoursesCarousel();
+    // Before loadPublicStats: the headline creates one of the member counters
+    // it fills, so it has to exist by the time that query runs.
+    if (window.renderFinalCtaTitle) window.renderFinalCtaTitle();
     // Static counters start immediately; the member counters are held back
     // until loadPublicStats() has a real number for them.
     if (window.initCounterUp) window.initCounterUp();

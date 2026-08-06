@@ -111,12 +111,16 @@ ${navLinks(true)}
     }
 
     // ─── Footer ──────────────────────────────────────────────────
-    // A straight port of the footer that used to be inline in index.html —
-    // same columns, same copy, same links. In particular the quick links still
-    // point at the home-page anchors (#modules, #reviews, #features,
-    // #checkout) rather than the new standalone pages: rewiring them is a
-    // later phase, and they work from every page because they are absolute
-    // (index.html#...).
+    // The quick links used to be home-page anchors (#modules, #reviews,
+    // #features, #checkout) left over from when the site was one page. They
+    // are the real standalone pages now — /tracks, /courses, /pricing,
+    // /instructors — plus the one thing that genuinely still is a section on
+    // the home page, the features.
+    //
+    // ⚠ The social links: the client said three new ones were coming by email.
+    // Only Instagram has arrived (instagram.com/ghawy.ai) and it is in below.
+    // Facebook and TikTok are still the old `ghawyofficial` / `ghawy_official`
+    // guesses and have NOT been confirmed — replace them when the links land.
     function footerHTML() {
         const link = (href, ar, en) =>
             `<a href="${href}" class="footer-link" data-ar="${ar}" data-en="${en}">${ar}</a>`;
@@ -128,18 +132,19 @@ ${navLinks(true)}
                 <div class="footer-col">
                     <h3 class="footer-heading" data-ar="عن غاوي" data-en="About Ghawy">عن غاوي</h3>
                     <p class="footer-about"
-                        data-ar="منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة."
-                        data-en="Ghawy is the best place to learn AI and build your own agency step by step.">
-                        منصة الغاوي هي المكان الأفضل لتعلم الذكاء الاصطناعي وبناء وكالتك الخاصة خطوة بخطوة.
+                        data-ar="منصة غاوي هي أكبر منصة لتعليم كافة مجالات الذكاء الاصطناعي لمختلف المجالات والاستخدامات في الشرق الأوسط."
+                        data-en="Ghawy is the Middle East's largest platform for teaching every area of artificial intelligence, across every field and use case.">
+                        منصة غاوي هي أكبر منصة لتعليم كافة مجالات الذكاء الاصطناعي لمختلف المجالات والاستخدامات في الشرق الأوسط.
                     </p>
                 </div>
 
                 <div class="footer-col">
                     <h3 class="footer-heading" data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
-                    ${link('index.html#modules', 'الكورسات', 'Courses')}
-                    ${link('index.html#reviews', 'آراء المشتركين', 'Reviews')}
+                    ${link('/tracks', 'المسارات', 'Tracks')}
+                    ${link('/courses', 'الكورسات', 'Courses')}
+                    ${link('/pricing', 'الأسعار', 'Pricing')}
+                    ${link('/instructors', 'المدربون', 'Instructors')}
                     ${link('index.html#features', 'المميزات', 'Features')}
-                    ${link('index.html#checkout', 'الأسعار', 'Pricing')}
                 </div>
 
                 <div class="footer-col">
@@ -150,10 +155,33 @@ ${navLinks(true)}
 
                 <div class="footer-col footer-col-contact">
                     <h3 class="footer-heading" data-ar="تواصل معنا" data-en="Contact Us">تواصل معنا</h3>
-                    <a href="tel:+201033903334" class="footer-link footer-phone">
-                        <i class="fa-solid fa-phone"></i> <span dir="ltr">01033903334</span>
+                    <!-- WhatsApp rather than a plain phone icon: this number is
+                         reached on WhatsApp, and tapping a phone glyph to open a
+                         dialler is not what most people want from it. -->
+                    <a href="https://wa.me/201033903334" target="_blank" rel="noopener"
+                       class="footer-link footer-contact-link">
+                        <i class="fa-brands fa-whatsapp"></i> <span dir="ltr">01033903334</span>
+                    </a>
+                    <a href="mailto:support@ghawy.ai" class="footer-link footer-contact-link">
+                        <i class="fa-solid fa-envelope"></i> <span dir="ltr">support@ghawy.ai</span>
                     </a>
                 </div>
+            </div>
+
+            <!-- Last thing in the footer, on its own row: instructors are
+                 recruited here, and burying it in a column of quick links would
+                 read as one more nav item. -->
+            <div class="footer-join">
+                <div class="footer-join-body">
+                    <h4 class="footer-join-title" data-ar="انضم كمدرب" data-en="Join us as an instructor">انضم كمدرب</h4>
+                    <p class="footer-join-text"
+                        data-ar="لو عندك خبرة أكتر من 3 سنين في مجالك وعايز تدي كورسات معانا، ابعتلنا على support@ghawy.ai بأكونتاتك وخبرتك وهتدرّب إيه."
+                        data-en="If you have more than 3 years of experience in your field and want to teach with us, email support@ghawy.ai with your accounts, your background, and what you would teach.">
+                        لو عندك خبرة أكتر من 3 سنين في مجالك وعايز تدي كورسات معانا، ابعتلنا على support@ghawy.ai بأكونتاتك وخبرتك وهتدرّب إيه.
+                    </p>
+                </div>
+                <a class="footer-join-btn" href="mailto:support@ghawy.ai?subject=%D8%A7%D9%86%D8%B6%D9%85%D8%A7%D9%85%20%D9%83%D9%85%D8%AF%D8%B1%D8%A8%20-%20Ghawy"
+                   data-ar="ابعتلنا" data-en="Email us">ابعتلنا</a>
             </div>
 
             <div class="footer-bottom">
