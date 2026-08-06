@@ -425,14 +425,10 @@ document.addEventListener("DOMContentLoaded", () => {
 // ═══════════════════════════════════════════
 //   FAQ Accordion
 // ═══════════════════════════════════════════
-document.querySelectorAll(".faq-q").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        const item = btn.parentElement;
-        const isOpen = item.classList.contains("open");
-        document.querySelectorAll(".faq-item").forEach((el) => el.classList.remove("open"));
-        if (!isOpen) item.classList.add("open");
-    });
-});
+// Moved to src/js/faq.js along with the questions themselves. This ran once at
+// load and bound one listener per .faq-q, which no longer works now that the
+// rows are rendered — and a second binding here would have toggled every row
+// twice, cancelling itself out.
 
 // ═══════════════════════════════════════════
 //   Sticky CTA Bar
@@ -519,6 +515,19 @@ function setLoading(btnId, loading) {
     if (!btn) return;
     btn.disabled = loading;
     btn.classList.toggle('loading', loading);
+}
+
+// Same function utils.js exposes, repeated here for the same reason showAlert
+// and setLoading already are: main.js and utils.js can never be loaded on the
+// same page (they both declare a top-level `const API`), so the landing page
+// only gets what main.js defines. The checkout calls showToast on a failed
+// payment and was hitting a ReferenceError inside its own catch block.
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type || 'success'}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
 function getToken() { return localStorage.getItem('token'); }

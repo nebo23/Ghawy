@@ -2227,83 +2227,6 @@ footer a:hover {
     position: relative;
 }
 
-/* ── Monthly/Yearly Toggle ── */
-.pricing-toggle-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 32px auto 0;
-}
-
-.pricing-toggle-label {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--muted);
-    transition: color 0.3s;
-    cursor: pointer;
-}
-
-.pricing-toggle-label.active {
-    color: var(--white);
-}
-
-.pricing-toggle {
-    position: relative;
-    display: inline-block;
-    width: 52px;
-    height: 28px;
-    cursor: pointer;
-}
-
-.pricing-toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.pricing-toggle-slider {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 100px;
-    border: 1px solid rgba(193, 255, 17, 0.2);
-    transition: background 0.3s, border-color 0.3s;
-}
-
-.pricing-toggle-slider::before {
-    content: "";
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    right: 3px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--gold);
-    border-radius: 50%;
-    transition: transform 0.3s;
-    box-shadow: 0 0 8px rgba(193, 255, 17, 0.4);
-}
-
-.pricing-toggle input:checked+.pricing-toggle-slider {
-    background: rgba(193, 255, 17, 0.12);
-    border-color: rgba(193, 255, 17, 0.4);
-}
-
-.pricing-toggle input:checked+.pricing-toggle-slider::before {
-    transform: translateY(-50%) translateX(-24px);
-}
-
-.pricing-save-badge {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: #000;
-    background: var(--gold);
-    padding: 3px 10px;
-    border-radius: 100px;
-    letter-spacing: 0.5px;
-}
-
 .pricing-card {
     max-width: 440px;
     margin: 48px auto 0;
@@ -2453,41 +2376,6 @@ footer a:hover {
     font-weight: 600;
 }
 
-/* Divider */
-.pricing-divider {
-    height: 1px;
-    background: linear-gradient(90deg,
-            transparent,
-            rgba(193, 255, 17, 0.15),
-            transparent);
-    margin: 0;
-}
-
-/* Features */
-.pricing-features {
-    list-style: none;
-    padding: 24px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.pricing-features li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.88rem;
-    color: var(--muted-light);
-    font-weight: 600;
-}
-
-.pricing-features li i {
-    color: #ffffff;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-}
-
-/* CTA */
 .pricing-cta {
     display: block;
     width: 100%;
@@ -2539,10 +2427,6 @@ footer a:hover {
         padding: 16px 20px 24px;
     }
 
-    .pricing-features {
-        padding: 24px 20px;
-    }
-
     .pricing-cta {
         width: calc(100% - 40px);
         margin: 0 auto 16px;
@@ -2553,15 +2437,446 @@ footer a:hover {
         padding: 0 20px 24px;
     }
 
-    .pricing-divider {
-        margin: 0 20px;
-    }
-
     .pricing-amount {
         font-size: 2.8rem;
     }
 }
 
+
+/* ════════════════════════════════════════════════════════
+        PRICING GRID, COMPARISON, PAYMENT METHODS, CHECKOUT STEP
+        The grid rules used to be an inline <style> inside #payment on
+        index.html. /pricing renders the same cards from the same file, so
+        they live here where both pages can see them.
+      ════════════════════════════════════════════════════════ */
+
+/* LTR on the row so "monthly, quarterly, yearly" comes out in that order left
+   to right in both languages — the 3-month card in the middle and the yearly
+   one on the right is the client's layout, and it should not flip with the
+   document. Each card is put back to the document's own direction. */
+.ghawy-pricing-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 30px;
+    /* stretch, so the three cards are one height and the three buttons sit on
+       one line — the yearly card carries an extra "6 months free" line and the
+       monthly one carries no struck price, so left to themselves they come out
+       three different heights and the row looks accidental */
+    align-items: stretch;
+    direction: ltr;
+    margin-top: 48px;
+}
+
+.ghawy-pricing-cards .pricing-card {
+    display: flex;
+    flex-direction: column;
+    direction: rtl;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 40px 28px 30px;
+}
+
+html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
+    direction: ltr;
+}
+
+.pricing-card-featured {
+    z-index: 2;
+    transform: translateY(-12px) scale(1.045);
+    border-color: rgba(193, 255, 17, 0.42);
+    box-shadow:
+        0 0 90px rgba(193, 255, 17, 0.12),
+        0 30px 90px rgba(0, 0, 0, 0.62);
+}
+
+.pricing-card-featured .pricing-card-glow {
+    height: 3px;
+    opacity: 1;
+}
+
+/* The struck-through reference price. It is not an invented anchor: it is what
+   the same period costs at the monthly rate, so 1800 above 1200 and 7200 above
+   3500. The monthly card has none — it IS the rate. */
+.pricing-was {
+    text-align: center;
+    margin-bottom: 4px;
+    min-height: 22px;
+}
+
+.pricing-was s {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-decoration-color: rgba(239, 68, 68, 0.75);
+    text-decoration-thickness: 2px;
+}
+
+.pricing-extra {
+    display: block;
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--gold);
+}
+
+.ghawy-pricing-cards .pricing-plan-sub {
+    margin: 18px 0 22px;
+    line-height: 1.7;
+    /* pushes the button to the bottom edge so all three line up */
+    flex: 1;
+}
+
+.ghawy-pricing-cards .pricing-cta {
+    margin-top: auto;
+}
+
+@media (max-width: 1100px) {
+    .ghawy-pricing-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+    }
+
+    .pricing-card-featured {
+        transform: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .ghawy-pricing-cards {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+}
+
+/* ── Accepted payment methods ── */
+.pricing-methods-block {
+    margin-top: 46px;
+    text-align: center;
+}
+
+.pay-methods-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+}
+
+.pay-methods {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pay-method {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted-light);
+}
+
+/* Font Awesome has brand marks for the three card networks and nothing for
+   Meeza, InstaPay, the two wallets or Fawry. Those are a name on a chip rather
+   than a generic glyph pretending to be a logo. */
+.pay-method i {
+    font-size: 1.25rem;
+    color: var(--off-white);
+}
+
+.pay-methods-note {
+    max-width: 620px;
+    margin: 18px auto 0;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--muted);
+}
+
+.pricing-more {
+    margin-top: 34px;
+}
+
+/* ── The comparison ── */
+.pricing-compare-section {
+    padding: 90px 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.pc-compare {
+    margin-top: 48px;
+}
+
+/* A wide table can always outgrow a narrow window; it scrolls inside its own
+   box so the page body never does. */
+.pc-table-wrap {
+    overflow-x: auto;
+}
+
+.pc-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.pc-table th,
+.pc-table td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    text-align: start;
+    vertical-align: top;
+    line-height: 1.7;
+}
+
+.pc-table thead th {
+    font-size: 0.92rem;
+    font-weight: 900;
+    color: var(--off-white);
+    border-bottom-color: var(--gold-border);
+}
+
+/* The 3-month column is the one the client wants picked, so it is tinted the
+   same way its card is raised. */
+.pc-table th:nth-child(3),
+.pc-table td:nth-child(3) {
+    background: var(--gold-subtle);
+}
+
+.pc-table tbody th {
+    font-weight: 800;
+    color: var(--muted-light);
+    white-space: nowrap;
+}
+
+.pc-table tbody td {
+    color: var(--off-white);
+    font-weight: 700;
+}
+
+.pc-table tbody tr:last-child th,
+.pc-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* The phone version. Same COMPARE_ROWS, one block per plan — a four-column
+   table of Arabic sentences is unreadable at 360px. */
+.pc-stack {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pc-stack-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 20px;
+}
+
+.pc-stack-name {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--gold);
+    margin-bottom: 14px;
+}
+
+.pc-stack-list {
+    margin: 0;
+}
+
+.pc-stack-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.83rem;
+    line-height: 1.6;
+}
+
+.pc-stack-row:last-child {
+    border-bottom: none;
+}
+
+.pc-stack-row dt {
+    color: var(--muted);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.pc-stack-row dd {
+    margin: 0;
+    color: var(--off-white);
+    font-weight: 700;
+    text-align: end;
+}
+
+@media (max-width: 860px) {
+    .pc-table-wrap {
+        display: none;
+    }
+
+    .pc-stack {
+        display: flex;
+    }
+}
+
+/* ── The checkout step ──
+   "اشترك الآن" opens this instead of starting a payment. The two options are
+   not equivalent — card/wallet opens access immediately, InstaPay is a receipt
+   a person reads — so the warning is part of the option, not small print. */
+.pay-choice {
+    max-width: 520px;
+    text-align: start;
+}
+
+.pay-choice .card-title {
+    text-align: center;
+}
+
+.pay-choice .card-sub {
+    text-align: center;
+    margin-bottom: 26px;
+}
+
+.pay-was {
+    color: var(--muted);
+    text-decoration-color: rgba(239, 68, 68, 0.75);
+    margin-inline-start: 8px;
+}
+
+.pay-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 18px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--off-white);
+    font-family: "Cairo", sans-serif;
+    text-align: start;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.25s;
+}
+
+.pay-option:hover:not(:disabled) {
+    border-color: var(--gold-border);
+    background: var(--gold-subtle);
+    transform: translateY(-2px);
+}
+
+.pay-option:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.pay-option--primary {
+    border-color: var(--gold-border);
+}
+
+.pay-option-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold-subtle);
+    border: 1px solid var(--gold-border);
+    color: var(--gold);
+    font-size: 1.05rem;
+}
+
+.pay-option-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.pay-option-title {
+    font-size: 0.98rem;
+    font-weight: 800;
+}
+
+.pay-option-note {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.7;
+    color: var(--muted-light);
+}
+
+.pay-option-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.7;
+    color: #ffd9a1;
+}
+
+.pay-option-warn i {
+    flex-shrink: 0;
+    margin-top: 4px;
+    color: #f59e0b;
+}
+
+@media (max-width: 520px) {
+    .pay-choice {
+        padding: 40px 20px 24px;
+    }
+
+    .pay-option {
+        padding: 16px 14px;
+        gap: 11px;
+    }
+}
+
+/* ── /pricing page bits ── */
+.pricing-page .page-shell-head {
+    margin-bottom: 0;
+}
+
+.pricing-help {
+    margin-top: 40px;
+}
+
+.pricing-help-text {
+    font-size: 0.88rem;
+    color: var(--muted-light);
+    margin-bottom: 14px;
+}
+
+/* Visible to a screen reader, not on screen — the comparison table's first
+   header cell, which has to be announced but would only be clutter drawn. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 
 /* WhatsApp link inside pricing card */
 .pricing-whatsapp {
@@ -4246,6 +4561,62 @@ footer a:hover {
 
     .hi-name {
         font-size: 1.05rem;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+   showToast() has been called from utils.js, pay.js and the checkout for a
+   long time and every one of those calls produced a bare <div class="toast">
+   with no rule anywhere in the project to style it — an unstyled block
+   dropped at the end of <body>, which on a dark page is an invisible error
+   message. These are the rules it always assumed it had.
+═══════════════════════════════════════════ */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4000;
+    max-width: min(440px, calc(100vw - 32px));
+    padding: 14px 22px;
+    border-radius: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--off-white);
+    font-family: "Cairo", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.6;
+    text-align: center;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+    animation: toastIn 0.28s ease;
+}
+
+.toast.success {
+    border-color: var(--gold-border);
+}
+
+.toast.error {
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #ffe3e3;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
     }
 }
 
@@ -8360,33 +8731,6 @@ html[dir="ltr"] .hero-cta-row,
 html[dir="ltr"] .hero-stats-inline,
 html[dir="ltr"] .info-item {
     /* Removed flex-direction: row; */
-}
-
-/* ─── Pricing features list direction ─── */
-/* Icon side is controlled by `direction` alone (flex-direction stays row).
-   RTL → icon on the right; LTR → icon on the left. */
-html[dir="rtl"] .pricing-features {
-    direction: rtl;
-}
-html[dir="rtl"] .pricing-features li {
-    flex-direction: row;
-    text-align: right;
-}
-html[dir="rtl"] .pricing-features li i {
-    margin-left: 0;
-    margin-right: 0;
-}
-
-html[dir="ltr"] .pricing-features {
-    direction: ltr;
-}
-html[dir="ltr"] .pricing-features li {
-    flex-direction: row;
-    text-align: left;
-}
-html[dir="ltr"] .pricing-features li i {
-    margin-left: 0;
-    margin-right: 0;
 }
 
 html[dir="rtl"] .hero-left,

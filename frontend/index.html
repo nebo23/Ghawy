@@ -81,7 +81,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260806d">
+    <link rel="stylesheet" href="src/css/main.css?v=20260806g">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -165,30 +165,6 @@
         /* ─── PRICING SECTION ─── */
         [dir="rtl"] .pricing-card {
             text-align: right;
-        }
-
-        [dir="rtl"] .pricing-features {
-            direction: rtl;
-        }
-
-        [dir="rtl"] .pricing-features li {
-            flex-direction: row;
-            text-align: right;
-        }
-
-        [dir="rtl"] .pricing-features li svg,
-        [dir="rtl"] .pricing-features li i {
-            margin-right: 0;
-            margin-left: 0;
-        }
-
-        [dir="ltr"] .pricing-features {
-            direction: ltr;
-        }
-
-        [dir="ltr"] .pricing-features li {
-            flex-direction: row;
-            text-align: left;
         }
 
         /* ─── EXPLICIT GRID DIRECTION FIX ─── */
@@ -1303,544 +1279,49 @@
         <div id="ratingsMarquee"></div>
     </section>
 
-    <section class="pricing-section" id="payment" data-pricing-currency="EGP">
-        <style>
-            #payment .ghawy-pricing-cards {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 30px;
-                align-items: center;
-                direction: ltr;
-                margin-top: 48px;
-            }
+    <!-- ════════════════════════════════════════
+     PRICING — the short version
+     Three cards, the accepted-payment row, and a link to /pricing for the
+     rest. The plans, the prices, the badges and the checkout all come from
+     src/js/pricing.js; this page holds no amount of its own, and neither does
+     /pricing. There used to be a copy of every price here in an inline
+     `pricingPlans` object under the markup, which is exactly the arrangement
+     that lets two pages quote different numbers.
 
-            #payment .pricing-card {
-                display: flex;
-                flex-direction: column;
-                direction: rtl;
-                width: 100%;
-                max-width: none;
-                min-height: 610px;
-                margin: 0;
-            }
-
-            #payment .pricing-card-featured {
-                z-index: 2;
-                transform: translateY(-12px) scale(1.045);
-                border-color: rgba(193, 255, 17, 0.42);
-                box-shadow:
-                    0 0 90px rgba(193, 255, 17, 0.12),
-                    0 30px 90px rgba(0, 0, 0, 0.62);
-            }
-
-            #payment .pricing-card-featured .pricing-card-glow {
-                height: 3px;
-                opacity: 1;
-            }
-
-            #payment .pricing-card-featured .pricing-badge {
-                background: linear-gradient(135deg, #c1ff11, #c1ff11);
-                box-shadow: 0 0 28px rgba(193, 255, 17, 0.24);
-            }
-
-            #payment .pricing-price-block {
-                min-height: 136px;
-            }
-
-            #payment .pricing-features {
-                flex: 1;
-            }
-
-            #payment .pricing-payment-note {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                margin-top: -4px;
-                color: var(--muted);
-                font-size: 0.78rem;
-                font-weight: 700;
-                line-height: 1.6;
-                text-align: center;
-            }
-
-            #payment .pricing-payment-note i {
-                color: var(--muted-light);
-                font-size: 0.82rem;
-            }
-
-            #payment .pricing-instapay-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                width: 100%;
-                margin: -4px 0 14px;
-                padding: 13px 16px;
-                border: 1px solid rgba(193, 255, 17, 0.18);
-                border-radius: 14px;
-                color: var(--muted-light);
-                background: rgba(255, 255, 255, 0.03);
-                font-family: "Cairo", sans-serif;
-                font-size: 0.9rem;
-                font-weight: 800;
-                text-decoration: none;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-
-            #payment .pricing-instapay-btn:hover {
-                color: var(--gold);
-                border-color: rgba(193, 255, 17, 0.38);
-                background: rgba(193, 255, 17, 0.06);
-                transform: translateY(-2px);
-            }
-
-            #payment .pricing-instapay-btn i {
-                color: var(--gold);
-            }
-
-            #payment[data-pricing-currency="USD"] .pricing-instapay-btn {
-                display: none;
-            }
-
-            @media (max-width: 1100px) {
-                #payment .ghawy-pricing-cards {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    align-items: stretch;
-                }
-
-                #payment .pricing-card-featured {
-                    transform: none;
-                }
-            }
-
-            @media (max-width: 720px) {
-                #payment .ghawy-pricing-cards {
-                    grid-template-columns: 1fr;
-                }
-
-                #payment .pricing-card {
-                    min-height: 0;
-                }
-            }
-        </style>
-
+     The id stays `payment` — the sticky bar, the hero button and the drawer
+     all link to #payment.
+    ════════════════════════════════════════ -->
+    <section class="pricing-section" id="payment">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow" data-ar="ابدأ دلوقتي" data-en="Get Started">ابدأ دلوقتي</span>
+                <span class="section-eyebrow" data-ar="الأسعار" data-en="Pricing">الأسعار</span>
+                <div class="section-divider"></div>
                 <h2 class="section-title" data-html="true"
-                    data-ar='أسعار <span style="color: var(--gold)">بسيطة.</span> قيمة قصوى.'
-                    data-en='Simple <span style="color: var(--gold)">Pricing.</span> Maximum Value.'>Simple <span
-                        style="color: var(--gold)">Pricing.</span> Maximum Value.</h2>
-                <p class="section-sub" data-ar="اختار الخطة اللي تناسب رحلتك."
-                    data-en="Choose the plan that fits your journey.">اختار الخطة اللي تناسب رحلتك.</p>
+                    data-ar='باقة واحدة، و<span style="color: var(--gold)">كل الكورسات</span> مفتوحة'
+                    data-en='One plan, and <span style="color: var(--gold)">every course</span> is open'>
+                    باقة واحدة، و<span style="color: var(--gold)">كل الكورسات</span> مفتوحة
+                </h2>
+                <p class="section-sub"
+                    data-ar="الفرق بين الباقات في المدة والسعر بس — المحتوى واحد في التلاتة، ومفيش حاجة مقفولة في أي باقة"
+                    data-en="The plans differ in duration and price only — the content is the same in all three, and nothing is locked on any of them.">
+                    الفرق بين الباقات في المدة والسعر بس — المحتوى واحد في التلاتة، ومفيش حاجة مقفولة في أي باقة
+                </p>
             </div>
 
-            <input type="checkbox" id="pricingToggle" hidden aria-hidden="true">
+            <!-- cards from src/js/pricing.js -->
+            <div id="pricingPlans"></div>
 
-            <div class="ghawy-pricing-cards">
-                <div class="pricing-card" data-plan-card="monthly">
-                    <div class="pricing-card-glow"></div>
-
-                    <h3 class="pricing-plan-name" data-ar="التجربة" data-en="Starter">التجربة</h3>
-                    <p class="pricing-plan-sub" data-ar="اختبار أولي قبل الالتزام." data-en="Try before you commit.">
-                        اختبار أولي قبل الالتزام.</p>
-
-                    <div class="pricing-price-block">
-                        <div class="pricing-current">
-                            <span class="pricing-amount" data-plan-amount>600</span>
-                            <div class="pricing-currency-col">
-                                <span class="pricing-currency" data-plan-currency>ج.م</span>
-                                <span class="pricing-period-label" data-plan-period>شهرياً</span>
-                            </div>
-                        </div>
-                        <span class="pricing-period" data-plan-note>تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك.</span>
-                    </div>
-
-                    <div class="pricing-divider"></div>
-
-                    <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="افتح كورس خارطة طريق الـ AI والكورسات المتاحة كل شهر"
-                                data-en="Access the AI Roadmap course and all monthly courses">افتح كورس خارطة طريق الـ
-                                AI والكورسات المتاحة كل شهر</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
-                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
-                                وتتكلم معاهم</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تتابع محتوى المجتمع خلال الشهر"
-                                data-en="Follow community content throughout the month">تتابع محتوى المجتمع خلال
-                                الشهر</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="كل شهر تقدر تشوف محتوى جديد"
-                                data-en="New content available every month">كل شهر تقدر تشوف محتوى جديد</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تجربة مناسبة لو لسه بتستكشف"
-                                data-en="Perfect if you're still exploring">تجربة مناسبة لو لسه بتستكشف</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="وصول أساسي للدعم والمتابعة"
-                                data-en="Basic access to support and mentoring">وصول أساسي للدعم والمتابعة</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="ابدأ من غير التزام طويل"
-                                data-en="Start without a long-term commitment">ابدأ من غير التزام طويل</span></li>
-                    </ul>
-
-                    <button class="pricing-cta" type="button" data-plan-checkout="monthly" data-ar="اشترك الآن"
-                        data-en="Subscribe Now">اشترك الآن</button>
-                    <button class="pricing-instapay-btn" type="button" data-plan-instapay="monthly">
-                        <i class="fa-solid fa-wallet"></i>
-                        <span data-ar="الدفع اليدوي" data-en="Manual Payment">الدفع اليدوي</span>
-                    </button>
-                    <div class="pricing-payment-note">
-                    </div>
-                </div>
-
-                <div class="pricing-card pricing-card-featured" data-plan-card="yearly">
-                    <div class="pricing-card-glow"></div>
-
-                    <span class="pricing-badge" data-ar="🔥 الأكثر توفيراً" data-en="🔥 Best Value">🔥 الأكثر
-                        توفيراً</span>
-                    <h3 class="pricing-plan-name" data-ar="عضو غاوي الكامل" data-en="Full Ghawy Member">عضو غاوي الكامل
-                    </h3>
-                    <p class="pricing-plan-sub" data-ar="كل حاجة — بدون استثناءات."
-                        data-en="Everything — no exceptions.">كل حاجة — بدون استثناءات.</p>
-
-                    <div class="pricing-price-block">
-                        <div class="pricing-current">
-                            <span class="pricing-amount" data-plan-amount>4000</span>
-                            <div class="pricing-currency-col">
-                                <span class="pricing-currency" data-plan-currency>ج.م</span>
-                                <span class="pricing-period-label" data-plan-period>سنوياً</span>
-                            </div>
-                        </div>
-                        <span class="pricing-period" data-plan-note>وفّرت 3200 جنيه — كأنك واخد 6 شهور مجانية.</span>
-                    </div>
-
-                    <div class="pricing-divider"></div>
-
-                    <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر"
-                                data-en="Access the AI Roadmap course — content refreshes every month">افتح كورس خارطة
-                                طريق الـ AI — الكورسات تتحرك كل شهر</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
-                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
-                                وتتكلم معاهم</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="كل شهر تظهر مشاريع AI حقيقية معنا live"
-                                data-en="Monthly live sessions building real AI projects">كل شهر تظهر مشاريع AI حقيقية
-                                معنا live</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI"
-                                data-en="Monthly live Q&amp;A with a top AI figure">كل شهر تسأل وتتكلم مع شخصية بارزة في
-                                الـ AI</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="شهادة رسمية لكل كورس بتخلصه"
-                                data-en="Official certificate for every course you complete">شهادة رسمية لكل كورس
-                                بتخلصه</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="التحديثات الحصرية لأول سنة بتوصلك قبل الكل بأسبوع"
-                                data-en="Exclusive updates delivered to you a week before everyone else">التحديثات
-                                الحصرية لأول سنة بتوصلك قبل الكل بأسبوع</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="قناة VIP خاصة وردود مباشرة على أسئلتك"
-                                data-en="Private VIP channel with direct answers to your questions">قناة VIP خاصة وردود
-                                مباشرة على أسئلتك</span></li>
-                    </ul>
-
-                    <button class="pricing-cta" type="button" data-plan-checkout="yearly" data-ar="اشترك الآن"
-                        data-en="Subscribe Now">اشترك الآن</button>
-                    <button class="pricing-instapay-btn" type="button" data-plan-instapay="yearly">
-                        <i class="fa-solid fa-wallet"></i>
-                        <span data-ar="الدفع اليدوي" data-en="Manual Payment">الدفع اليدوي</span>
-                    </button>
-                    <div class="pricing-payment-note">
-                    </div>
-                </div>
-
-                <div class="pricing-card" data-plan-card="quarterly">
-                    <div class="pricing-card-glow"></div>
-
-                    <h3 class="pricing-plan-name" data-ar="المتعلم الجاد" data-en="Serious Learner">المتعلم الجاد</h3>
-                    <p class="pricing-plan-sub" data-ar="بتبني وتثبت مع المجتمع."
-                        data-en="Build and grow with the community.">بتبني وتثبت مع المجتمع.</p>
-
-                    <div class="pricing-price-block">
-                        <div class="pricing-current">
-                            <span class="pricing-amount" data-plan-amount>1200</span>
-                            <div class="pricing-currency-col">
-                                <span class="pricing-currency" data-plan-currency>ج.م</span>
-                                <span class="pricing-period-label" data-plan-period>كل 3 شهور</span>
-                            </div>
-                        </div>
-                        <span class="pricing-period" data-plan-note>وفّرت 600 جنيه — بدلاً من 1,800 جنيه.</span>
-                    </div>
-
-                    <div class="pricing-divider"></div>
-
-                    <ul class="pricing-features">
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="افتح كورس خارطة طريق الـ AI — الكورسات تتحرك كل شهر"
-                                data-en="Access the AI Roadmap course — content refreshes every month">افتح كورس خارطة
-                                طريق الـ AI — الكورسات تتحرك كل شهر</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="تنضم لمجتمع المتعلمين وتتكلم معاهم"
-                                data-en="Join the learner community and connect with members">تنضم لمجتمع المتعلمين
-                                وتتكلم معاهم</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="كل شهر تظهر مشاريع AI حقيقية معنا live"
-                                data-en="Monthly live sessions building real AI projects">كل شهر تظهر مشاريع AI حقيقية
-                                معنا live</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span
-                                data-ar="كل شهر تسأل وتتكلم مع شخصية بارزة في الـ AI"
-                                data-en="Monthly live Q&amp;A with a top AI figure">كل شهر تسأل وتتكلم مع شخصية بارزة في
-                                الـ AI</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="شهادة رسمية لكل كورس بتخلصه"
-                                data-en="Official certificate for every course you complete">شهادة رسمية لكل كورس
-                                بتخلصه</span></li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="متابعة أفضل من الاشتراك الشهري"
-                                data-en="Better mentoring than the monthly plan">متابعة أفضل من الاشتراك الشهري</span>
-                        </li>
-                        <li><i class="fa-solid fa-circle-check"></i> <span data-ar="مناسب لو داخل تتعلم وتطبق بجدية"
-                                data-en="Ideal if you're ready to learn and apply seriously">مناسب لو داخل تتعلم وتطبق
-                                بجدية</span></li>
-                    </ul>
-
-                    <button class="pricing-cta" type="button" data-plan-checkout="quarterly" data-ar="اشترك الآن"
-                        data-en="Subscribe Now">اشترك الآن</button>
-                    <button class="pricing-instapay-btn" type="button" data-plan-instapay="quarterly">
-                        <i class="fa-solid fa-wallet"></i>
-                        <span data-ar="الدفع اليدوي" data-en="Manual Payment">الدفع اليدوي</span>
-                    </button>
-                    <div class="pricing-payment-note">
-                    </div>
-                </div>
+            <div class="pricing-methods-block">
+                <p class="pay-methods-label" data-ar="طرق الدفع المتاحة" data-en="Accepted payment methods">طرق الدفع
+                    المتاحة</p>
+                <div id="payMethods"></div>
             </div>
 
+            <div class="centered pricing-more">
+                <a href="/pricing" class="btn-more-courses" data-ar="شاهد الأسعار" data-en="See full pricing">شاهد
+                    الأسعار</a>
+            </div>
         </div>
-
-        <script>
-            (function () {
-                const section = document.getElementById('payment');
-                if (!section) return;
-
-                const pricingPlans = {
-                    EGP: {
-                        monthly: {
-                            amount: 600,
-                            display: '600',
-                            currency: 'ج.م',
-                            period: 'شهرياً', periodEn: 'Monthly',
-                            note: 'تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك.',
-                            noteEn: 'A flexible monthly trial so you can start and see for yourself.',
-                            methods: 'الدفع عن طريق كاشير / انستاباي',
-                            planKey: 'monthly_egp'
-                        },
-                        yearly: {
-                            amount: 4000,
-                            display: '4000',
-                            currency: 'ج.م',
-                            period: 'سنوياً', periodEn: 'Yearly',
-                            note: 'وفّرت 3200 جنيه — كأنك واخد 6 شهور مجانية.',
-                            noteEn: 'Save 3,200 EGP — like getting 6 months free.',
-                            methods: 'الدفع عن طريق كاشير / انستاباي',
-                            planKey: 'yearly_egp'
-                        },
-                        quarterly: {
-                            amount: 1200,
-                            display: '1200',
-                            currency: 'ج.م',
-                            period: 'كل 3 شهور', periodEn: 'Every 3 Months',
-                            note: 'وفّرت 600 جنيه — بدلاً من 1,800 جنيه.',
-                            noteEn: 'Save 600 EGP — instead of paying 1,800 EGP.',
-                            methods: 'الدفع عن طريق كاشير / انستاباي',
-                            planKey: 'quarterly_egp'
-                        }
-                    },
-                    USD: {
-                        monthly: {
-                            amount: 20,
-                            display: '20',
-                            currency: '$',
-                            period: 'شهرياً', periodEn: 'Monthly',
-                            note: 'تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك.',
-                            noteEn: 'A flexible monthly trial so you can start and see for yourself.',
-                            methods: 'الدفع الدولي عن طريق PayPal',
-                            planKey: 'monthly_usd'
-                        },
-                        yearly: {
-                            amount: 100,
-                            display: '100',
-                            currency: '$',
-                            period: 'سنوياً', periodEn: 'Yearly',
-                            note: 'وفّرت 95$ مقارنة بالدفع الشهري.',
-                            noteEn: 'Save $95 compared to monthly billing.',
-                            methods: 'الدفع الدولي عن طريق PayPal',
-                            planKey: 'yearly_usd'
-                        },
-                        quarterly: {
-                            amount: 35,
-                            display: '35',
-                            currency: '$',
-                            period: 'كل 3 شهور', periodEn: 'Every 3 Months',
-                            note: 'قيمة حقيقية وتفاعل حقيقي بدون ضغط.',
-                            noteEn: 'Real value and real engagement without pressure.',
-                            methods: 'الدفع الدولي عن طريق PayPal',
-                            planKey: 'quarterly_usd'
-                        }
-                    }
-                };
-
-                function currentCurrency() {
-                    return localStorage.getItem('user_currency') === 'USD' ? 'USD' : 'EGP';
-                }
-
-                function setLegacyCycle(plan) {
-                    const legacyToggle = document.getElementById('pricingToggle');
-                    if (legacyToggle) legacyToggle.checked = plan === 'yearly';
-                    localStorage.setItem('ghawy_selected_plan', plan);
-                }
-
-                function applyPricingCurrency(currency) {
-                    const safeCurrency = currency === 'USD' ? 'USD' : 'EGP';
-                    section.dataset.pricingCurrency = safeCurrency;
-                    const lang = localStorage.getItem('ghawy_lang') || 'ar';
-
-                    section.querySelectorAll('[data-plan-card]').forEach(card => {
-                        const plan = card.dataset.planCard;
-                        const data = pricingPlans[safeCurrency][plan];
-                        if (!data) return;
-
-                        const amount = card.querySelector('[data-plan-amount]');
-                        const currencyLabel = card.querySelector('[data-plan-currency]');
-                        const period = card.querySelector('[data-plan-period]');
-                        const note = card.querySelector('[data-plan-note]');
-                        const methods = card.querySelector('[data-plan-methods]');
-
-                        if (amount) amount.textContent = data.display;
-                        if (currencyLabel) currencyLabel.textContent = data.currency;
-                        if (period) {
-                            period.setAttribute('data-ar', data.period);
-                            period.setAttribute('data-en', data.periodEn || data.period);
-                            period.textContent = lang === 'en' ? (data.periodEn || data.period) : data.period;
-                        }
-                        if (note) {
-                            note.setAttribute('data-ar', data.note);
-                            note.setAttribute('data-en', data.noteEn || data.note);
-                            note.textContent = lang === 'en' ? (data.noteEn || data.note) : data.note;
-                        }
-                        if (methods) methods.textContent = data.methods;
-
-                        // Update plan name & sub if they have data-ar/data-en
-                        card.querySelectorAll('[data-ar]').forEach(el => {
-                            const arText = el.getAttribute('data-ar');
-                            const enText = el.getAttribute('data-en');
-                            if (arText && enText) {
-                                el.textContent = lang === 'en' ? enText : arText;
-                            }
-                        });
-                    });
-                }
-                // Expose globally so applyLanguage can call it on language switch
-                window.applyPricingCurrency = applyPricingCurrency;
-
-                async function startPlanCheckout(plan, trigger) {
-                    const currency = section.dataset.pricingCurrency === 'USD' ? 'USD' : 'EGP';
-                    const data = pricingPlans[currency][plan];
-                    const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
-                    const apiBase = typeof API !== 'undefined' ? API : 'http://127.0.0.1:8000';
-
-                    if (!token) {
-                        window.location.href = `register.html?plan=${encodeURIComponent(plan)}`;
-                        return;
-                    }
-
-                    if (currency === 'USD') {
-                        if (typeof window.handlePayPalPayment === 'function') {
-                            window.handlePayPalPayment(plan, data);
-                            return;
-                        }
-                        window.location.href = `payment.html?plan=${encodeURIComponent(plan)}&method=paypal`;
-                        return;
-                    }
-
-                    const originalText = trigger ? trigger.textContent : '';
-                    if (trigger) {
-                        trigger.disabled = true;
-                        trigger.textContent = 'جاري التحويل...';
-                    }
-
-                    try {
-                        const response = await fetch(`${apiBase}/payment/kashier/create`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                amount: data.amount,
-                                currency,
-                                plan_key: data.planKey
-                            })
-                        });
-                        const result = await response.json();
-                        const checkoutUrl = result.payment_url || result.approval_url;
-
-                        if (response.ok && checkoutUrl) {
-                            window.location.href = checkoutUrl;
-                            return;
-                        }
-
-                        throw new Error(result.detail || 'Payment unavailable');
-                    } catch (error) {
-                        showToast('تعذر بدء عملية الدفع حالياً. من فضلك جرّب مرة أخرى.', 'error');
-                    } finally {
-                        if (trigger) {
-                            trigger.disabled = false;
-                            trigger.textContent = originalText;
-                        }
-                    }
-                }
-
-                section.querySelectorAll('[data-plan-checkout]').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const plan = button.dataset.planCheckout;
-                        setLegacyCycle(plan);
-                        startPlanCheckout(plan, button);
-                    });
-                });
-
-                section.querySelectorAll('[data-plan-instapay]').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const plan = button.dataset.planInstapay;
-                        setLegacyCycle(plan);
-                        const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
-
-                        if (!token) {
-                            window.location.href = `register.html?plan=${encodeURIComponent(plan)}`;
-                            return;
-                        }
-
-                        window.location.href = `pay.html?plan=${encodeURIComponent(plan)}`;
-                    });
-                });
-
-                document.addEventListener('DOMContentLoaded', async () => {
-                    const originalApplyCurrencyUI = window.applyCurrencyUI;
-                    if (typeof originalApplyCurrencyUI === 'function' && !originalApplyCurrencyUI.ghawyPricingWrapped) {
-                        window.applyCurrencyUI = function (currency) {
-                            const result = originalApplyCurrencyUI.apply(this, arguments);
-                            applyPricingCurrency(currency);
-                            return result;
-                        };
-                        window.applyCurrencyUI.ghawyPricingWrapped = true;
-                    }
-
-                    if (typeof initCurrency === 'function') {
-                        const currency = await initCurrency();
-                        applyPricingCurrency(currency);
-                    } else {
-                        applyPricingCurrency(currentCurrency());
-                    }
-
-                    setTimeout(() => applyPricingCurrency(currentCurrency()), 350);
-                });
-            })();
-        </script>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -1855,88 +1336,13 @@
                 <h2 class="section-title" data-ar="كل اللي عايز تعرفه" data-en="Everything You Need to Know">كل اللي
                     عايز تعرفه</h2>
             </div>
-            <div class="faq-list">
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="هل هحتاج خبرة سابقة في البرمجة؟"
-                            data-en="Do I need prior programming experience?">هل هحتاج خبرة سابقة في
-                            البرمجة؟</span><span class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="لا خالص, الكورس متصمم من الصفر. الأدوات اللي بنستخدمها زي n8n وMake هي No-Code مش بتعتمد على كتابة أي كود, وغير كدا انواع البيانات والحاجات اللي هنحتاجها في البرمجه هنشرحها بالكامل من الصفر, وعندنا شابتر كامل عن Machine learning للي عايز يتعمق في البرمجة"
-                        data-en="Not at all — the course is designed from scratch. The tools we use, like n8n and Make, are No-Code and don't rely on writing any code. We also fully explain the data types and programming basics you'll need from scratch, and there's a complete chapter on Machine Learning for anyone who wants to go deeper into programming.">
-                        لا خالص, الكورس متصمم من الصفر. الأدوات اللي بنستخدمها زي n8n
-                        وMake هي No-Code مش بتعتمد على كتابة أي كود, وغير كدا انواع
-                        البيانات والحاجات اللي هنحتاجها في البرمجه هنشرحها بالكامل من
-                        الصفر, وعندنا شابتر كامل عن Machine learning للي عايز يتعمق في
-                        البرمجة
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="امتي هبدأ احقق ربح من المجال؟"
-                            data-en="When will I start making money from this field?">امتي هبدأ احقق ربح من
-                            المجال؟</span><span class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="الأمر بالكامل بيعتمد على مجهودك وتطبيقك, مفيش وقت محدد, بس بعض المشتركين قدروا يجيبوا أول عميل بعد 14 يوماً من التطبيق وانهاء الكورس"
-                        data-en="It depends entirely on your effort and how much you apply. There's no fixed timeline, but some members managed to land their first client just 14 days after applying and finishing the course.">
-                        الأمر بالكامل بيعتمد على مجهودك وتطبيقك, مفيش وقت محدد, بس بعض
-                        المشتركين قدروا يجيبوا أول عميل بعد 14 يوماً من التطبيق وانهاء
-                        الكورس
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="هل الكورس مسجل ولا بث مباشر؟" data-en="Is the course recorded or live?">هل الكورس
-                            مسجل ولا بث مباشر؟</span><span class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="الكورس متسجل بالكامل بجودة عالية تقدر تشوفه في أي وقت وبالسرعة اللي تناسبك, بالإضافة لجروب دعم VIP ومكالمات اسبوعية للإجابة على أسئلتك."
-                        data-en="The course is fully recorded in high quality, so you can watch it anytime at the speed that suits you, plus a VIP support group and weekly calls to answer your questions.">
-                        الكورس متسجل بالكامل بجودة عالية تقدر تشوفه في أي وقت وبالسرعة
-                        اللي تناسبك, بالإضافة لجروب دعم VIP ومكالمات اسبوعية للإجابة على
-                        أسئلتك.
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="كيف أستلم الكورس بعد الدفع؟"
-                            data-en="How do I receive the course after payment?">كيف أستلم الكورس بعد الدفع؟</span><span
-                            class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="بمجرد إتمام الدفع بنجاح، سيتم إنشاء حساب لك على منصة Whop وإرسال بيانات الدخول على رقمك فوراً - الوصول فوري."
-                        data-en="As soon as your payment is completed successfully, an account will be created for you on the Whop platform and your login details will be sent to your number immediately — access is instant.">
-                        بمجرد إتمام الدفع بنجاح، سيتم إنشاء حساب لك على منصة Whop وإرسال
-                        بيانات الدخول على رقمك فوراً - الوصول فوري.
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="هل يوجد ضمان استرداد الأموال؟" data-en="Is there a money-back guarantee?">هل يوجد
-                            ضمان استرداد الأموال؟</span><span class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="أيوه أكيد. ضمان استرداد 100% خلال 3 أيام من الشراء, بدون أسئلة وبدون أي تعقيدات."
-                        data-en="Yes, absolutely. A 100% refund guarantee within 3 days of purchase — no questions asked and no complications.">
-                        أيوه أكيد. ضمان استرداد 100% خلال 3 أيام من الشراء, بدون أسئلة
-                        وبدون أي تعقيدات.
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q">
-                        <span data-ar="هل انا محتاج لاب توب غالي؟" data-en="Do I need an expensive laptop?">هل انا محتاج
-                            لاب توب غالي؟</span><span class="faq-icon">+</span>
-                    </div>
-                    <div class="faq-a"
-                        data-ar="لا نهائي, شغلنا مش تقيل خالص, اي نوع لاب توب عشان تقدر تحضر ميتينجز وتعمل الاوتوميشن علي n8n مش اكتر."
-                        data-en="Not at all. Our work isn't heavy — any laptop will do, so you can attend meetings and build automations on n8n, nothing more.">
-                        لا نهائي, شغلنا مش تقيل خالص, اي نوع لاب توب عشان تقدر تحضر
-                        ميتينجز وتعمل الاوتوميشن علي n8n مش اكتر.
-                    </div>
-                </div>
-            </div>
+
+            <!-- Questions and answers come from src/js/faq.js, the same file
+                 /pricing renders from. The set that used to be written out
+                 here is why that file exists: it told visitors their login
+                 details would arrive on Whop and promised a 3-day money-back
+                 guarantee, neither of which is true. -->
+            <div id="faqList"></div>
         </div>
     </section>
 
@@ -1966,24 +1372,12 @@
                     data-en="Join Now — Only EGP 600">
                     انضم الآن — EGP 600 فقط
                 </a>
-                <!-- INSTAPAY OPTION -->
-                <div style="margin-top: 16px; display: flex; justify-content: center;">
-                    <a href="javascript:void(0)" onclick="handleInstapayPayment()"
-                        style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 14px; transition: color 0.3s;"
-                        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                        <span data-html="true" data-ar="الدفع عن طريق انستاباي / فودافون كاش &rarr;"
-                            data-en="Pay via Instapay / Vodafone Cash &rarr;">الدفع عن طريق انستاباي / فودافون كاش
-                            &rarr;</span>
-                    </a>
-                </div>
+                <!-- The "pay via Instapay / Vodafone Cash" shortcut that sat here
+                     is gone. It jumped straight to pay.html, skipping the step
+                     that tells you Instapay is manual and that access is not
+                     immediate — which is the one thing someone choosing it has
+                     to be told first. Every route to a payment now goes through
+                     the plan cards and their checkout step. -->
                 <div class="cta-sub-note" style="margin-top: 18px">
                     <span class="note-item"><i class="fa-solid fa-users"></i> <span data-ar="+350 مشترك"
                             data-en="+350 Members">+350 مشترك</span></span>
@@ -2012,14 +1406,19 @@
     <!-- Language engine — shared with every other page (single 'ghawy_lang' key,
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
-    <script src="src/js/i18n.js?v=20260805a"></script>
+    <script src="src/js/i18n.js?v=20260806a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
     <script src="src/js/catalog.js?v=20260806e"></script>
     <!-- Member reviews — the single source for the testimonials section.
          Adding a review is one entry in this file. -->
     <script src="src/js/reviews.js?v=20260806c"></script>
-    <script src="src/js/main.js?v=20260806c"></script>
+    <!-- Plans, prices, the comparison and the checkout step — shared with
+         /pricing so the two pages cannot quote different numbers. -->
+    <script src="src/js/pricing.js?v=20260806a"></script>
+    <!-- The FAQ, shared with /pricing for the same reason. -->
+    <script src="src/js/faq.js?v=20260806a"></script>
+    <script src="src/js/main.js?v=20260806d"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant
@@ -2036,44 +1435,10 @@
         // Scroll-aware nav, hamburger/drawer and the active-link state now live
         // in src/js/layout.js so every public page gets them from one place.
 
-        // --- Pricing Toggle (Monthly / Yearly) ---
-        const pricingToggle = document.getElementById('pricingToggle');
-        const priceAmount = document.getElementById('priceAmount');
-        const pricePeriod = document.getElementById('pricePeriod');
-        const priceNote = document.getElementById('priceNote');
-        const labelMonthly = document.getElementById('labelMonthly');
-        const labelYearly = document.getElementById('labelYearly');
-
-        function updatePricing() {
-            if (!pricingToggle || !priceAmount) return;
-            const isYearly = pricingToggle.checked;
-            priceAmount.style.opacity = '0';
-            priceAmount.style.transform = 'translateY(8px)';
-            setTimeout(() => {
-                priceAmount.textContent = isYearly ? '333' : '600';
-                if (pricePeriod) pricePeriod.textContent = '/شهر';
-                if (priceNote) priceNote.textContent = isYearly
-                    ? 'تدفع 4,000 جنيه سنوياً بدلاً من 6,000 جنيه'
-                    : 'اشتراك شهري — إلغاء في أي وقت';
-
-                priceAmount.setAttribute('data-egp', priceAmount.textContent);
-                if (priceNote) priceNote.setAttribute('data-egp', priceNote.textContent);
-
-                if (window.applyCurrencyUI) {
-                    window.applyCurrencyUI(localStorage.getItem('user_currency') || 'EGP');
-                }
-                if (labelMonthly) labelMonthly.classList.toggle('active', !isYearly);
-                if (labelYearly) labelYearly.classList.toggle('active', isYearly);
-                priceAmount.style.opacity = '1';
-                priceAmount.style.transform = 'translateY(0)';
-            }, 200);
-        }
-
-        if (pricingToggle) {
-            pricingToggle.addEventListener('change', updatePricing);
-            // Set initial state
-            if (labelMonthly) labelMonthly.classList.add('active');
-        }
+        // The monthly/yearly toggle that used to live here is gone. It flipped
+        // one card between 600 and 333 and rewrote a note under it; there are
+        // three real plan cards now, rendered from src/js/pricing.js, and
+        // nothing left for it to toggle.
 
         // The scroll-spy that highlighted #anchor nav links is gone with them —
         // the header links are real pages now, and layout.js marks the active
@@ -2417,27 +1782,19 @@
         // The password-strength label is written by JS — re-render it on toggle.
         document.addEventListener('languagechange', () => updateModalSubmitBtn());
 
-        // --- Kashier Payment Handler ---
+        // --- "Join now" buttons ---
+        // These used to start a payment straight away, picking the plan off the
+        // monthly/yearly toggle. There are three plans now and no toggle, so a
+        // button that says "join" can't know which one is meant — it takes you
+        // to the cards, and the card's own button opens the checkout step.
+        // layout.js calls handleKashierPayment() from the drawer CTA.
         function handleKashierPayment() {
-            const token = getToken();
-            if (!token) {
-                window.location.href = 'register.html';
+            const section = document.getElementById('payment');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return;
             }
-            // Pass the selected billing cycle to payment.html
-            const toggle = document.getElementById('pricingToggle');
-            const cycle = (toggle && toggle.checked) ? 'yearly' : 'monthly';
-            window.location.href = `payment.html?plan=${cycle}`;
-        }
-
-        // --- Instapay Payment Handler ---
-        function handleInstapayPayment() {
-            const token = getToken();
-            if (!token) {
-                window.location.href = 'register.html';
-                return;
-            }
-            window.location.href = 'pay.html';
+            window.location.href = '/pricing';
         }
 
         // --- Scroll Reveal ---
@@ -2457,29 +1814,10 @@
             revealObserver.observe(s);
         });
 
-        // --- Handle Currency & Pricing ---
-        async function setupDynamicPricing() {
-            if (typeof initCurrency !== 'function') return;
-            const currency = await initCurrency();
-            const priceAmount = document.getElementById('priceAmount');
-            const priceCurrency = document.querySelector('.pricing-currency');
-            const finalCta = document.querySelector('.final-cta-section .btn-cta');
-
-            // The #vs-price-* elements are gone with the value stack section:
-            // the client asked for no amount to appear outside the pricing
-            // cards, so there is nothing left here to convert but the plan
-            // price itself.
-            if (currency === 'USD') {
-                if (priceAmount) priceAmount.innerText = '600';
-                if (priceCurrency) priceCurrency.innerText = 'USD';
-                if (finalCta) finalCta.innerHTML = 'انضم الآن — 60$ فقط';
-            } else {
-                if (priceAmount) priceAmount.innerText = '600';
-                if (priceCurrency) priceCurrency.innerText = 'ج.م';
-                if (finalCta) finalCta.innerHTML = 'انضم الآن — ج.م 600 فقط';
-            }
-        }
-        setupDynamicPricing();
+        // The currency rewrite that lived here is gone with the single price it
+        // rewrote. src/js/pricing.js repaints the cards from PLANS when
+        // applyCurrencyUI fires, so EGP/USD is handled in one place for the
+        // home page and /pricing together.
 
         // --- Handle OAuth Token from URL ---
         const urlParams = new URLSearchParams(window.location.search);

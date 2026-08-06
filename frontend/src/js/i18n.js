@@ -292,13 +292,11 @@ function applyLanguage(lang, persist = true) {
     //    plain grid rendered from src/js/catalog.js, which re-renders itself
     //    off the `languagechange` event dispatched in step 10.)
 
-    // 9. Re-apply pricing currency so dynamic price copy follows the language.
-    if (typeof window.applyPricingCurrency === 'function') {
-        const pricingSection = document.getElementById('payment');
-        if (pricingSection) {
-            window.applyPricingCurrency(pricingSection.dataset.pricingCurrency || 'EGP');
-        }
-    }
+    // 9. (The pricing section used to expose applyPricingCurrency() from an
+    //     inline script and be re-run here. The cards come from
+    //     src/js/pricing.js now, which repaints itself off the
+    //     `languagechange` event dispatched in step 10 like every other
+    //     JS-rendered section.)
 
     // 10. Let page scripts re-render anything they built in JS.
     document.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));

@@ -1,23 +1,28 @@
 <!doctype html>
+<!-- Arabic-first like every other public page; i18n.js re-applies the
+     visitor's stored choice on load. -->
 <html lang="ar" dir="rtl" id="htmlRoot">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>الأسعار — Ghawy</title>
-    <meta name="description" content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع." />
+    <meta name="description"
+        content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع. شهري 600 ج.م، ربع سنوي 1200 ج.م، سنوي 3500 ج.م." />
     <link rel="canonical" href="https://ghawy.ai/pricing" />
-    <meta name="author" content="Nabil Ahmed" />
+    <meta name="author" content="Ghawy" />
 
     <meta property="og:title" content="الأسعار — Ghawy" />
-    <meta property="og:description" content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع." />
+    <meta property="og:description"
+        content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع." />
     <meta property="og:image" content="./imgs/community-logo.png" />
     <meta property="og:url" content="https://ghawy.ai/pricing" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ghawy" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="الأسعار — Ghawy" />
-    <meta name="twitter:description" content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع." />
+    <meta name="twitter:description"
+        content="خطط اشتراك Ghawy — اشتراك واحد يفتحلك كل الكورسات والمسارات والمجتمع." />
     <meta name="twitter:image" content="./imgs/community-logo.png" />
 
     <meta name="theme-color" content="#000000" />
@@ -28,7 +33,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260806d">
+    <link rel="stylesheet" href="src/css/main.css?v=20260806g">
 </head>
 
 <body>
@@ -37,32 +42,106 @@
     <div id="siteHeader"></div>
     <script src="src/js/layout.js?v=20260806a"></script>
 
-    <main class="page-shell">
+    <!-- ════════════════════════════════════════
+     PRICING
+     Nothing on this page holds a price. The cards, the comparison, the
+     accepted-payment row and the checkout step all come from
+     src/js/pricing.js, which the home page renders from too — so /pricing and
+     the home page cannot end up quoting different numbers. The questions come
+     from src/js/faq.js, shared the same way.
+
+     The client's ask was that this page be very easy to walk into, so it is
+     laid out in the order a visitor decides in: what it costs → what actually
+     differs between the plans → how you pay → the questions that stop people.
+    ════════════════════════════════════════ -->
+    <main class="page-shell pricing-page">
         <div class="container">
             <header class="page-shell-head">
                 <h1 class="page-shell-title" data-ar="الأسعار" data-en="Pricing">الأسعار</h1>
-                <p class="page-shell-lead" data-ar="اشتراك واحد بس يفتحلك كل الكورسات والمسارات والمجتمع — من غير أي رسوم مخفية." data-en="A single subscription unlocks every course, every track and the community — with no hidden fees.">اشتراك واحد بس يفتحلك كل الكورسات والمسارات والمجتمع — من غير أي رسوم مخفية.</p>
+                <p class="page-shell-lead"
+                    data-ar="اشتراك واحد بس يفتحلك كل الكورسات والمسارات والمجتمع — من غير أي رسوم مخفية، ومن غير تجديد تلقائي."
+                    data-en="A single subscription unlocks every course, every track and the community — no hidden fees, and no automatic renewal.">
+                    اشتراك واحد بس يفتحلك كل الكورسات والمسارات والمجتمع — من غير أي رسوم مخفية، ومن غير تجديد تلقائي.
+                </p>
             </header>
 
-            <!-- Placeholder — the real content of this page ships in a later phase. -->
-            <section class="page-shell-placeholder">
-                <i class="fa-solid fa-tags" aria-hidden="true"></i>
-                <h2 data-ar="الصفحة دي لسه بتتجهّز" data-en="This page is still being built">الصفحة دي لسه بتتجهّز</h2>
-                <p data-ar="المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية."
-                   data-en="The full content of this page ships in a later phase. Until then, you can see a preview of everything on the home page.">
-                    المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية.
+            <!-- cards from src/js/pricing.js -->
+            <div id="pricingPlans"></div>
+
+            <div class="pricing-methods-block">
+                <p class="pay-methods-label" data-ar="طرق الدفع المتاحة" data-en="Accepted payment methods">طرق الدفع
+                    المتاحة</p>
+                <div id="payMethods"></div>
+                <p class="pay-methods-note"
+                    data-ar="الدفع بالبطاقة أو المحفظة بيفتحلك الوصول فوراً. انستاباي اليدوي للمصريين بس، وبيتراجع بإيدينا فمش فوري."
+                    data-en="Paying by card or wallet opens your access immediately. Manual InstaPay is for Egypt only and is reviewed by hand, so it is not instant.">
+                    الدفع بالبطاقة أو المحفظة بيفتحلك الوصول فوراً. انستاباي اليدوي للمصريين بس، وبيتراجع بإيدينا فمش
+                    فوري.
                 </p>
-                <a href="/" class="btn-cta-solid page-shell-cta" data-ar="ارجع للصفحة الرئيسية" data-en="Back to home">ارجع للصفحة الرئيسية</a>
-            </section>
+            </div>
         </div>
     </main>
+
+    <!-- ════════════════════════════════════════
+     WHAT ACTUALLY DIFFERS
+     The cards carry no tick lists, because the three plans unlock exactly the
+     same thing and three identical columns of ticks only make a reader hunt
+     for a difference that is not there. This is where the real difference
+     goes: duration, cost per month, saving, and who each one suits.
+    ════════════════════════════════════════ -->
+    <section class="pricing-compare-section">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow" data-ar="المقارنة" data-en="Compare">المقارنة</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title" data-ar="إيه الفرق بين الباقات فعلاً؟"
+                    data-en="What actually differs between the plans?">إيه الفرق بين الباقات فعلاً؟</h2>
+                <p class="section-sub"
+                    data-ar="المحتوى واحد في التلاتة — كل الكورسات والمجتمع واللايفات والدعم. الفرق في المدة والسعر بس."
+                    data-en="The content is identical across all three — every course, the community, the lives and the support. The difference is duration and price.">
+                    المحتوى واحد في التلاتة — كل الكورسات والمجتمع واللايفات والدعم. الفرق في المدة والسعر بس.
+                </p>
+            </div>
+
+            <!-- table + stacked cards from src/js/pricing.js -->
+            <div id="pricingCompare"></div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+     FAQ — same source as the home page (src/js/faq.js)
+    ════════════════════════════════════════ -->
+    <section class="faq-section" id="faq">
+        <div class="container">
+            <div class="centered">
+                <span class="section-eyebrow" data-ar="الأسئلة الشائعة" data-en="Frequently Asked Questions">الأسئلة
+                    الشائعة</span>
+                <div class="section-divider"></div>
+                <h2 class="section-title" data-ar="أسئلة قبل ما تشترك" data-en="Questions before you subscribe">أسئلة
+                    قبل ما تشترك</h2>
+            </div>
+            <div id="faqList"></div>
+
+            <div class="centered pricing-help">
+                <p class="pricing-help-text" data-ar="لسه عندك سؤال مش موجود هنا؟"
+                    data-en="Still have a question that isn't here?">لسه عندك سؤال مش موجود هنا؟</p>
+                <a class="btn-more-courses" href="mailto:support@ghawy.ai" data-ar="اكتبلنا على support@ghawy.ai"
+                    data-en="Email us at support@ghawy.ai">اكتبلنا على support@ghawy.ai</a>
+            </div>
+        </div>
+    </section>
 
     <!-- Shared footer — single source in src/js/layout.js -->
     <div id="siteFooter"></div>
     <script>GhawyLayout.mountFooter();</script>
 
-    <script src="src/js/i18n.js?v=20260805a"></script>
+    <script src="src/js/i18n.js?v=20260806a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
+    <!-- Plans, prices, comparison and the checkout step — shared with the
+         home page so neither can quote a number the other doesn't. -->
+    <script src="src/js/pricing.js?v=20260806a"></script>
+    <!-- The questions, shared with the home page for the same reason. -->
+    <script src="src/js/faq.js?v=20260806a"></script>
 </body>
 
 </html>
