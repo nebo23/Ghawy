@@ -1544,7 +1544,7 @@ async function loadSubsChart() {
     chartSubs = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Monthly (600)', 'Quarterly (1200)', 'Yearly (4000)', 'None'],
+        labels: ['Monthly (600)', 'Quarterly (1200)', 'Yearly (3500)', 'None'],
         datasets: [{
           data: [data.monthly || 0, data.quarterly || 0, data.yearly || 0, data.none || 0],
           backgroundColor: ['#3f8ff9', '#22c55e', '#f59e0b', '#333'],

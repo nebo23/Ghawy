@@ -23,13 +23,19 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 
 
 # ─── Plan Labels (shared) ──────────────────────────────────
+# Deliberately NO price here. This table used to carry an `amount` per plan —
+# 10 EGP monthly, 3000 yearly — which was never read by anything (the endpoint
+# below reports the amount from the payment row) and had drifted far from what
+# the platform actually charges. The one source of truth for prices is
+# PLAN_PRICES in app/routers/payment.py; a second copy anywhere is how a page
+# ends up advertising one number while the gateway collects another.
 PLAN_LABELS = {
-    "monthly_egp":   {"label": "شهري",       "amount": 10,   "currency": "EGP", "days": 30},
-    "quarterly_egp": {"label": "تلت شهور",   "amount": 1200, "currency": "EGP", "days": 90},
-    "yearly_egp":    {"label": "سنوي",        "amount": 3000, "currency": "EGP", "days": 365},
-    "monthly_usd":   {"label": "Monthly",     "amount": 15,   "currency": "USD", "days": 30},
-    "quarterly_usd": {"label": "Quarterly",   "amount": 35,   "currency": "USD", "days": 90},
-    "yearly_usd":    {"label": "Yearly",      "amount": 100,  "currency": "USD", "days": 365},
+    "monthly_egp":   {"label": "شهري",       "currency": "EGP", "days": 30},
+    "quarterly_egp": {"label": "تلت شهور",   "currency": "EGP", "days": 90},
+    "yearly_egp":    {"label": "سنوي",        "currency": "EGP", "days": 365},
+    "monthly_usd":   {"label": "Monthly",     "currency": "USD", "days": 30},
+    "quarterly_usd": {"label": "Quarterly",   "currency": "USD", "days": 90},
+    "yearly_usd":    {"label": "Yearly",      "currency": "USD", "days": 365},
 }
 
 

@@ -19,7 +19,7 @@ if (!getToken()) {
 const PLANS = {
   monthly_egp: { amount: 600, currency: 'EGP', label: 'شهري', labelEn: 'Monthly', period: 'شهر', periodEn: 'Month', badge: null },
   quarterly_egp: { amount: 1200, currency: 'EGP', label: 'ربع سنوي', labelEn: 'Quarterly', period: '3 أشهر', periodEn: '3 Months', badge: 'وفّر 600 جنيه' },
-  yearly_egp: { amount: 4000, currency: 'EGP', label: 'سنوي', labelEn: 'Annual', period: 'سنة', periodEn: 'Year', badge: 'وفّر 3200 جنيه' },
+  yearly_egp: { amount: 3500, currency: 'EGP', label: 'سنوي', labelEn: 'Annual', period: 'سنة', periodEn: 'Year', badge: 'وفّر 3700 جنيه' },
   monthly_usd: { amount: 20, currency: 'USD', label: 'Monthly', labelEn: 'Monthly', period: 'Month', periodEn: 'Month', badge: null },
   quarterly_usd: { amount: 35, currency: 'USD', label: 'Quarterly', labelEn: 'Quarterly', period: '3 Months', periodEn: '3 Months', badge: 'Save $10' },
   yearly_usd: { amount: 100, currency: 'USD', label: 'Annual', labelEn: 'Annual', period: 'Year', periodEn: 'Year', badge: 'Save $80' },

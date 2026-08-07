@@ -29,7 +29,7 @@ const API = (location.hostname === 'localhost' || location.hostname === '127.0.0
 const PLANS = {
     monthly_egp: { amount: 600, currency: 'EGP', label: 'شهري', period: 'شهر', days: 30, badge: null },
     quarterly_egp: { amount: 1200, currency: 'EGP', label: 'ربع سنوي', period: '3 شهور', days: 90, badge: 'وفّر 600 جنيه' },
-    yearly_egp: { amount: 4000, currency: 'EGP', label: 'سنوي', period: 'سنة', days: 365, badge: 'وفّر 3200 جنيه' },
+    yearly_egp: { amount: 3500, currency: 'EGP', label: 'سنوي', period: 'سنة', days: 365, badge: 'وفّر 3700 جنيه' },
 };
 const PLAN_ORDER = ['monthly_egp', 'quarterly_egp', 'yearly_egp'];
 

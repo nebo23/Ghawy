@@ -20,7 +20,7 @@ router = APIRouter(prefix="/payment", tags=["Payment"])
 PLAN_PRICES = {
     "monthly_egp":   {"amount": 600,   "currency": "EGP"},
     "quarterly_egp": {"amount": 1200,  "currency": "EGP"},
-    "yearly_egp":    {"amount": 4000,  "currency": "EGP"},
+    "yearly_egp":    {"amount": 3500,  "currency": "EGP"},
     "monthly_usd":   {"amount": 20,    "currency": "USD"},
     "quarterly_usd": {"amount": 35,    "currency": "USD"},
     "yearly_usd":    {"amount": 100,   "currency": "USD"},
