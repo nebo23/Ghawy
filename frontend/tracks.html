@@ -4,21 +4,30 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>المسارات — Ghawy</title>
-    <meta name="description" content="مسارات تعلم الذكاء الاصطناعي على Ghawy — مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك. المقارنة كاملة والكورسات بترتيبها." />
+    <title>مسارات تعلم الذكاء الاصطناعي — غاوي</title>
+    <meta name="description"
+        content="مسارات غاوي لتعلم الذكاء الاصطناعي: مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك الحالي — والفرق بينهم بالتفصيل مع ترتيب الكورسات." />
     <link rel="canonical" href="https://ghawy.ai/tracks" />
-    <meta name="author" content="Nabil Ahmed" />
 
-    <meta property="og:title" content="المسارات — Ghawy" />
-    <meta property="og:description" content="مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك — والفرق بينهم بالتفصيل." />
-    <meta property="og:image" content="./imgs/community-logo.png" />
-    <meta property="og:url" content="https://ghawy.ai/tracks" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="author" content="Ghawy" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Ghawy" />
+    <meta property="og:site_name" content="غاوي | Ghawy" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:url" content="https://ghawy.ai/tracks" />
+    <meta property="og:title" content="مسارات تعلم الذكاء الاصطناعي — غاوي" />
+    <meta property="og:description" content="مسارات غاوي لتعلم الذكاء الاصطناعي: مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك الحالي — والفرق بينهم بالتفصيل مع ترتيب الكورسات." />
+    <meta property="og:image" content="https://ghawy.ai/imgs/og-banner.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="مسارات تعلم الذكاء الاصطناعي على غاوي" />
+
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="المسارات — Ghawy" />
-    <meta name="twitter:description" content="مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك — والفرق بينهم بالتفصيل." />
-    <meta name="twitter:image" content="./imgs/community-logo.png" />
+    <meta name="twitter:title" content="مسارات تعلم الذكاء الاصطناعي — غاوي" />
+    <meta name="twitter:description" content="مسارات غاوي لتعلم الذكاء الاصطناعي: مسارات تخصص تتعلم فيها الـ AI نفسه، ومسارات تطبيق تستخدم فيها الـ AI في شغلك الحالي — والفرق بينهم بالتفصيل مع ترتيب الكورسات." />
+    <meta name="twitter:image" content="https://ghawy.ai/imgs/og-banner.png" />
+
 
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
@@ -85,6 +94,35 @@
         }
 
         // ═══════════════════════════════════════════════════════════
+        //   Per-view SEO tags
+        // ═══════════════════════════════════════════════════════════
+        // This page is two things behind one file: the tracks index, and one
+        // page per track at ?t=<slug>. Leaving the index's canonical and
+        // description on the track views is what makes Google treat five
+        // pages as one. The track's own `about` text is the description —
+        // the same sentence the page shows, never a second copy of it.
+        const SEO_INDEX = {
+            title: 'مسارات تعلم الذكاء الاصطناعي — غاوي',
+            desc: document.querySelector('meta[name="description"]').content,
+            url: 'https://ghawy.ai/tracks',
+        };
+
+        function setSEO({ title, desc, url }) {
+            document.title = title;
+            const set = (sel, attr, value) => {
+                const el = document.head.querySelector(sel);
+                if (el) el.setAttribute(attr, value);
+            };
+            set('link[rel="canonical"]', 'href', url);
+            set('meta[name="description"]', 'content', desc);
+            set('meta[property="og:url"]', 'content', url);
+            set('meta[property="og:title"]', 'content', title);
+            set('meta[property="og:description"]', 'content', desc);
+            set('meta[name="twitter:title"]', 'content', title);
+            set('meta[name="twitter:description"]', 'content', desc);
+        }
+
+        // ═══════════════════════════════════════════════════════════
         //   LIST VIEW — the page a visitor who knows nothing lands on
         // ═══════════════════════════════════════════════════════════
         // Order is deliberate: explain what the two kinds ARE, put them
@@ -92,7 +130,7 @@
         // tracks themselves. Someone reading top to bottom should never hit
         // a track name before they know what family it belongs to.
         function renderList() {
-            document.title = 'المسارات — Ghawy';
+            setSEO(SEO_INDEX);
 
             setHead(
                 { ar: 'المسارات', en: 'Tracks' },
@@ -197,7 +235,11 @@
         // should feel one site, not two.
         function renderDetail(tr) {
             const f = C.family(tr.family);
-            document.title = `${C.L(tr.name)} — Ghawy`;
+            setSEO({
+                title: `${C.L(tr.name)} — مسار تعلم على غاوي`,
+                desc: C.L(tr.about),
+                url: C.trackHref(tr.slug).replace(/^\//, 'https://ghawy.ai/'),
+            });
 
             head.innerHTML = `
                 <a href="/tracks" class="cd-back-btn tr-back">
@@ -383,7 +425,9 @@
         //   Unknown slug — a clear message, never a blank page
         // ═══════════════════════════════════════════════════════════
         function renderNotFound(slug) {
-            document.title = 'المسار مش موجود — Ghawy';
+            // Canonical back to the index: a mistyped slug is not a page that
+            // should collect its own search result.
+            setSEO({ ...SEO_INDEX, title: 'المسار مش موجود — غاوي' });
             setHead({ ar: 'المسار ده مش موجود', en: 'This track does not exist' }, null);
             const msg = {
                 ar: `مفيش مسار بالاسم "${slug}". يمكن اللينك قديم أو المسار اتغيّر اسمه — دي كل المسارات المتاحة.`,

@@ -6,21 +6,30 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>المدربين — Ghawy</title>
-    <meta name="description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
+    <title>مدربو غاوي — مين بيشرحلك الذكاء الاصطناعي</title>
+    <meta name="description"
+        content="مدربو منصة غاوي: خبرتهم، الكورسات اللي بيقدموها، والعملاء اللي اشتغلوا معاهم — ناس بتشتغل بالـ AI فعلاً مش بتشرح من كتاب." />
     <link rel="canonical" href="https://ghawy.ai/instructors" />
-    <meta name="author" content="Nabil Ahmed" />
 
-    <meta property="og:title" content="المدربين — Ghawy" />
-    <meta property="og:description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
-    <meta property="og:image" content="./imgs/community-logo.png" />
-    <meta property="og:url" content="https://ghawy.ai/instructors" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="author" content="Ghawy" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Ghawy" />
+    <meta property="og:site_name" content="غاوي | Ghawy" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:url" content="https://ghawy.ai/instructors" />
+    <meta property="og:title" content="مدربو غاوي — مين بيشرحلك الذكاء الاصطناعي" />
+    <meta property="og:description" content="مدربو منصة غاوي: خبرتهم، الكورسات اللي بيقدموها، والعملاء اللي اشتغلوا معاهم — ناس بتشتغل بالـ AI فعلاً مش بتشرح من كتاب." />
+    <meta property="og:image" content="https://ghawy.ai/imgs/og-banner.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="مدربو منصة غاوي" />
+
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="المدربين — Ghawy" />
-    <meta name="twitter:description" content="مدربين غاوي — مين بيشرحلك، خبرتهم إيه، واشتغلوا مع مين." />
-    <meta name="twitter:image" content="./imgs/community-logo.png" />
+    <meta name="twitter:title" content="مدربو غاوي — مين بيشرحلك الذكاء الاصطناعي" />
+    <meta name="twitter:description" content="مدربو منصة غاوي: خبرتهم، الكورسات اللي بيقدموها، والعملاء اللي اشتغلوا معاهم — ناس بتشتغل بالـ AI فعلاً مش بتشرح من كتاب." />
+    <meta name="twitter:image" content="https://ghawy.ai/imgs/og-banner.png" />
+
 
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
@@ -78,8 +87,35 @@
                 ${lead ? `<p class="page-shell-lead" ${C.i18nAttrs(lead)}>${C.esc(C.L(lead))}</p>` : ''}`;
         }
 
+        // ─── Per-view SEO tags ───────────────────────────────────
+        // Same arrangement as /tracks: one file serves the index and a page
+        // per instructor at ?i=<slug>, and each needs its own canonical or
+        // Google files them all under the index. The bio in the catalog is
+        // the description — the same words the page prints.
+        const SEO_INDEX = {
+            title: document.title,
+            desc: document.querySelector('meta[name="description"]').content,
+            url: 'https://ghawy.ai/instructors',
+        };
+
+        function setSEO({ title, desc, url }) {
+            document.title = title;
+            const set = (sel, attr, value) => {
+                const el = document.head.querySelector(sel);
+                if (el) el.setAttribute(attr, value);
+            };
+            set('link[rel="canonical"]', 'href', url);
+            set('meta[name="description"]', 'content', desc);
+            set('meta[property="og:url"]', 'content', url);
+            set('meta[property="og:title"]', 'content', title);
+            set('meta[property="og:description"]', 'content', desc);
+            set('meta[name="twitter:title"]', 'content', title);
+            set('meta[name="twitter:description"]', 'content', desc);
+        }
+
         // ─── List view ───────────────────────────────────────────
         function renderList() {
+            setSEO(SEO_INDEX);
             setHead(
                 { ar: 'المدربين', en: 'Instructors' },
                 {
@@ -100,6 +136,8 @@
         // A clear message, never a blank page: the visitor most likely
         // followed an old link.
         function renderNotFound(slug) {
+            // Canonical back to the index — a dead slug is not its own page.
+            setSEO({ ...SEO_INDEX, title: 'المدرّب ده مش موجود — غاوي' });
             setHead({ ar: 'المدرّب ده مش موجود', en: 'Instructor not found' }, null);
             const msg = {
                 ar: `مفيش مدرّب بالاسم "${slug}". يمكن اللينك قديم — دي قايمة كل المدربين.`,
@@ -115,6 +153,13 @@
 
         // ─── Detail view ─────────────────────────────────────────
         function renderDetail(inst) {
+            const name = C.L(inst.name);
+            setSEO({
+                title: `${name} — مدرّب على غاوي`,
+                desc: inst.bio ? C.L(inst.bio) : `${name} — ${C.L(inst.role)} على منصة غاوي.`,
+                url: `https://ghawy.ai/instructors?i=${encodeURIComponent(inst.slug)}`,
+            });
+
             // The identity used to sit inside a boxed instructor card. That box
             // is gone, so the photo, name, role and facts lead the page here as
             // a plain header, and everything that was crammed in beside them —
@@ -183,7 +228,6 @@
             const inst = C.instructor(slug);
             if (!inst) { renderNotFound(slug); return; }
             renderDetail(inst);
-            document.title = `${C.L(inst.name)} — Ghawy`;
         }
 
         // Everything above is injected AFTER i18n.js has made its automatic

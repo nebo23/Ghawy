@@ -10,39 +10,62 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ghawy — منصة تعليم الذكاء الاصطناعي</title>
+
+    <!-- ── SEO ──
+         Head block approved by the client. The canonical, the title and the
+         description are per-page across the site: /courses, /tracks, /pricing,
+         /reviews, /instructors and /course-details each carry their own, so
+         Google can list them as separate results under the domain rather than
+         seeing six copies of the home page. -->
+    <link rel="canonical" href="https://ghawy.ai/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <title>غاوي — منصة ومجتمع الذكاء الاصطناعي بالعربي</title>
     <meta name="description"
-        content="Ghawy هو برنامج تدريبي عملي يعلمك كل شيء عن الذكاء الاصطناعي من الصفر، وعن هندسه البرومبت, والاوتوميشن وازاي تجيب اول عميل وتحقق ربح من الذكاء الاصطناعي" />
+        content="غاوي Ghawy هي أول منصة ومجتمع عربي لتعليم الذكاء الاصطناعي وريادة الاعمال: من الأساسيات للاحتراف، أوتوميشن، تعلم الآلة, اكتساب عملاء، وبناء بيزنس بالـ AI. ابدأ رحلتك دلوقتي مع غاوي" />
     <meta name="keywords"
-        content="ذكاء اصطناعي, AI Automation, وكالة AA, ربح من الانترنت, أوتوميشن, بيزنس تقني, تعليم ذكاء اصطناعي" />
-    <meta name="author" content="Nabil Ahmed" />
-    <meta name="developer" content="Nabil Ahmed" />
+        content="غاوي, منصة غاوي, تعليم الذكاء الاصطناعي, ذكاء اصطناعي بالعربي, كورس ذكاء اصطناعي, كورس AI, اوتوميشن, n8n, هندسة البرومبت, اتمتة, AI Automation Agency, ربح من الذكاء الاصطناعي, مجتمع تعليمي" />
+    <meta name="author" content="Ghawy" />
+    <!-- Developer credit — kept from the previous head, and matched by the
+         #developer node in the structured data below. -->
     <link rel="author" href="/humans.txt" />
-    <meta property="og:title" content="Ghawy | ابدأ رحلتك مع عالم الذكاء الاصطناعي" />
-    <meta property="og:description"
-        content="خارطة طريقك لبناء وكالة أوتوميشن ذكية وتحقيق دخل مستدام باستخدام الـ AI." />
-    <meta property="og:image" content="./imgs/community-logo.png" />
-    <meta property="og:url" content="https://ghawy.ai" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Ghawy" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <meta property="og:site_name" content="غاوي | Ghawy" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:url" content="https://ghawy.ai/" />
+    <meta property="og:title" content="غاوي — منصة ومجتمع الذكاء الاصطناعي" />
+    <meta property="og:description"
+        content="غاوي Ghawy هي أول منصة ومجتمع عربي لتعليم الذكاء الاصطناعي وريادة الاعمال: من الأساسيات للاحتراف، أوتوميشن، تعلم الآلة, اكتساب عملاء، وبناء بيزنس بالـ AI. ابدأ رحلتك دلوقتي مع غاوي" />
+    <meta property="og:image" content="https://ghawy.ai/imgs/og-banner.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="غاوي — منصة تعليم الذكاء الاصطناعي" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Ghawy – ابني وكالة AI وابدأ دخل حقيقي" />
+    <meta name="twitter:title" content="غاوي — منصة ومجتمع الذكاء الاصطناعي" />
     <meta name="twitter:description"
-        content="برنامج عملي لبناء وكالة AI Automation والحصول على أول عميل بخطوات واضحة وتطبيق عملي." />
-    <meta name="twitter:image" content="./imgs/community-logo.png" />
+        content="غاوي Ghawy هي أول منصة ومجتمع عربي لتعليم الذكاء الاصطناعي وريادة الاعمال: من الأساسيات للاحتراف، أوتوميشن، تعلم الآلة, اكتساب عملاء، وبناء بيزنس بالـ AI. ابدأ رحلتك دلوقتي مع غاوي" />
+    <meta name="twitter:image" content="https://ghawy.ai/imgs/og-banner.png" />
 
     <meta name="theme-color" content="#000000" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
 
-    <!-- ── Structured data (schema.org) — attribution for search engines ── -->
+    <!-- ── Structured data (schema.org) ──
+         Kept in step with the meta tags above: same name, same description,
+         same banner. `sameAs` is what tells Google the Instagram/Facebook/
+         TikTok accounts are this organisation's — two of those three are still
+         unconfirmed guesses (see the note in src/js/layout.js) and should be
+         corrected here as well when the real links arrive.
+
+         The FAQPage entry is NOT here. It is emitted by src/js/faq.js from the
+         same array the page renders, so the rich result can never quote an
+         answer the page no longer gives. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -50,20 +73,31 @@
         {
           "@type": "WebSite",
           "@id": "https://ghawy.ai/#website",
-          "url": "https://ghawy.ai",
-          "name": "Ghawy",
+          "url": "https://ghawy.ai/",
+          "name": "غاوي",
+          "alternateName": "Ghawy",
           "inLanguage": "ar",
-          "description": "منصة تعليم الذكاء الاصطناعي والأوتوميشن.",
+          "description": "منصة ومجتمع عربي لتعليم الذكاء الاصطناعي — من الأساسيات للاحتراف، أوتوميشن، هندسة البرومبت، وبناء بيزنس بالـ AI.",
           "publisher": { "@id": "https://ghawy.ai/#organization" },
-          "creator": { "@id": "https://ghawy.ai/#developer" },
-          "author": { "@id": "https://ghawy.ai/#developer" }
+          "creator": { "@id": "https://ghawy.ai/#developer" }
         },
         {
-          "@type": "Organization",
+          "@type": ["Organization", "EducationalOrganization"],
           "@id": "https://ghawy.ai/#organization",
-          "name": "Ghawy",
-          "url": "https://ghawy.ai",
+          "name": "غاوي",
+          "alternateName": "Ghawy",
+          "url": "https://ghawy.ai/",
           "logo": "https://ghawy.ai/imgs/community-logo.png",
+          "image": "https://ghawy.ai/imgs/og-banner.png",
+          "description": "أكبر منصة لتعليم كافة مجالات الذكاء الاصطناعي لمختلف المجالات والاستخدامات في الشرق الأوسط.",
+          "email": "support@ghawy.ai",
+          "telephone": "+201033903334",
+          "areaServed": "EG",
+          "sameAs": [
+            "https://www.instagram.com/ghawy.ai/",
+            "https://facebook.com/ghawyofficial",
+            "https://tiktok.com/@ghawy_official"
+          ],
           "founder": {
             "@type": "Person",
             "name": "Mohamed Salah",
@@ -1421,7 +1455,7 @@
          /pricing so the two pages cannot quote different numbers. -->
     <script src="src/js/pricing.js?v=20260806a"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
-    <script src="src/js/faq.js?v=20260806a"></script>
+    <script src="src/js/faq.js?v=20260806b"></script>
     <script src="src/js/main.js?v=20260806e"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has

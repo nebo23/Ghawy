@@ -1,0 +1,43 @@
+# غاوي — https://ghawy.ai
+#
+# The public marketing pages are open to every crawler. Everything behind a
+# login is not: those URLs render nothing useful without a token, and an
+# indexed /dashboard is a result that sends a visitor to an empty screen.
+#
+# Note the `$` anchors on /course-detail — the PUBLIC page is /course-details
+# (with the s) and must stay crawlable; /course-detail is the member player.
+
+User-agent: *
+Allow: /
+
+# Members-only app
+Disallow: /dashboard$
+Disallow: /dashboard.html
+Disallow: /dashboard-courses
+Disallow: /course-detail$
+Disallow: /course-detail.html
+Disallow: /chat
+Disallow: /direct-messages
+Disallow: /profile
+Disallow: /profile-settings
+Disallow: /teamdashboard
+Disallow: /admin-course-detail
+Disallow: /ai-updates
+Disallow: /guest-of-honors
+Disallow: /build-with-me
+
+# Account + payment flows — nothing to rank, and some carry query state
+Disallow: /onboarding
+Disallow: /verify-email
+Disallow: /legacy-access
+Disallow: /renewal
+Disallow: /payment
+Disallow: /pay
+Disallow: /login
+Disallow: /register
+
+# Scratch pages
+Disallow: /_langtest
+Disallow: /course-detail-test
+
+Sitemap: https://ghawy.ai/sitemap.xml

@@ -181,6 +181,41 @@
         });
     }
 
+    // ─── Structured data ────────────────────────────────────────
+
+    /**
+     * Emit a schema.org FAQPage built from FAQ.
+     *
+     * Written here rather than typed into each page's <head> for the same
+     * reason the questions themselves are: a hand-written copy in the markup
+     * is a second answer to the same question, and the one Google shows in a
+     * rich result would eventually stop matching the one on the page. This
+     * cannot drift — it is the array.
+     *
+     * Only one page may claim FAQPage per URL, and both pages that render the
+     * questions are separate URLs, so each gets its own. The guard is for the
+     * re-render on `languagechange`: the tag is replaced, never stacked.
+     */
+    function injectFAQSchema() {
+        const data = {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: FAQ.map(entry => ({
+                '@type': 'Question',
+                name: L(entry.q),
+                acceptedAnswer: { '@type': 'Answer', text: L(entry.a) },
+            })),
+        };
+        let tag = document.getElementById('faqSchema');
+        if (!tag) {
+            tag = document.createElement('script');
+            tag.type = 'application/ld+json';
+            tag.id = 'faqSchema';
+            document.head.appendChild(tag);
+        }
+        tag.textContent = JSON.stringify(data);
+    }
+
     // ─── Auto-init ──────────────────────────────────────────────
     // A page wanting the questions drops `<div id="faqList">` in and loads
     // this file. Re-rendered on `languagechange` because the text is chosen by
@@ -190,7 +225,11 @@
         const el = document.getElementById('faqList');
         if (!el) return;
         renderFAQ(el);
-        document.addEventListener('languagechange', () => renderFAQ(el));
+        injectFAQSchema();
+        document.addEventListener('languagechange', () => {
+            renderFAQ(el);
+            injectFAQSchema();
+        });
     }
 
     if (document.readyState === 'loading') {
@@ -199,5 +238,5 @@
         autoInit();
     }
 
-    window.GhawyFAQ = { FAQ, L, esc, i18nAttrs, itemHTML, renderFAQ };
+    window.GhawyFAQ = { FAQ, L, esc, i18nAttrs, itemHTML, renderFAQ, injectFAQSchema };
 })();
