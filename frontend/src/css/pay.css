@@ -72,8 +72,76 @@ body {
 /* Grid Layout */
 .pay-steps-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, 1fr), NOT 1fr. A `1fr` track floors at the min-content width
+       of what is inside it, and the Instapay handle is now `white-space:
+       nowrap` — so the track refused to go below the width of that one
+       unbreakable string and the card overflowed the viewport on a phone. In
+       RTL that overflow runs off the LEFT edge, where it produces no scrollbar
+       and `scrollWidth` never reports it; it just silently clips the text. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 30px;
+    /* Both cards are already the same HEIGHT — grid stretches them. What was
+       unbalanced is what is INSIDE them: step 1 is full to the bottom edge and
+       step 2 ran out of content two-thirds of the way down, leaving a slab of
+       empty card under the submit button. The rules below make step 2's
+       dropzone absorb that space instead. */
+    align-items: stretch;
+}
+
+/* A column, so the parts inside can be told to grow. */
+.pay-steps-grid > .step-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.pay-steps-grid > .step-card > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* The receipt field takes whatever height is left over...
+   `flex: 1 0 auto` — grow into spare space, but NEVER shrink below the
+   content. Plain `flex: 1` sets shrink to 1, and once a tall receipt preview
+   was in here that let the box collapse under its own content, which pushed
+   the "تغيير الصورة" button out of the card and straight through the submit
+   button below it. */
+#pay-submit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+}
+
+/* ...and hands it to the dropzone, which is the one element on this card that
+   is better for being bigger — it is a drag target. `min-height` keeps it a
+   sensible size on a short viewport where there is nothing spare to give. */
+#pay-submit-form .file-drop-area {
+    flex: 1 0 auto;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Same for the state after a file is chosen, so the card does not resize
+   under the reader at the moment the preview appears. */
+#pay-submit-form .file-preview {
+    flex: 1 0 auto;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Both of the above set `display`, which beats the UA sheet's
+   `[hidden] { display: none }` — without these two the dropzone stayed on
+   screen underneath the preview after an upload, undoing the Phase 8 fix that
+   swaps one for the other. */
+#pay-submit-form .file-drop-area[hidden],
+#pay-submit-form .file-preview[hidden] {
+    display: none;
 }
   
 /* Cards */
@@ -83,6 +151,9 @@ body {
     border-radius: 16px;
     padding: 32px;
     position: relative;
+    /* Lets the card shrink inside its track instead of being propped open by
+       the un-wrappable Instapay handle. */
+    min-width: 0;
 }
   
 .step-badge {
@@ -159,18 +230,27 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
+    min-width: 0;
 }
 
+/* ONE line, always.
+   This used to be `word-break: break-all`, which split the handle across two
+   lines in the middle of a word and looked broken. The full value is never
+   lost: it is on `data-full` and in the title, the copy button reads from
+   there, and the blue "ادفع دلوقتي" button below opens the real link — so an
+   ellipsis here costs the payer nothing. */
 .pi-number {
     flex: 1;
     min-width: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 600;
     color: #3f8ff9;
     font-family: 'IBM Plex Mono', monospace;
     letter-spacing: 0;
-    word-break: break-all;
-    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
 }
 
 .pi-copy-btn {
@@ -420,18 +500,25 @@ body {
 }
 
 /* Submit Button — green, so the last thing on the page reads as "go" rather
-   than as one more blue link like the Instapay button above it. */
+   than as one more blue link like the Instapay button above it.
+
+   It used to be `width: 100%` at 16px padding, which made a ~400px slab of
+   solid green — the heaviest object on a page whose other controls are all
+   modest. It is sized to its text now and sits at the start of the row (so it
+   lands under the form in both directions without a left/right rule). Full
+   width comes back on phones, where a thumb target should span the column. */
 .pay-submit-btn {
-    width: 100%;
+    align-self: flex-start;
+    min-width: 190px;
     background: #c1ff11;
     color: #000;
     border: none;
-    padding: 16px;
+    padding: 13px 34px;
     border-radius: 10px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 4px;
     transition: background 0.2s, box-shadow 0.2s;
     display: flex;
     justify-content: center;
@@ -562,14 +649,43 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
     .pay-steps-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
-    
+
     .pay-header {
         padding: 20px;
     }
-    
+
     .pay-container {
-        padding: 40px 20px;
+        padding: 32px 18px 48px;
+    }
+
+    /* One column, so there is no second card to match — the dropzone stops
+       stretching and goes back to hugging its content. Two stacked cards each
+       padded out to a shared height is a lot of scrolling for nothing. */
+    #pay-submit-form .form-group,
+    #pay-submit-form .file-drop-area,
+    #pay-submit-form .file-preview {
+        flex: 0 1 auto;
+        min-height: 0;
+    }
+
+    #pay-submit-form .file-drop-area {
+        padding: 28px 20px;
+    }
+
+    /* A thumb target should span the column. */
+    .pay-submit-btn {
+        align-self: stretch;
+        width: 100%;
+        padding: 15px 20px;
+    }
+
+    .pay-card {
+        padding: 26px 20px;
+    }
+
+    .pay-title-section h1 {
+        font-size: 25px;
     }
 }

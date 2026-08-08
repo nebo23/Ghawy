@@ -62,6 +62,11 @@ if (!token) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Normalise the hardcoded fallback in the markup through the same path the
+    // backend value takes, so `data-full` is populated even when the config
+    // request fails and the copy button still copies a working link.
+    const insta = document.getElementById('display-instapay');
+    if (insta) setInstapayDisplay(insta.textContent.trim());
     loadPaymentConfig();
     setupDragAndDrop();
 });
@@ -77,7 +82,7 @@ async function loadPaymentConfig() {
         // (default placeholder "xxxx" / empty would otherwise hide the payment link).
         const instapay = config.instapay_number;
         if (instapay && instapay !== "xxxx") {
-            document.getElementById('display-instapay').innerText = instapay;
+            setInstapayDisplay(instapay);
             // If it's a full payment URL, point the "Pay now" button to it too.
             if (/^https?:\/\//i.test(instapay)) {
                 document.getElementById('pi-instapay-link').href = instapay;
@@ -108,9 +113,33 @@ function renderPlanLabels() {
 document.addEventListener('languagechange', renderPlanLabels);
 
 // Copy to clipboard
+/**
+ * Put the Instapay handle on screen without letting it wrap.
+ *
+ * The raw value is a full URL — "https://ipn.eg/S/salahabouzeid2/instapay/
+ * 8D6xNU" — and at the width of that box it broke across two lines, mid-word,
+ * which is what the client saw and disliked. Two things fix it and neither
+ * loses information:
+ *
+ *   - the scheme is dropped from the DISPLAY. "https://" is eight characters
+ *     that tell a payer nothing.
+ *   - `data-full` keeps the real value, and it is what the copy button and
+ *     the title tooltip use. So what gets copied is always the complete,
+ *     working link no matter how the label is shortened or ellipsised by CSS.
+ */
+function setInstapayDisplay(value) {
+    const el = document.getElementById('display-instapay');
+    if (!el || !value) return;
+    el.dataset.full = value;
+    el.title = value;
+    el.textContent = String(value).replace(/^https?:\/\//i, '');
+}
+
 function copyInstapay() {
-    const text = document.getElementById('display-instapay').innerText;
-    if (text === "---") return;
+    const el = document.getElementById('display-instapay');
+    // Always the full value, never the shortened label on screen.
+    const text = (el.dataset.full || el.innerText || '').trim();
+    if (!text || text === "---") return;
 
     navigator.clipboard.writeText(text).then(() => {
         showToast(t('payCopiedToast'), 'success');

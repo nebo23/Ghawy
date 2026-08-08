@@ -86,8 +86,18 @@
     // this file works on its own — it is loaded by pages that do not load
     // either of those.
 
+    // The language comes from i18n.js and nowhere else.
+    //
+    // This used to read localStorage('ghawy_lang') directly, and that is what
+    // made the questions stay Arabic after a visitor pressed English: the
+    // re-render below runs on `languagechange`, and at that moment storage
+    // still held the language being left behind. The <html> lang attribute
+    // that currentLang() reads is set before the event fires, so it is the
+    // only source that is correct while a handler is running. The fallback is
+    // for the (impossible in practice) case of this file loading without
+    // i18n.js — Arabic, the site default.
     function currentLang() {
-        return localStorage.getItem('ghawy_lang') === 'en' ? 'en' : 'ar';
+        return (typeof window.currentLang === 'function') ? window.currentLang() : 'ar';
     }
 
     /** Pick the current language out of an {ar, en} pair. */

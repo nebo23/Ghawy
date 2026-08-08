@@ -208,8 +208,11 @@
 
     // ─── Helpers ────────────────────────────────────────────────
 
+    // From i18n.js — see the note in faq.js. Reading localStorage here made
+    // the plan cards repaint in the language the visitor had just left,
+    // because `languagechange` fires before storage is written.
     function currentLang() {
-        return localStorage.getItem('ghawy_lang') === 'en' ? 'en' : 'ar';
+        return (typeof window.currentLang === 'function') ? window.currentLang() : 'ar';
     }
 
     function L(pair) {

@@ -37,14 +37,14 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260806h">
+    <link rel="stylesheet" href="src/css/main.css?v=20260808a">
 </head>
 
 <body>
 
     <!-- Shared navbar + drawer — single source in src/js/layout.js -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260806b"></script>
+    <script src="src/js/layout.js?v=20260808a"></script>
 
     <!-- ════════════════════════════════════════
      TRACKS
@@ -74,9 +74,9 @@
     <div id="siteFooter"></div>
     <script>GhawyLayout.mountFooter();</script>
 
-    <script src="src/js/i18n.js?v=20260806a"></script>
+    <script src="src/js/i18n.js?v=20260808a"></script>
     <!-- The single source for course + track + instructor data. -->
-    <script src="src/js/catalog.js?v=20260806e"></script>
+    <script src="src/js/catalog.js?v=20260808a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
     <script>
         const C = window.GhawyCatalog;
@@ -347,7 +347,11 @@
         // moves these numbers on its own.
         function renderStats(tr, st) {
             const el = document.getElementById('trStats');
-            if (st.empty) {
+            // Nothing watchable yet — whether the track is empty or its only
+            // courses are announced-but-unreleased. Printing "1 course · 0
+            // lessons · 0 hours" for the second case would be worse than the
+            // honest line, so both get it.
+            if (st.empty || st.soon) {
                 const soon = { ar: 'المسار بيتجهّز', en: 'This track is being prepared' };
                 el.innerHTML = `
                 <div class="tr-stat tr-stat-soon">
@@ -362,24 +366,36 @@
                 statHTML('fa-regular fa-clock', st.hours, { ar: 'ساعة', en: 'hours' });
         }
 
+        // One step in the track. A course that has been announced but not
+        // released is shown in its place in the order — that is the whole
+        // point of announcing it — but it does not link anywhere, its meta
+        // line reads "قريباً" instead of "undefined درس · undefined", and it
+        // carries no arrow, so it is visibly not yet openable.
         function stepHTML(course, i) {
-            const href = `/course-details?course=${encodeURIComponent(course.slug)}`;
-            const meta = {
+            const soon = C.isSoon(course);
+            const meta = soon ? C.SOON : {
                 ar: `${C.lessonsWord(course.lessons).ar} · ${course.duration}`,
                 en: `${C.lessonsWord(course.lessons).en} · ${course.duration}`
             };
-            return `
-            <li class="tr-step">
-                <a class="tr-step-link" href="${href}">
+            const tr = C.track(course.track);
+            const thumb = course.image
+                ? `<img src="${C.esc(course.image)}" alt="" loading="lazy" />`
+                : `<i class="${C.esc(tr && tr.icon ? tr.icon : 'fa-solid fa-graduation-cap')}" aria-hidden="true"></i>`;
+
+            const body = `
                     <span class="tr-step-num">${i + 1}</span>
-                    <span class="tr-step-thumb"><img src="${C.esc(course.image)}" alt="" loading="lazy" /></span>
+                    <span class="tr-step-thumb${course.image ? '' : ' tr-step-thumb-ph'}">${thumb}</span>
                     <span class="tr-step-body">
                         <span class="tr-step-title" ${C.i18nAttrs(course.title)}>${C.esc(C.L(course.title))}</span>
-                        <span class="tr-step-meta" ${C.i18nAttrs(meta)}>${C.esc(C.L(meta))}</span>
+                        <span class="tr-step-meta${soon ? ' tr-step-meta-soon' : ''}" ${C.i18nAttrs(meta)}>${C.esc(C.L(meta))}</span>
                     </span>
-                    <i class="fa-solid fa-arrow-left tr-step-arrow" aria-hidden="true"></i>
-                </a>
-            </li>`;
+                    ${soon ? '' : '<i class="fa-solid fa-arrow-left tr-step-arrow" aria-hidden="true"></i>'}`;
+
+            return soon
+                ? `<li class="tr-step is-soon"><span class="tr-step-link">${body}</span></li>`
+                : `<li class="tr-step">
+                    <a class="tr-step-link" href="/course-details?course=${encodeURIComponent(course.slug)}">${body}</a>
+                </li>`;
         }
 
         // An empty track gets a designed "coming soon" panel — the client

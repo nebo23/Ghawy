@@ -8732,10 +8732,65 @@ h1.hero-heading-single>span {
     direction: rtl;
 }
 
+/* The `direction: rtl` above is unconditional, which is wrong on the English
+   site: it bidi-reorders the Latin text in this bar, so "© 2026 Ghawy. All
+   rights reserved." rendered as ".Ghawy. All rights reserved 2026 ©" and the
+   developer credit came out as "Nabil Ahmed — Built by".
+
+   Overridden rather than deleted so the Arabic bar stays byte-identical to
+   what it is today — only an LTR document is affected. */
+html[dir="ltr"] .footer-bottom {
+    direction: ltr;
+}
+
 .footer-copy {
     font-size: 0.9rem;
     color: #666;
     margin: 0;
+}
+
+/* Developer credit — sits next to the copyright, not opposite it.
+   `.footer-bottom` is a space-between row of three now (copyright, credit,
+   socials); the auto margin on the inline-end side consumes the free space
+   after this item, which keeps the credit tucked against the copyright and
+   still throws the social icons to the far edge. Works unchanged in both
+   directions because the margin is logical. */
+.footer-dev {
+    margin: 0;
+    margin-inline-end: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.84rem;
+    color: #5c5c5c;
+}
+
+.footer-dev a {
+    color: #8a8a8a;
+    text-decoration: none;
+    /* A Latin name inside an RTL line — isolate it so the surrounding
+       punctuation cannot be reordered around it. */
+    unicode-bidi: isolate;
+    transition: color 0.2s;
+}
+
+.footer-dev a:hover,
+.footer-dev a:focus-visible {
+    color: var(--gold);
+    text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+    /* Stacked and centred — an auto margin in a wrapped row just strands the
+       credit on its own line hard against one edge. */
+    .footer-bottom {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .footer-dev {
+        margin-inline-end: 0;
+    }
 }
 
 .social-icons {
@@ -9264,5 +9319,458 @@ html[dir="ltr"] .hero-stats-cards {
 
     .hero-stat-value {
         font-size: 0.76rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANNOUNCED, NOT RELEASED
+   ═══════════════════════════════════════════════════════════════
+   A course can be on the site before it is watchable: the client wants the
+   two new courses visible with their instructor, but with no runtime and no
+   way in. `catalog.js` marks those with `isSoon()` — no duration — and these
+   rules are the whole visual difference. Nothing here is a one-off: the day
+   one of them gets a runtime the classes stop being emitted and the card goes
+   back to normal with no CSS change.
+
+   The rule the states share: dim, dashed, and never green-filled. A
+   coming-soon card must not compete with a card you can actually open. */
+
+/* The thumbnail stand-in — the track's icon on its family's gradient, the
+   same treatment /tracks already gives a track with no artwork. `.gc-media`
+   is the positioning context, `.tr-thumb-ph` supplies the grid + glow. */
+.gc-media-ph {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 85% 75% at 50% 12%, var(--tr-glow) 0%, transparent 72%),
+        linear-gradient(145deg, #0e0e0e 0%, #000000 65%);
+}
+
+.gc-media-ph::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--tr-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--tr-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.32;
+    -webkit-mask-image: radial-gradient(ellipse 72% 72% at 50% 46%, #000 15%, transparent 78%);
+    mask-image: radial-gradient(ellipse 72% 72% at 50% 46%, #000 15%, transparent 78%);
+}
+
+.gc-media-ph i {
+    position: relative;
+    font-size: 2.1rem;
+    color: var(--tr-ink);
+    opacity: 0.85;
+}
+
+/* The card keeps its full height in the grid — only its weight drops. */
+.gc-card.is-soon .gc-media {
+    filter: saturate(0.75);
+}
+
+.gc-hours-soon {
+    color: var(--tr-ink, var(--gold));
+    opacity: 0.95;
+}
+
+.gc-hours-soon i {
+    color: inherit;
+}
+
+/* The disabled "محتوى الكورس". Same box as the real button so the row of
+   cards still lines up, but visibly inert: dashed, muted, no pointer. */
+.gc-card .gc-btn-soon {
+    margin-top: auto;
+    display: block;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.98rem;
+    padding: 12px 20px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    color: var(--muted-light);
+    cursor: default;
+    user-select: none;
+}
+
+.gc-card .gc-btn-soon:hover {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+}
+
+/* "وكورس كمان قريباً" on a track card that is only partly released. */
+.tr-meta-soon {
+    opacity: 0.85;
+}
+
+.tr-meta-soon i {
+    color: var(--tr-ink);
+}
+
+/* A track step that is announced but not open: no arrow, no hover lift, and
+   the number ring dashed so the row reads as a placeholder in the order
+   rather than a link that failed. */
+.tr-step.is-soon .tr-step-link {
+    cursor: default;
+    opacity: 0.72;
+}
+
+.tr-step.is-soon .tr-step-num {
+    border-style: dashed;
+}
+
+.tr-step-meta-soon {
+    color: var(--tr-ink);
+    font-weight: 700;
+}
+
+/* Step thumbnail with no artwork — icon instead of a grey box. */
+.tr-step-thumb-ph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 85% 75% at 50% 12%, var(--tr-glow) 0%, transparent 72%),
+        linear-gradient(145deg, #0e0e0e 0%, #000000 65%);
+    border: 1px solid var(--tr-line);
+}
+
+.tr-step-thumb-ph i {
+    font-size: 1.15rem;
+    color: var(--tr-ink);
+    opacity: 0.9;
+}
+
+/* The single "قريباً" chip that replaces the lesson-count + runtime pair on
+   an unreleased course's own page. */
+.cd-meta-soon {
+    color: var(--gold);
+    font-weight: 700;
+}
+
+.cd-meta-soon i {
+    color: var(--gold);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   /reviews — the full wall of proof
+   ═══════════════════════════════════════════════════════════════
+   The home page shows a teaser: a scrolling marquee and a few cards. This
+   page is where someone goes to actually read the lot, so the same data is
+   laid out still and in full — four sections, a filter, and a lightbox for
+   the screenshots (which are text, and unreadable at thumbnail size).
+
+   The written-review cards (.rv-card) are NOT restyled here. They are the
+   Phase-2 component and this page reuses them exactly as the home page has
+   them; only the sections around them are new. */
+
+.rv-page .rv-section {
+    margin-top: 64px;
+}
+
+.rv-page .rv-section[hidden] {
+    display: none;
+}
+
+.rv-section-head {
+    margin-bottom: 24px;
+}
+
+.rv-section-title {
+    font-size: clamp(1.35rem, 3vw, 1.9rem);
+    font-weight: 900;
+    color: var(--white);
+    margin: 0 0 6px;
+}
+
+.rv-section-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* ── Filter ──
+   A row of pills. `flex-wrap` so four Arabic labels do not force a sideways
+   scroll at 360px. */
+.rv-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+}
+
+.rv-filter-btn {
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--muted-light);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 100px;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.rv-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--white);
+}
+
+.rv-filter-btn.is-active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+}
+
+.rv-filter-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* ── Video grid ──
+   The clips are vertical (9:16 phone video), so the cards are narrow and
+   tall and four fit on a desktop row. `auto-fill` with a 220px floor drops
+   that to two on a phone without a media query. */
+.rvv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.rvv-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rvv-frame {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #0d0d0d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rvv-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* The iframe is injected on click and covers the poster completely. */
+.rvv-iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.rvv-card.is-playing .rvv-play,
+.rvv-card.is-playing .rvv-time {
+    display: none;
+}
+
+/* One obvious control, centred, always visible — not a hover reveal. The
+   previous video section failed precisely because the play affordance was
+   hidden until you already knew where to aim. */
+.rvv-play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #000;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 6px 26px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* The triangle is optically off-centre in a circle; nudge it back. The
+   inline-start nudge follows the writing direction, so it stays correct
+   in both LTR and RTL. */
+.rvv-play i {
+    margin-inline-start: 3px;
+}
+
+.rvv-card:hover .rvv-play {
+    transform: scale(1.07);
+    box-shadow: 0 8px 32px rgba(193, 255, 17, 0.35);
+}
+
+.rvv-play:focus-visible {
+    outline: 3px solid var(--white);
+    outline-offset: 3px;
+}
+
+.rvv-time {
+    position: absolute;
+    inset-inline-end: 8px;
+    bottom: 8px;
+    background: rgba(0, 0, 0, 0.72);
+    color: var(--white);
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    /* A clock reads left-to-right in both languages. */
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.rvv-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.rvv-name {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 0.95rem;
+}
+
+.rvv-city {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+/* ── Screenshot grid ──
+   `columns`, not `grid`: the shots are a single width and every possible
+   height, and a column layout packs them with no gaps and no JS. */
+.rvg-grid {
+    columns: 4 240px;
+    column-gap: 14px;
+}
+
+.rvg-grid--tall {
+    columns: 4 260px;
+}
+
+.rvg-cell {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0d0d0d;
+    cursor: zoom-in;
+    /* Stop a card being split across two columns mid-message. */
+    break-inside: avoid;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.rvg-cell:hover {
+    border-color: var(--gold-border);
+    transform: translateY(-2px);
+}
+
+.rvg-cell:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.rvg-cell img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ── Lightbox ── */
+.rvlb {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(4px);
+    cursor: zoom-out;
+}
+
+.rvlb[hidden] {
+    display: none;
+}
+
+.rvlb-img {
+    max-width: min(100%, 720px);
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 10px;
+    cursor: default;
+}
+
+.rvlb-close {
+    position: absolute;
+    top: 18px;
+    inset-inline-end: 18px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--white);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.rvlb-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.rvlb-close:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* Stop the page scrolling behind the overlay. */
+body.rvlb-open {
+    overflow: hidden;
+}
+
+.rv-filter-empty {
+    margin-top: 48px;
+}
+
+@media (max-width: 700px) {
+    .rv-page .rv-section {
+        margin-top: 48px;
+    }
+
+    /* Two columns of chat screenshots at 360px is unreadable — one, full
+       width, so the message can actually be read without the lightbox. */
+    .rvg-grid,
+    .rvg-grid--tall {
+        columns: 1;
+    }
+
+    .rvv-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
 }

@@ -26,7 +26,17 @@ const PLANS = {
 };
 
 let selectedPlan = 'monthly_egp'; // default
-let currentLang = localStorage.getItem('ghawy_lang') || 'ar';
+
+// The language, read fresh from i18n.js on every use.
+//
+// This was `let currentLang = localStorage.getItem('ghawy_lang')`, and the
+// name was the problem: i18n.js (loaded just before this file on
+// payment.html) declares a global function `currentLang`, so a top-level
+// `let` of the same name threw "Identifier 'currentLang' has already been
+// declared" — a SyntaxError, which meant NONE of this file ever ran and the
+// plan cards never rendered at all. Renamed, and turned into a function so it
+// also picks up a language change instead of snapshotting at load.
+const payLang = () => (typeof window.currentLang === 'function' ? window.currentLang() : 'ar');
 
 // ─── Render All 3 Plans for the Region ──────────────────────
 function renderPlans(region) {
@@ -40,12 +50,12 @@ function renderPlans(region) {
   container.innerHTML = planKeys.map((key, idx) => {
     const p = PLANS[key];
     const isActive = idx === 0;
-    const label = currentLang === 'ar' ? p.label : p.labelEn;
-    const period = currentLang === 'ar' ? p.period : p.periodEn;
+    const label = payLang() === 'ar' ? p.label : p.labelEn;
+    const period = payLang() === 'ar' ? p.period : p.periodEn;
     const symbol = p.currency === 'USD' ? '$' : '';
     const curr = p.currency === 'USD' ? 'USD' : 'EGP';
     const badge = p.badge ? `<div class="plan-badge">${p.badge}</div>` : '';
-    const instaLabel = currentLang === 'ar' ? 'ادفع عبر انستاباي' : 'Pay via Instapay';
+    const instaLabel = payLang() === 'ar' ? 'ادفع عبر انستاباي' : 'Pay via Instapay';
 
     return `
       <div class="plan-card${isActive ? ' active' : ''}" data-plan="${key}" onclick="selectPlan('${key}')">
@@ -106,16 +116,16 @@ async function pay() {
     const url = data.payment_url || data.approval_url;
 
     if (res.ok && url) {
-      showAlert(currentLang === 'ar' ? 'جارٍ التحويل لصفحة الدفع... ✅' : 'Redirecting to payment... ✅', 'success');
+      showAlert(payLang() === 'ar' ? 'جارٍ التحويل لصفحة الدفع... ✅' : 'Redirecting to payment... ✅', 'success');
       setTimeout(() => { window.location.href = url; }, 800);
     } else if (res.status === 401) {
-      showAlert(currentLang === 'ar' ? 'انتهت الجلسة، سجّل دخولك مرة أخرى' : 'Session expired, please login again', 'error');
+      showAlert(payLang() === 'ar' ? 'انتهت الجلسة، سجّل دخولك مرة أخرى' : 'Session expired, please login again', 'error');
       setTimeout(() => { logout(); }, 1500);
     } else {
-      showAlert(data.detail || (currentLang === 'ar' ? 'حدث خطأ، حاول مرة أخرى' : 'An error occurred, try again'), 'error');
+      showAlert(data.detail || (payLang() === 'ar' ? 'حدث خطأ، حاول مرة أخرى' : 'An error occurred, try again'), 'error');
     }
   } catch {
-    showAlert(currentLang === 'ar' ? 'لا يوجد اتصال بالسيرفر' : 'No connection to server', 'error');
+    showAlert(payLang() === 'ar' ? 'لا يوجد اتصال بالسيرفر' : 'No connection to server', 'error');
   } finally {
     setLoading('payBtn', false);
   }

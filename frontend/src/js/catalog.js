@@ -61,7 +61,7 @@
         'mohamed-salah': {
             slug: 'mohamed-salah',
             name: { ar: 'محمد صلاح', en: 'Mohamed Salah' },
-            photo: null,                       // → placeholder avatar
+            photo: './imgs/instructors/mohamed.png',
             role: {
                 ar: 'مؤسس غاوي ومدرّب AI Automation',
                 en: 'Founder of Ghawy — AI Automation instructor'
@@ -92,6 +92,66 @@
                 ar: 'بدأ أونلاين بيزنس وهو عنده 14 سنة، واشتغل في البرمجة والجرافيك والتسويق قبل ما يستقر على الـ AI والأوتوميشن. أسّس غاوي عشان يبني المصدر العربي اللي كان ناقصه هو نفسه وهو بيتعلّم.',
                 en: 'Started an online business at 14 and worked through programming, design and marketing before settling on AI and automation. He founded Ghawy to build the Arabic resource he could not find while learning it himself.'
             }
+        },
+
+        // ── The two instructors added with the thumbnails and ML courses ──
+        //
+        // READ THIS BEFORE FILLING ANYTHING IN BELOW.
+        //
+        // Four things about these two are confirmed: the name the client
+        // used for them, the photo they sent, the Instagram link, and the
+        // course each one teaches. That is all that is written here.
+        //
+        // `yearsExperience`, `clientsCount`, `clients` and `bio` are null on
+        // purpose. Both Instagram profiles are behind a login wall, so there
+        // was no way to read anything true off them, and inventing an
+        // experience figure or a client count for a real person is not a
+        // placeholder — it is a false claim with their face next to it. The
+        // renderers below all skip a fact that is null, so the cards read as
+        // deliberately short rather than broken. Ask the client for these
+        // four fields and drop them in; nothing else has to change.
+        //
+        // `role` is derived only from the confirmed course, nothing more.
+        //
+        // The display name is the handle the client referred to them by
+        // ("ofa", "talkhawy"), identical in both languages because guessing
+        // an Arabic spelling of someone's name is the same invention problem.
+        // Replace with their real names when the client sends them.
+        'ofa': {
+            slug: 'ofa',
+            name: { ar: 'Ofa', en: 'Ofa' },
+            photo: './imgs/instructors/ofa.jpg',
+            role: {
+                ar: 'مدرّب كورس الثامبنيلز بالـ AI',
+                en: 'AI Thumbnails instructor'
+            },
+            roleShort: { ar: 'مدرّب الثامبنيلز', en: 'Thumbnails instructor' },
+            yearsExperience: null,
+            clientsCount: null,
+            clients: [],
+            links: {
+                instagram: 'https://www.instagram.com/ofapsd/',
+            },
+            introVideo: null,
+            bio: null,
+        },
+        'talkhawy': {
+            slug: 'talkhawy',
+            name: { ar: 'Talkhawy', en: 'Talkhawy' },
+            photo: './imgs/instructors/talkhawy.jpg',
+            role: {
+                ar: 'مدرّب كورس الـ Machine Learning',
+                en: 'Machine Learning instructor'
+            },
+            roleShort: { ar: 'مدرّب Machine Learning', en: 'ML instructor' },
+            yearsExperience: null,
+            clientsCount: null,
+            clients: [],
+            links: {
+                instagram: 'https://www.instagram.com/talkhawy1/',
+            },
+            introVideo: null,
+            bio: null,
         },
     };
 
@@ -445,6 +505,39 @@
             track: 'automation',
             instructor: 'mohamed-salah',
         },
+
+        // ── Announced, not released ──
+        //
+        // These two are deliberately missing `courseId`, `lessons` and
+        // `duration`, and that absence IS the state: `isSoon()` below treats a
+        // course with no runtime as not-yet-available, and every place that
+        // shows a runtime, a course count or a total reads that flag instead
+        // of guessing from a zero. So the cards say "قريباً" where the hours
+        // would go, the "محتوى الكورس" button is inert, and the two tracks
+        // they belong to keep reading "coming soon" rather than suddenly
+        // claiming "1 course · 0 hours".
+        //
+        // Releasing one is a three-line change here and nothing else: give it
+        // the platform's `courseId` and its static `lessons`/`duration`
+        // fallback. `load()` will then merge the live numbers over the top and
+        // the course flips to available everywhere on the site at once.
+        //
+        // No `image` yet either — `courseMediaHTML` draws the track's icon on
+        // its family gradient until the client sends the thumbnails.
+        {
+            slug: 'ai-thumbnails',
+            title: { ar: 'الثامبنيلز بالذكاء الاصطناعي', en: 'AI Thumbnails' },
+            image: null,
+            track: 'ai-thumbnails',
+            instructor: 'ofa',
+        },
+        {
+            slug: 'machine-learning',
+            title: { ar: 'Machine Learning', en: 'Machine Learning' },
+            image: null,
+            track: 'machine-learning',
+            instructor: 'talkhawy',
+        },
     ];
 
     // ─── Helpers ────────────────────────────────────────────────
@@ -487,6 +580,20 @@
     function mediaURL(url) {
         if (!url) return null;
         return url.startsWith('/') ? API_BASE + url : url;
+    }
+
+    /**
+     * Is this course announced but not out yet?
+     *
+     * A released course always has a runtime — the platform gives it one the
+     * moment a lesson is ready, and the static fallback in COURSES carries one
+     * too. So "no runtime" is the single, self-maintaining signal that a
+     * course is not watchable yet, and it needs no extra flag to be kept in
+     * sync by hand: the day the API returns a `course_time` for one of these,
+     * it stops being "soon" everywhere at once.
+     */
+    function isSoon(course) {
+        return !course || !course.duration;
     }
 
     /** "12h 11m" → 731 minutes. Returns 0 for anything unparseable. */
@@ -606,9 +713,21 @@
     }
 
     /**
-     * Counts for one track, with its course list. `empty` is the flag the
-     * "coming soon" state is driven by — an empty track is a deliberate,
-     * designed state on this site, not a bug to hide.
+     * Counts for one track, with its course list.
+     *
+     * There are THREE states here, not two, and conflating the last two is
+     * what would have gone wrong the moment a course was announced without a
+     * date:
+     *
+     *   empty   — nothing announced at all.
+     *   soon    — something announced, none of it watchable yet.
+     *   normal  — at least one course you can open today.
+     *
+     * `empty` used to be the only flag, so a track flipped straight from
+     * "قريباً" to "1 course · 0 hours" as soon as an unreleased course was
+     * added to it — louder AND less true than the state it replaced. Both of
+     * the first two states render as "coming soon"; `count`/`hours` describe
+     * only what is actually watchable, and `soonCount` carries the rest.
      */
     function trackStats(slug) {
         return coursesInTrack(slug).then(courses => {
@@ -616,7 +735,11 @@
             return {
                 courses: courses,
                 empty: courses.length === 0,
+                // Announced but nothing to watch — reads as "coming soon" too.
+                soon: courses.length > 0 && t.courses === 0,
+                soonCount: t.soon,
                 count: t.courses,
+                announced: t.announced,
                 lessons: t.lessons,
                 hours: t.hours,
                 minutes: t.minutes,
@@ -639,15 +762,30 @@
         return Object.keys(INSTRUCTORS).map(k => INSTRUCTORS[k]);
     }
 
-    /** Totals across the whole catalog — for the "all of Ghawy" bar. */
+    /**
+     * Totals across the whole catalog — for the "all of Ghawy" bar.
+     *
+     * `courses`, `lessons`, `minutes` and `hours` count ONLY courses that are
+     * actually watchable. An announced-but-unreleased course would otherwise
+     * push the headline course count up while adding nothing to the hours,
+     * which is the site promising more than a subscriber can open — the
+     * numbers on this site are a claim about what you get for your money, and
+     * a course with no lessons in it is not part of that.
+     *
+     * `announced` and `soon` are kept alongside for the places that DO want to
+     * say "and two more are on the way".
+     */
     function totals(list) {
-        const courses = list || COURSES;
-        const mins = courses.reduce((s, c) => s + durationToMinutes(c.duration), 0);
+        const all = list || COURSES;
+        const out = all.filter(c => !isSoon(c));
+        const mins = out.reduce((s, c) => s + durationToMinutes(c.duration), 0);
         return {
-            courses: courses.length,
-            lessons: courses.reduce((s, c) => s + (c.lessons || 0), 0),
+            courses: out.length,
+            lessons: out.reduce((s, c) => s + (c.lessons || 0), 0),
             minutes: mins,
             hours: Math.round(mins / 60),
+            announced: all.length,
+            soon: all.length - out.length,
         };
     }
 
@@ -693,19 +831,32 @@
         </a>`;
     }
 
-    /** The experience / client-count pills. */
-    function factsHTML(inst) {
-        const yearsLine = {
+    /**
+     * "خبرة أكتر من N سنين", or null when we do not know N.
+     *
+     * Every caller used to build this line unconditionally, which printed
+     * "خبرة أكتر من undefined سنين" for an instructor whose figures the client
+     * has not sent yet. A fact we do not have is not rendered at all.
+     */
+    function yearsLineFor(inst) {
+        if (!inst || !inst.yearsExperience) return null;
+        return {
             ar: `خبرة أكتر من ${inst.yearsExperience} سنين`,
             en: `${inst.yearsExperience}+ years of experience`,
         };
+    }
+
+    /** The experience / client-count pills. Omitted entirely if we have neither. */
+    function factsHTML(inst) {
+        const yearsLine = yearsLineFor(inst);
         const clientsLine = inst.clientsCount ? {
             ar: `اشتغل مع أكتر من ${inst.clientsCount} عميل`,
             en: `Worked with ${inst.clientsCount}+ clients`,
         } : null;
+        if (!yearsLine && !clientsLine) return '';
         return `
         <div class="gi-facts">
-            <span class="gi-fact" ${i18nAttrs(yearsLine)}>${esc(L(yearsLine))}</span>
+            ${yearsLine ? `<span class="gi-fact" ${i18nAttrs(yearsLine)}>${esc(L(yearsLine))}</span>` : ''}
             ${clientsLine ? `<span class="gi-fact" ${i18nAttrs(clientsLine)}>${esc(L(clientsLine))}</span>` : ''}
         </div>`;
     }
@@ -788,10 +939,9 @@
     function instructorCardHTML(inst) {
         const href = `/instructors?i=${encodeURIComponent(inst.slug)}`;
         const name = L(inst.name);
-        const years = {
-            ar: `خبرة أكتر من ${inst.yearsExperience} سنين`,
-            en: `${inst.yearsExperience}+ years of experience`,
-        };
+        // Null for an instructor whose figures we have not been given — the
+        // pill is dropped rather than printed with an "undefined" in it.
+        const years = yearsLineFor(inst);
         return `
     <article class="gi-card">
         <a class="gi-card-top" href="${href}">
@@ -801,7 +951,7 @@
                 <span class="gi-role" ${i18nAttrs(inst.role)}>${esc(L(inst.role))}</span>
             </span>
         </a>
-        <span class="gi-fact" ${i18nAttrs(years)}>${esc(L(years))}</span>
+        ${years ? `<span class="gi-fact" ${i18nAttrs(years)}>${esc(L(years))}</span>` : ''}
         <a class="gc-btn" href="${href}" data-ar="صفحة المدرّب" data-en="Instructor page">صفحة المدرّب</a>
     </article>`;
     }
@@ -817,7 +967,12 @@
      * no number that changes under the reader a second after it appears.
      */
     function courseCountFor(slug) {
-        return COURSES.filter(c => c.instructor === slug).length;
+        return COURSES.filter(c => c.instructor === slug && !isSoon(c)).length;
+    }
+
+    /** Announced-but-unreleased courses for one instructor. */
+    function soonCountFor(slug) {
+        return COURSES.filter(c => c.instructor === slug && isSoon(c)).length;
     }
 
     /**
@@ -836,26 +991,44 @@
      */
     function homeInstructorCardHTML(inst) {
         const href = `/instructors?i=${encodeURIComponent(inst.slug)}`;
+        // Courses out today, and courses announced. An instructor whose only
+        // course has not shipped yet gets "كورس واحد قريباً" — saying "كورس
+        // واحد على غاوي" would point at something nobody can open.
         const n = courseCountFor(inst.slug);
-        const courses = {
-            ar: `${L(coursesWord(n))} على غاوي`,
-            en: `${L(coursesWord(n))} on Ghawy`,
-        };
-        const years = {
-            ar: `خبرة أكتر من ${inst.yearsExperience} سنين`,
-            en: `${inst.yearsExperience}+ years of experience`,
-        };
+        const soonN = soonCountFor(inst.slug);
+        const courses = n
+            ? { ar: `${L(coursesWord(n))} على غاوي`, en: `${L(coursesWord(n))} on Ghawy` }
+            : soonN
+                ? { ar: `${coursesWord(soonN).ar} قريباً`, en: `${coursesWord(soonN).en} coming soon` }
+                : null;
+
+        const years = yearsLineFor(inst);
+
         // What he is known for. The role is already the line under his name,
         // so this one picks up where that leaves off: who he has actually done
         // it for. `clients` holds CATEGORIES of client, so it reads as a
         // description and never as a name-drop. With no clients on file it
-        // falls back to the bio's first sentence rather than repeating the
-        // role a second time.
+        // falls back to the bio; with no bio either — an instructor whose
+        // details the client has not sent yet — the line is left out rather
+        // than rendered as an empty paragraph.
         const clientNames = (inst.clients || []).map(c => c.name);
         const distinction = clientNames.length ? {
             ar: `اشتغل مع ${clientNames.map(c => c.ar).join(' و')}، وبيشرح على غاوي اللي بيعمله فعلاً في شغله.`,
             en: `Has worked with ${clientNames.map(c => c.en || c.ar).join(' and ')}, and teaches on Ghawy exactly what he does in that work.`,
         } : inst.bio;
+
+        const facts = [
+            courses ? `
+            <span class="hi-fact">
+                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+                <span ${i18nAttrs(courses)}>${esc(L(courses))}</span>
+            </span>` : '',
+            years ? `
+            <span class="hi-fact">
+                <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                <span ${i18nAttrs(years)}>${esc(L(years))}</span>
+            </span>` : '',
+        ].join('');
 
         return `
     <article class="hi-card">
@@ -867,18 +1040,9 @@
             </span>
         </a>
 
-        <p class="hi-distinction" ${i18nAttrs(distinction)}>${esc(L(distinction))}</p>
+        ${distinction ? `<p class="hi-distinction" ${i18nAttrs(distinction)}>${esc(L(distinction))}</p>` : ''}
 
-        <div class="hi-facts">
-            <span class="hi-fact">
-                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-                <span ${i18nAttrs(courses)}>${esc(L(courses))}</span>
-            </span>
-            <span class="hi-fact">
-                <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
-                <span ${i18nAttrs(years)}>${esc(L(years))}</span>
-            </span>
-        </div>
+        ${facts ? `<div class="hi-facts">${facts}</div>` : ''}
 
         <div class="hi-foot">
             <a class="gc-btn hi-btn" href="${href}"
@@ -965,32 +1129,67 @@
      * between it and the body. Dropping the image later means deleting the
      * `.gc-media` anchor and nothing else.
      */
+    /**
+     * The card thumbnail. A course with no artwork yet gets the same treatment
+     * a track with no artwork gets — its track's icon on its family's gradient
+     * — rather than `src="null"` and a broken-image glyph.
+     */
+    function courseMediaHTML(course, href) {
+        const inner = course.image
+            ? `<img src="${esc(course.image)}" alt="" loading="lazy" />`
+            : (() => {
+                const tr = track(course.track);
+                const fam = tr ? family(tr.family) : null;
+                const accent = fam ? fam.accent : 'gold';
+                return `<span class="gc-media-ph tr-accent-${accent}" aria-hidden="true">
+                    <i class="${esc(tr && tr.icon ? tr.icon : 'fa-solid fa-graduation-cap')}"></i>
+                </span>`;
+            })();
+
+        // No link on an unreleased course — see the button below.
+        return href
+            ? `<a class="gc-media" href="${href}" tabindex="-1" aria-hidden="true">${inner}</a>`
+            : `<span class="gc-media" aria-hidden="true">${inner}</span>`;
+    }
+
     function courseCardHTML(course) {
         const inst = instructor(course.instructor);
-        const href = `/course-details?course=${encodeURIComponent(course.slug)}`;
+        const soon = isSoon(course);
+        // An unreleased course has no content page worth sending anyone to, so
+        // the card does not link anywhere at all: not the thumbnail, not the
+        // title, not the button. The button stays in place as an inert chip
+        // reading "قريباً" so the card keeps its shape in the grid — hiding it
+        // would leave this one card short next to its neighbours.
+        const href = soon ? null : `/course-details?course=${encodeURIComponent(course.slug)}`;
         const title = L(course.title);
+
         // The reference writes the runtime as whole hours ("12 ساعة"), not as
         // the platform's "12h 3m". `hoursWord` handles the Arabic dual/plural.
+        // With no runtime the slot says "قريباً" — never "0 ساعة", and never
+        // an empty gap where a number should be.
         const mins = durationToMinutes(course.duration);
-        const hours = mins
-            ? hoursWord(Math.round(mins / 60))
-            : { ar: course.duration, en: course.duration };
+        const hours = soon
+            ? SOON
+            : (mins ? hoursWord(Math.round(mins / 60)) : { ar: course.duration, en: course.duration });
+
+        const btn = soon
+            ? `<span class="gc-btn gc-btn-soon" aria-disabled="true"
+                     ${i18nAttrs(SOON)}>${esc(L(SOON))}</span>`
+            : `<a class="gc-btn" href="${href}" data-ar="محتوى الكورس" data-en="Course content">محتوى الكورس</a>`;
 
         return `
-    <article class="gc-card">
-        <a class="gc-media" href="${href}" tabindex="-1" aria-hidden="true">
-            <img src="${esc(course.image)}" alt="" loading="lazy" />
-        </a>
+    <article class="gc-card${soon ? ' is-soon' : ''}">
+        ${courseMediaHTML(course, href)}
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
             <div class="gc-meta">
                 ${cardInstructorHTML(inst)}
-                <span class="gc-hours">
-                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <span class="gc-hours${soon ? ' gc-hours-soon' : ''}">
+                    <i class="fa-regular fa-${soon ? 'hourglass-half' : 'clock'}" aria-hidden="true"></i>
                     <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
                 </span>
             </div>
-            <a class="gc-btn" href="${href}" data-ar="محتوى الكورس" data-en="Course content">محتوى الكورس</a>
+            ${btn}
         </div>
     </article>`;
     }
@@ -1042,6 +1241,14 @@
         return { ar, en: n === 1 ? '1 hour' : `${n} hours` };
     }
 
+    /** "وكورس كمان قريباً" — the tail on a track that is partly released. */
+    function soonMoreWord(n) {
+        const ar = n === 1 ? 'وكورس كمان قريباً'
+            : n === 2 ? 'وكورسين كمان قريباً'
+                : `و${n} كورسات كمان قريباً`;
+        return { ar, en: n === 1 ? '1 more coming soon' : `${n} more coming soon` };
+    }
+
     const SOON = { ar: 'قريباً', en: 'Coming soon' };
 
     /**
@@ -1079,7 +1286,20 @@
         const accent = fam ? fam.accent : 'gold';
         const href = trackHref(tr.slug);
 
-        const meta = st.empty
+        // Nothing watchable — whether or not a course has been announced — is
+        // one badge and no numbers. A "0 hours" on a card is worse than no
+        // number at all.
+        const nothingYet = st.empty || st.soon;
+
+        // Some courses out, others still coming: say both, in that order.
+        const soonTail = (!nothingYet && st.soonCount)
+            ? `<span class="tr-meta-item tr-meta-soon">
+                <i class="fa-regular fa-hourglass-half" aria-hidden="true"></i>
+                <span ${i18nAttrs(soonMoreWord(st.soonCount))}>${esc(L(soonMoreWord(st.soonCount)))}</span>
+            </span>`
+            : '';
+
+        const meta = nothingYet
             ? `<span class="tr-badge-soon" ${i18nAttrs(SOON)}>${esc(L(SOON))}</span>`
             : `
             <span class="tr-meta-item">
@@ -1089,14 +1309,14 @@
             <span class="tr-meta-item">
                 <i class="fa-regular fa-clock" aria-hidden="true"></i>
                 <span ${i18nAttrs(hoursWord(st.hours))}>${esc(L(hoursWord(st.hours)))}</span>
-            </span>`;
+            </span>${soonTail}`;
 
-        const cta = st.empty
+        const cta = nothingYet
             ? { ar: 'شوف المسار', en: 'See the track' }
             : { ar: 'افتح المسار', en: 'Open the track' };
 
         return `
-    <a class="tr-card tr-accent-${accent}${st.empty ? ' is-soon' : ''}" href="${href}">
+    <a class="tr-card tr-accent-${accent}${nothingYet ? ' is-soon' : ''}" href="${href}">
         ${trackThumbHTML(tr, 'tr-thumb-card')}
         <span class="tr-card-body">
             <span class="tr-card-title" ${i18nAttrs(tr.name)}>${esc(L(tr.name))}</span>
@@ -1154,7 +1374,9 @@
      */
     function familyTeaserHTML(fam, entries) {
         const chips = entries.map(e => {
-            const soon = e.stats.empty;
+            // Same three-state rule as the track card: a track whose only
+            // courses are unreleased is still "قريباً", not "1 course".
+            const soon = e.stats.empty || e.stats.soon;
             const label = soon
                 ? { ar: `${L(e.track.name)} — قريباً`, en: `${L(e.track.name)} — soon` }
                 : {
@@ -1372,10 +1594,11 @@
         API_BASE,
         INSTRUCTORS, TRACKS, COURSES, FAMILIES, COMPARE_ROWS,
         L, esc, i18nAttrs, mediaURL,
-        durationToMinutes, minutesToDuration,
+        durationToMinutes, minutesToDuration, isSoon,
         instructor, track, family,
         load, courseBySlug, lessonsFor, totals,
-        coursesByInstructor, instructorList, courseCountFor,
+        coursesByInstructor, instructorList, courseCountFor, soonCountFor,
+        yearsLineFor,
         familyList, trackList, trackHref,
         coursesInTrack, trackStats, trackListWithStats,
         coursesWord, lessonsWord, hoursWord, SOON,

@@ -420,8 +420,9 @@ setInterval(fetchLastPurchase, 10000);
 /**
  * "انضم الآن لأكثر من N عضو وابدأ رحلتك في الذكاء الاصطناعي مع أكثر من M كورس"
  *
- * Neither number is written into the page. M is GhawyCatalog.COURSES.length,
- * so it moves the day a course is added. N is a `.counter-value[data-stat=
+ * Neither number is written into the page. M is GhawyCatalog.totals().courses
+ * — the released courses, the same figure the totals bar shows — so it moves
+ * the day a course actually ships. N is a `.counter-value[data-stat=
  * "members"]` span exactly like the hero's — which means loadPublicStats()
  * picks it up in the same pass and fills both from ONE call to /stats/public.
  * That is the point: the previous copy said "+350 مشترك" a screen below a hero
@@ -435,11 +436,19 @@ window.renderFinalCtaTitle = function () {
     const el = document.getElementById('finalCtaTitle');
     if (!el) return;
 
-    const courses = (window.GhawyCatalog && window.GhawyCatalog.COURSES)
-        ? window.GhawyCatalog.COURSES.length : 0;
+    // Courses a subscriber can actually open — NOT `COURSES.length`.
+    //
+    // The raw array now also holds announced-but-unreleased courses, so the
+    // length was 9 while the totals bar two sections up said 7. `totals()`
+    // counts only what has a runtime, which is the same number the rest of
+    // the site quotes.
+    const courses = (window.GhawyCatalog && window.GhawyCatalog.totals)
+        ? window.GhawyCatalog.totals().courses : 0;
     if (!courses) return;   // no invented number if catalog.js didn't load
 
-    const lang = localStorage.getItem('ghawy_lang') === 'en' ? 'en' : 'ar';
+    // From i18n.js, not localStorage — this runs on `languagechange`, and
+    // storage is not the source of truth while that event is in flight.
+    const lang = (typeof window.currentLang === 'function') ? window.currentLang() : 'ar';
     // data-stat-pending keeps the skeleton up until the real count lands; the
     // data-target here is only what it counts to if the endpoint never answers.
     const members = '<span class="counter-value stat-members" data-stat="members"'

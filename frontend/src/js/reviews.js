@@ -14,7 +14,9 @@
 //     quote: { ar: '…', en: '…' },            // required — the review itself
 //     win:   { ar: '…', en: '…' },            // optional — a short achievement chip
 //     photo: null,                            // optional — path to a real photo
-//     video: null,                            // optional — a Wistia media id
+//     video: 'abc123',                        // optional — a Wistia media id
+//     videoPoster: 'imgs/…',                  // required WITH video — local still
+//     videoSeconds: 78,                       // required WITH video — runtime
 //   }
 //
 // ── Why this is a file of its own and not part of catalog.js ──
@@ -34,10 +36,29 @@
 // cards use. Dropping a path into `photo` swaps it, no other change.
 //
 // ── Video ──
-// These seven reviews were filmed and used to play as Wistia embeds inside a
-// carousel nobody could work out how to open. The section is text cards now,
-// but the media ids are kept in `video` so a card can get its clip back later
-// without hunting for them. The renderer deliberately ignores the field today.
+// All seven of these reviews were filmed. They used to play as Wistia embeds
+// inside a carousel nobody could work out how to open, so the home page became
+// text cards and the media ids were parked in `video`.
+//
+// /reviews plays them again, and deliberately not the way that failed: each
+// one is a poster with a real play button on it, in a grid, with nothing
+// hidden behind a hover or a card promotion.
+//
+// Every id below was checked against Wistia's oEmbed endpoint before it was
+// wired up — all seven resolve, and each one's title matches the name on its
+// review ("Omar Testimonial" ↔ عمر عماد, and so on down the list). None of
+// this was invented; the ids were already in this file.
+//
+// Nothing loads from Wistia until a visitor presses play:
+//   - `videoPoster` is a LOCAL still (imgs/reviews/video/), pulled once from
+//     the oEmbed thumbnail and re-encoded to webp. No external image request.
+//   - the <iframe> is created by the click handler, not written into the
+//     markup, so a page with seven videos on it makes zero third-party
+//     requests until somebody actually wants one.
+// That also means no `E-v1.js` — the plain iframe embed does not need it.
+//
+// `videoSeconds` is Wistia's own duration, shown on the poster so the length
+// is known before the click.
 //
 // ── Screenshots ──
 // Two arrays of image names, both under `imgs/reviews/`, and adding one is a
@@ -74,6 +95,8 @@
             win: { ar: 'أول عميل وهو في نص الكورس', en: 'First client mid-course' },
             photo: null,
             video: 'oqg0kwtp2y',
+            videoPoster: 'imgs/reviews/video/omar-emad.webp',
+            videoSeconds: 78,
         },
         {
             name: { ar: 'كريم طارق', en: 'Karim Tarek' },
@@ -86,6 +109,8 @@
             win: null,
             photo: null,
             video: 'p6kqa3edvy',
+            videoPoster: 'imgs/reviews/video/karim-tarek.webp',
+            videoSeconds: 100,
         },
         {
             name: { ar: 'زياد تامر', en: 'Ziad Tamer' },
@@ -98,6 +123,8 @@
             win: { ar: 'غيّر مساره من الميديا باينج', en: 'Career switch out of media buying' },
             photo: null,
             video: 'vj9ymlhi7z',
+            videoPoster: 'imgs/reviews/video/ziad-tamer.webp',
+            videoSeconds: 68,
         },
         {
             name: { ar: 'منذر', en: 'Munzer' },
@@ -110,6 +137,8 @@
             win: { ar: 'أسّس وكالة stirx.ai', en: 'Founded stirx.ai' },
             photo: null,
             video: 'f19iov9z3o',
+            videoPoster: 'imgs/reviews/video/munzer.webp',
+            videoSeconds: 112,
         },
         {
             name: { ar: 'يوسف دسوقي', en: 'Youssef Dessouky' },
@@ -122,6 +151,8 @@
             win: null,
             photo: null,
             video: 'lh58056wkw',
+            videoPoster: 'imgs/reviews/video/youssef-dessouky.webp',
+            videoSeconds: 215,
         },
         {
             name: { ar: 'ياسين مصطفى', en: 'Yassin Mostafa' },
@@ -134,6 +165,8 @@
             win: { ar: 'أول عميل بعد أسبوعين', en: 'First client in two weeks' },
             photo: null,
             video: 'sn2k9l641c',
+            videoPoster: 'imgs/reviews/video/yassin-mostafa.webp',
+            videoSeconds: 131,
         },
         {
             name: { ar: 'معتز', en: 'Moataz' },
@@ -146,6 +179,8 @@
             win: null,
             photo: null,
             video: '8n571cb98s',
+            videoPoster: 'imgs/reviews/video/moataz.webp',
+            videoSeconds: 133,
         },
     ];
 
@@ -222,6 +257,20 @@
         return `data-ar="${esc(pair.ar || '')}" data-en="${esc(pair.en || pair.ar || '')}"`;
     }
 
+    /**
+     * The same, but for an element's aria-label instead of its text.
+     *
+     * MUST be used instead of i18nAttrs() on anything with children: data-ar
+     * is applied as textContent, so putting it on a button that wraps an
+     * <img> or an icon deletes the child on the first language pass. i18n.js
+     * reads these two and writes aria-label only.
+     */
+    function i18nAria(pair) {
+        if (pair == null) return '';
+        if (typeof pair === 'string') return `data-ar-aria="${esc(pair)}" data-en-aria="${esc(pair)}"`;
+        return `data-ar-aria="${esc(pair.ar || '')}" data-en-aria="${esc(pair.en || pair.ar || '')}"`;
+    }
+
     function initials(name) {
         return String(name || '?').trim().split(/\s+/).slice(0, 2)
             .map(w => w[0]).join(' ');
@@ -293,12 +342,110 @@
     </article>`;
     }
 
-    function emptyHTML() {
+    function emptyHTML(pair, icon) {
+        const msg = pair || { ar: 'مفيش آراء معروضة دلوقتي.', en: 'No reviews to show right now.' };
         return `
     <div class="rv-empty">
-        <i class="fa-solid fa-comments" aria-hidden="true"></i>
-        <p data-ar="مفيش آراء معروضة دلوقتي." data-en="No reviews to show right now.">مفيش آراء معروضة دلوقتي.</p>
+        <i class="fa-solid fa-${esc(icon || 'comments')}" aria-hidden="true"></i>
+        <p ${i18nAttrs(msg)}>${esc(L(msg))}</p>
     </div>`;
+    }
+
+    // ─── Video card ─────────────────────────────────────────────
+
+    /** 131 → "2:11". */
+    function clock(seconds) {
+        const s = Math.max(0, Math.round(Number(seconds) || 0));
+        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    /**
+     * One filmed review: a local poster, the runtime, and a play button.
+     *
+     * The button is a real <button> carrying the media id in a data attribute
+     * — the iframe does not exist until it is pressed. That is what keeps a
+     * page of seven testimonials from opening seven third-party connections
+     * to show seven stills we already have locally.
+     *
+     * It is also the fix for the thing that killed the last video section:
+     * there is one obvious control, it looks like a play button, and it is
+     * focusable and operable from the keyboard. Nothing is hidden behind a
+     * hover state or a click on the card body.
+     */
+    function videoCardHTML(rev, i) {
+        const name = L(rev.name);
+        const city = rev.city ? `<span class="rvv-city" ${i18nAttrs(rev.city)}>${esc(L(rev.city))}</span>` : '';
+        const play = { ar: `شغّل فيديو ${name}`, en: `Play ${name}'s video` };
+        return `
+    <article class="rvv-card" data-video="${esc(rev.video)}">
+        <div class="rvv-frame">
+            <img class="rvv-poster" src="${esc(rev.videoPoster)}" alt=""
+                 loading="lazy" decoding="async" width="360" height="640" />
+            <button type="button" class="rvv-play" aria-label="${esc(L(play))}" ${i18nAria(play)}>
+                <i class="fa-solid fa-play" aria-hidden="true"></i>
+            </button>
+            ${rev.videoSeconds ? `<span class="rvv-time">${esc(clock(rev.videoSeconds))}</span>` : ''}
+        </div>
+        <div class="rvv-foot">
+            <span class="rvv-name" ${i18nAttrs(rev.name)}>${esc(name)}</span>
+            ${city}
+        </div>
+    </article>`;
+    }
+
+    /**
+     * The grid of filmed reviews.
+     *
+     * Delegated click, like the text grid, so a language re-render cannot
+     * leave listeners behind on detached nodes.
+     */
+    function renderVideos(el) {
+        if (!el) return;
+        const list = REVIEWS.filter(r => r.video && r.videoPoster);
+
+        const paint = () => {
+            el.className = 'rvv-grid';
+            el.innerHTML = list.length
+                ? list.map(videoCardHTML).join('')
+                : emptyHTML({ ar: 'مفيش فيديوهات لسه.', en: 'No videos yet.' }, 'video');
+            // Picks up the play button's aria-label via data-ar-aria too.
+            if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+        };
+        paint();
+
+        if (el.dataset.rvvBound) return;
+        el.dataset.rvvBound = '1';
+
+        el.addEventListener('click', e => {
+            const btn = e.target.closest('.rvv-play');
+            if (!btn || !el.contains(btn)) return;
+            const card = btn.closest('.rvv-card');
+            const id = card && card.getAttribute('data-video');
+            if (!id || card.classList.contains('is-playing')) return;
+
+            // First and only Wistia request for this card. `autoplay=1` is
+            // honoured because the iframe is created inside a real click.
+            const frame = document.createElement('iframe');
+            frame.src = `https://fast.wistia.net/embed/iframe/${encodeURIComponent(id)}?autoPlay=1&playsinline=1`;
+            frame.title = card.querySelector('.rvv-name')?.textContent || 'Ghawy member review';
+            frame.allow = 'autoplay; fullscreen';
+            frame.allowFullscreen = true;
+            frame.loading = 'lazy';
+            frame.className = 'rvv-iframe';
+            card.classList.add('is-playing');
+            card.querySelector('.rvv-frame').appendChild(frame);
+        });
+
+        document.addEventListener('languagechange', () => {
+            if (!document.body.contains(el)) return;
+            // Never repaint over a playing video — that would kill playback
+            // mid-sentence just because somebody pressed the language button.
+            if (el.querySelector('.rvv-card.is-playing')) {
+                if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+                return;
+            }
+            paint();
+        });
     }
 
     // ─── Render ─────────────────────────────────────────────────
@@ -429,7 +576,7 @@
     function renderScreenshots(el, opts) {
         if (!el) return;
         const o = opts || {};
-        const files = o.files || SCREENSHOTS;
+        const files = publishable(o.files || SCREENSHOTS);
         if (!files.length) { el.innerHTML = ''; el.hidden = true; return; }
         el.hidden = false;
         el.className = 'rvs-wrap' + (o.modifier ? ' ' + o.modifier : '');
@@ -437,12 +584,155 @@
         el.innerHTML = dealRows(files, o.rows || SHOT_ROWS).map(shotRowHTML).join('');
     }
 
+    // ─── Screenshot grid (the /reviews page) ────────────────────
+    //
+    // The home page scrolls the screenshots past as a marquee — it is a
+    // teaser, and motion is the point. /reviews is the page you land on to
+    // actually READ them, so the same files are laid out as a still masonry
+    // grid instead: nothing moves, nothing loops, and every shot is reachable.
+    //
+    // A CSS `columns` layout rather than a grid because these images are all
+    // one width and wildly different heights (a one-line message next to a
+    // ten-line one). Columns pack them with no gaps and no JS measuring.
+
+    /**
+     * Files the client has flagged as needing an edit never render.
+     *
+     * Today none are in the arrays and none are in the repo, so this filter
+     * removes nothing — it is here so that adding one by mistake later cannot
+     * put a half-cut sentence on a public page. The check is on the name, so
+     * it works no matter which array the file is dropped into.
+     */
+    function publishable(files) {
+        return (files || []).filter(f => !/NEEDS[-_]EDIT/i.test(f));
+    }
+
+    function shotCellHTML(file) {
+        const src = SHOT_DIR + file;
+        const open = { ar: 'كبّر الصورة', en: 'Enlarge image' };
+        // A button, not a bare <img>: enlarging is an action, and it has to be
+        // reachable by keyboard. The alt stays empty for the reason at the top
+        // of this file — the words are someone else's and are in the pixels.
+        return `
+        <button type="button" class="rvg-cell" data-full="${esc(src)}"
+                aria-label="${esc(L(open))}" ${i18nAria(open)}>
+            <img src="${esc(src)}" alt="" loading="lazy" decoding="async" />
+        </button>`;
+    }
+
+    /**
+     * Fill a container with the still grid, plus the shared lightbox.
+     *
+     * `empty` is the message shown when the array is empty — every list on
+     * this page has one, because "no screenshots" and "screenshots failed to
+     * render" must not look the same.
+     */
+    function renderShotGrid(el, opts) {
+        if (!el) return;
+        const o = opts || {};
+        const files = publishable(o.files || SCREENSHOTS);
+
+        const paint = () => {
+            el.className = 'rvg-grid' + (o.modifier ? ' ' + o.modifier : '');
+            el.innerHTML = files.length
+                ? files.map(shotCellHTML).join('')
+                : emptyHTML(o.empty || { ar: 'مفيش صور هنا دلوقتي.', en: 'No screenshots here yet.' }, 'image');
+            if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+        };
+        paint();
+
+        if (el.dataset.rvgBound) return;
+        el.dataset.rvgBound = '1';
+        el.addEventListener('click', e => {
+            const cell = e.target.closest('.rvg-cell');
+            if (cell && el.contains(cell)) openLightbox(cell.getAttribute('data-full'), cell);
+        });
+        document.addEventListener('languagechange', () => {
+            if (document.body.contains(el)) paint();
+        });
+    }
+
+    // ─── Lightbox ───────────────────────────────────────────────
+    //
+    // These screenshots are TEXT. At grid width a long message is legible but
+    // tight, and on a phone it is not legible at all, so there has to be a way
+    // to see one full size. One overlay is built lazily and reused by every
+    // grid on the page.
+    //
+    // No library, and no `window.alert`-style browser chrome: Escape closes,
+    // clicking the backdrop closes, focus moves into the overlay and returns
+    // to the exact thumbnail that opened it.
+
+    let lightbox = null;
+    let lastFocus = null;
+
+    function buildLightbox() {
+        const close = { ar: 'إغلاق', en: 'Close' };
+        const box = document.createElement('div');
+        box.className = 'rvlb';
+        box.hidden = true;
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-modal', 'true');
+        box.innerHTML = `
+        <button type="button" class="rvlb-close" aria-label="${esc(L(close))}" ${i18nAttrs(close)}>
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <img class="rvlb-img" src="" alt="" />`;
+        document.body.appendChild(box);
+
+        box.addEventListener('click', e => {
+            // Backdrop or the close button — but never the image itself.
+            if (e.target.closest('.rvlb-img')) return;
+            closeLightbox();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !box.hidden) closeLightbox();
+        });
+        return box;
+    }
+
+    function openLightbox(src, opener) {
+        if (!src) return;
+        lightbox = lightbox || buildLightbox();
+        lastFocus = opener || null;
+        lightbox.querySelector('.rvlb-img').src = src;
+        lightbox.hidden = false;
+        document.body.classList.add('rvlb-open');
+        lightbox.querySelector('.rvlb-close').focus();
+    }
+
+    function closeLightbox() {
+        if (!lightbox || lightbox.hidden) return;
+        lightbox.hidden = true;
+        // Drop the src so a closed overlay is not holding a decoded bitmap.
+        lightbox.querySelector('.rvlb-img').src = '';
+        document.body.classList.remove('rvlb-open');
+        if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+        lastFocus = null;
+    }
+
     // ─── Auto-init ──────────────────────────────────────────────
     // A page wanting the reviews just drops `<div id="reviewsGrid">` into its
     // markup and loads this file. `<div id="reviewsMarquee">` adds the wall of
     // chat screenshots above it, and `<div id="ratingsMarquee">` the wall of
     // course rating lists.
+    //
+    // /reviews uses the still-grid ids instead — `#reviewsVideos`,
+    // `#shotsGrid` and `#ratingsGrid` — so the marquee and the grid are two
+    // presentations of ONE set of files, never two lists to keep in step.
     function autoInit() {
+        renderVideos(document.getElementById('reviewsVideos'));
+        renderShotGrid(document.getElementById('shotsGrid'), {
+            empty: { ar: 'مفيش رسايل معروضة دلوقتي.', en: 'No messages to show right now.' },
+        });
+        renderShotGrid(document.getElementById('ratingsGrid'), {
+            files: RATINGS, modifier: 'rvg-grid--tall',
+            empty: { ar: 'مفيش تقييمات معروضة دلوقتي.', en: 'No ratings to show right now.' },
+        });
+        autoInitHome();
+    }
+
+    function autoInitHome() {
         renderScreenshots(document.getElementById('reviewsMarquee'));
         // One row, not three: the rating lists are tall columns, so three rows
         // of them would be a screen and a half of nothing else. Six shots at
@@ -460,8 +750,10 @@
     }
 
     window.GhawyReviews = {
-        REVIEWS, SCREENSHOTS, RATINGS,
-        L, esc, i18nAttrs,
+        REVIEWS, SCREENSHOTS, RATINGS, SHOT_DIR,
+        L, esc, i18nAttrs, publishable,
         reviewCardHTML, emptyHTML, renderReviews, renderScreenshots,
+        videoCardHTML, renderVideos,
+        shotCellHTML, renderShotGrid, openLightbox, closeLightbox, i18nAria,
     };
 })();

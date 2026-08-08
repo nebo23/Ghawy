@@ -250,6 +250,19 @@ function translateTree(root, lang) {
         setNodeText(el, entry[lang] || entry.ar, el.getAttribute('data-i18n-html') === 'true');
     });
 
+    // data-ar-aria / data-en-aria → the aria-label attribute.
+    //
+    // Needed because data-ar/data-en write textContent, so putting them on a
+    // button that CONTAINS something — an icon, an image — deletes its
+    // children and replaces them with the string. An icon button whose label
+    // has to be translated therefore cannot use data-ar/data-en at all, and
+    // before this existed the only way was to re-set innerHTML by hand after
+    // every language pass.
+    each('[data-ar-aria]', el => {
+        const v = lang === 'ar' ? el.getAttribute('data-ar-aria') : el.getAttribute('data-en-aria');
+        if (v != null) el.setAttribute('aria-label', v);
+    });
+
     // data-i18n-placeholder / data-i18n-title
     each('[data-i18n-placeholder]', el => {
         const entry = i18nDict[el.getAttribute('data-i18n-placeholder')];
@@ -306,13 +319,26 @@ function applyLanguage(lang, persist = true) {
     //     `languagechange` event dispatched in step 10 like every other
     //     JS-rendered section.)
 
-    // 10. Let page scripts re-render anything they built in JS.
-    document.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
-
-    // 11. Persist the explicit choice.
+    // 10. Persist the explicit choice — BEFORE the event, never after.
+    //
+    // This used to be the last step, after the dispatch below, and that one
+    // line was the whole "English keeps showing Arabic" bug: a renderer
+    // listening for `languagechange` that read the language out of
+    // localStorage read the value from BEFORE the toggle, and repainted itself
+    // in the language the user had just left. translateTree() above had
+    // already put the correct text on the page, so the re-render actively
+    // undid it — which is why only the sections rendered in JS (the FAQ, the
+    // plan cards, the final CTA) were wrong while the static markup was right.
+    //
+    // Every renderer now reads currentLang() off the <html> lang attribute set
+    // in step 1, so this ordering is belt-and-braces. It stays first anyway:
+    // storage and the DOM should never disagree while a handler is running.
     if (persist) {
         try { localStorage.setItem('ghawy_lang', lang); } catch (e) { /* ignore */ }
     }
+
+    // 11. Let page scripts re-render anything they built in JS.
+    document.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
 }
 
 /** Explicit, user-chosen language — persists and wins on every page. */

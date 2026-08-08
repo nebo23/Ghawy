@@ -37,32 +37,115 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260806h">
+    <link rel="stylesheet" href="src/css/main.css?v=20260808a">
 </head>
 
 <body>
 
     <!-- Shared navbar + drawer — single source in src/js/layout.js -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260806b"></script>
+    <script src="src/js/layout.js?v=20260808a"></script>
 
-    <main class="page-shell">
+    <!--
+     EVERY review on the site, in one place.
+
+     There is no review content in this file. The written reviews, the filmed
+     ones, the chat screenshots and the ratings screenshots all come from
+     src/js/reviews.js — the same file the home page renders its teaser from,
+     so /reviews can never show a different set to the strip on the home page.
+     Adding a review is still one entry in that file and it lands here on its
+     own.
+
+     Four kinds of proof, four sections, in descending order of how much a
+     stranger is likely to trust them: people on camera, then people's words,
+     then their messages, then their ratings.
+    -->
+    <main class="page-shell rv-page">
         <div class="container">
             <header class="page-shell-head">
                 <h1 class="page-shell-title" data-ar="آراء الأعضاء" data-en="Member Reviews">آراء الأعضاء</h1>
                 <p class="page-shell-lead" data-ar="تجارب حقيقية من أعضاء اتعلموا الـ AI معانا وطبّقوه فعلاً في شغلهم." data-en="Real stories from members who learned AI with us and actually put it to work.">تجارب حقيقية من أعضاء اتعلموا الـ AI معانا وطبّقوه فعلاً في شغلهم.</p>
             </header>
 
-            <!-- Placeholder — the real content of this page ships in a later phase. -->
-            <section class="page-shell-placeholder">
-                <i class="fa-solid fa-comments" aria-hidden="true"></i>
-                <h2 data-ar="الصفحة دي لسه بتتجهّز" data-en="This page is still being built">الصفحة دي لسه بتتجهّز</h2>
-                <p data-ar="المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية."
-                   data-en="The full content of this page ships in a later phase. Until then, you can see a preview of everything on the home page.">
-                    المحتوى الكامل للصفحة هينزل في مرحلة جاية. لحد ما ينزل، تقدر تشوف نبذة عن كل حاجة في الصفحة الرئيسية.
-                </p>
-                <a href="/" class="btn-cta-solid page-shell-cta" data-ar="ارجع للصفحة الرئيسية" data-en="Back to home">ارجع للصفحة الرئيسية</a>
+            <!--
+             The filter. Real <button>s in a group, not links and not a <select>:
+             the whole page is already loaded, so this only shows and hides
+             sections — no navigation, no URL change, no reload.
+
+             It is progressive: with JS off, no button does anything and all
+             four sections are visible, which is the correct fallback.
+            -->
+            <nav class="rv-filter" id="rvFilter" aria-label="تصفية الآراء">
+                <button type="button" class="rv-filter-btn is-active" data-filter="all"
+                        aria-pressed="true" data-ar="الكل" data-en="All">الكل</button>
+                <button type="button" class="rv-filter-btn" data-filter="video"
+                        aria-pressed="false" data-ar="فيديو" data-en="Video">فيديو</button>
+                <button type="button" class="rv-filter-btn" data-filter="text"
+                        aria-pressed="false" data-ar="مكتوب" data-en="Written">مكتوب</button>
+                <button type="button" class="rv-filter-btn" data-filter="shots"
+                        aria-pressed="false" data-ar="سكرين شوت" data-en="Screenshots">سكرين شوت</button>
+            </nav>
+
+            <!-- 1. Filmed reviews -->
+            <section class="rv-section" data-kind="video" aria-labelledby="rvVideosTitle">
+                <div class="rv-section-head">
+                    <h2 class="rv-section-title" id="rvVideosTitle"
+                        data-ar="آراء بالفيديو" data-en="Video reviews">آراء بالفيديو</h2>
+                    <p class="rv-section-note"
+                       data-ar="أعضاء بيحكوا بنفسهم. الفيديو مابيتحمّلش غير لما تضغط تشغيل."
+                       data-en="Members in their own words. Nothing loads until you press play.">أعضاء بيحكوا بنفسهم. الفيديو مابيتحمّلش غير لما تضغط تشغيل.</p>
+                </div>
+                <div id="reviewsVideos"></div>
             </section>
+
+            <!-- 2. Written reviews — the same cards the home page uses -->
+            <section class="rv-section" data-kind="text" aria-labelledby="rvTextTitle">
+                <div class="rv-section-head">
+                    <h2 class="rv-section-title" id="rvTextTitle"
+                        data-ar="آراء مكتوبة" data-en="Written reviews">آراء مكتوبة</h2>
+                    <p class="rv-section-note"
+                       data-ar="كل رأي مكتوب زي ما صاحبه كتبه بالظبط."
+                       data-en="Every review exactly as its author wrote it.">كل رأي مكتوب زي ما صاحبه كتبه بالظبط.</p>
+                </div>
+                <div id="reviewsGrid"></div>
+            </section>
+
+            <!--
+             3 + 4. The screenshots.
+
+             The note under each one is not decoration: these are photographs
+             of Arabic messages, so their text does not translate with the rest
+             of the page. Saying that out loud is better than an English
+             visitor deciding the site is half-broken. See the note in
+             src/js/reviews.js about why the alt text is empty.
+            -->
+            <section class="rv-section" data-kind="shots" aria-labelledby="rvShotsTitle">
+                <div class="rv-section-head">
+                    <h2 class="rv-section-title" id="rvShotsTitle"
+                        data-ar="رسايل من داخل المجتمع" data-en="Messages from inside the community">رسايل من داخل المجتمع</h2>
+                    <p class="rv-section-note"
+                       data-ar="سكرين شوت من شات المجتمع. اضغط على أي صورة تكبّرها."
+                       data-en="Screenshots from the community chat — in Arabic, as they were written. Tap any image to enlarge.">سكرين شوت من شات المجتمع. اضغط على أي صورة تكبّرها.</p>
+                </div>
+                <div id="shotsGrid"></div>
+            </section>
+
+            <section class="rv-section" data-kind="shots" aria-labelledby="rvRatingsTitle">
+                <div class="rv-section-head">
+                    <h2 class="rv-section-title" id="rvRatingsTitle"
+                        data-ar="تقييمات الكورسات" data-en="Course ratings">تقييمات الكورسات</h2>
+                    <p class="rv-section-note"
+                       data-ar="تقييمات الأعضاء للكورسات جوه المنصة."
+                       data-en="Member ratings of the courses, from inside the platform.">تقييمات الأعضاء للكورسات جوه المنصة.</p>
+                </div>
+                <div id="ratingsGrid"></div>
+            </section>
+
+            <!-- Shown only when a filter matches nothing. Never on load. -->
+            <div class="rv-empty rv-filter-empty" id="rvFilterEmpty" hidden>
+                <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                <p data-ar="مفيش حاجة في القسم ده دلوقتي." data-en="Nothing in this section right now.">مفيش حاجة في القسم ده دلوقتي.</p>
+            </div>
         </div>
     </main>
 
@@ -70,8 +153,47 @@
     <div id="siteFooter"></div>
     <script>GhawyLayout.mountFooter();</script>
 
-    <script src="src/js/i18n.js?v=20260806a"></script>
+    <script src="src/js/i18n.js?v=20260808a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
+    <script src="src/js/reviews.js?v=20260808a"></script>
+
+    <script>
+        // ── The filter ──
+        //
+        // Show/hide only. It deliberately does NOT re-render anything: the
+        // sections are already built by reviews.js, and rebuilding them on a
+        // tab press would throw away a playing video and an expanded quote.
+        (function () {
+            const bar = document.getElementById('rvFilter');
+            const empty = document.getElementById('rvFilterEmpty');
+            if (!bar) return;
+            const sections = Array.from(document.querySelectorAll('.rv-section'));
+
+            function apply(kind) {
+                let shown = 0;
+                sections.forEach(s => {
+                    const on = kind === 'all' || s.dataset.kind === kind;
+                    s.hidden = !on;
+                    if (on) shown++;
+                });
+                // A filter that matches nothing still has to say something.
+                // Cannot happen with the four buttons above, but the sections
+                // are data-driven and one could be removed later.
+                if (empty) empty.hidden = shown > 0;
+
+                bar.querySelectorAll('.rv-filter-btn').forEach(b => {
+                    const active = b.dataset.filter === kind;
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-pressed', String(active));
+                });
+            }
+
+            bar.addEventListener('click', e => {
+                const btn = e.target.closest('.rv-filter-btn');
+                if (btn) apply(btn.dataset.filter);
+            });
+        })();
+    </script>
 </body>
 
 </html>

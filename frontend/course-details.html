@@ -47,14 +47,14 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260806h" />
+    <link rel="stylesheet" href="src/css/main.css?v=20260808a" />
 
 </head>
 
 <body>
     <!-- Shared navbar + drawer — single source in src/js/layout.js -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260806b"></script>
+    <script src="src/js/layout.js?v=20260808a"></script>
 
     <!-- ════════════════════════════════════════
      COURSE PREVIEW
@@ -118,9 +118,9 @@
     <!-- Language engine — same file, same load position, as every other page.
          It must come before the inline script below, which renders the course
          content in whatever language i18n.js has just applied. -->
-    <script src="src/js/i18n.js?v=20260806a"></script>
+    <script src="src/js/i18n.js?v=20260808a"></script>
     <!-- The single source for course + instructor data. -->
-    <script src="src/js/catalog.js?v=20260806e"></script>
+    <script src="src/js/catalog.js?v=20260808a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
     <script>
         // ═══════════════════════════════════════
@@ -307,12 +307,23 @@
                 // Intro video (placeholder until the client sends the files)
                 document.getElementById('cdVideo').innerHTML = C.courseVideoHTML(course);
 
-                // Lesson count + total duration
+                // Lesson count + total duration.
+                //
+                // An announced-but-unreleased course has neither, so the two
+                // items collapse into one "قريباً" chip. Rendering the normal
+                // pair would print "undefined درس" next to an empty clock.
+                const soon = C.isSoon(course);
                 const lessonsWord = {
                     ar: `${course.lessons} درس`,
                     en: `${course.lessons} lessons`,
                 };
-                document.getElementById('cdMeta').innerHTML = `
+                document.getElementById('cdMeta').innerHTML = soon
+                    ? `
+                    <span class="cd-meta-item cd-meta-soon">
+                        <i class="fa-regular fa-hourglass-half" aria-hidden="true"></i>
+                        <span ${C.i18nAttrs(C.SOON)}>${C.esc(C.L(C.SOON))}</span>
+                    </span>`
+                    : `
                     <span class="cd-meta-item">
                         <i class="fa-solid fa-list" aria-hidden="true"></i>
                         <span ${C.i18nAttrs(lessonsWord)}>${C.esc(C.L(lessonsWord))}</span>
@@ -328,8 +339,22 @@
                     ? C.instructorBarHTML(inst) + C.factsHTML(inst)
                     : '';
 
-                // Lessons: skeleton rows until the endpoint answers.
                 const list = document.getElementById('cdLessonsList');
+
+                // Nothing to fetch and nothing to wait for: an unreleased
+                // course has no platform id, so skeleton rows here would be a
+                // loading state for a request that is never made. Say what is
+                // actually true instead.
+                if (soon) {
+                    const note = {
+                        ar: 'الكورس ده لسه بيتجهّز. أول ما ينزل هتلاقي دروسه هنا كاملة.',
+                        en: 'This course is still being prepared. Its lessons will appear here in full as soon as it lands.'
+                    };
+                    list.innerHTML = `<li class="cd-lesson-none" ${C.i18nAttrs(note)}>${C.esc(C.L(note))}</li>`;
+                    return;
+                }
+
+                // Lessons: skeleton rows until the endpoint answers.
                 list.innerHTML = Array.from({ length: Math.min(course.lessons || 4, 8) },
                     () => '<li class="cd-lesson-item cd-lesson-skeleton"><span class="gc-sk gc-sk-line"></span></li>').join('');
 

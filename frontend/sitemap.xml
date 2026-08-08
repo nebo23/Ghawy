@@ -94,6 +94,23 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Announced, not released (no runtime in catalog.js → "قريباً" on site).
+       Listed because the page is real and says something true about a course
+       that is coming, but at a lower priority than a course you can watch
+       today, and weekly rather than monthly — these two are the entries most
+       likely to change next. -->
+  <url>
+    <loc>https://ghawy.ai/course-details?course=ai-thumbnails</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ghawy.ai/course-details?course=machine-learning</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
 
   <!-- Tracks — one URL per track (?t=<slug> in catalog.js TRACKS) -->
   <url>
@@ -131,6 +148,18 @@
   <url>
     <loc>https://ghawy.ai/instructors?i=mohamed-salah</loc>
     <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ghawy.ai/instructors?i=ofa</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ghawy.ai/instructors?i=talkhawy</loc>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

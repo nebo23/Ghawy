@@ -187,6 +187,32 @@ ${navLinks(true)}
             <div class="footer-bottom">
                 <p class="footer-copy" data-ar="© 2026 Ghawy. جميع الحقوق محفوظة."
                     data-en="© 2026 Ghawy. All rights reserved.">© 2026 Ghawy. جميع الحقوق محفوظة.</p>
+
+                <!-- Developer credit.
+                     Beside the copyright, one small quiet line — the
+                     conventional place for it. Deliberately NOT a section, a
+                     banner, or a second logo.
+
+                     The label and the name are two elements on purpose: only
+                     the label is translated ("تطوير" / "Built by"), and the
+                     name is a proper noun that stays as it is in both
+                     languages. Wrapping both in one data-ar would translate
+                     the person's name along with the word.
+
+                     This credit and the Person entry in index.html's
+                     structured data are the ONLY two places the developer is
+                     named. The author meta tag is the platform — that was
+                     settled in Phase 10 and is not this.
+
+                     (No backticks anywhere in this comment: the whole footer
+                     is one JS template literal, and a stray one ends it.) -->
+                <p class="footer-dev">
+                    <span data-ar="تطوير" data-en="Built by">تطوير</span>
+                    <span aria-hidden="true">—</span>
+                    <a href="https://www.instagram.com/nabil.ahmed_1/"
+                       target="_blank" rel="noopener">Nabil Ahmed</a>
+                </p>
+
                 <div class="social-icons">
                     <a href="https://www.instagram.com/ghawy.ai/" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
                         <i class="fa-brands fa-instagram"></i>
