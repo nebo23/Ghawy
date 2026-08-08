@@ -883,7 +883,9 @@ a {
     display: block;
     width: 100%;
     height: auto;
-    /* holds the row's height before a lazy image has arrived */
+    /* Belt-and-braces floor. The real reservation now comes from the
+       width/height attributes reviews.js emits from SHOT_SIZES, which give
+       the browser the aspect ratio before the file lands. */
     min-height: 70px;
 }
 
@@ -9536,20 +9538,115 @@ html[dir="ltr"] .hero-stats-cards {
     outline-offset: 2px;
 }
 
-/* ── Video grid ──
-   The clips are vertical (9:16 phone video), so the cards are narrow and
-   tall and four fit on a desktop row. `auto-fill` with a 220px floor drops
-   that to two on a phone without a media query. */
-.rvv-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+/* ── Video rail ──
+   The clips are vertical (9:16 phone video). A wrapping grid put seven of
+   them on two rows with a hole at the end, and squeezing all seven onto one
+   row made each a stamp. So they sit on one line and scroll sideways
+   instead: every card the same size, the row full whatever the count, and no
+   extra page height as more testimonials arrive.
+
+   The arrows live outside the scroller so they stay put while it moves. */
+.rvv-rail {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rvv-scroller {
+    display: flex;
     gap: 18px;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 2px;
+    /* Room for the cards' focus ring and hover lift, which would otherwise
+       be clipped by the scroll container's own edge. */
+    padding: 4px 2px 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    overscroll-behavior-x: contain;
+}
+
+.rvv-scroller::-webkit-scrollbar {
+    height: 6px;
+}
+
+.rvv-scroller::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rvv-scroller::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 100px;
+}
+
+.rvv-scroller:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.rvv-scroller:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 4px;
+    border-radius: 14px;
 }
 
 .rvv-card {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    /* Fixed width — a flex item in a scroller must not shrink to share the
+       row, which is exactly what it would do by default. */
+    flex: 0 0 208px;
+    width: 208px;
+    scroll-snap-align: start;
+}
+
+/* ── Rail arrows ── */
+.rvv-nav {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.rvv-nav:hover:not(:disabled) {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+}
+
+.rvv-nav:disabled {
+    opacity: 0.28;
+    cursor: default;
+}
+
+.rvv-nav:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* "Next" is to the LEFT in Arabic. Mirroring both chevrons flips prev and
+   next together, which is the whole correction — no second icon set. */
+html[dir="rtl"] .rvv-nav i {
+    transform: scaleX(-1);
+}
+
+/* Fewer videos than fit: no arrows, and the row starts at the reading edge
+   rather than pretending to be scrollable. */
+.rvv-rail.is-static .rvv-nav {
+    display: none;
 }
 
 .rvv-frame {
@@ -9657,13 +9754,104 @@ html[dir="ltr"] .hero-stats-cards {
 /* ── Screenshot grid ──
    `columns`, not `grid`: the shots are a single width and every possible
    height, and a column layout packs them with no gaps and no JS. */
+/* Three columns, not four.
+   At 1440px four columns made each screenshot ~270px wide, and these are
+   photographs of Arabic chat messages — at that size the text is not
+   readable and the section reads as wallpaper rather than as evidence. The
+   340px column floor drops it to two columns before it ever squeezes them
+   that small again. */
 .rvg-grid {
-    columns: 4 240px;
-    column-gap: 14px;
+    columns: 3 340px;
+    column-gap: 16px;
 }
 
+/* ── Ratings ──
+   These six are tall single columns (a list of names and stars), 500-1500px
+   each. Poured into the masonry at a readable width they came to 1600px of
+   page — a wall you scroll past rather than read.
+
+   So this variant is a real grid of equal cards showing the TOP of each list
+   under a fade, which is the same treatment the home page gives the same six
+   images. The point of the section is "lots of members rated this highly",
+   and the top of a list carries that; the lightbox has the whole thing one
+   click away. */
 .rvg-grid--tall {
-    columns: 4 260px;
+    columns: initial;
+    display: grid;
+    /* Three, not `auto-fill`. There are six rating shots: auto-fill chose
+       four at desktop width and left the last row two-thirds empty, which
+       with cards this tall is a hole you cannot miss. Three divides six into
+       two full rows — and 9 or 12 later. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.rvg-grid--tall .rvg-cell {
+    position: relative;
+    margin: 0;
+    height: 340px;
+}
+
+.rvg-grid--tall .rvg-cell img {
+    height: 100%;
+    object-fit: cover;
+    /* Top of the list, not the middle of it. */
+    object-position: top center;
+}
+
+/* Fades the cut edge so it reads as "and there is more" rather than as an
+   image that failed to finish. */
+.rvg-grid--tall .rvg-cell::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 96px;
+    background: linear-gradient(to top, #0d0d0d 12%, rgba(13, 13, 13, 0) 100%);
+    pointer-events: none;
+}
+
+/* `.rvg-cell` sets `display: block`, which beats the UA sheet's
+   `[hidden] { display: none }` — without this the not-yet-revealed tail of
+   the grid would render anyway and "show more" would do nothing. */
+.rvg-cell[hidden] {
+    display: none;
+}
+
+/* ── "Show more" ──
+   Outside the columns container: a button inside it gets dealt into a column
+   like another screenshot instead of centring under the whole block. */
+.rvg-more-bar {
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.rvg-more-bar[hidden] {
+    display: none;
+}
+
+.rvg-more-btn {
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 100px;
+    padding: 11px 30px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.rvg-more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--gold-border);
+}
+
+.rvg-more-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
 }
 
 .rvg-cell {
@@ -9754,6 +9942,26 @@ body.rvlb-open {
     overflow: hidden;
 }
 
+/* ── Written reviews on /reviews ──
+   Masonry, not a 3-up grid. The quotes run from one line to five, so a grid
+   left every row ragged and — with seven reviews and three columns — stranded
+   the last card alone next to a two-card-wide hole. Columns pack them flush
+   with no hole anywhere and no dependence on the review count.
+
+   Scoped to `.rv-page` on purpose: the home page renders the same `.rv-card`
+   into the same `.rv-grid` and keeps its deliberate 3-up row. */
+.rv-page #reviewsGrid.rv-grid {
+    display: block;
+    columns: 3 300px;
+    column-gap: 22px;
+    margin-top: 0;
+}
+
+.rv-page #reviewsGrid .rv-card {
+    break-inside: avoid;
+    margin-bottom: 22px;
+}
+
 .rv-filter-empty {
     margin-top: 48px;
 }
@@ -9770,7 +9978,26 @@ body.rvlb-open {
         columns: 1;
     }
 
-    .rvv-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    .rv-page #reviewsGrid.rv-grid {
+        columns: 1;
+    }
+
+    .rvg-grid--tall {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rvg-grid--tall .rvg-cell {
+        height: 260px;
+    }
+
+    /* Swipe is the natural gesture here and the arrows would eat 100px of a
+       360px row, so they go and the cards get a little wider. */
+    .rvv-rail .rvv-nav {
+        display: none;
+    }
+
+    .rvv-card {
+        flex-basis: 176px;
+        width: 176px;
     }
 }

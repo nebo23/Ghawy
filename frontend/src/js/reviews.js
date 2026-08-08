@@ -223,6 +223,75 @@
         'ratings-04.webp', 'ratings-05.webp', 'ratings-06.webp',
     ];
 
+
+    /**
+     * Intrinsic pixel size of every screenshot, so an <img> can carry real
+     * `width`/`height` attributes.
+     *
+     * Not decoration. These images are lazy AND laid out in CSS `columns`,
+     * and without the attributes the browser has no aspect ratio to reserve
+     * space with: every cell is zero-high until its file arrives, the whole
+     * masonry collapses to nothing, then snaps to full height as the images
+     * decode. With them, the column heights are correct on the first frame.
+     *
+     * Generated from the files themselves — if you add a screenshot, add its
+     * real dimensions here too. A missing entry is not fatal (the attributes
+     * are simply omitted, and you get the old jumping behaviour for that one
+     * cell).
+     */
+    const SHOT_SIZES = {
+        'chat-01.webp': [900, 628],
+        'chat-02.webp': [870, 426],
+        'chat-03.webp': [865, 363],
+        'chat-04-1.webp': [878, 191],
+        'chat-04-2.webp': [791, 136],
+        'chat-05.webp': [868, 305],
+        'chat-06.webp': [878, 314],
+        'chat-08-1.webp': [900, 175],
+        'chat-08-2.webp': [900, 289],
+        'chat-08-3.webp': [900, 182],
+        'chat-08-4.webp': [900, 134],
+        'chat-08-5.webp': [900, 182],
+        'chat-11-1.webp': [900, 320],
+        'chat-11-2.webp': [900, 126],
+        'chat-12.webp': [900, 292],
+        'chat-13-1.webp': [900, 167],
+        'chat-13-2.webp': [900, 170],
+        'chat-15.webp': [900, 197],
+        'chat-16.webp': [900, 261],
+        'chat-17.webp': [878, 495],
+        'chat-18.webp': [900, 175],
+        'chat-19.webp': [870, 364],
+        'chat-20.webp': [900, 586],
+        'chat-21.webp': [900, 339],
+        'chat-22-1.webp': [900, 300],
+        'chat-22-2.webp': [900, 220],
+        'chat-23.webp': [900, 580],
+        'chat-24.webp': [900, 379],
+        'chat-25.webp': [900, 312],
+        'chat-26.webp': [877, 428],
+        'chat-27.webp': [900, 197],
+        'chat-28.webp': [900, 356],
+        'chat-29.webp': [900, 372],
+        'chat-30.webp': [868, 295],
+        'chat-31.webp': [900, 182],
+        'chat-32.webp': [900, 249],
+        'chat-33.webp': [870, 364],
+        'chat-34.webp': [864, 232],
+        'chat-35.webp': [823, 135],
+        'chat-36.webp': [868, 234],
+        'chat-38.webp': [878, 189],
+        'chat-40.webp': [333, 213],
+        'ratings-01.webp': [317, 661],
+        'ratings-02.webp': [317, 714],
+        'ratings-03.webp': [317, 719],
+        'ratings-04.webp': [317, 591],
+        'ratings-05.webp': [317, 509],
+        'ratings-06.webp': [318, 681],
+        'win-01.webp': [283, 249],
+        'win-02.webp': [283, 174],
+    };
+
     const SHOT_DIR = 'imgs/reviews/';
     const SHOT_ROWS = 3;
 
@@ -394,29 +463,94 @@
     }
 
     /**
-     * The grid of filmed reviews.
+     * The filmed reviews, as a horizontal rail you scroll sideways.
      *
-     * Delegated click, like the text grid, so a language re-render cannot
-     * leave listeners behind on detached nodes.
+     * A wrapping grid was wrong for these: seven 9:16 cards wrap to 4 + 3 and
+     * leave a hole where the eighth would be, and shrinking them to fit one
+     * row makes each one a stamp. A rail sizes every card the same, fills the
+     * row edge to edge whatever the count, and grows by scrolling instead of
+     * by getting taller — which matters on a page that already has three more
+     * sections under it.
+     *
+     * Native scrolling does the work: swipe on touch, shift+wheel or a
+     * trackpad on desktop, and the arrow buttons for a mouse. Scroll snapping
+     * keeps cards from being left half-cut.
      */
     function renderVideos(el) {
         if (!el) return;
         const list = REVIEWS.filter(r => r.video && r.videoPoster);
 
+        const prevLbl = { ar: 'السابق', en: 'Previous' };
+        const nextLbl = { ar: 'التالي', en: 'Next' };
+
         const paint = () => {
-            el.className = 'rvv-grid';
-            el.innerHTML = list.length
-                ? list.map(videoCardHTML).join('')
-                : emptyHTML({ ar: 'مفيش فيديوهات لسه.', en: 'No videos yet.' }, 'video');
+            el.className = 'rvv-rail';
+            if (!list.length) {
+                el.innerHTML = emptyHTML({ ar: 'مفيش فيديوهات لسه.', en: 'No videos yet.' }, 'video');
+                return;
+            }
+            // The arrows sit OUTSIDE the scroller so they never scroll away,
+            // and are chevron-left/right as written — CSS mirrors them under
+            // RTL, where "next" is to the left.
+            el.innerHTML = `
+        <button type="button" class="rvv-nav rvv-nav-prev" aria-label="${esc(L(prevLbl))}" ${i18nAria(prevLbl)}>
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <div class="rvv-scroller" tabindex="0" role="group" aria-label="${esc(L({ ar: 'آراء بالفيديو', en: 'Video reviews' }))}">
+            ${list.map(videoCardHTML).join('')}
+        </div>
+        <button type="button" class="rvv-nav rvv-nav-next" aria-label="${esc(L(nextLbl))}" ${i18nAria(nextLbl)}>
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>`;
             // Picks up the play button's aria-label via data-ar-aria too.
             if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+            syncNav();
         };
+
+        /**
+         * Enable/disable the arrows, and hide them entirely when everything
+         * already fits.
+         *
+         * Direction-agnostic on purpose. In an RTL scroller `scrollLeft`
+         * starts at 0 on the RIGHT and goes NEGATIVE as you move left, so
+         * comparing it against 0 the LTR way marks the rail as "at the end"
+         * the moment it loads. Taking the absolute value gives one distance
+         * that means the same thing in both directions.
+         */
+        function syncNav() {
+            const sc = el.querySelector('.rvv-scroller');
+            const prev = el.querySelector('.rvv-nav-prev');
+            const next = el.querySelector('.rvv-nav-next');
+            if (!sc || !prev || !next) return;
+            const overflow = sc.scrollWidth - sc.clientWidth;
+            el.classList.toggle('is-static', overflow <= 2);
+            const pos = Math.abs(sc.scrollLeft);
+            prev.disabled = pos <= 2;
+            next.disabled = pos >= overflow - 2;
+        }
+
+        function page(dir) {
+            const sc = el.querySelector('.rvv-scroller');
+            if (!sc) return;
+            const rtl = getComputedStyle(sc).direction === 'rtl';
+            // Just under a full viewport of the rail, so the card you were
+            // looking at stays partly visible as an anchor.
+            const step = Math.max(200, sc.clientWidth * 0.8);
+            sc.scrollBy({ left: (rtl ? -dir : dir) * step, behavior: 'smooth' });
+        }
+
         paint();
 
         if (el.dataset.rvvBound) return;
         el.dataset.rvvBound = '1';
 
         el.addEventListener('click', e => {
+            const nav = e.target.closest('.rvv-nav');
+            if (nav && el.contains(nav)) {
+                page(nav.classList.contains('rvv-nav-next') ? 1 : -1);
+                return;
+            }
+
             const btn = e.target.closest('.rvv-play');
             if (!btn || !el.contains(btn)) return;
             const card = btn.closest('.rvv-card');
@@ -434,7 +568,15 @@
             frame.className = 'rvv-iframe';
             card.classList.add('is-playing');
             card.querySelector('.rvv-frame').appendChild(frame);
+
+            // Bring the card that just started playing fully into view, so a
+            // click on a half-visible card does not leave it half-visible.
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         });
+
+        // Delegated to `el` so it survives every repaint of the scroller.
+        el.addEventListener('scroll', syncNav, { capture: true, passive: true });
+        window.addEventListener('resize', syncNav, { passive: true });
 
         document.addEventListener('languagechange', () => {
             if (!document.body.contains(el)) return;
@@ -554,11 +696,11 @@
     function shotRowHTML(files, index) {
         const imgs = files.map(f => `
             <div class="rvs-card">
-                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async" />
+                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async"${sizeAttrs(f)} />
             </div>`).join('');
         const dup = files.map(f => `
             <div class="rvs-card rvs-dup">
-                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async" />
+                <img src="${esc(SHOT_DIR + f)}" alt="" loading="lazy" decoding="async"${sizeAttrs(f)} />
             </div>`).join('');
         // even rows drift one way, odd rows the other
         const dir = index % 2 === 0 ? 'rvs-row--fwd' : 'rvs-row--rev';
@@ -607,16 +749,25 @@
         return (files || []).filter(f => !/NEEDS[-_]EDIT/i.test(f));
     }
 
-    function shotCellHTML(file) {
+    /** `width="900" height="628"` for a screenshot, or '' if we have no size. */
+    function sizeAttrs(file) {
+        const s = SHOT_SIZES[file];
+        return s ? ` width="${s[0]}" height="${s[1]}"` : '';
+    }
+
+    function shotCellHTML(file, hidden) {
         const src = SHOT_DIR + file;
         const open = { ar: 'كبّر الصورة', en: 'Enlarge image' };
         // A button, not a bare <img>: enlarging is an action, and it has to be
         // reachable by keyboard. The alt stays empty for the reason at the top
         // of this file — the words are someone else's and are in the pixels.
+        //
+        // `hidden` is the not-yet-revealed tail. The images are lazy, so a
+        // hidden cell costs nothing until "show more" is pressed.
         return `
-        <button type="button" class="rvg-cell" data-full="${esc(src)}"
+        <button type="button" class="rvg-cell" data-full="${esc(src)}"${hidden ? ' hidden' : ''}
                 aria-label="${esc(L(open))}" ${i18nAria(open)}>
-            <img src="${esc(src)}" alt="" loading="lazy" decoding="async" />
+            <img src="${esc(src)}" alt="" loading="lazy" decoding="async"${sizeAttrs(file)} />
         </button>`;
     }
 
@@ -632,13 +783,59 @@
         const o = opts || {};
         const files = publishable(o.files || SCREENSHOTS);
 
+        // How many to show before the "عرض المزيد" button. There are 44 chat
+        // screenshots; dropping all of them on the page at once made /reviews
+        // about four screens of nothing but screenshots, and the written
+        // reviews above them stopped being the point of the page. `0` means
+        // no limit — the ratings section, which is six images, uses that.
+        const initial = o.initial || 0;
+        // Kept outside paint() so a language switch does not silently collapse
+        // a grid the visitor had already expanded.
+        let expanded = false;
+
         const paint = () => {
             el.className = 'rvg-grid' + (o.modifier ? ' ' + o.modifier : '');
-            el.innerHTML = files.length
-                ? files.map(shotCellHTML).join('')
-                : emptyHTML(o.empty || { ar: 'مفيش صور هنا دلوقتي.', en: 'No screenshots here yet.' }, 'image');
+            if (!files.length) {
+                el.innerHTML = emptyHTML(o.empty || { ar: 'مفيش صور هنا دلوقتي.', en: 'No screenshots here yet.' }, 'image');
+                if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+                return;
+            }
+            const cut = (initial && !expanded) ? initial : files.length;
+            el.innerHTML = files.map((f, i) => shotCellHTML(f, i >= cut)).join('');
             if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
+            paintMoreBtn(files.length - cut);
         };
+
+        /**
+         * The "show more" button, in its own element after the grid.
+         *
+         * Outside `el` because `el` is a CSS `columns` container — a button
+         * inside it would be dealt into a column like another screenshot
+         * instead of sitting centred under the whole block.
+         */
+        function paintMoreBtn(remaining) {
+            let bar = el.nextElementSibling;
+            if (!bar || !bar.classList.contains('rvg-more-bar')) {
+                bar = document.createElement('div');
+                bar.className = 'rvg-more-bar';
+                el.insertAdjacentElement('afterend', bar);
+                bar.addEventListener('click', e => {
+                    if (!e.target.closest('.rvg-more-btn')) return;
+                    expanded = true;
+                    paint();
+                });
+            }
+            if (remaining <= 0) { bar.innerHTML = ''; bar.hidden = true; return; }
+            bar.hidden = false;
+            const label = {
+                ar: `عرض ${remaining} كمان`,
+                en: `Show ${remaining} more`,
+            };
+            bar.innerHTML = `
+            <button type="button" class="rvg-more-btn" ${i18nAttrs(label)}>${esc(L(label))}</button>`;
+            if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(bar);
+        }
+
         paint();
 
         if (el.dataset.rvgBound) return;
@@ -723,6 +920,9 @@
     function autoInit() {
         renderVideos(document.getElementById('reviewsVideos'));
         renderShotGrid(document.getElementById('shotsGrid'), {
+            // 12 fills roughly one screen of the masonry at desktop width;
+            // the other 32 are one button away.
+            initial: 12,
             empty: { ar: 'مفيش رسايل معروضة دلوقتي.', en: 'No messages to show right now.' },
         });
         renderShotGrid(document.getElementById('ratingsGrid'), {
@@ -750,7 +950,7 @@
     }
 
     window.GhawyReviews = {
-        REVIEWS, SCREENSHOTS, RATINGS, SHOT_DIR,
+        REVIEWS, SCREENSHOTS, RATINGS, SHOT_DIR, SHOT_SIZES,
         L, esc, i18nAttrs, publishable,
         reviewCardHTML, emptyHTML, renderReviews, renderScreenshots,
         videoCardHTML, renderVideos,
