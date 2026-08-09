@@ -2467,7 +2467,13 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
 .pricing-was {
     text-align: center;
     margin-bottom: 4px;
-    min-height: 22px;
+    /* font-size and line-height live here, not only on the <s>, so the empty
+       twin on the monthly card is exactly one line tall — the same line the
+       struck price occupies. With min-height in em it cannot drift out of step
+       with the text the way a hard pixel value did. */
+    font-size: 0.95rem;
+    line-height: 1.75;
+    min-height: 1.75em;
 }
 
 .pricing-was s {
@@ -2484,12 +2490,36 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     text-align: center;
     font-size: 0.8rem;
     font-weight: 800;
+    line-height: 1.5;
+    /* holds one line even when empty — see .pricing-row--empty */
+    min-height: 1.5em;
     color: var(--gold);
+}
+
+/* Every card draws the same rows in the same order, and the ones with nothing
+   to say draw them empty rather than skipping them.
+
+   The monthly plan has no badge, no struck reference price (it IS the monthly
+   rate) and no "a month free" line, so when those three were rendered
+   conditionally it came out three lines shorter than its neighbours and its
+   price sat visibly higher than the other two. Reserving the space is what
+   puts the three prices on one line; it is not padding the card with invented
+   copy. aria-hidden on the markup side keeps the empties off the
+   accessibility tree, so a screen reader still hears three different cards.
+
+   (The badge is position: absolute, so its empty twin reserves nothing and is
+   here only so the three cards have the same shape in the DOM.) */
+.pricing-row--empty {
+    visibility: hidden;
 }
 
 .ghawy-pricing-cards .pricing-plan-sub {
     margin: 18px 0 22px;
     line-height: 1.7;
+    /* Two lines' worth, so a one-line blurb and a two-line one leave the
+       button at the same height. English wraps to two lines where Arabic
+       fits on one, which is exactly the case this guards. */
+    min-height: 3.4em;
     /* pushes the button to the bottom edge so all three line up */
     flex: 1;
 }
@@ -2513,6 +2543,17 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     .ghawy-pricing-cards {
         grid-template-columns: 1fr;
         gap: 22px;
+    }
+
+    /* One card per row here, so there is no neighbour to line up with and the
+       reserved empties would just be a blank gap above the monthly price.
+       Drop the reservation and let that card be as short as it is. */
+    .pricing-row--empty {
+        display: none;
+    }
+
+    .ghawy-pricing-cards .pricing-plan-sub {
+        min-height: 0;
     }
 }
 
@@ -2560,7 +2601,7 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 14px;
+    padding: 6px 11px;
     border-radius: 100px;
     background: #fff;
     border: 1px solid rgba(255, 255, 255, 0.14);
@@ -2574,20 +2615,9 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
    <img> carry these same numbers so the row's height is reserved up-front. */
 .pay-method img {
     display: block;
-    width: 66px;
-    height: 30px;
+    width: 52px;
+    height: 24px;
     object-fit: contain;
-}
-
-/* ⚠️ Meeza: the client's folder has six logos for seven methods, so this one
-   is its name on a chip — deliberately NOT a mark taken from the internet.
-   Sized to match the logo chips exactly (66px box + 14px padding each side). */
-.pay-method-name {
-    min-width: 94px;
-    height: 46px;
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: #1a1a1a;
 }
 
 /* Mobile: the row wraps rather than scrolling sideways — the chips shrink a
@@ -2598,18 +2628,12 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     }
 
     .pay-method {
-        padding: 7px 11px;
+        padding: 5px 9px;
     }
 
     .pay-method img {
-        width: 54px;
-        height: 26px;
-    }
-
-    .pay-method-name {
-        min-width: 76px;
-        height: 40px;
-        font-size: 0.8rem;
+        width: 44px;
+        height: 20px;
     }
 }
 
@@ -2935,18 +2959,35 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     border-color: var(--gold-border);
 }
 
+/* The two choices carry their real marks (visa.png, instapay.png) rather than
+   a generic glyph. Both are drawn for white — Visa is dark blue, InstaPay
+   purple — and this modal is black, so the icon is a white capsule for exactly
+   the reason .pay-method is one. It stays white on :hover too: the hover moves
+   the option's own border and background, and a mark that changed shade under
+   the cursor would just look broken.
+
+   The box is a rectangle, not the old 42px square: both logos are wider than
+   they are tall (Visa is 246×80) and a square would either squash them or
+   leave them tiny. 40×26 image box + 6px padding + the 1px border = 54×40
+   on screen, and the width/height attributes on the <img> repeat that image
+   box exactly, so the space is reserved before the file lands. */
 .pay-option-icon {
     flex-shrink: 0;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    padding: 6px;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--gold-subtle);
-    border: 1px solid var(--gold-border);
-    color: var(--gold);
-    font-size: 1.05rem;
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.pay-option-icon img {
+    display: block;
+    width: 40px;
+    height: 26px;
+    object-fit: contain;
 }
 
 .pay-option-body {

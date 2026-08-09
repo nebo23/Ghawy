@@ -59,9 +59,10 @@
     <!-- ── Structured data (schema.org) ──
          Kept in step with the meta tags above: same name, same description,
          same banner. `sameAs` is what tells Google the Instagram/Facebook/
-         TikTok accounts are this organisation's — two of those three are still
-         unconfirmed guesses (see the note in src/js/layout.js) and should be
-         corrected here as well when the real links arrive.
+         TikTok accounts are this organisation's, so a wrong link here is worse
+         than no link. All three are the client's confirmed accounts and match
+         the footer in src/js/layout.js and the profile in src/js/catalog.js —
+         if one moves, all three copies move.
 
          The FAQPage entry is NOT here. It is emitted by src/js/faq.js from the
          same array the page renders, so the rich result can never quote an
@@ -95,8 +96,8 @@
           "areaServed": "EG",
           "sameAs": [
             "https://www.instagram.com/ghawy.ai/",
-            "https://facebook.com/ghawyofficial",
-            "https://tiktok.com/@ghawy_official"
+            "https://www.facebook.com/profile.php?id=61591378479904",
+            "https://www.tiktok.com/@ghawy.ai"
           ],
           "founder": {
             "@type": "Person",
@@ -116,7 +117,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260809c">
+    <link rel="stylesheet" href="src/css/main.css?v=20260809e">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -303,7 +304,7 @@
      back in here; edit layout.js instead.
     ════════════════════════════════════════ -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260809a"></script>
+    <script src="src/js/layout.js?v=20260809b"></script>
 
     <!-- ════════════════════════════════════════
      AUTH MODALS
@@ -648,7 +649,7 @@
                     <!-- CTA Buttons -->
                     <div class="hero-cta-row">
                         <a href="javascript:void(0)" onclick="handleKashierPayment()" class="btn-cta btn-cta-solid">
-                            <span data-ar="انضم لـ Ghawy الآن" data-en="Join Ghawy Now">انضم لـ Ghawy الآن</span>
+                            <span data-ar="انضم الآن" data-en="Join Now">انضم الآن</span>
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
                         <a href="/courses" class="btn-cta-ghost">
@@ -1257,17 +1258,7 @@
     <section class="screenshots-section">
         <div class="container">
             <div class="centered">
-                <span class="section-eyebrow" data-ar="تقييمات الكورسات" data-en="Course ratings">تقييمات
-                    الكورسات</span>
-                <h2 class="section-title" data-html="true"
-                    data-ar='مجتمعنا لا يتوقف عن <span style="color: var(--gold)">تحقيق النتائج</span>'
-                    data-en='Our community never stops <span style="color: var(--gold)">achieving results</span>'>
-                    مجتمعنا لا يتوقف عن
-                    <span style="color: var(--gold)">تحقيق النتائج</span>
-                </h2>
-                <p class="section-sub" data-ar="التقييمات اللي الأعضاء سابوها على الكورسات نفسها، زي ما هي"
-                    data-en="The ratings members left on the courses themselves, exactly as they are">التقييمات اللي
-                    الأعضاء سابوها على الكورسات نفسها، زي ما هي</p>
+                <h2 class="section-title" data-ar="تقييمات الكورس" data-en="Course ratings">تقييمات الكورس</h2>
             </div>
         </div>
 
@@ -1410,16 +1401,16 @@
     <!-- Language engine — shared with every other page (single 'ghawy_lang' key,
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
-    <script src="src/js/i18n.js?v=20260809c"></script>
+    <script src="src/js/i18n.js?v=20260809d"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260809a"></script>
+    <script src="src/js/catalog.js?v=20260809b"></script>
     <!-- Member reviews — the single source for the testimonials section.
          Adding a review is one entry in this file. -->
-    <script src="src/js/reviews.js?v=20260809b"></script>
+    <script src="src/js/reviews.js?v=20260809c"></script>
     <!-- Plans, prices, the comparison and the checkout step — shared with
          /pricing so the two pages cannot quote different numbers. -->
-    <script src="src/js/pricing.js?v=20260809b"></script>
+    <script src="src/js/pricing.js?v=20260809d"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
     <script src="src/js/faq.js?v=20260808a"></script>
     <script src="src/js/main.js?v=20260808a"></script>
@@ -1485,7 +1476,7 @@
                         if (mobileOut) mobileOut.style.display = 'block';
                         if (mobileIn) mobileIn.style.display = 'none';
                         if (mobileCta) mobileCta.style.display = 'block';
-                        setLangText(heroJoinText, 'انضم لـ Ghawy دلوقتي', 'Join Ghawy Now');
+                        setLangText(heroJoinText, 'انضم الآن', 'Join Now');
                         return; // Stop here
                     }
                 } catch (e) {
@@ -1517,7 +1508,7 @@
                 if (mobileOut) mobileOut.style.display = 'block';
                 if (mobileIn) mobileIn.style.display = 'none';
                 if (mobileCta) mobileCta.style.display = 'block';
-                setLangText(heroJoinText, 'انضم لـ Ghawy دلوقتي', 'Join Ghawy Now');
+                setLangText(heroJoinText, 'انضم الآن', 'Join Now');
             }
         }
         updateAuthUI();

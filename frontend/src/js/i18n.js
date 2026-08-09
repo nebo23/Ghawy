@@ -15,6 +15,7 @@
 // Supported markup:
 //   data-ar / data-en                 → text swap        (landing-page style)
 //   data-ar-placeholder / -en-        → placeholder swap
+//   data-ar-alt / -en-alt             → alt swap on an <img>
 //   data-html="true"                  → use innerHTML instead of textContent
 //   data-i18n="key"                   → text from i18nDict (auth/funnel style)
 //   data-i18n-html="true"             → that key's value is HTML
@@ -119,7 +120,7 @@ const i18nDict = {
     // ── pay.html (Instapay) ──
     payPageTitle:     { ar: 'الدفع عبر انستاباي — Ghawy',   en: 'Pay with Instapay — Ghawy' },
     backToHome:       { ar: 'رجوع للرئيسية',               en: 'Back to Home' },
-    payTitle:         { ar: 'انضم لـ Ghawy عبر انستاباي',   en: 'Join Ghawy via Instapay' },
+    payTitle:         { ar: 'انضم لـ غاوي عبر انستاباي',   en: 'Join Ghawy via Instapay' },
     paySubtitle:      { ar: 'اتمّم الدفع بأمان وارفع إيصال التحويل عشان تدخل على طول.', en: 'Complete your payment securely and submit your receipt to get instant access.' },
     payStep1:         { ar: 'الخطوة 1',                    en: 'Step 1' },
     payStep1Title:    { ar: 'حوّل المبلغ',                 en: 'Transfer the amount' },
@@ -288,6 +289,17 @@ function translateTree(root, lang) {
     each('[data-ar-aria]', el => {
         const v = lang === 'ar' ? el.getAttribute('data-ar-aria') : el.getAttribute('data-en-aria');
         if (v != null) el.setAttribute('aria-label', v);
+    });
+
+    // data-ar-alt / data-en-alt → the alt attribute, same reasoning as above.
+    //
+    // An <img> has no text node to write into, so data-ar/data-en cannot carry
+    // its alt. Without this, a translated logo's alt is whatever language the
+    // markup was built in and then never changes — the payment-choice icons
+    // are built once and reused for the life of the page.
+    each('[data-ar-alt]', el => {
+        const v = lang === 'ar' ? el.getAttribute('data-ar-alt') : el.getAttribute('data-en-alt');
+        if (v != null) el.setAttribute('alt', v);
     });
 
     // data-i18n-placeholder / data-i18n-title

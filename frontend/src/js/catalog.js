@@ -84,8 +84,8 @@
             ],
             links: {
                 instagram: 'https://www.instagram.com/ghawy.ai/',
-                tiktok: 'https://tiktok.com/@ghawy_official',
-                facebook: 'https://facebook.com/ghawyofficial',
+                tiktok: 'https://www.tiktok.com/@ghawy.ai',
+                facebook: 'https://www.facebook.com/profile.php?id=61591378479904',
             },
             introVideo: null,                  // → "coming soon" placeholder
             bio: {

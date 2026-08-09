@@ -117,10 +117,16 @@ ${navLinks(true)}
     // /instructors — plus the one thing that genuinely still is a section on
     // the home page, the features.
     //
-    // ⚠ The social links: the client said three new ones were coming by email.
-    // Only Instagram has arrived (instagram.com/ghawy.ai) and it is in below.
-    // Facebook and TikTok are still the old `ghawyofficial` / `ghawy_official`
-    // guesses and have NOT been confirmed — replace them when the links land.
+    // The social links are all three confirmed by the client now. The Facebook
+    // one is a numeric profile.php?id= rather than a vanity name because that
+    // page has no username yet; the client sent it as web.facebook.com with a
+    // pile of `mibextid` tracking params attached, which are one browser
+    // session's and mean nothing to anyone else, so it is stored here as plain
+    // www.facebook.com with everything after the id stripped.
+    //
+    // The same three URLs are in src/js/catalog.js and in the `sameAs` array
+    // of the JSON-LD in index.html — that array is how Google ties the
+    // accounts to the org, so all three copies move together.
     function footerHTML() {
         const link = (href, ar, en) =>
             `<a href="${href}" class="footer-link" data-ar="${ar}" data-en="${en}">${ar}</a>`;
@@ -237,10 +243,10 @@ ${navLinks(true)}
                     <a href="https://www.instagram.com/ghawy.ai/" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
                         <i class="fa-brands fa-instagram"></i>
                     </a>
-                    <a href="https://facebook.com/ghawyofficial" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook">
+                    <a href="https://www.facebook.com/profile.php?id=61591378479904" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook">
                         <i class="fa-brands fa-facebook-f"></i>
                     </a>
-                    <a href="https://tiktok.com/@ghawy_official" target="_blank" rel="noopener" class="social-icon" aria-label="TikTok">
+                    <a href="https://www.tiktok.com/@ghawy.ai" target="_blank" rel="noopener" class="social-icon" aria-label="TikTok">
                         <i class="fa-brands fa-tiktok"></i>
                     </a>
                 </div>

@@ -73,6 +73,11 @@
                     en: 'The balanced one, for building a real result over months',
                 },
                 badge: { ar: 'الأكثر مبيعاً', en: 'Best seller' },
+                // 1800 − 1200 = 600, which is exactly one month at the monthly price.
+                extra: {
+                    ar: 'كأنك واخد شهر مجاني',
+                    en: 'Like getting a month free',
+                },
             },
             yearly: {
                 key: 'yearly',
@@ -126,6 +131,11 @@
                     en: 'The balanced one, for building a real result over months',
                 },
                 badge: { ar: 'الأكثر مبيعاً', en: 'Best seller' },
+                // 60 − 35 = 25, against a 20 monthly — a month free, same as EGP.
+                extra: {
+                    ar: 'كأنك واخد شهر مجاني',
+                    en: 'Like getting a month free',
+                },
             },
             yearly: {
                 key: 'yearly',
@@ -197,10 +207,10 @@
     // that a wide wordmark (Fawry, Etisalat) and a compact mark (InstaPay,
     // Mastercard) carry the same visual weight inside an identical chip.
     //
-    // ⚠️ Meeza has NO logo in the set the client shared — six files, seven
-    // methods. It is deliberately rendered as its name on a chip of exactly
-    // the same size, NOT a logo pulled off the internet. If the client wants a
-    // Meeza mark here, they need to supply it.
+    // Six methods, six logos. Meeza used to sit here as a name on a chip
+    // because the client's folder has no Meeza mark; it was dropped rather
+    // than shown without one. (Card checkout still accepts Meeza — the
+    // sentence under the card option says so.)
     //
     // Every mark is drawn for a white background (Visa blue, Fawry yellow,
     // Etisalat black/red, Vodafone red on white, InstaPay purple), so each one
@@ -210,7 +220,6 @@
     const METHODS = [
         { logo: 'visa.png', label: { ar: 'فيزا', en: 'Visa' } },
         { logo: 'mastercard.svg', label: { ar: 'ماستركارد', en: 'Mastercard' } },
-        { logo: null, label: { ar: 'ميزة', en: 'Meeza' } },
         { logo: 'instapay.png', label: { ar: 'انستاباي', en: 'InstaPay' } },
         { logo: 'vodafone-cash.jpg', label: { ar: 'فودافون كاش', en: 'Vodafone Cash' } },
         { logo: 'etisalat.png', label: { ar: 'اتصالات كاش', en: 'Etisalat Cash' } },
@@ -286,7 +295,9 @@
         return `
     <div class="pricing-card${featured ? ' pricing-card-featured' : ''}" data-plan-card="${esc(p.key)}">
         <div class="pricing-card-glow"></div>
-        ${p.badge ? `<span class="pricing-badge" ${i18nAttrs(p.badge)}>${esc(L(p.badge))}</span>` : ''}
+        ${p.badge
+                ? `<span class="pricing-badge" ${i18nAttrs(p.badge)}>${esc(L(p.badge))}</span>`
+                : `<span class="pricing-badge pricing-row--empty" aria-hidden="true"></span>`}
 
         <h3 class="pricing-plan-name" ${i18nAttrs(p.name)}>${esc(L(p.name))}</h3>
 
@@ -294,7 +305,7 @@
             ${p.was ? `
             <div class="pricing-was">
                 <s>${esc(money(p.was))} ${cur}</s>
-            </div>` : ''}
+            </div>` : `<div class="pricing-was pricing-row--empty" aria-hidden="true"></div>`}
             <div class="pricing-current">
                 <span class="pricing-amount">${esc(money(p.amount))}</span>
                 <div class="pricing-currency-col">
@@ -302,7 +313,9 @@
                     <span class="pricing-period-label" ${i18nAttrs(p.period)}>${esc(L(p.period))}</span>
                 </div>
             </div>
-            ${p.extra ? `<span class="pricing-extra" ${i18nAttrs(p.extra)}>${esc(L(p.extra))}</span>` : ''}
+            ${p.extra
+                ? `<span class="pricing-extra" ${i18nAttrs(p.extra)}>${esc(L(p.extra))}</span>`
+                : `<span class="pricing-extra pricing-row--empty" aria-hidden="true"></span>`}
         </div>
 
         <p class="pricing-plan-sub" ${i18nAttrs(p.blurb)}>${esc(L(p.blurb))}</p>
@@ -370,20 +383,13 @@
 
     function methodsHTML() {
         return METHODS.map(m => {
-            // Meeza — name on a chip, same size as the logo chips.
-            if (!m.logo) {
-                return `
-        <span class="pay-method pay-method-name">
-            <span ${i18nAttrs(m.label)}>${esc(L(m.label))}</span>
-        </span>`;
-            }
             // width/height match the .pay-method img box in CSS, so the row
             // reserves its full height before the images arrive and the page
             // does not jump. object-fit: contain does the actual fitting.
             return `
         <span class="pay-method">
             <img src="imgs/payment/${m.logo}" alt="${esc(L(m.label))}"
-                 width="66" height="30" loading="lazy" decoding="async" />
+                 width="52" height="24" loading="lazy" decoding="async" />
         </span>`;
         }).join('');
     }
@@ -734,7 +740,9 @@
             ${couponFieldHTML()}
 
             <button class="pay-option pay-option--primary" type="button" data-pay-card>
-                <span class="pay-option-icon"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></span>
+                <span class="pay-option-icon"><img src="imgs/payment/visa.png"
+                        alt="فيزا" data-ar-alt="فيزا" data-en-alt="Visa"
+                        width="40" height="26" loading="lazy" decoding="async" /></span>
                 <span class="pay-option-body">
                     <span class="pay-option-title" data-ar="دفع بالبطاقة أو المحفظة"
                         data-en="Pay by card or wallet">دفع بالبطاقة أو المحفظة</span>
@@ -746,7 +754,9 @@
             </button>
 
             <button class="pay-option" type="button" data-pay-instapay>
-                <span class="pay-option-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+                <span class="pay-option-icon"><img src="imgs/payment/instapay.png"
+                        alt="انستاباي" data-ar-alt="انستاباي" data-en-alt="InstaPay"
+                        width="40" height="26" loading="lazy" decoding="async" /></span>
                 <span class="pay-option-body">
                     <span class="pay-option-title" data-ar="انستاباي يدوي — للمصريين بس"
                         data-en="Manual InstaPay — Egypt only">انستاباي يدوي — للمصريين بس</span>
