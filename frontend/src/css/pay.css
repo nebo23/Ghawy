@@ -695,7 +695,31 @@ body {
 .pay-email {
     color: #fff;
     font-weight: 700;
-    word-break: break-all;
+    /* Its own line, with the full width of the card.
+       This used to be an inline span with `word-break: break-all`, which is
+       exactly what produced "nabilbackupp@gmail.co" on one line and a lone "m"
+       on the next: the span began halfway along the Arabic sentence that
+       introduces it, so only a sliver of width was left, and break-all happily
+       cut the address in the middle of the domain.
+       On its own line the address fits whole. `anywhere` stays as a last
+       resort for a genuinely long address on a narrow screen — unlike
+       break-all it never splits one that already fits. */
+    display: block;
+    margin-top: 4px;
+    direction: ltr;
+    unicode-bidi: isolate;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+/* `hidden` must win over any class that sets `display`.
+   .pay-home-btn set `display: inline-block`, and a class beats the browser's
+   own [hidden] rule on specificity — so #blocked-dashboard-btn stayed on
+   screen even though pay.js had set .hidden = true. That is why the
+   "request under review" card showed a "Go to dashboard" button it was never
+   meant to show. */
+[hidden] {
+    display: none !important;
 }
 
 /* Waiting on review is not success. Amber, not green. */

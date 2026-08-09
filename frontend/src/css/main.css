@@ -2548,25 +2548,69 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     gap: 10px;
 }
 
+/* The real brand marks (imgs/payment/) are all drawn for a white background:
+   Visa blue, Fawry yellow, Etisalat black-and-red, Vodafone red on white,
+   InstaPay purple. On the page's black they would either disappear or look
+   dirty, so every method sits in its own white capsule.
+
+   The white is pure #fff, not an off-white: vodafone-cash.jpg is a JPEG with a
+   baked-in white background, and any other shade would show it as a visible
+   rectangle inside the capsule. */
 .pay-method {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 16px;
+    justify-content: center;
+    padding: 8px 14px;
     border-radius: 100px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border);
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--muted-light);
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-/* Font Awesome has brand marks for the three card networks and nothing for
-   Meeza, InstaPay, the two wallets or Fawry. Those are a name on a chip rather
-   than a generic glyph pretending to be a logo. */
-.pay-method i {
-    font-size: 1.25rem;
-    color: var(--off-white);
+/* One fixed box for every mark. The logos have very different proportions
+   (Etisalat and Fawry are wide wordmarks, InstaPay and Mastercard are nearly
+   square), so `contain` inside an identical box is what makes them read as the
+   same size instead of one being four times the other. The attributes on the
+   <img> carry these same numbers so the row's height is reserved up-front. */
+.pay-method img {
+    display: block;
+    width: 66px;
+    height: 30px;
+    object-fit: contain;
+}
+
+/* ⚠️ Meeza: the client's folder has six logos for seven methods, so this one
+   is its name on a chip — deliberately NOT a mark taken from the internet.
+   Sized to match the logo chips exactly (66px box + 14px padding each side). */
+.pay-method-name {
+    min-width: 94px;
+    height: 46px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+/* Mobile: the row wraps rather than scrolling sideways — the chips shrink a
+   little so three still fit on a 360px screen. */
+@media (max-width: 480px) {
+    .pay-methods {
+        gap: 8px;
+    }
+
+    .pay-method {
+        padding: 7px 11px;
+    }
+
+    .pay-method img {
+        width: 54px;
+        height: 26px;
+    }
+
+    .pay-method-name {
+        min-width: 76px;
+        height: 40px;
+        font-size: 0.8rem;
+    }
 }
 
 .pay-methods-note {
@@ -9620,49 +9664,23 @@ html[dir="rtl"] .rvv-nav i {
 }
 
 /* ── Ratings ──
-   These six are tall single columns (a list of names and stars), 500-1500px
-   each. Poured into the masonry at a readable width they came to 1600px of
-   page — a wall you scroll past rather than read.
+   The same masonry, tuned for a different shape. These six are tall portraits
+   (317x500-720, i.e. about 1:2) while the chat shots are wide and short, so
+   they get their own column width rather than their own layout.
 
-   So this variant is a real grid of equal cards showing the TOP of each list
-   under a fade, which is the same treatment the home page gives the same six
-   images. The point of the section is "lots of members rated this highly",
-   and the top of a list carries that; the lightbox has the whole thing one
-   click away. */
+   They used to be equal-height cards with `object-fit: cover` and a fade over
+   the cut edge. That crops a screenshot whose whole content is text — names,
+   stars and sentences — so the bottom of every list was simply gone. Nothing
+   is cropped now: each shot renders at its natural height.
+
+   The column floor is 230px, not the 340px the chat grid uses, precisely
+   because these are narrow and tall: a wider column would make each card
+   ~700px high and turn six images into two screens of scrolling. At this
+   width the six pack into four short columns, and any list whose small print
+   the visitor actually wants to read is one click from the lightbox. */
 .rvg-grid--tall {
-    columns: initial;
-    display: grid;
-    /* Three, not `auto-fill`. There are six rating shots: auto-fill chose
-       four at desktop width and left the last row two-thirds empty, which
-       with cards this tall is a hole you cannot miss. Three divides six into
-       two full rows — and 9 or 12 later. */
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.rvg-grid--tall .rvg-cell {
-    position: relative;
-    margin: 0;
-    height: 340px;
-}
-
-.rvg-grid--tall .rvg-cell img {
-    height: 100%;
-    object-fit: cover;
-    /* Top of the list, not the middle of it. */
-    object-position: top center;
-}
-
-/* Fades the cut edge so it reads as "and there is more" rather than as an
-   image that failed to finish. */
-.rvg-grid--tall .rvg-cell::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    height: 96px;
-    background: linear-gradient(to top, #0d0d0d 12%, rgba(13, 13, 13, 0) 100%);
-    pointer-events: none;
+    columns: 4 230px;
+    column-gap: 16px;
 }
 
 /* `.rvg-cell` sets `display: block`, which beats the UA sheet's
@@ -9807,17 +9825,18 @@ body.rvlb-open {
 
     /* Two columns of chat screenshots at 360px is unreadable — one, full
        width, so the message can actually be read without the lightbox. */
-    .rvg-grid,
-    .rvg-grid--tall {
+    .rvg-grid {
         columns: 1;
     }
 
+    /* The rating lists stay at two columns on a phone. They are portraits
+       roughly twice as tall as they are wide, so a single full-width column
+       would make each one ~700px and the six of them about four screens of
+       scrolling. Two keeps the section skimmable, and nothing is cropped —
+       the lightbox is one tap away for the small print. */
     .rvg-grid--tall {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .rvg-grid--tall .rvg-cell {
-        height: 260px;
+        columns: 2;
+        column-gap: 12px;
     }
 
     /* Swipe is the natural gesture here and the arrows would eat 100px of a

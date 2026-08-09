@@ -223,8 +223,12 @@
     // of proof never show the same picture twice.
     //
     // They are tall single columns rather than chat bubbles, which is why they
-    // get their own row treatment (`rvs-wrap--tall`) instead of being dealt in
-    // with the messages above.
+    // get their own treatment — `rvs-wrap--tall` in the home-page marquee and
+    // `rvg-grid--tall` in the /reviews masonry — instead of being dealt in
+    // with the messages above. Both are the SAME masonry as the chat shots,
+    // only with a narrower column: these are ~1:2 portraits and the chat shots
+    // are wide and short, so one column width cannot flatter both. Neither is
+    // cropped — a screenshot made of text has nothing safe to cut.
     const RATINGS = [
         'ratings-01.webp', 'ratings-02.webp', 'ratings-03.webp',
         'ratings-04.webp', 'ratings-05.webp', 'ratings-06.webp',

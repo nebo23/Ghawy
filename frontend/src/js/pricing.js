@@ -192,18 +192,29 @@
     ];
 
     // ─── Payment methods ────────────────────────────────────────
-    // The row under the cards. Font Awesome carries brand marks for the three
-    // card networks; Meeza, Instapay, Vodafone Cash, Etisalat Cash and Fawry
-    // have no icon in the set, so those are a name on a chip rather than a
-    // wrong-looking generic glyph.
+    // The row under the cards. These are the real brand marks, served from
+    // imgs/payment/ — trimmed of their padding and normalised to one height so
+    // that a wide wordmark (Fawry, Etisalat) and a compact mark (InstaPay,
+    // Mastercard) carry the same visual weight inside an identical chip.
+    //
+    // ⚠️ Meeza has NO logo in the set the client shared — six files, seven
+    // methods. It is deliberately rendered as its name on a chip of exactly
+    // the same size, NOT a logo pulled off the internet. If the client wants a
+    // Meeza mark here, they need to supply it.
+    //
+    // Every mark is drawn for a white background (Visa blue, Fawry yellow,
+    // Etisalat black/red, Vodafone red on white, InstaPay purple), so each one
+    // sits in a white capsule — see .pay-method in main.css. The capsule is
+    // pure white on purpose: vodafone-cash.jpg is a JPEG with a baked-in white
+    // background, and any off-white would show it as a visible rectangle.
     const METHODS = [
-        { icon: 'fa-brands fa-cc-visa', label: { ar: 'فيزا', en: 'Visa' } },
-        { icon: 'fa-brands fa-cc-mastercard', label: { ar: 'ماستركارد', en: 'Mastercard' } },
-        { icon: null, label: { ar: 'ميزة', en: 'Meeza' } },
-        { icon: null, label: { ar: 'انستاباي', en: 'InstaPay' } },
-        { icon: null, label: { ar: 'فودافون كاش', en: 'Vodafone Cash' } },
-        { icon: null, label: { ar: 'اتصالات كاش', en: 'Etisalat Cash' } },
-        { icon: null, label: { ar: 'فوري', en: 'Fawry' } },
+        { logo: 'visa.png', label: { ar: 'فيزا', en: 'Visa' } },
+        { logo: 'mastercard.svg', label: { ar: 'ماستركارد', en: 'Mastercard' } },
+        { logo: null, label: { ar: 'ميزة', en: 'Meeza' } },
+        { logo: 'instapay.png', label: { ar: 'انستاباي', en: 'InstaPay' } },
+        { logo: 'vodafone-cash.jpg', label: { ar: 'فودافون كاش', en: 'Vodafone Cash' } },
+        { logo: 'etisalat.png', label: { ar: 'اتصالات كاش', en: 'Etisalat Cash' } },
+        { logo: 'fawry.png', label: { ar: 'فوري', en: 'Fawry' } },
     ];
 
     // ─── Helpers ────────────────────────────────────────────────
@@ -358,11 +369,23 @@
     // ─── Payment methods row ────────────────────────────────────
 
     function methodsHTML() {
-        return METHODS.map(m => `
-        <span class="pay-method">
-            ${m.icon ? `<i class="${m.icon}" aria-hidden="true"></i>` : ''}
+        return METHODS.map(m => {
+            // Meeza — name on a chip, same size as the logo chips.
+            if (!m.logo) {
+                return `
+        <span class="pay-method pay-method-name">
             <span ${i18nAttrs(m.label)}>${esc(L(m.label))}</span>
-        </span>`).join('');
+        </span>`;
+            }
+            // width/height match the .pay-method img box in CSS, so the row
+            // reserves its full height before the images arrive and the page
+            // does not jump. object-fit: contain does the actual fitting.
+            return `
+        <span class="pay-method">
+            <img src="imgs/payment/${m.logo}" alt="${esc(L(m.label))}"
+                 width="66" height="30" loading="lazy" decoding="async" />
+        </span>`;
+        }).join('');
     }
 
     function renderMethods(el) {

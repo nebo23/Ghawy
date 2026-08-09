@@ -23,13 +23,99 @@ const API = (location.hostname === 'localhost' || location.hostname === '127.0.0
     ? 'http://127.0.0.1:8000'
     : '/api';
 
+// ─── اللغة ──────────────────────────────────────────────────
+// الصفحة دي كانت مكتوبة عربي ثابت و<html lang="ar" dir="rtl"> متسمّر في
+// الماركب، فالعضو اللي مختار إنجليزي كان بيتحوّل عليها (الحارس بتاع الاشتراك
+// المنتهي بيوديه هنا) ويلاقي صفحة عربي — وده جزء من إحساس إن اللغة "مش متصلة".
+// المصدر واحد: window.currentLang() من src/js/i18n.js، اللي بيقرا ghawy_lang.
+function lang() {
+    if (typeof window.currentLang === 'function') return window.currentLang();
+    return document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar';
+}
+
+/** يختار النص المناسب من {ar, en}. */
+function L(pair) {
+    if (pair == null) return '';
+    if (typeof pair === 'string') return pair;
+    return pair[lang()] || pair.ar || '';
+}
+
+const T = {
+    loading: { ar: 'بنجيب تفاصيل اشتراكك...', en: 'Fetching your subscription details…' },
+    currency: { ar: 'جنيه', en: 'EGP' },
+    // وضع القفل
+    lockedTitle: { ar: 'اشتراكك خلص — جدّد دلوقتي وكمّل من غير ما تخرج', en: 'Your subscription has ended — renew now and carry on where you left off' },
+    lockedSub: { ar: 'حسابك ومحتواك ومحادثاتك كلها مستنياك زي ما هي. اختار باقتك، ادفع في دقيقة، وهترجع للداشبورد على طول.', en: 'Your account, your content and your conversations are all still here. Pick a plan, pay in a minute, and you are back on your dashboard right away.' },
+    endedOn: { ar: 'اشتراكك انتهى يوم', en: 'Your subscription ended on' },
+    renewCta: { ar: 'جدّد اشتراكك 🚀', en: 'Renew your subscription 🚀' },
+    logout: { ar: 'تسجيل الخروج', en: 'Sign out' },
+    // وضع التجديد المبكّر
+    renewTitle: { ar: 'تجديد الاشتراك', en: 'Renew your subscription' },
+    renewSub: { ar: 'اشتراكك لسه شغّال — أي تجديد دلوقتي بيتضاف <b>فوق</b> الأيام الباقية، مش بيلغيها.', en: 'Your subscription is still running — renewing now is added <b>on top of</b> the days you have left, not instead of them.' },
+    youHaveLeft: { ar: 'باقي معاك', en: 'You have left' },
+    endsOn: { ar: 'اشتراكك بيخلص يوم', en: 'Your subscription ends on' },
+    currentPlan: { ar: 'باقتك الحالية', en: 'Your current plan' },
+    noEndDate: { ar: 'من غير تاريخ انتهاء', en: 'No end date' },
+    lessThanADay: { ar: 'أقل من يوم', en: 'Less than a day' },
+    openEnded: { ar: 'مفتوح', en: 'Open-ended' },
+    freeMembership: { ar: 'عضوية مجانية', en: 'Free membership' },
+    renewNowCta: { ar: 'جدّد دلوقتي 🚀', en: 'Renew now 🚀' },
+    backToDashboard: { ar: 'ارجع للداشبورد', en: 'Back to dashboard' },
+    // الدفع
+    securePay: { ar: 'الدفع آمن 100% عبر Kashier', en: '100% secure payment via Kashier' },
+    or: { ar: 'أو', en: 'or' },
+    payInstapay: { ar: 'ادفع عبر انستاباي', en: 'Pay with InstaPay' },
+    manualNoteRenew: { ar: 'انستاباي بيتراجع يدويًا، والاشتراك بيتحسب من <b>يوم الموافقة</b> — يعني الأيام الباقية معاك دلوقتي مش هتتضاف عليه. لو عايز الأيام تتجمّع، ادفع بالكارت.', en: 'InstaPay is reviewed by hand and the subscription is counted from the <b>day it is approved</b> — the days you have left now will not be added to it. If you want the days to stack, pay by card.' },
+    manualNoteLocked: { ar: 'انستاباي محتاج مراجعة يدوية من الفريق، فالتفعيل مش فوري زي الكارت.', en: 'InstaPay needs a manual review by the team, so activation is not instant the way card payment is.' },
+    // المعاينة
+    willRunUntil: { ar: 'اشتراكك هيشتغل لحد {date}', en: 'Your subscription will run until {date}' },
+    totalUntil: { ar: 'المجموع <b>{days}</b> · لحد {date}', en: 'Total <b>{days}</b> · until {date}' },
+    addedUntil: { ar: '<b>{days}</b> · لحد {date}', en: '<b>{days}</b> · until {date}' },
+    previewRenewStacked: { ar: 'لو جدّدت دلوقتي هيبقى معاك مجموع <b>{days}</b>', en: 'Renewing now gives you a total of <b>{days}</b>' },
+    previewRenewPlain: { ar: 'لو جدّدت دلوقتي هيبقى معاك <b>{days}</b>', en: 'Renewing now gives you <b>{days}</b>' },
+    previewRenewTail: { ar: ' — واشتراكك هيخلص يوم <b>{date}</b>.', en: ' — and your subscription will end on <b>{date}</b>.' },
+    previewLocked: { ar: 'لو دفعت دلوقتي هيترجعلك الوصول فورًا لمدة <b>{days}</b> — لحد يوم <b>{date}</b>.', en: 'Paying now restores your access immediately for <b>{days}</b> — until <b>{date}</b>.' },
+    // الأخطاء
+    errTitle: { ar: 'مش قادرين نجيب تفاصيل اشتراكك', en: 'We could not load your subscription details' },
+    retry: { ar: 'حاول تاني', en: 'Try again' },
+    errNetwork: { ar: 'مشكلة في الاتصال بالسيرفر. جرّب تاني بعد شوية.', en: 'There was a problem reaching the server. Please try again shortly.' },
+    errServer: { ar: 'السيرفر رجّعلنا خطأ غير متوقع. جرّب تاني، ولو فضلت المشكلة كلّم الدعم.', en: 'The server returned an unexpected error. Please try again, and contact support if it keeps happening.' },
+    errParse: { ar: 'رد السيرفر مش مفهوم. جرّب تاني.', en: 'We could not read the server response. Please try again.' },
+    redirecting: { ar: 'جارٍ التحويل لصفحة الدفع... ✅', en: 'Taking you to the payment page… ✅' },
+    sessionExpired: { ar: 'انتهت الجلسة، سجّل دخولك تاني', en: 'Your session expired — please sign in again' },
+    payFailed: { ar: 'حصل خطأ وإحنا بنجهّز الدفع، حاول تاني', en: 'Something went wrong while preparing the payment. Please try again.' },
+    noConnection: { ar: 'مفيش اتصال بالسيرفر — اتأكد من النت وحاول تاني', en: 'No connection to the server — check your internet and try again' },
+};
+
+/** يملا {name} في النص المترجم. */
+function fill(pair, vars) {
+    let s = L(pair);
+    for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+    return s;
+}
+
 // نفس باقات payment.js — المنصة بتعرض EGP بس.
 // الأسعار هنا للعرض فقط؛ المصدر الرسمي هو PLAN_PRICES في backend/app/routers/payment.py.
 // و`days` مطابقة لـ plan_duration() في backend/app/services/payment_service.py.
 const PLANS = {
-    monthly_egp: { amount: 600, currency: 'EGP', label: 'شهري', period: 'شهر', days: 30, badge: null },
-    quarterly_egp: { amount: 1200, currency: 'EGP', label: 'ربع سنوي', period: '3 شهور', days: 90, badge: 'وفّر 600 جنيه' },
-    yearly_egp: { amount: 3500, currency: 'EGP', label: 'سنوي', period: 'سنة', days: 365, badge: 'وفّر 3700 جنيه' },
+    monthly_egp: {
+        amount: 600, currency: 'EGP', days: 30,
+        label: { ar: 'شهري', en: 'Monthly' },
+        period: { ar: 'شهر', en: 'month' },
+        badge: null,
+    },
+    quarterly_egp: {
+        amount: 1200, currency: 'EGP', days: 90,
+        label: { ar: 'ربع سنوي', en: 'Quarterly' },
+        period: { ar: '3 شهور', en: '3 months' },
+        badge: { ar: 'وفّر 600 جنيه', en: 'Save 600 EGP' },
+    },
+    yearly_egp: {
+        amount: 3500, currency: 'EGP', days: 365,
+        label: { ar: 'سنوي', en: 'Yearly' },
+        period: { ar: 'سنة', en: 'year' },
+        badge: { ar: 'وفّر 3700 جنيه', en: 'Save 3,700 EGP' },
+    },
 };
 const PLAN_ORDER = ['monthly_egp', 'quarterly_egp', 'yearly_egp'];
 
@@ -70,18 +156,21 @@ function parseUtc(iso) {
     return isNaN(d.getTime()) ? null : d;
 }
 
-/** تاريخ عربي واضح بأرقام لاتينية (عشان يبقى متسق مع باقي الأرقام في الصفحة) */
+/** تاريخ واضح بأرقام لاتينية (عشان يبقى متسق مع باقي الأرقام في الصفحة) */
 function fmtDate(d) {
     if (!d) return '—';
     const opts = { timeZone: 'Africa/Cairo', day: 'numeric', month: 'long', year: 'numeric' };
-    try {
-        return d.toLocaleDateString('ar-EG-u-nu-latn', opts);
-    } catch (e) {
-        try { return d.toLocaleDateString('ar-EG', opts); } catch (e2) { return d.toISOString().slice(0, 10); }
+    // en-GB زي العربي: يوم ثم شهر ثم سنة، فترتيب المعلومة ما بتتغيرش مع اللغة.
+    const locales = lang() === 'en' ? ['en-GB'] : ['ar-EG-u-nu-latn', 'ar-EG'];
+    for (const loc of locales) {
+        try { return d.toLocaleDateString(loc, opts); } catch (e) { /* جرّب اللي بعده */ }
     }
+    return d.toISOString().slice(0, 10);
 }
 
+/** جمع التكسير العربي مقابل جمع إنجليزي بسيط. */
 function daysWord(n) {
+    if (lang() === 'en') return n === 1 ? '1 day' : n + ' days';
     if (n === 1) return 'يوم واحد';
     if (n === 2) return 'يومين';
     if (n >= 3 && n <= 10) return n + ' أيام';
@@ -129,20 +218,20 @@ function plansHtml() {
         const p = PLANS[key];
         const pv = previewFor(key);
         const active = key === selectedPlan;
-        const badge = p.badge ? `<span class="rn-plan-badge">${esc(p.badge)}</span>` : '';
+        const badge = p.badge ? `<span class="rn-plan-badge">${esc(L(p.badge))}</span>` : '';
         // في وضع التجديد بنقول "المجموع" بس لما يكون فيه أيام باقية فعلاً تتضاف عليها
         const note = mode !== 'renew'
-            ? `اشتراكك هيشتغل لحد ${fmtDate(pv.newEnd)}`
+            ? fill(T.willRunUntil, { date: fmtDate(pv.newEnd) })
             : (pv.stillRunning
-                ? `المجموع <b>${daysWord(pv.totalDays)}</b> · لحد ${fmtDate(pv.newEnd)}`
-                : `<b>${daysWord(pv.addedDays)}</b> · لحد ${fmtDate(pv.newEnd)}`);
+                ? fill(T.totalUntil, { days: daysWord(pv.totalDays), date: fmtDate(pv.newEnd) })
+                : fill(T.addedUntil, { days: daysWord(pv.addedDays), date: fmtDate(pv.newEnd) }));
 
         return `
       <button type="button" class="rn-plan${active ? ' active' : ''}" data-plan="${key}"
               aria-pressed="${active ? 'true' : 'false'}">
         ${badge}
-        <div class="rn-plan-name">${esc(p.label)}</div>
-        <div class="rn-plan-price">${p.amount.toLocaleString('en-US')}<span>جنيه / ${esc(p.period)}</span></div>
+        <div class="rn-plan-name">${esc(L(p.label))}</div>
+        <div class="rn-plan-price">${p.amount.toLocaleString('en-US')}<span>${esc(L(T.currency))} / ${esc(L(p.period))}</span></div>
         <div class="rn-plan-note">${note}</div>
       </button>`;
     }).join('');
@@ -152,16 +241,16 @@ function previewBoxHtml() {
     const pv = previewFor(selectedPlan);
     if (mode === 'renew') {
         const head = pv.stillRunning
-            ? `لو جدّدت دلوقتي هيبقى معاك مجموع <b>${daysWord(pv.totalDays)}</b>`
-            : `لو جدّدت دلوقتي هيبقى معاك <b>${daysWord(pv.addedDays)}</b>`;
+            ? fill(T.previewRenewStacked, { days: daysWord(pv.totalDays) })
+            : fill(T.previewRenewPlain, { days: daysWord(pv.addedDays) });
         return `<div class="rn-preview" id="rnPreview">
       <i class="fa-solid fa-circle-info"></i>
-      ${head} — واشتراكك هيخلص يوم <b>${fmtDate(pv.newEnd)}</b>.
+      ${head}${fill(T.previewRenewTail, { date: fmtDate(pv.newEnd) })}
     </div>`;
     }
     return `<div class="rn-preview" id="rnPreview">
     <i class="fa-solid fa-circle-info"></i>
-    لو دفعت دلوقتي هيترجعلك الوصول فورًا لمدة <b>${daysWord(pv.addedDays)}</b> — لحد يوم <b>${fmtDate(pv.newEnd)}</b>.
+    ${fill(T.previewLocked, { days: daysWord(pv.addedDays), date: fmtDate(pv.newEnd) })}
   </div>`;
 }
 
@@ -180,23 +269,22 @@ function payButtonHtml(label) {
     const manualNote = mode === 'renew'
         ? `<div class="rn-manual-note">
          <i class="fa-solid fa-triangle-exclamation"></i>
-         انستاباي بيتراجع يدويًا، والاشتراك بيتحسب من <b>يوم الموافقة</b> —
-         يعني الأيام الباقية معاك دلوقتي مش هتتضاف عليه. لو عايز الأيام تتجمّع، ادفع بالكارت.
+         ${L(T.manualNoteRenew)}
        </div>`
         : `<div class="rn-manual-note">
          <i class="fa-solid fa-clock"></i>
-         انستاباي محتاج مراجعة يدوية من الفريق، فالتفعيل مش فوري زي الكارت.
+         ${L(T.manualNoteLocked)}
        </div>`;
 
     return `<button type="button" class="rn-pay" id="rnPayBtn">
     <span class="rn-spinner"></span>
     <span class="rn-pay-text">${label}</span>
   </button>
-  <div class="rn-secure"><i class="fa-solid fa-lock"></i> الدفع آمن 100% عبر Kashier</div>
-  <div class="rn-or"><span>أو</span></div>
+  <div class="rn-secure"><i class="fa-solid fa-lock"></i> ${esc(L(T.securePay))}</div>
+  <div class="rn-or"><span>${esc(L(T.or))}</span></div>
   <button type="button" class="rn-instapay" id="rnManualBtn">
     <i class="fa-solid fa-wallet"></i>
-    <span>ادفع عبر انستاباي</span>
+    <span>${esc(L(T.payInstapay))}</span>
   </button>
   ${manualNote}`;
 }
@@ -206,7 +294,7 @@ function renderLocked() {
     const end = parseUtc(sub && sub.subscription_end);
     const endLine = end
         ? `<div class="rn-status"><div class="rn-stat">
-         <div class="rn-stat-label">اشتراكك انتهى يوم</div>
+         <div class="rn-stat-label">${esc(L(T.endedOn))}</div>
          <div class="rn-stat-value">${fmtDate(end)}</div>
        </div></div>`
         : '';
@@ -214,17 +302,16 @@ function renderLocked() {
     cardEl.innerHTML = `
     <img class="rn-logo" src="./imgs/community-logo.png" alt="Ghawy" />
     <div class="rn-icon danger"><i class="fa-solid fa-lock"></i></div>
-    <h1 class="rn-title" id="rnTitle">اشتراكك خلص — جدّد دلوقتي وكمّل من غير ما تخرج</h1>
-    <p class="rn-sub">حسابك ومحتواك ومحادثاتك كلها مستنياك زي ما هي. اختار باقتك، ادفع في دقيقة،
-       وهترجع للداشبورد على طول.</p>
+    <h1 class="rn-title" id="rnTitle">${esc(L(T.lockedTitle))}</h1>
+    <p class="rn-sub">${esc(L(T.lockedSub))}</p>
     ${endLine}
     <div class="rn-plans" id="rnPlans">${plansHtml()}</div>
     ${previewBoxHtml()}
     <div class="rn-alert" id="rnAlert"></div>
-    ${payButtonHtml('جدّد اشتراكك 🚀')}
+    ${payButtonHtml(esc(L(T.renewCta)))}
     <div class="rn-actions">
       <button type="button" class="rn-ghost-btn danger" id="rnLogoutBtn">
-        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+        <i class="fa-solid fa-right-from-bracket"></i> ${esc(L(T.logout))}
       </button>
     </div>`;
 
@@ -236,32 +323,35 @@ function renderRenew() {
     const end = parseUtc(sub && sub.subscription_end);
     const remaining = typeof sub.days_remaining === 'number' ? sub.days_remaining : null;
 
+    const dayWord = lang() === 'en' ? (remaining === 1 ? 'day' : 'days') : 'يوم';
     const remainingValue = remaining === null
-        ? '<span style="font-size:1.1rem">من غير تاريخ انتهاء</span>'
-        : (remaining === 0 ? 'أقل من يوم' : `${remaining} <small>يوم</small>`);
+        ? `<span style="font-size:1.1rem">${esc(L(T.noEndDate))}</span>`
+        : (remaining === 0 ? esc(L(T.lessThanADay)) : `${remaining} <small>${dayWord}</small>`);
 
     const planLine = sub.is_free
-        ? 'عضوية مجانية'
+        ? esc(L(T.freeMembership))
         : (sub.plan_label ? esc(sub.plan_label) : '—');
+
+    // سهم "الرجوع" بيلف مع اتجاه الصفحة — يمين في RTL، شمال في LTR.
+    const backArrow = lang() === 'en' ? 'fa-arrow-left' : 'fa-arrow-right';
 
     cardEl.innerHTML = `
     <img class="rn-logo" src="./imgs/community-logo.png" alt="Ghawy" />
     <div class="rn-icon"><i class="fa-solid fa-rotate"></i></div>
-    <h1 class="rn-title" id="rnTitle">تجديد الاشتراك</h1>
-    <p class="rn-sub">اشتراكك لسه شغّال — أي تجديد دلوقتي بيتضاف <b>فوق</b> الأيام الباقية،
-       مش بيلغيها.</p>
+    <h1 class="rn-title" id="rnTitle">${esc(L(T.renewTitle))}</h1>
+    <p class="rn-sub">${L(T.renewSub)}</p>
 
     <div class="rn-status">
       <div class="rn-stat">
-        <div class="rn-stat-label">باقي معاك</div>
+        <div class="rn-stat-label">${esc(L(T.youHaveLeft))}</div>
         <div class="rn-stat-value big">${remainingValue}</div>
       </div>
       <div class="rn-stat">
-        <div class="rn-stat-label">اشتراكك بيخلص يوم</div>
-        <div class="rn-stat-value">${end ? fmtDate(end) : 'مفتوح'}</div>
+        <div class="rn-stat-label">${esc(L(T.endsOn))}</div>
+        <div class="rn-stat-value">${end ? fmtDate(end) : esc(L(T.openEnded))}</div>
       </div>
       <div class="rn-stat">
-        <div class="rn-stat-label">باقتك الحالية</div>
+        <div class="rn-stat-label">${esc(L(T.currentPlan))}</div>
         <div class="rn-stat-value">${planLine}</div>
       </div>
     </div>
@@ -269,10 +359,10 @@ function renderRenew() {
     <div class="rn-plans" id="rnPlans">${plansHtml()}</div>
     ${previewBoxHtml()}
     <div class="rn-alert" id="rnAlert"></div>
-    ${payButtonHtml('جدّد دلوقتي 🚀')}
+    ${payButtonHtml(esc(L(T.renewNowCta)))}
     <div class="rn-actions">
       <a href="/dashboard" class="rn-ghost-btn">
-        <i class="fa-solid fa-arrow-right"></i> ارجع للداشبورد
+        <i class="fa-solid ${backArrow}"></i> ${esc(L(T.backToDashboard))}
       </a>
     </div>`;
 
@@ -283,14 +373,14 @@ function renderError(msg) {
     cardEl.innerHTML = `
     <img class="rn-logo" src="./imgs/community-logo.png" alt="Ghawy" />
     <div class="rn-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
-    <h1 class="rn-title" id="rnTitle">مش قادرين نجيب تفاصيل اشتراكك</h1>
+    <h1 class="rn-title" id="rnTitle">${esc(L(T.errTitle))}</h1>
     <p class="rn-sub">${esc(msg)}</p>
     <div class="rn-actions" style="margin-top:24px">
       <button type="button" class="rn-ghost-btn" id="rnRetryBtn">
-        <i class="fa-solid fa-rotate-right"></i> حاول تاني
+        <i class="fa-solid fa-rotate-right"></i> ${esc(L(T.retry))}
       </button>
       <button type="button" class="rn-ghost-btn danger" id="rnLogoutBtn">
-        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+        <i class="fa-solid fa-right-from-bracket"></i> ${esc(L(T.logout))}
       </button>
     </div>`;
 
@@ -364,20 +454,20 @@ async function pay() {
         const url = data.payment_url || data.approval_url;
 
         if (res.ok && url) {
-            showAlert('جارٍ التحويل لصفحة الدفع... ✅', 'success');
+            showAlert(L(T.redirecting), 'success');
             setTimeout(() => { window.location.href = url; }, 700);
             return; // سيب الزرار مقفول — إحنا خارجين من الصفحة
         }
 
         if (res.status === 401) {
-            showAlert('انتهت الجلسة، سجّل دخولك تاني', 'error');
+            showAlert(L(T.sessionExpired), 'error');
             setTimeout(goLogin, 1500);
             return;
         }
 
-        showAlert(data.detail || 'حصل خطأ وإحنا بنجهّز الدفع، حاول تاني', 'error');
+        showAlert(data.detail || L(T.payFailed), 'error');
     } catch (e) {
-        showAlert('مفيش اتصال بالسيرفر — اتأكد من النت وحاول تاني', 'error');
+        showAlert(L(T.noConnection), 'error');
     }
 
     btn.disabled = false;
@@ -400,7 +490,7 @@ async function init() {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
     } catch (e) {
-        renderError('مشكلة في الاتصال بالسيرفر. جرّب تاني بعد شوية.');
+        renderError(L(T.errNetwork));
         return;
     }
 
@@ -412,14 +502,14 @@ async function init() {
     }
 
     if (!res.ok) {
-        renderError('السيرفر رجّعلنا خطأ غير متوقع. جرّب تاني، ولو فضلت المشكلة كلّم الدعم.');
+        renderError(L(T.errServer));
         return;
     }
 
     try {
         sub = await res.json();
     } catch (e) {
-        renderError('رد السيرفر مش مفهوم. جرّب تاني.');
+        renderError(L(T.errParse));
         return;
     }
 
@@ -458,5 +548,13 @@ async function init() {
     // عشان مايحصلش لوب — نعرضله واجهة التجديد وهو لسه معاه وصول.
     renderRenew();
 }
+
+// الصفحة بتتبني بالكامل في JS، فلازم تعيد رسم نفسها لما اللغة تتغيّر — زي
+// باقي الأقسام المرسومة بـ JS في الموقع (pricing.js, catalog.js).
+document.addEventListener('languagechange', () => {
+    if (!sub || !cardEl) return;
+    if (mode === 'renew') renderRenew();
+    else renderLocked();
+});
 
 init();

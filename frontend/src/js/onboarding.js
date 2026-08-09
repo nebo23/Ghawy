@@ -2,6 +2,48 @@
    Onboarding Flow — JS Controller
 ═══════════════════════════════════════════ */
 
+// ── اللغة ──
+// الصفحة بتقرا الاختيار من نفس المصدر الوحيد (ghawy_lang عن طريق
+// window.currentLang() في src/js/i18n.js). كانت رسايل الـ toast هنا عربي
+// ثابت جنب ماركب إنجليزي ثابت، فالشاشة كانت بتتكلم لغتين في نفس الوقت.
+function obLang() {
+  if (typeof window.currentLang === 'function') return window.currentLang();
+  return document.documentElement.getAttribute('lang') === 'en' ? 'en' : 'ar';
+}
+function L(pair) {
+  if (pair == null) return '';
+  if (typeof pair === 'string') return pair;
+  return pair[obLang()] || pair.ar || '';
+}
+const OB_T = {
+  onlyImages: { ar: 'الصور المسموحة JPG أو PNG أو WEBP بس', en: 'Only JPG, PNG and WEBP files are allowed' },
+  tooBig: { ar: 'الملف لازم يكون أقل من 5 ميجا', en: 'File size must be under 5MB' },
+  loading: { ar: 'لحظة...', en: 'Loading...' },
+  uploadFailed: { ar: 'الرفع مانجحش. حاول تاني.', en: 'Upload failed. Please try again.' },
+  uploadError: { ar: 'حصلت مشكلة في الرفع. حاول تاني.', en: 'Error uploading. Please try again.' },
+  continueBtn: { ar: 'كمّل →', en: 'Continue →' },
+  startExploring: { ar: 'يلا نبدأ →', en: 'Start Exploring →' },
+  welcome: { ar: 'أهلاً بيك!', en: 'Welcome!' },
+  wrongDial: { ar: 'الرقم مش بيبدأ بـ {code} — اختار الدولة الصح', en: 'The number does not start with {code} — pick the right country' },
+  badNumber: { ar: 'اكتب رقم {country} صحيح — {hint}', en: 'Enter a valid {country} number — {hint}' },
+  codeSent: { ar: 'تم إرسال الكود ✅', en: 'Code sent ✅' },
+  genericErr: { ar: 'حصل خطأ، حاول تاني', en: 'Something went wrong, please try again' },
+  noConnection: { ar: 'مفيش اتصال بالسيرفر', en: 'No connection to the server' },
+  sixDigits: { ar: 'اكتب الكود المكوّن من 6 أرقام كامل', en: 'Enter the full 6-digit code' },
+  reenterPhone: { ar: 'اكتب رقمك تاني واطلب كود جديد', en: 'Enter your number again and request a new code' },
+  eg: { ar: 'مثال: {n}', en: 'e.g. {n}' },
+};
+
+/** نص المثال تحت خانة الرقم — الرقم نفسه ثابت واللي بيتترجم كلمة "مثال". */
+function hintText(cfg) {
+  return (cfg && cfg.hintEg) ? obFill(OB_T.eg, { n: cfg.hintEg }) : '';
+}
+function obFill(pair, vars) {
+  let out = L(pair);
+  for (const k in vars) out = out.split('{' + k + '}').join(vars[k]);
+  return out;
+}
+
 // Auth guard
 const token = localStorage.getItem('token');
 if (!token) { localStorage.removeItem('user'); window.location.href = '/login'; }
@@ -101,13 +143,13 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
   // Validate type
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowed.includes(file.type)) {
-    showToast('Only JPG, PNG, WEBP files are allowed', 'error');
+    showToast(L(OB_T.onlyImages), 'error');
     return;
   }
 
   // Validate size (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showToast('File size must be under 5MB', 'error');
+    showToast(L(OB_T.tooBig), 'error');
     return;
   }
 
@@ -133,7 +175,7 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 async function submitStep1() {
   const btn = document.getElementById('step1Btn');
   btn.disabled = true;
-  btn.textContent = 'Loading...';
+  btn.textContent = L(OB_T.loading);
 
   try {
     if (uploadedFile) {
@@ -148,17 +190,17 @@ async function submitStep1() {
         const data = await res.json();
         uploadedAvatarUrl = data.avatar_url;
       } else {
-        showToast('Upload failed. Please try again.', 'error');
+        showToast(L(OB_T.uploadFailed), 'error');
         btn.disabled = false;
-        btn.textContent = 'Continue →';
+        btn.textContent = L(OB_T.continueBtn);
         return;
       }
     }
     goToPhoneStep();
   } catch (e) {
-    showToast('Error uploading. Please try again.', 'error');
+    showToast(L(OB_T.uploadError), 'error');
     btn.disabled = false;
-    btn.textContent = 'Continue →';
+    btn.textContent = L(OB_T.continueBtn);
   }
 }
 
@@ -201,7 +243,7 @@ function submitStep2() {
   }
 
   // Show user name
-  document.getElementById('congratsName').textContent = userName || 'Welcome!';
+  document.getElementById('congratsName').textContent = userName || L(OB_T.welcome);
 
   // Confetti!
   launchConfetti();
@@ -211,7 +253,7 @@ function submitStep2() {
 async function submitStep3() {
   const btn = document.getElementById('step3Btn');
   btn.disabled = true;
-  btn.textContent = 'Loading...';
+  btn.textContent = L(OB_T.loading);
 
   try {
     const body = {
@@ -259,12 +301,12 @@ async function submitStep3() {
       const err = await res.json();
       alert(err.detail || 'Something went wrong');
       btn.disabled = false;
-      btn.textContent = 'Start Exploring →';
+      btn.textContent = L(OB_T.startExploring);
     }
   } catch (e) {
     showToast('Connection error. Please try again.', 'error');
     btn.disabled = false;
-    btn.textContent = 'Start Exploring →';
+    btn.textContent = L(OB_T.startExploring);
   }
 }
 
@@ -305,28 +347,28 @@ function goToPhoneStep() {
 
 // ── Country Configuration ────────────────────────────────
 const COUNTRY_CONFIG = {
-  EG: { dialCode: '+20',  digits: 11, placeholder: '01XXXXXXXXX',  hint: 'مثال: 01012345678',  stripZero: true,  regex: /^01[0-9]{9}$/ },
-  SA: { dialCode: '+966', digits: 10, placeholder: '05XXXXXXXX',   hint: 'مثال: 0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
-  AE: { dialCode: '+971', digits: 10, placeholder: '05XXXXXXXX',   hint: 'مثال: 0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
-  KW: { dialCode: '+965', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 51234567',     stripZero: false, regex: /^[569][0-9]{7}$/ },
-  QA: { dialCode: '+974', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 33123456',     stripZero: false, regex: /^[3567][0-9]{7}$/ },
-  BH: { dialCode: '+973', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 36123456',     stripZero: false, regex: /^[3689][0-9]{7}$/ },
-  OM: { dialCode: '+968', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 91234567',     stripZero: false, regex: /^[279][0-9]{7}$/ },
-  JO: { dialCode: '+962', digits: 10, placeholder: '07XXXXXXXX',   hint: 'مثال: 0791234567',   stripZero: true,  regex: /^07[789][0-9]{7}$/ },
-  LB: { dialCode: '+961', digits: 8,  placeholder: '03XXXXXX',     hint: 'مثال: 03123456',     stripZero: true,  regex: /^0?(3[0-9]{6}|(7[0-9]|8[0-9])[0-9]{6})$/ },
-  IQ: { dialCode: '+964', digits: 11, placeholder: '07XXXXXXXXX',  hint: 'مثال: 07901234567',  stripZero: true,  regex: /^07[0-9]{9}$/ },
-  SY: { dialCode: '+963', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
-  PS: { dialCode: '+970', digits: 10, placeholder: '059XXXXXXX',   hint: 'مثال: 0591234567',   stripZero: true,  regex: /^05[69][0-9]{7}$/ },
-  YE: { dialCode: '+967', digits: 9,  placeholder: '7XXXXXXXX',    hint: 'مثال: 712345678',    stripZero: true,  regex: /^0?7[0-9]{8}$/ },
-  SD: { dialCode: '+249', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
-  LY: { dialCode: '+218', digits: 10, placeholder: '09XXXXXXXX',   hint: 'مثال: 0912345678',   stripZero: true,  regex: /^09[1-6][0-9]{7}$/ },
-  TN: { dialCode: '+216', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 21234567',     stripZero: false, regex: /^[2-9][0-9]{7}$/ },
-  DZ: { dialCode: '+213', digits: 10, placeholder: '0XXXXXXXXX',   hint: 'مثال: 0551234567',   stripZero: true,  regex: /^0[5-7][0-9]{8}$/ },
-  MA: { dialCode: '+212', digits: 10, placeholder: '06XXXXXXXX',   hint: 'مثال: 0612345678',   stripZero: true,  regex: /^0[67][0-9]{8}$/ },
-  MR: { dialCode: '+222', digits: 8,  placeholder: 'XXXXXXXX',     hint: 'مثال: 31234567',     stripZero: false, regex: /^[2-4][0-9]{7}$/ },
-  SO: { dialCode: '+252', digits: 9,  placeholder: '6XXXXXXXX',    hint: 'مثال: 612345678',    stripZero: true,  regex: /^0?[6-9][0-9]{7,8}$/ },
-  DJ: { dialCode: '+253', digits: 8,  placeholder: '77XXXXXX',     hint: 'مثال: 77123456',     stripZero: false, regex: /^77[0-9]{6}$/ },
-  KM: { dialCode: '+269', digits: 7,  placeholder: 'XXXXXXX',      hint: 'مثال: 3212345',      stripZero: false, regex: /^[347][0-9]{6}$/ },
+  EG: { dialCode: '+20',  digits: 11, placeholder: '01XXXXXXXXX',  hintEg: '01012345678',  stripZero: true,  regex: /^01[0-9]{9}$/ },
+  SA: { dialCode: '+966', digits: 10, placeholder: '05XXXXXXXX',   hintEg: '0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
+  AE: { dialCode: '+971', digits: 10, placeholder: '05XXXXXXXX',   hintEg: '0512345678',   stripZero: true,  regex: /^05[0-9]{8}$/ },
+  KW: { dialCode: '+965', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '51234567',     stripZero: false, regex: /^[569][0-9]{7}$/ },
+  QA: { dialCode: '+974', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '33123456',     stripZero: false, regex: /^[3567][0-9]{7}$/ },
+  BH: { dialCode: '+973', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '36123456',     stripZero: false, regex: /^[3689][0-9]{7}$/ },
+  OM: { dialCode: '+968', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '91234567',     stripZero: false, regex: /^[279][0-9]{7}$/ },
+  JO: { dialCode: '+962', digits: 10, placeholder: '07XXXXXXXX',   hintEg: '0791234567',   stripZero: true,  regex: /^07[789][0-9]{7}$/ },
+  LB: { dialCode: '+961', digits: 8,  placeholder: '03XXXXXX',     hintEg: '03123456',     stripZero: true,  regex: /^0?(3[0-9]{6}|(7[0-9]|8[0-9])[0-9]{6})$/ },
+  IQ: { dialCode: '+964', digits: 11, placeholder: '07XXXXXXXXX',  hintEg: '07901234567',  stripZero: true,  regex: /^07[0-9]{9}$/ },
+  SY: { dialCode: '+963', digits: 10, placeholder: '09XXXXXXXX',   hintEg: '0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
+  PS: { dialCode: '+970', digits: 10, placeholder: '059XXXXXXX',   hintEg: '0591234567',   stripZero: true,  regex: /^05[69][0-9]{7}$/ },
+  YE: { dialCode: '+967', digits: 9,  placeholder: '7XXXXXXXX',    hintEg: '712345678',    stripZero: true,  regex: /^0?7[0-9]{8}$/ },
+  SD: { dialCode: '+249', digits: 10, placeholder: '09XXXXXXXX',   hintEg: '0912345678',   stripZero: true,  regex: /^09[0-9]{8}$/ },
+  LY: { dialCode: '+218', digits: 10, placeholder: '09XXXXXXXX',   hintEg: '0912345678',   stripZero: true,  regex: /^09[1-6][0-9]{7}$/ },
+  TN: { dialCode: '+216', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '21234567',     stripZero: false, regex: /^[2-9][0-9]{7}$/ },
+  DZ: { dialCode: '+213', digits: 10, placeholder: '0XXXXXXXXX',   hintEg: '0551234567',   stripZero: true,  regex: /^0[5-7][0-9]{8}$/ },
+  MA: { dialCode: '+212', digits: 10, placeholder: '06XXXXXXXX',   hintEg: '0612345678',   stripZero: true,  regex: /^0[67][0-9]{8}$/ },
+  MR: { dialCode: '+222', digits: 8,  placeholder: 'XXXXXXXX',     hintEg: '31234567',     stripZero: false, regex: /^[2-4][0-9]{7}$/ },
+  SO: { dialCode: '+252', digits: 9,  placeholder: '6XXXXXXXX',    hintEg: '612345678',    stripZero: true,  regex: /^0?[6-9][0-9]{7,8}$/ },
+  DJ: { dialCode: '+253', digits: 8,  placeholder: '77XXXXXX',     hintEg: '77123456',     stripZero: false, regex: /^77[0-9]{6}$/ },
+  KM: { dialCode: '+269', digits: 7,  placeholder: 'XXXXXXX',      hintEg: '3212345',      stripZero: false, regex: /^[347][0-9]{6}$/ },
 };
 
 // ── Helpers ──────────────────────────────────────────────
@@ -357,7 +399,7 @@ function onCountryChange() {
     input.value       = '';
     input.focus();
   }
-  if (hint) hint.textContent = cfg.hint;
+  if (hint) hint.textContent = hintText(cfg);
 }
 
 let enteredPhone = '';
@@ -392,17 +434,17 @@ async function sendPhoneOTP() {
     // User entered international format: +966551996766 or 966551996766
     phoneE164 = normalized.startsWith('+') ? normalized : '+' + normalized;
     if (!cfg || !phoneE164.startsWith(cfg.dialCode)) {
-      showToast(`الرقم لا يبدأ بـ ${cfg ? cfg.dialCode : ''} — اختر الدولة الصحيحة`, 'error');
+      showToast(obFill(OB_T.wrongDial, { code: cfg ? cfg.dialCode : '' }), 'error');
       return;
     }
     if (!/^\+\d{7,15}$/.test(phoneE164)) {
-      showToast(`أدخل رقم ${document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || ''} صحيح — ${cfg ? cfg.hint : ''}`, 'error');
+      showToast(obFill(OB_T.badNumber, { country: document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || '', hint: hintText(cfg) }), 'error');
       return;
     }
   } else {
     // Local format (e.g. 0551996766 for SA, 51234567 for KW)
     if (!cfg || !cfg.regex.test(normalized)) {
-      showToast(`أدخل رقم ${document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || ''} صحيح — ${cfg ? cfg.hint : ''}`, 'error');
+      showToast(obFill(OB_T.badNumber, { country: document.getElementById('countrySelect')?.selectedOptions[0]?.text?.split('(')[0]?.trim() || '', hint: hintText(cfg) }), 'error');
       return;
     }
     phoneE164 = buildE164(normalized, countryCode);
@@ -424,13 +466,13 @@ async function sendPhoneOTP() {
       document.getElementById('phoneSent').textContent = localNumber + ' (' + phoneE164 + ')';
       document.getElementById('phone-input-phase').style.display = 'none';
       document.getElementById('otp-input-phase').style.display = 'block';
-      showToast('تم إرسال الكود ✅', 'success');
+      showToast(L(OB_T.codeSent), 'success');
       document.querySelectorAll('.otp-box')[0].focus();
     } else {
-      showToast(data.detail || 'حدث خطأ، حاول مرة أخرى', 'error');
+      showToast(data.detail || L(OB_T.genericErr), 'error');
     }
   } catch (err) {
-    showToast('لا يوجد اتصال بالسيرفر', 'error');
+    showToast(L(OB_T.noConnection), 'error');
   } finally {
     setLoadingBtn('sendOtpBtn', false);
   }
@@ -441,7 +483,7 @@ async function verifyPhoneOTP() {
   const code = Array.from(boxes).map(b => b.value).join('');
 
   if (code.length !== 6) {
-    showToast('أدخل الكود المكون من 6 أرقام كاملاً', 'error');
+    showToast(L(OB_T.sixDigits), 'error');
     return;
   }
 
@@ -476,7 +518,7 @@ async function resendOTP() {
   document.getElementById('phone-input-phase').style.display = 'block';
   // Re-apply country config in case user wants to switch country on resend
   onCountryChange();
-  showToast('أدخل رقمك مرة أخرى واطلب كود جديد', 'info');
+  showToast(L(OB_T.reenterPhone), 'info');
 }
 
 // Initialize country config on load (sets correct placeholder/maxlength for default Egypt)

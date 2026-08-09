@@ -919,4 +919,123 @@
             initApply();
         }
     }
+
+    /* ─── Language toggle in the community sidebar ───────────────
+     *
+     * Until now the ONLY way to change language while logged in was
+     * Settings → Preferences, three clicks away from wherever you were. That
+     * is a large part of why the language felt "disconnected" from the rest
+     * of the site: the landing page has a button in the navbar, the community
+     * had nothing.
+     *
+     * Injected from here rather than pasted into eleven files because all
+     * eleven community pages share one sidebar and all eleven already load
+     * this script — the same "one source" rule layout.js follows for the
+     * public navbar.
+     *
+     * The switch itself delegates to setLanguagePref() in i18n.js, which is
+     * the one engine that writes `ghawy_lang`. This file never writes the key
+     * when that engine is present, so there is still a single writer and a
+     * single source of truth. The fallback below only exists so the button is
+     * not dead weight if a page ever ships without i18n.js.
+     *
+     * The label carries id="langToggleText" on purpose: applyLanguage() in
+     * i18n.js already sets that element's text to the "other" language's name
+     * on every pass, so the button relabels itself through the existing
+     * contract instead of a second mechanism.
+     */
+    function currentDocLang() {
+        return document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+    }
+
+    function syncToggleLabel() {
+        var label = currentDocLang() === 'ar' ? 'English' : 'عربي';
+        var span = document.getElementById('langToggleText');
+        if (span) span.textContent = label;
+        // utils.js copies each nav item's text into a `title` once, for the
+        // tooltip shown while the sidebar is collapsed. It only sets it when
+        // absent, so without this the tooltip would keep naming the language
+        // the visitor already switched away from.
+        var btn = document.getElementById('communityLangToggle');
+        if (btn && btn.hasAttribute('title')) btn.setAttribute('title', label);
+    }
+
+    function switchLang(lang) {
+        if (typeof window.setLanguagePref === 'function') {
+            window.setLanguagePref(lang);   // writes ghawy_lang + flips <html lang>
+        } else {
+            // i18n.js absent — keep the same key and the same semantics.
+            try { localStorage.setItem(LS_KEY, lang); } catch (e) { /* private mode */ }
+            if (lang === 'ar') applyArabic();
+            else applyEnglish();
+        }
+        syncToggleLabel();
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    function injectToggle() {
+        if (document.getElementById('communityLangToggle')) return;
+        // /renewal paints a decorative, inert copy of the dashboard behind its
+        // overlay. It matches this selector but must never receive a real
+        // control, so anything inert / aria-hidden is skipped.
+        var nav = null;
+        var candidates = document.querySelectorAll('.dash-sidebar .sidebar-nav');
+        for (var i = 0; i < candidates.length; i++) {
+            if (candidates[i].closest('[inert], [aria-hidden="true"], .renewal-ghost')) continue;
+            nav = candidates[i];
+            break;
+        }
+        if (!nav) return;
+
+        // Font Awesome rather than a data-lucide icon: FA is pure CSS, so the
+        // glyph is correct no matter whether lucide.createIcons() has run yet.
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'nav-item community-lang-toggle';
+        btn.id = 'communityLangToggle';
+        // data-no-i18n: the label is managed here, and "English" is a DICT key
+        // that the observer would otherwise rewrite to Arabic.
+        btn.setAttribute('data-no-i18n', '');
+        btn.innerHTML =
+            '<span class="nav-icon-wrap nav-icon-gray">' +
+            '<i class="fa-solid fa-language" style="font-size:16px"></i>' +
+            '</span><span id="langToggleText"></span>';
+        btn.addEventListener('click', function () {
+            switchLang(currentDocLang() === 'ar' ? 'en' : 'ar');
+        });
+        nav.appendChild(btn);
+        syncToggleLabel();
+    }
+
+    /* A <button> does not inherit the <a class="nav-item"> styling, so only the
+       differences are patched here — the rest comes from dashboard.css. */
+    function injectToggleStyle() {
+        if (document.getElementById('communityLangToggleStyle')) return;
+        var st = document.createElement('style');
+        st.id = 'communityLangToggleStyle';
+        st.textContent =
+            '.community-lang-toggle{' +
+            'width:100%;background:none;border:0;font:inherit;color:inherit;' +
+            'cursor:pointer;text-align:inherit;appearance:none;}' +
+            '.community-lang-toggle #langToggleText{font-weight:inherit;}';
+        (document.head || document.documentElement).appendChild(st);
+    }
+
+    function initToggle() {
+        injectToggleStyle();
+        injectToggle();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initToggle);
+    } else {
+        initToggle();
+    }
+
+    // Keep the label honest when the language is changed from anywhere else
+    // (Settings → Preferences, or another tab).
+    new MutationObserver(syncToggleLabel)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 })();

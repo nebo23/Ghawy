@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome — Ghawy</title>
+  <title data-ar="أهلاً بيك — Ghawy" data-en="Welcome — Ghawy">Welcome — Ghawy</title>
   <meta name="description" content="Complete your Ghawy profile to get started" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,51 +31,49 @@
     <div class="ob-stepper" id="obStepper">
       <div class="ob-step-wrap">
         <div class="ob-step done" id="stepCircle1">✓</div>
-        <div class="ob-step-label"><span class="ob-step-title">Payment</span><span class="ob-step-sub">Completed</span>
+        <div class="ob-step-label"><span class="ob-step-title" data-ar="الدفع" data-en="Payment">Payment</span><span class="ob-step-sub" data-ar="تم" data-en="Completed">Completed</span>
         </div>
       </div>
       <div class="ob-step-line done" id="stepLine1"></div>
       <div class="ob-step-wrap">
         <div class="ob-step active" id="stepCircle2">2</div>
-        <div class="ob-step-label"><span class="ob-step-title">Complete</span><span class="ob-step-sub">Your
-            Profile</span></div>
+        <div class="ob-step-label"><span class="ob-step-title" data-ar="أكمل" data-en="Complete">Complete</span><span class="ob-step-sub" data-ar="ملفك" data-en="Your Profile">Your Profile</span></div>
       </div>
       <div class="ob-step-line" id="stepLine2"></div>
       <div class="ob-step-wrap">
         <div class="ob-step locked" id="stepCircle3">3</div>
-        <div class="ob-step-label"><span class="ob-step-title">You're All Set!</span><span class="ob-step-sub">Let's
-            go</span></div>
+        <div class="ob-step-label"><span class="ob-step-title" data-ar="تمام كده!" data-en="You're All Set!">You're All Set!</span><span class="ob-step-sub" data-ar="يلا بينا" data-en="Let's go">Let's go</span></div>
       </div>
     </div>
 
     <!-- ════════════ STEP 1: Profile Picture ════════════ -->
     <div id="step1" class="onboarding-step">
       <div class="ob-card">
-        <div class="ob-title">✅ Thank you!</div>
-        <div class="ob-subtitle">Your payment was successful.</div>
-        <div class="ob-description">Let's complete your profile to personalize your experience.</div>
+        <div class="ob-title" data-ar="✅ شكراً ليك!" data-en="✅ Thank you!">✅ Thank you!</div>
+        <div class="ob-subtitle" data-ar="تم الدفع بنجاح." data-en="Your payment was successful.">Your payment was successful.</div>
+        <div class="ob-description" data-ar="يلا نكمّل ملفك عشان نظبّط تجربتك." data-en="Let's complete your profile to personalize your experience.">Let's complete your profile to personalize your experience.</div>
 
-        <div class="ob-section-title">Add a Profile Picture</div>
-        <div class="ob-section-sub">Upload your photo or choose an avatar</div>
+        <div class="ob-section-title" data-ar="ضيف صورة شخصية" data-en="Add a Profile Picture">Add a Profile Picture</div>
+        <div class="ob-section-sub" data-ar="ارفع صورتك أو اختار أفاتار" data-en="Upload your photo or choose an avatar">Upload your photo or choose an avatar</div>
 
         <div class="ob-two-col">
           <!-- Upload -->
           <div>
             <div class="ob-upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
               <div class="ob-upload-icon">☁️↑</div>
-              <div class="ob-upload-text">Upload Your Photo</div>
-              <div class="ob-upload-hint">JPG, PNG or WEBP. Max size 5MB</div>
+              <div class="ob-upload-text" data-ar="ارفع صورتك" data-en="Upload Your Photo">Upload Your Photo</div>
+              <div class="ob-upload-hint" data-ar="JPG أو PNG أو WEBP — 5 ميجا كحد أقصى" data-en="JPG, PNG or WEBP. Max size 5MB">JPG, PNG or WEBP. Max size 5MB</div>
               <div class="ob-upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview" /></div>
             </div>
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden />
           </div>
 
           <!-- OR -->
-          <div class="ob-or-divider">OR</div>
+          <div class="ob-or-divider" data-ar="أو" data-en="OR">OR</div>
 
           <!-- Avatars -->
           <div>
-            <div class="ob-avatar-section-title">Choose an Avatar</div>
+            <div class="ob-avatar-section-title" data-ar="اختار أفاتار" data-en="Choose an Avatar">Choose an Avatar</div>
             <div class="ob-avatar-grid" id="avatarGrid">
               <div class="ob-avatar-item" data-avatar="icon_1.png" onclick="handleAvatarSelect('icon_1.png', this)"><img
                   src="imgs/avatars/icon_1.png" alt="Avatar 1" /></div>
@@ -93,55 +91,55 @@
           </div>
         </div>
 
-        <button class="ob-continue-btn" id="step1Btn" disabled onclick="submitStep1()">Continue →</button>
+        <button class="ob-continue-btn" id="step1Btn" disabled onclick="submitStep1()" data-ar="كمّل →" data-en="Continue →">Continue →</button>
       </div>
     </div>
 
     <!-- ════════════ STEP PHONE: Phone Verification ════════════ -->
     <div class="onboarding-step" id="step-phone" style="display:none;">
       <div class="ob-card">
-        <div class="ob-title">تحقق من رقمك</div>
-        <div class="ob-subtitle">هنبعتلك كود على الواتس عشان نتأكد منه</div>
+        <div class="ob-title" data-ar="تحقق من رقمك" data-en="Verify your number">تحقق من رقمك</div>
+        <div class="ob-subtitle" data-ar="هنبعتلك كود على الواتس عشان نتأكد منه" data-en="We'll send you a code on WhatsApp to confirm it">هنبعتلك كود على الواتس عشان نتأكد منه</div>
 
         <!-- Phase 1: إدخال الرقم -->
         <div id="phone-input-phase">
           <!-- Country selector -->
-          <div class="ob-input-group mt-4" dir="rtl">
+          <div class="ob-input-group mt-4">
             <select id="countrySelect" onchange="onCountryChange()"
-              style="width:100%; padding:12px 16px; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; font-size:16px; font-family:inherit; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23888%22 d=%22M6 8L1 3h10z%22/></svg>'); background-repeat:no-repeat; background-position:left 14px center; direction:rtl;">
-              <option value="EG">🇪🇬 مصر (+20)</option>
-              <option value="SA">🇸🇦 السعودية (+966)</option>
-              <option value="AE">🇦🇪 الإمارات (+971)</option>
-              <option value="KW">🇰🇼 الكويت (+965)</option>
-              <option value="QA">🇶🇦 قطر (+974)</option>
-              <option value="BH">🇧🇭 البحرين (+973)</option>
-              <option value="OM">🇴🇲 عُمان (+968)</option>
-              <option value="JO">🇯🇴 الأردن (+962)</option>
-              <option value="LB">🇱🇧 لبنان (+961)</option>
-              <option value="IQ">🇮🇶 العراق (+964)</option>
-              <option value="SY">🇸🇾 سوريا (+963)</option>
-              <option value="PS">🇵🇸 فلسطين (+970)</option>
-              <option value="YE">🇾🇪 اليمن (+967)</option>
-              <option value="SD">🇸🇩 السودان (+249)</option>
-              <option value="LY">🇱🇾 ليبيا (+218)</option>
-              <option value="TN">🇹🇳 تونس (+216)</option>
-              <option value="DZ">🇩🇿 الجزائر (+213)</option>
-              <option value="MA">🇲🇦 المغرب (+212)</option>
-              <option value="MR">🇲🇷 موريتانيا (+222)</option>
-              <option value="SO">🇸🇴 الصومال (+252)</option>
-              <option value="DJ">🇩🇯 جيبوتي (+253)</option>
-              <option value="KM">🇰🇲 جزر القمر (+269)</option>
+              style="width:100%; padding:12px 16px; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; font-size:16px; font-family:inherit; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23888%22 d=%22M6 8L1 3h10z%22/></svg>'); background-repeat:no-repeat; background-position:left 14px center; direction:inherit;">
+              <option value="EG" data-ar="🇪🇬 مصر (+20)" data-en="🇪🇬 Egypt (+20)">🇪🇬 مصر (+20)</option>
+              <option value="SA" data-ar="🇸🇦 السعودية (+966)" data-en="🇸🇦 Saudi Arabia (+966)">🇸🇦 السعودية (+966)</option>
+              <option value="AE" data-ar="🇦🇪 الإمارات (+971)" data-en="🇦🇪 UAE (+971)">🇦🇪 الإمارات (+971)</option>
+              <option value="KW" data-ar="🇰🇼 الكويت (+965)" data-en="🇰🇼 Kuwait (+965)">🇰🇼 الكويت (+965)</option>
+              <option value="QA" data-ar="🇶🇦 قطر (+974)" data-en="🇶🇦 Qatar (+974)">🇶🇦 قطر (+974)</option>
+              <option value="BH" data-ar="🇧🇭 البحرين (+973)" data-en="🇧🇭 Bahrain (+973)">🇧🇭 البحرين (+973)</option>
+              <option value="OM" data-ar="🇴🇲 عُمان (+968)" data-en="🇴🇲 Oman (+968)">🇴🇲 عُمان (+968)</option>
+              <option value="JO" data-ar="🇯🇴 الأردن (+962)" data-en="🇯🇴 Jordan (+962)">🇯🇴 الأردن (+962)</option>
+              <option value="LB" data-ar="🇱🇧 لبنان (+961)" data-en="🇱🇧 Lebanon (+961)">🇱🇧 لبنان (+961)</option>
+              <option value="IQ" data-ar="🇮🇶 العراق (+964)" data-en="🇮🇶 Iraq (+964)">🇮🇶 العراق (+964)</option>
+              <option value="SY" data-ar="🇸🇾 سوريا (+963)" data-en="🇸🇾 Syria (+963)">🇸🇾 سوريا (+963)</option>
+              <option value="PS" data-ar="🇵🇸 فلسطين (+970)" data-en="🇵🇸 Palestine (+970)">🇵🇸 فلسطين (+970)</option>
+              <option value="YE" data-ar="🇾🇪 اليمن (+967)" data-en="🇾🇪 Yemen (+967)">🇾🇪 اليمن (+967)</option>
+              <option value="SD" data-ar="🇸🇩 السودان (+249)" data-en="🇸🇩 Sudan (+249)">🇸🇩 السودان (+249)</option>
+              <option value="LY" data-ar="🇱🇾 ليبيا (+218)" data-en="🇱🇾 Libya (+218)">🇱🇾 ليبيا (+218)</option>
+              <option value="TN" data-ar="🇹🇳 تونس (+216)" data-en="🇹🇳 Tunisia (+216)">🇹🇳 تونس (+216)</option>
+              <option value="DZ" data-ar="🇩🇿 الجزائر (+213)" data-en="🇩🇿 Algeria (+213)">🇩🇿 الجزائر (+213)</option>
+              <option value="MA" data-ar="🇲🇦 المغرب (+212)" data-en="🇲🇦 Morocco (+212)">🇲🇦 المغرب (+212)</option>
+              <option value="MR" data-ar="🇲🇷 موريتانيا (+222)" data-en="🇲🇷 Mauritania (+222)">🇲🇷 موريتانيا (+222)</option>
+              <option value="SO" data-ar="🇸🇴 الصومال (+252)" data-en="🇸🇴 Somalia (+252)">🇸🇴 الصومال (+252)</option>
+              <option value="DJ" data-ar="🇩🇯 جيبوتي (+253)" data-en="🇩🇯 Djibouti (+253)">🇩🇯 جيبوتي (+253)</option>
+              <option value="KM" data-ar="🇰🇲 جزر القمر (+269)" data-en="🇰🇲 Comoros (+269)">🇰🇲 جزر القمر (+269)</option>
             </select>
           </div>
           <!-- Phone number input -->
-          <div class="ob-input-group mt-3 text-right" dir="rtl">
+          <div class="ob-input-group mt-3 text-right">
             <input type="tel" id="phoneInput" class="ob-input text-center text-xl tracking-widest"
               placeholder="01XXXXXXXXX" maxlength="11" inputmode="numeric" style="direction: ltr;" />
             <small id="phoneHint"
               style="display:block; color:#888; font-size:12px; margin-top:6px; text-align:center; direction:ltr;"></small>
           </div>
           <button class="ob-continue-btn" id="sendOtpBtn" onclick="sendPhoneOTP()" style="margin-top:20px;">
-            <span class="btn-text">إرسال الكود</span>
+            <span class="btn-text" data-ar="إرسال الكود" data-en="Send the code">إرسال الكود</span>
             <div class="spinner" style="display:none;"></div>
           </button>
         </div>
@@ -165,11 +163,11 @@
               style="width:45px; height:50px; text-align:center; font-size:24px; padding:0;" inputmode="numeric" />
           </div>
           <button class="ob-continue-btn" id="verifyOtpBtn" onclick="verifyPhoneOTP()">
-            <span class="btn-text">تأكيد الكود</span>
+            <span class="btn-text" data-ar="تأكيد الكود" data-en="Confirm the code">تأكيد الكود</span>
             <div class="spinner" style="display:none;"></div>
           </button>
           <button class="ob-continue-btn" style="background:transparent; color:#888; box-shadow:none; margin-top:10px;"
-            onclick="resendOTP()">إعادة إرسال الكود</button>
+            onclick="resendOTP()" data-ar="إعادة إرسال الكود" data-en="Resend the code">إعادة إرسال الكود</button>
         </div>
       </div>
     </div>
@@ -177,28 +175,28 @@
     <!-- ════════════ STEP 2: Profile Details ════════════ -->
     <div id="step2" class="onboarding-step" style="display:none">
       <div class="ob-card">
-        <div class="ob-title">✅ Almost there!</div>
-        <div class="ob-subtitle">Let's finalize your profile.</div>
-        <div class="ob-description">Add your birth date and a social media account to complete your journey.</div>
+        <div class="ob-title" data-ar="✅ فاضل شوية!" data-en="✅ Almost there!">✅ Almost there!</div>
+        <div class="ob-subtitle" data-ar="يلا نخلّص ملفك." data-en="Let's finalize your profile.">Let's finalize your profile.</div>
+        <div class="ob-description" data-ar="ضيف تاريخ ميلادك وحساب سوشيال عشان تكمّل رحلتك." data-en="Add your birth date and a social media account to complete your journey.">Add your birth date and a social media account to complete your journey.</div>
 
         <hr class="ob-divider" />
 
         <div class="ob-input-group">
-          <label>Birth Date</label>
+          <label data-ar="تاريخ الميلاد" data-en="Birth Date">Birth Date</label>
           <input type="date" class="ob-input" id="birthDateInput" placeholder="DD / MM / YYYY" />
         </div>
 
         <div class="ob-input-group">
-          <label>Social Media Account <span class="required">*</span></label>
+          <label><span data-ar="حساب سوشيال ميديا" data-en="Social Media Account">Social Media Account</span> <span class="required">*</span></label>
           <div class="ob-input-with-icon">
             <span class="ob-input-icon">🔗</span>
             <input type="url" class="ob-input" id="socialInput" placeholder="https://your-profile-link.com" />
           </div>
-          <div class="ob-helper-text">Enter your profile link (Instagram, TikTok, Facebook, etc.)</div>
-          <div class="ob-error" id="socialError">Please enter a valid URL starting with https://</div>
+          <div class="ob-helper-text" data-ar="حط لينك حسابك (انستجرام، تيك توك، فيسبوك، إلخ)" data-en="Enter your profile link (Instagram, TikTok, Facebook, etc.)">Enter your profile link (Instagram, TikTok, Facebook, etc.)</div>
+          <div class="ob-error" id="socialError" data-ar="من فضلك اكتب لينك صحيح بيبدأ بـ https://" data-en="Please enter a valid URL starting with https://">Please enter a valid URL starting with https://</div>
         </div>
 
-        <button class="ob-continue-btn" onclick="submitStep2()">Join Now →</button>
+        <button class="ob-continue-btn" onclick="submitStep2()" data-ar="انضم دلوقتي →" data-en="Join Now →">Join Now →</button>
       </div>
     </div>
 
@@ -206,13 +204,13 @@
     <div id="step3" class="onboarding-step" style="display:none">
       <div class="ob-card" style="text-align:center;">
         <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
-        <div class="ob-title">مبروك! أنت جاهز تبدأ</div>
-        <div class="ob-subtitle">ملفك الشخصي اكتمل بنجاح</div>
+        <div class="ob-title" data-ar="مبروك! أنت جاهز تبدأ" data-en="Congratulations! You're ready to go">مبروك! أنت جاهز تبدأ</div>
+        <div class="ob-subtitle" data-ar="ملفك الشخصي اكتمل بنجاح" data-en="Your profile is complete">ملفك الشخصي اكتمل بنجاح</div>
 
         <div class="ob-congrats-avatar" id="congratsAvatar"></div>
         <div class="ob-congrats-name" id="congratsName"></div>
 
-        <button class="ob-continue-btn" id="step3Btn" onclick="submitStep3()">Start Exploring →</button>
+        <button class="ob-continue-btn" id="step3Btn" onclick="submitStep3()" data-ar="يلا نبدأ →" data-en="Start Exploring →">Start Exploring →</button>
       </div>
       <div class="ob-confetti-container" id="confettiContainer"></div>
     </div>
@@ -223,13 +221,17 @@
         <img src="./imgs/g-icon-logo.png" alt="" />
         <span>Ghawy</span>
       </div>
-      <div class="ob-footer-text">Empowering Minds, Building Futures</div>
+      <div class="ob-footer-text" data-ar="نبني عقول، ونصنع مستقبل" data-en="Empowering Minds, Building Futures">Empowering Minds, Building Futures</div>
     </div>
   </div>
 
+  <!-- محرك اللغة الوحيد (ghawy_lang). الصفحة كانت <html lang="en" dir="ltr">
+       متسمّرة ومن غير أي محرك، فاللي مختار عربي كان بيوصلها بعد التسجيل
+       ويلاقيها إنجليزي. لازم يسبق onboarding.js عشان L() تلاقي currentLang(). -->
+  <script src="src/js/i18n.js?v=20260809c"></script>
   <script src="src/js/utils.js?v=1785600000"></script>
 
-  <script src="src/js/onboarding.js?v=4"></script>
+  <script src="src/js/onboarding.js?v=5"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());
