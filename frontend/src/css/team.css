@@ -965,6 +965,79 @@
 .cr-released,
 .cr-expired { opacity: 0.5; }
 
+/* A switched-off coupon still shows everyone who used it, so the card stays
+   fully readable — it just stops looking like one of the live ones. */
+.coupon-admin-card.is-disabled { border-color: #3a2a2a; opacity: 0.72; }
+
+/* ── Owner-only controls ── */
+.coupon-admin-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.coupon-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 7px 13px;
+  color: #ddd;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.coupon-admin-btn:hover:not(:disabled) { background: #2a2a2a; border-color: #444; color: #fff; }
+.coupon-admin-btn:disabled { opacity: 0.5; cursor: default; }
+.coupon-admin-btn.danger:hover:not(:disabled) { border-color: #ef4444; color: #ef4444; }
+.coupon-admin-btn i { width: 14px; height: 14px; }
+
+/* ── Coupon form ── */
+#coupon-modal .fg { margin-bottom: 14px; }
+
+.coupon-form-input { width: 100%; }
+
+.coupon-form-hint {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: #777;
+}
+
+/* The cap being lowered under what has already been taken. Amber rather than
+   red: it is a legitimate thing to do and nobody loses their slot — it just
+   does not mean what the number looks like it means. */
+.coupon-form-warning {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.coupon-form-note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: #888;
+}
+
+/* Whatever the backend said. Empty until it says something. */
+.coupon-form-error {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #ef4444;
+}
+
+.coupon-form-error:empty { display: none; }
+
 @media (max-width: 520px) {
   .coupon-admin-grid { grid-template-columns: 1fr; }
 }

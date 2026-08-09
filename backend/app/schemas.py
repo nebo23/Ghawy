@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Any, Dict, Literal
 from datetime import datetime
+from decimal import Decimal
 from app.models import PaymentMethod, PaymentStatus, ChannelType, MessageType, MemberRole, TeamRole
 
 # ─── User Schemas ───────────────────────────────────────────
@@ -518,3 +519,65 @@ class FeedbackOut(BaseModel):
     class Config:
         from_attributes = True
 
+# ─── Coupon Admin Schemas ────────────────────────────────────
+#
+# The limits live here rather than as `if` statements in the handler so a bad
+# number comes back as a described 422 the panel can render, instead of a
+# generic message someone has to translate.
+#
+# What is deliberately NOT on CouponUpdate: `code`. It is the lookup key — it
+# is stored lowercase behind a unique index, it travels in payment links as
+# `?coupon=...`, and a live 30-minute hold is keyed to the coupon a member
+# already applied. Renaming it would break the link in someone's hand and the
+# checkout tab they have open. Cosmetics change through `display_code`.
+
+COUPON_CODE_PATTERN = r"^[A-Za-z0-9]+$"
+
+
+def _clean_coupon_code(v: str) -> str:
+    """Trim, then insist on letters and digits only.
+
+    The code goes into a URL as `?coupon=...`. A space becomes `%20`, and a
+    member who copies the code off the screen and types it by hand never
+    reproduces that — so the character set is narrowed at the door rather than
+    debugged later.
+    """
+    v = (v or "").strip()
+    if not v:
+        raise ValueError("Code cannot be empty")
+    if len(v) > 64:
+        raise ValueError("Code cannot be longer than 64 characters")
+    import re
+    if not re.match(COUPON_CODE_PATTERN, v):
+        raise ValueError("Code can only contain letters and numbers — no spaces or symbols")
+    return v
+
+
+class CouponCreate(BaseModel):
+    # Kept exactly as typed: `code` is lowercased for storage, and this same
+    # string is saved as `display_code` so the panel and the receipt say
+    # "Monzer" rather than "monzer".
+    code: str
+    discount_percent: Decimal = Field(gt=0, le=100, max_digits=5, decimal_places=2)
+    max_redemptions: int = Field(ge=1)
+    is_active: bool = True
+
+    @field_validator("code")
+    @classmethod
+    def _validate_code(cls, v: str) -> str:
+        return _clean_coupon_code(v)
+
+
+class CouponUpdate(BaseModel):
+    """Only what changed. Every field optional; `code` is not a field."""
+    discount_percent: Optional[Decimal] = Field(default=None, gt=0, le=100, max_digits=5, decimal_places=2)
+    max_redemptions: Optional[int] = Field(default=None, ge=1)
+    is_active: Optional[bool] = None
+    display_code: Optional[str] = None
+
+    @field_validator("display_code")
+    @classmethod
+    def _validate_display_code(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return _clean_coupon_code(v)

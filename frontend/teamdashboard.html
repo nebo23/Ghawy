@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260809b" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260809c" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1423,13 +1423,17 @@
             <!-- Tab Content: Coupons
                  One card per code. The question this answers is "is it about to
                  run out", so the count and the bar lead and the list of who
-                 took it is underneath. Read-only on purpose — creating and
-                 editing codes was not asked for, and a form that can change a
-                 discount percentage is a bigger thing than a panel that
-                 reports one. -->
+                 took it is underneath.
+                 Creating and editing is owner-only, and the button below is
+                 hidden for everyone else — the real gate is the 403 on
+                 POST/PATCH /coupons/admin. No delete button exists anywhere:
+                 coupon_redemptions cascades off the coupon row, so deleting a
+                 code would take the record of who paid what with it. -->
             <div id="tab-coupons" class="tab-panel" style="display:none;">
               <div class="mpr-filter-bar">
                 <h3>Discount Coupons</h3>
+                <button class="btn-add-member" id="coupon-new-btn" style="display:none"
+                  onclick="openCouponModal()">+ New Coupon</button>
               </div>
               <div id="coupons-container" class="coupon-admin-grid">
                 <div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>
@@ -2243,6 +2247,57 @@
     </div>
   </div>
 
+  <!-- Coupon Modal — new code and edit share one form.
+       The code field turns into a display-spelling field once the coupon
+       exists: the code is matched lowercase, it is already out in
+       `pay.html?coupon=...` links, and members may be holding a 30-minute slot
+       taken with it, so only its capitalisation can move afterwards. -->
+  <div class="modal-overlay-team" id="coupon-modal" style="display:none">
+    <div class="modal-box-team small">
+      <div class="modal-header-team">
+        <h3 id="coupon-modal-title">New Coupon</h3><button class="modal-close-team"
+          onclick="closeModal('coupon-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <div class="fg">
+          <label id="coupon-code-label">Code *</label>
+          <input type="text" id="coupon-code" class="coupon-form-input" placeholder="e.g. Monzer"
+            maxlength="64" autocomplete="off">
+          <div class="coupon-form-hint" id="coupon-code-hint">
+            Letters and numbers only. Case does not matter when a member types it.
+          </div>
+        </div>
+        <div class="fg">
+          <label>Discount % *</label>
+          <input type="number" id="coupon-percent" class="coupon-form-input" placeholder="e.g. 10"
+            min="0.01" max="100" step="0.01">
+        </div>
+        <div class="fg">
+          <label>Number of people *</label>
+          <input type="number" id="coupon-max" class="coupon-form-input" placeholder="e.g. 30"
+            min="1" step="1" oninput="checkCouponMaxWarning()">
+          <div class="coupon-form-warning" id="coupon-max-warning" style="display:none"></div>
+        </div>
+        <div class="fg" id="coupon-active-row">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="coupon-active" checked style="width:auto;margin:0;">
+            Active straight away
+          </label>
+        </div>
+        <p class="coupon-form-note">
+          Changes apply to new redemptions only. Anyone who has already paid keeps
+          the price they paid, and a payment page that is already open stays valid
+          at the price it was quoted until its 30-minute hold runs out.
+        </p>
+        <div class="coupon-form-error" id="coupon-error"></div>
+      </div>
+      <div class="modal-footer-team">
+        <button class="btn-cancel-team" onclick="closeModal('coupon-modal')">Cancel</button>
+        <button class="btn-confirm-team" id="coupon-save-btn" onclick="saveCoupon()">Create Coupon</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Receipt Lightbox -->
   <div class="receipt-lightbox" id="receipt-lightbox" style="display:none" onclick="closeLightbox(event)">
     <div class="lightbox-content">
@@ -2631,7 +2686,7 @@
   <script src="src/js/utils.js?v=1785600000"></script>
     <script src="src/js/dashboard-new.js?v=1785700000"></script>
   <script src="src/js/i18n.js?v=20260809d"></script>
-  <script src="src/js/team.js?v=20260809b"></script>
+  <script src="src/js/team.js?v=20260809c"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

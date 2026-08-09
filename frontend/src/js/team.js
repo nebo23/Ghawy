@@ -1896,8 +1896,8 @@ function renderMprCards(requests, container) {
 //  COUPONS
 // ═══════════════════════════════════════════════════════════
 //
-// Read-only. The client's question is "how close is this code to running out",
-// so `used / max` and the bar are the headline and the redemption list sits
+// The client's question is "how close is this code to running out", so
+// `used / max` and the bar are the headline and the redemption list sits
 // under it.
 //
 // `used` counts confirmed redemptions PLUS live holds — a hold is a Kashier
@@ -1905,6 +1905,12 @@ function renderMprCards(requests, container) {
 // after 30 minutes. It is shown separately rather than folded in silently,
 // because a panel that says 30/30 and then reads 27/30 half an hour later with
 // no explanation looks broken.
+//
+// Creating and editing codes is OWNER-ONLY, and the buttons below only hide
+// themselves for everyone else — the actual refusal is the 403 from
+// POST/PATCH /coupons/admin. There is no delete: coupon_redemptions cascades
+// off the coupon row, so removing a code would delete the record of who paid
+// what. Disable does the job and keeps the history.
 
 const COUPON_STATUS_LABELS = {
   active: 'Used',
@@ -1913,14 +1919,24 @@ const COUPON_STATUS_LABELS = {
   released: 'Released',
 };
 
+// Cards as the server last described them, by id — the edit form reads its
+// starting values from here rather than scraping them back off the DOM.
+let couponsById = {};
+
 async function loadCouponsTab() {
   const container = document.getElementById('coupons-container');
   container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>`;
+
+  const newBtn = document.getElementById('coupon-new-btn');
+  if (newBtn) newBtn.style.display = currentUserIsOwner ? '' : 'none';
 
   try {
     const res = await authFetch(`${API}/coupons/admin`);
     if (!res.ok) throw new Error('Failed to load coupons');
     const data = await res.json();
+
+    couponsById = {};
+    (data.coupons || []).forEach(c => { couponsById[c.id] = c; });
 
     if (!data.coupons || data.coupons.length === 0) {
       container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">No coupons configured.</div>`;
@@ -1961,8 +1977,20 @@ function renderCouponCard(c) {
         </tr>`).join('')
     : `<tr><td colspan="5" style="text-align:center;color:#888;padding:18px;">Nobody has used this code yet.</td></tr>`;
 
+  const actions = currentUserIsOwner ? `
+      <div class="coupon-admin-actions">
+        <button class="coupon-admin-btn" onclick="openCouponModal(${c.id})">
+          <i data-lucide="pencil"></i> Edit
+        </button>
+        <button class="coupon-admin-btn ${c.is_active ? 'danger' : ''}"
+                id="coupon-toggle-${c.id}"
+                onclick="toggleCouponActive(${c.id})">
+          <i data-lucide="${c.is_active ? 'ban' : 'check'}"></i> ${c.is_active ? 'Disable' : 'Enable'}
+        </button>
+      </div>` : '';
+
   return `
-    <div class="coupon-admin-card">
+    <div class="coupon-admin-card${c.is_active ? '' : ' is-disabled'}" id="coupon-card-${c.id}">
       <div class="coupon-admin-head">
         <div>
           <div class="coupon-admin-code">${escapeHtml(c.code)}</div>
@@ -1976,6 +2004,7 @@ function renderCouponCard(c) {
       <div class="coupon-admin-bar"><span class="${barClass}" style="width:${pct}%"></span></div>
       <div class="coupon-admin-remaining">${c.remaining} left</div>
       ${holdsNote}
+      ${actions}
 
       <table class="coupon-admin-table">
         <thead>
@@ -1984,6 +2013,177 @@ function renderCouponCard(c) {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+// ── Create / edit ────────────────────────────────────────────
+//
+// One modal for both. `couponEditingId` is null when it is a new code, and the
+// difference that matters is the first field: on a new coupon it is the code
+// itself, on an existing one it is only the display spelling. See the note in
+// backend/app/schemas.py for why the code is frozen after creation.
+
+let couponEditingId = null;
+
+function couponFormEl(id) { return document.getElementById(id); }
+
+function openCouponModal(id = null) {
+  if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
+
+  couponEditingId = id;
+  const c = id != null ? couponsById[id] : null;
+
+  couponFormEl('coupon-modal-title').textContent = c ? `Edit ${c.code}` : 'New Coupon';
+  couponFormEl('coupon-code').value = c ? c.code : '';
+  couponFormEl('coupon-percent').value = c ? c.discount_percent : '';
+  couponFormEl('coupon-max').value = c ? c.max_redemptions : '';
+  couponFormEl('coupon-error').textContent = '';
+  couponFormEl('coupon-max-warning').style.display = 'none';
+
+  // The code is the lookup key once it exists: it is matched lowercase, it
+  // travels in `pay.html?coupon=...` links people already have, and a member
+  // may be sitting on a 30-minute hold taken with it. Only its capitalisation
+  // can move.
+  couponFormEl('coupon-code-label').textContent = c ? 'Display spelling' : 'Code *';
+  couponFormEl('coupon-code-hint').textContent = c
+    ? `Capitalisation only — “${c.lookup_code}” stays the code people type.`
+    : 'Letters and numbers only. Case does not matter when a member types it.';
+
+  // "Active from the start" is a create-time choice; afterwards the card's
+  // Disable/Enable button is the one place that switches a coupon off, so the
+  // form does not offer a second way to do the same thing.
+  couponFormEl('coupon-active-row').style.display = c ? 'none' : '';
+  couponFormEl('coupon-active').checked = true;
+
+  const btn = couponFormEl('coupon-save-btn');
+  btn.disabled = false;
+  btn.textContent = c ? 'Save Changes' : 'Create Coupon';
+
+  openModal('coupon-modal');
+}
+
+// Lowering the cap under what has already been taken is allowed — nobody is
+// thrown out, the code just stops accepting new people. Said out loud before
+// the save, because "10" looks like it means ten users and it does not when
+// twenty are already in.
+function checkCouponMaxWarning() {
+  const el = couponFormEl('coupon-max-warning');
+  const c = couponEditingId != null ? couponsById[couponEditingId] : null;
+  const val = parseInt(couponFormEl('coupon-max').value, 10);
+  if (!c || isNaN(val) || val >= c.used) {
+    el.style.display = 'none';
+    return;
+  }
+  el.textContent = `⚠️ ${c.used} ${c.used === 1 ? 'person has' : 'people have'} already used this code. `
+    + `Lowering the limit to ${val} keeps every one of them — it only stops new redemptions.`;
+  el.style.display = '';
+}
+
+// Whatever the backend said, verbatim. 422 arrives as FastAPI's array of
+// per-field problems; the rest as a plain string.
+async function couponErrorText(res) {
+  if (res.status === 403) return 'Owners only';
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* empty or non-JSON body */ }
+  const detail = data && data.detail;
+  if (Array.isArray(detail) && detail.length) {
+    return detail.map(d => String(d.msg || '').replace(/^Value error,\s*/, '')).join(' · ');
+  }
+  if (typeof detail === 'string' && detail) return detail;
+  return `Request failed (${res.status})`;
+}
+
+async function saveCoupon() {
+  const btn = couponFormEl('coupon-save-btn');
+  const errEl = couponFormEl('coupon-error');
+  errEl.textContent = '';
+
+  const codeText = couponFormEl('coupon-code').value.trim();
+  const percent = couponFormEl('coupon-percent').value.trim();
+  const max = couponFormEl('coupon-max').value.trim();
+
+  if (!codeText) { errEl.textContent = 'Code is required'; return; }
+  if (!percent)  { errEl.textContent = 'Discount is required'; return; }
+  if (!max)      { errEl.textContent = 'Number of people is required'; return; }
+
+  const editing = couponEditingId != null;
+  const body = editing
+    ? { display_code: codeText, discount_percent: Number(percent), max_redemptions: parseInt(max, 10) }
+    : {
+        code: codeText,
+        discount_percent: Number(percent),
+        max_redemptions: parseInt(max, 10),
+        is_active: couponFormEl('coupon-active').checked,
+      };
+
+  // Locked for the round trip: two clicks on Create is two coupons.
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const res = await authFetch(
+      editing ? `${API}/coupons/admin/${couponEditingId}` : `${API}/coupons/admin`,
+      {
+        method: editing ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!res.ok) {
+      errEl.textContent = await couponErrorText(res);
+      btn.disabled = false;
+      btn.textContent = original;
+      return;
+    }
+
+    closeModal('coupon-modal');
+    showToast(editing ? '🎟️ Coupon updated' : '🎟️ Coupon created', 'success');
+    loadCouponsTab();
+  } catch (e) {
+    errEl.textContent = 'Network error';
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+// Disable, not delete. `is_active = false` makes preview and checkout refuse
+// the code with reason `inactive`, and every redemption already recorded
+// against it stays exactly where it is.
+async function toggleCouponActive(id) {
+  if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
+
+  const c = couponsById[id];
+  if (!c) return;
+
+  const btn = document.getElementById(`coupon-toggle-${id}`);
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await authFetch(`${API}/coupons/admin/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !c.is_active }),
+    });
+
+    if (!res.ok) {
+      showToast(await couponErrorText(res), 'error');
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    const updated = await res.json();
+    couponsById[id] = updated;
+    const card = document.getElementById(`coupon-card-${id}`);
+    if (card) {
+      card.outerHTML = renderCouponCard(updated);
+      window.lucide && window.lucide.createIcons();
+    }
+    showToast(updated.is_active ? '🎟️ Coupon enabled' : '🎟️ Coupon disabled', 'success');
+  } catch (e) {
+    showToast('Network error', 'error');
+    if (btn) btn.disabled = false;
+  }
 }
 
 function renderMprPagination(page, pages) {
