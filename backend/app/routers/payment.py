@@ -155,4 +155,7 @@ def _redirect_amounts_match(params: dict, payment: Payment) -> bool:
 @router.get("/kashier/fail")
 def kashier_fail():
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
-    return RedirectResponse(url=f"{frontend_url}/payment.html?error=failed")
+    # Back to the plans page with the failure flagged. /pricing replaced
+    # /payment, and unlike the old page it actually reads `error` and says
+    # something — see the ?error=failed handler in pricing.html.
+    return RedirectResponse(url=f"{frontend_url}/pricing?error=failed")

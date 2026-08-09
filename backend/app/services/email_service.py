@@ -349,7 +349,8 @@ def send_renewal_reminder_email(
     plan = _RENEWAL_PLAN_LABELS.get(plan_key, _RENEWAL_PLAN_LABELS["monthly_egp"])
     price_str = _plan_price_str(plan_key)
     end_date_str = subscription_end.strftime("%d/%m/%Y") if subscription_end else "—"
-    renew_url = f"{frontend_url}/payment.html?plan={plan_key}"
+    # /pricing replaced /payment as the page holding the plans and checkout.
+    renew_url = f"{frontend_url}/pricing?plan={plan_key}"
     name = _first_name(full_name)
     day_word = "يوم" if days_left == 1 else "أيام"
 

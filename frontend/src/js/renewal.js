@@ -165,9 +165,9 @@ function previewBoxHtml() {
   </div>`;
 }
 
-/** رابط الدفع اليدوي (انستاباي) — نفس goManual() في payment.html:
- *  pay.html بياخد الـ cycle من غير لاحقة العملة. و`intent=renew` بيخلّي
- *  pay.js يسيب العضو المفعّل يكمّل بدل ما يرميه على الداشبورد. */
+/** رابط الدفع اليدوي (انستاباي) — نفس اللي بيعمله startInstapay() في
+ *  pricing.js: pay.html بياخد الـ cycle من غير لاحقة العملة. و`intent=renew`
+ *  بيخلّي pay.js يسيب العضو المفعّل يكمّل بدل ما يرميه على الداشبورد. */
 function manualUrl() {
     const cycle = selectedPlan.replace(/_(egp|usd)$/, '');
     return `/pay?plan=${encodeURIComponent(cycle)}` + (mode === 'renew' ? '&intent=renew' : '');

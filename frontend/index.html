@@ -116,7 +116,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260808b">
+    <link rel="stylesheet" href="src/css/main.css?v=20260809a">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -303,7 +303,7 @@
      back in here; edit layout.js instead.
     ════════════════════════════════════════ -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260808a"></script>
+    <script src="src/js/layout.js?v=20260809a"></script>
 
     <!-- ════════════════════════════════════════
      AUTH MODALS
@@ -874,9 +874,14 @@
 
     <!-- ════════════════════════════════════════
      MEMBER REVIEWS
-     Cards are rendered from src/js/reviews.js — adding a review is one entry
-     in that file, nothing here changes. The id stays `reviews`: the drawer in
-     layout.js links to index.html#reviews.
+     The proof here is the wall of chat screenshots, rendered from
+     SCREENSHOTS in src/js/reviews.js — adding one is a filename in that file
+     and nothing here changes. The written-review cards that used to sit under
+     it were dropped at the client's request; the data is still in reviews.js,
+     so bringing them back is one <div id="reviewsGrid"> away.
+
+     The id stays `reviews`: the drawer in layout.js links to
+     index.html#reviews.
     ════════════════════════════════════════ -->
     <section class="reviews-section" id="reviews">
         <div class="container">
@@ -898,11 +903,6 @@
              it sits outside .container. Rows, images and the seamless
              duplicate all come from SCREENSHOTS in reviews.js. -->
         <div id="reviewsMarquee"></div>
-
-        <div class="container">
-            <!-- Cards, empty state and the expand behaviour all come from reviews.js -->
-            <div id="reviewsGrid"></div>
-        </div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -1003,41 +1003,6 @@
             </p>
         </div>
     </section>
-
-    <!-- ════════════════════════════════════════
-     STATS BAR
-    ════════════════════════════════════════ -->
-    <div class="full-stripe stats-bar" id="statsBar">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-num">
-                        <!-- Same source as the hero card (GET /stats/public) — the
-                             page must never show two different member counts. -->
-                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-users"></i><span
-                                class="counter-value stat-members" data-stat="members" data-stat-pending="1"
-                                data-target="1000">0</span><span class="stat-plus">+</span><span class="stat-skeleton"
-                                aria-hidden="true"></span></span>
-                    </div>
-                    <div class="stat-label">عدد الطلاب</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-num">
-                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-clock"></i><span
-                                class="counter-value" data-target="8">0</span>+</span>
-                    </div>
-                    <div class="stat-label">ساعات الكورس</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-num">
-                        <span class="accent"><i style="margin-left: 8px" class="fa-solid fa-star"></i><span
-                                class="counter-value" data-target="4.9" data-decimals="1">0</span></span>
-                    </div>
-                    <div class="stat-label">التقييمات</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- ════════════════════════════════════════
      GHAWY FOR EVERY FIELD
@@ -1445,16 +1410,16 @@
     <!-- Language engine — shared with every other page (single 'ghawy_lang' key,
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
-    <script src="src/js/i18n.js?v=20260808a"></script>
+    <script src="src/js/i18n.js?v=20260809a"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
-    <script src="src/js/catalog.js?v=20260808a"></script>
+    <script src="src/js/catalog.js?v=20260809a"></script>
     <!-- Member reviews — the single source for the testimonials section.
          Adding a review is one entry in this file. -->
-    <script src="src/js/reviews.js?v=20260808b"></script>
+    <script src="src/js/reviews.js?v=20260809a"></script>
     <!-- Plans, prices, the comparison and the checkout step — shared with
          /pricing so the two pages cannot quote different numbers. -->
-    <script src="src/js/pricing.js?v=20260808a"></script>
+    <script src="src/js/pricing.js?v=20260809a"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
     <script src="src/js/faq.js?v=20260808a"></script>
     <script src="src/js/main.js?v=20260808a"></script>
@@ -1536,12 +1501,14 @@
                         coursesBottomCtaBtn.onclick = () => window.location.href = 'dashboard.html';
                     }
                 } else {
-                    // Logged in but NOT subscribed → go to payment
+                    // Logged in but NOT subscribed → the plans page. /pricing
+                    // replaced /payment as the single page holding the plans
+                    // and the checkout step.
                     setLangText(heroJoinText, 'اشترك الآن', 'Subscribe Now');
-                    if (heroJoinBtn) heroJoinBtn.onclick = (e) => { e.preventDefault(); window.location.href = 'payment.html'; };
+                    if (heroJoinBtn) heroJoinBtn.onclick = (e) => { e.preventDefault(); window.location.href = '/pricing'; };
                     if (coursesBottomCtaBtn) {
                         setLangText(coursesBottomCtaBtn, 'اشترك الآن', 'Subscribe Now');
-                        coursesBottomCtaBtn.onclick = () => window.location.href = 'payment.html';
+                        coursesBottomCtaBtn.onclick = () => window.location.href = '/pricing';
                     }
                 }
             } else {

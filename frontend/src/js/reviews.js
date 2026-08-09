@@ -2,19 +2,27 @@
 //
 // Everything the public site says in a testimonial comes from REVIEWS below.
 //
+// ── What renders today ──
+// Only the FILMED reviews. The client dropped the written-review cards from
+// both places they appeared (the home page and /reviews), so `quote`, `stars`,
+// `win`, `city` and `photo` are carried but not drawn anywhere. The array was
+// deliberately left whole rather than trimmed to the video entries: every one
+// of these people is filmed, the words are theirs, and putting the cards back
+// is one `<div id="reviewsGrid">` plus a renderer — not a re-transcription.
+//
 // ── Adding a review ──
-// Add ONE entry to REVIEWS and it appears on the home page. Nothing else has
-// to change — no HTML, no CSS, no renderer edit. The order of the array is the
+// Add ONE entry to REVIEWS. If it carries `video` + `videoPoster` it appears in
+// the rail on /reviews with no other change. The order of the array is the
 // order on the page.
 //
 //   {
 //     name:  { ar: 'الاسم', en: 'Name' },     // required
-//     city:  { ar: 'المدينة', en: 'City' },   // optional — omit to hide the line
-//     stars: 5,                               // 1–5, defaults to 5
-//     quote: { ar: '…', en: '…' },            // required — the review itself
-//     win:   { ar: '…', en: '…' },            // optional — a short achievement chip
-//     photo: null,                            // optional — path to a real photo
-//     video: 'abc123',                        // optional — a Wistia media id
+//     city:  { ar: 'المدينة', en: 'City' },   // optional — shown under the poster
+//     stars: 5,                               // 1–5 — carried, not drawn today
+//     quote: { ar: '…', en: '…' },            // the review itself — see above
+//     win:   { ar: '…', en: '…' },            // carried, not drawn today
+//     photo: null,                            // carried, not drawn today
+//     video: 'abc123',                        // a Wistia media id
 //     videoPoster: 'imgs/…',                  // required WITH video — local still
 //     videoSeconds: 78,                       // required WITH video — runtime
 //   }
@@ -24,16 +32,14 @@
 // shape is built around merging static marketing fields onto live
 // `GET /api/courses` data. Reviews have no API side at all — they are static
 // copy — and catalog.js is already ~1300 lines. Keeping them apart is what
-// makes "adding a review is one line" actually true, and lets /reviews (still
-// a placeholder page) read the same source later without pulling the whole
-// catalogue in.
+// makes "adding a review is one line" actually true, and lets /reviews read
+// the same source without pulling the whole catalogue in.
 //
 // ── Photos ──
 // `photo` is null on every entry on purpose. The client has not sent photos of
 // the people quoted here, and putting an unattributed stock face next to a
-// real person's name claims it is them. Until real photos arrive the card
-// draws initials on the brand gradient, the same placeholder the instructor
-// cards use. Dropping a path into `photo` swaps it, no other change.
+// real person's name claims it is them. Nothing reads it today — it was the
+// written card's avatar — but the rule stands for whatever draws it next.
 //
 // ── Video ──
 // All seven of these reviews were filmed. They used to play as Wistia embeds
@@ -41,8 +47,9 @@
 // text cards and the media ids were parked in `video`.
 //
 // /reviews plays them again, and deliberately not the way that failed: each
-// one is a poster with a real play button on it, in a grid, with nothing
-// hidden behind a hover or a card promotion.
+// one is a poster with a real play button on it, in a rail you scroll
+// sideways, with nothing hidden behind a hover or a card promotion. With the
+// text cards now gone too, these are the only thing REVIEWS still draws.
 //
 // Every id below was checked against Wistia's oEmbed endpoint before it was
 // wired up — all seven resolve, and each one's title matches the name on its
@@ -319,6 +326,21 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    /**
+     * How this page is allowed to move things.
+     *
+     * The CSS honours prefers-reduced-motion for the marquee, but the video
+     * rail is scrolled from JS, and `behavior: 'smooth'` in a scrollBy call is
+     * animation the stylesheet cannot reach. Read the preference live rather
+     * than once at load, so someone turning it on in their OS gets it without
+     * a reload.
+     */
+    function scrollBehavior() {
+        const reduce = window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        return reduce ? 'auto' : 'smooth';
+    }
+
     /** data-ar/data-en on an element so i18n.js keeps it in sync. */
     function i18nAttrs(pair) {
         if (pair == null) return '';
@@ -338,77 +360,6 @@
         if (pair == null) return '';
         if (typeof pair === 'string') return `data-ar-aria="${esc(pair)}" data-en-aria="${esc(pair)}"`;
         return `data-ar-aria="${esc(pair.ar || '')}" data-en-aria="${esc(pair.en || pair.ar || '')}"`;
-    }
-
-    function initials(name) {
-        return String(name || '?').trim().split(/\s+/).slice(0, 2)
-            .map(w => w[0]).join(' ');
-    }
-
-    function avatarHTML(rev) {
-        const name = L(rev.name);
-        if (rev.photo) {
-            return `<img class="rv-avatar" src="${esc(rev.photo)}" alt="${esc(name)}" loading="lazy" />`;
-        }
-        return `<span class="rv-avatar rv-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
-    }
-
-    /**
-     * Stars as text, with the count in the label rather than in the glyphs —
-     * a screen reader reading "★★★★★" out loud is noise.
-     */
-    function starsHTML(n) {
-        const count = Math.max(1, Math.min(5, Number(n) || 5));
-        const label = lang() === 'ar' ? `${count} من 5` : `${count} out of 5`;
-        return `<span class="rv-stars" role="img" aria-label="${esc(label)}">${'★'.repeat(count)}</span>`;
-    }
-
-    // ─── Card ───────────────────────────────────────────────────
-
-    /**
-     * One review card.
-     *
-     * The quote is clamped to three lines and opened by a real <button>, not
-     * by a click handler on the card. That is the whole point of the rebuild:
-     * the previous section promoted a card to a hero on click and hid a play
-     * button inside it, and the client's report was that people could not work
-     * out how to open one. A button gets the pointer cursor, keyboard focus,
-     * Enter/Space and touch for free, and says what it does.
-     *
-     * The button ships hidden (`hidden` attribute) and is revealed by
-     * `revealToggles()` only on the cards whose text is actually clamped —
-     * a short review with a "read the full review" button under it that does
-     * nothing visible is its own small confusion.
-     */
-    function reviewCardHTML(rev, i) {
-        const name = L(rev.name);
-        const bodyId = `rvQuote-${i}`;
-        const city = rev.city
-            ? `<span class="rv-city" ${i18nAttrs(rev.city)}>${esc(L(rev.city))}</span>`
-            : '';
-        const win = rev.win
-            ? `<span class="rv-win"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
-                   <span ${i18nAttrs(rev.win)}>${esc(L(rev.win))}</span></span>`
-            : '';
-
-        return `
-    <article class="rv-card">
-        <div class="rv-head">
-            ${avatarHTML(rev)}
-            <div class="rv-ident">
-                <span class="rv-name" ${i18nAttrs(rev.name)}>${esc(name)}</span>
-                ${city}
-            </div>
-        </div>
-        ${starsHTML(rev.stars)}
-        ${win}
-        <p class="rv-quote" id="${bodyId}" ${i18nAttrs(rev.quote)}>${esc(L(rev.quote))}</p>
-        <button type="button" class="rv-toggle" aria-expanded="false" aria-controls="${bodyId}" hidden>
-            <span class="rv-toggle-label"
-                  data-ar="اقرا الرأي كامل" data-en="Read full review">اقرا الرأي كامل</span>
-            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-        </button>
-    </article>`;
     }
 
     function emptyHTML(pair, icon) {
@@ -536,7 +487,7 @@
             // Just under a full viewport of the rail, so the card you were
             // looking at stays partly visible as an anchor.
             const step = Math.max(200, sc.clientWidth * 0.8);
-            sc.scrollBy({ left: (rtl ? -dir : dir) * step, behavior: 'smooth' });
+            sc.scrollBy({ left: (rtl ? -dir : dir) * step, behavior: scrollBehavior() });
         }
 
         paint();
@@ -571,7 +522,7 @@
 
             // Bring the card that just started playing fully into view, so a
             // click on a half-visible card does not leave it half-visible.
-            card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            card.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest', inline: 'center' });
         });
 
         // Delegated to `el` so it survives every repaint of the scroller.
@@ -587,86 +538,6 @@
                 return;
             }
             paint();
-        });
-    }
-
-    // ─── Render ─────────────────────────────────────────────────
-
-    /**
-     * Show the toggle only where the text is really cut off.
-     *
-     * Has to run after paint — before layout `scrollHeight` and `clientHeight`
-     * are both 0 and every button would stay hidden. It also re-runs on
-     * resize and on a language switch, because the same quote clamps at three
-     * lines in Arabic and at two in English (or the other way round) depending
-     * on the width.
-     */
-    function revealToggles(el) {
-        el.querySelectorAll('.rv-card').forEach(card => {
-            const quote = card.querySelector('.rv-quote');
-            const btn = card.querySelector('.rv-toggle');
-            if (!quote || !btn) return;
-            if (card.classList.contains('is-open')) return; // measuring an open card tells us nothing
-            btn.hidden = quote.scrollHeight - quote.clientHeight <= 1;
-        });
-    }
-
-    /**
-     * Fill a container with the review cards.
-     *
-     * No skeleton here on purpose: the data is static and paints in the same
-     * tick as the call, so a loading state would be a flash of grey that never
-     * corresponded to any wait. Lists that come off the API (the course grid)
-     * still get one.
-     */
-    function renderReviews(el, opts) {
-        if (!el) return;
-        const o = opts || {};
-        const list = o.limit ? REVIEWS.slice(0, o.limit) : REVIEWS;
-
-        el.classList.add('rv-grid');
-        el.innerHTML = list.length ? list.map(reviewCardHTML).join('') : emptyHTML();
-
-        // Most of the card is written in the current language at render time,
-        // but the toggle label and the empty state are plain data-ar/data-en.
-        // i18n.js has already made its page-load pass by now, so they have to
-        // be handed to it explicitly or they stay Arabic on the English site.
-        if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(el);
-        requestAnimationFrame(() => revealToggles(el));
-
-        if (el.dataset.rvBound) return;
-        el.dataset.rvBound = '1';
-
-        // One delegated listener for the whole grid — the cards are rebuilt on
-        // every language switch, so per-button listeners would be re-bound (or
-        // leaked) each time.
-        el.addEventListener('click', e => {
-            const btn = e.target.closest('.rv-toggle');
-            if (!btn || !el.contains(btn)) return;
-            const card = btn.closest('.rv-card');
-            if (!card) return;
-            const open = !card.classList.contains('is-open');
-            card.classList.toggle('is-open', open);
-            btn.setAttribute('aria-expanded', String(open));
-            const label = btn.querySelector('.rv-toggle-label');
-            if (label) {
-                const ar = open ? 'اعرض أقل' : 'اقرا الرأي كامل';
-                const en = open ? 'Show less' : 'Read full review';
-                label.setAttribute('data-ar', ar);
-                label.setAttribute('data-en', en);
-                label.textContent = lang() === 'ar' ? ar : en;
-            }
-        });
-
-        document.addEventListener('languagechange', () => {
-            if (!document.body.contains(el)) return;
-            renderReviews(el, o);
-        });
-
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => revealToggles(el), 150);
         });
     }
 
@@ -909,14 +780,17 @@
     }
 
     // ─── Auto-init ──────────────────────────────────────────────
-    // A page wanting the reviews just drops `<div id="reviewsGrid">` into its
-    // markup and loads this file. `<div id="reviewsMarquee">` adds the wall of
-    // chat screenshots above it, and `<div id="ratingsMarquee">` the wall of
-    // course rating lists.
+    // A page asks for a block by dropping its container id into the markup and
+    // loading this file. Nothing is wired up by hand.
     //
-    // /reviews uses the still-grid ids instead — `#reviewsVideos`,
-    // `#shotsGrid` and `#ratingsGrid` — so the marquee and the grid are two
-    // presentations of ONE set of files, never two lists to keep in step.
+    // The home page drifts its screenshots past as a teaser:
+    //   #reviewsMarquee  — the wall of chat screenshots
+    //   #ratingsMarquee  — the wall of course rating lists
+    //
+    // /reviews is the page you land on to actually look at them, so it uses
+    // the still ids instead — #reviewsVideos, #shotsGrid, #ratingsGrid. The
+    // marquee and the grid are two presentations of ONE set of files, never
+    // two lists to keep in step.
     function autoInit() {
         renderVideos(document.getElementById('reviewsVideos'));
         renderShotGrid(document.getElementById('shotsGrid'), {
@@ -940,7 +814,6 @@
         renderScreenshots(document.getElementById('ratingsMarquee'), {
             files: RATINGS, rows: 1, modifier: 'rvs-wrap--tall',
         });
-        renderReviews(document.getElementById('reviewsGrid'));
     }
 
     if (document.readyState === 'loading') {
@@ -952,7 +825,7 @@
     window.GhawyReviews = {
         REVIEWS, SCREENSHOTS, RATINGS, SHOT_DIR, SHOT_SIZES,
         L, esc, i18nAttrs, publishable,
-        reviewCardHTML, emptyHTML, renderReviews, renderScreenshots,
+        emptyHTML, renderScreenshots,
         videoCardHTML, renderVideos,
         shotCellHTML, renderShotGrid, openLightbox, closeLightbox, i18nAria,
     };

@@ -86,7 +86,10 @@ async function verifyEmail() {
       if (data.access_token) {
         saveToken(data.access_token);
       }
-      setTimeout(() => { window.location.href = 'payment.html'; }, 1200);
+      // Verified and now logged in, but not subscribed — the plans page is
+      // the next step. /pricing replaced /payment as the one page that holds
+      // the plans and the checkout.
+      setTimeout(() => { window.location.href = '/pricing'; }, 1200);
     } else {
       showAlert(data.detail || 'فشل التحقق من الكود', 'error');
     }

@@ -374,11 +374,20 @@
     // ─── Checkout ───────────────────────────────────────────────
 
     /**
-     * Send the visitor to Kashier (card / wallet) or to PayPal abroad.
+     * Send the visitor to Kashier (card / wallet).
      *
      * This is the old inline handler, moved but not rewritten. The one thing
      * it does differently is that the button that reaches it is now inside the
      * choice modal rather than on the card, so `trigger` is that button.
+     *
+     * There used to be a branch here that sent a USD visitor to
+     * `payment.html?method=paypal`. Nothing on the other side handled it:
+     * `window.handlePayPalPayment` was never defined anywhere in the repo, and
+     * payment.html ignored `method` and rendered the EGP plans through Kashier
+     * regardless. So it was a detour that landed on the same rail one page
+     * later. Kashier takes the USD plan keys directly — PLAN_PRICES in
+     * backend/app/routers/payment.py carries all six — so both currencies now
+     * go straight through the call below.
      */
     async function startCardCheckout(planKey, trigger) {
         const cur = currency();
@@ -390,15 +399,6 @@
 
         if (!token) {
             window.location.href = `register.html?plan=${encodeURIComponent(planKey)}`;
-            return;
-        }
-
-        if (cur === 'USD') {
-            if (typeof window.handlePayPalPayment === 'function') {
-                window.handlePayPalPayment(planKey, data);
-                return;
-            }
-            window.location.href = `payment.html?plan=${encodeURIComponent(planKey)}&method=paypal`;
             return;
         }
 
@@ -450,7 +450,16 @@
             window.location.href = `register.html?plan=${encodeURIComponent(planKey)}`;
             return;
         }
-        window.location.href = `pay.html?plan=${encodeURIComponent(planKey)}`;
+        // pay.js keys its price table by the bare cycle — monthly / quarterly /
+        // yearly — not by the currency-suffixed key the cards use. The strip
+        // below is what payment.html's goManual() used to do; it went missing
+        // when that page was retired, and without it `monthly_egp` matched
+        // nothing there: the transfer screen fell back to the backend's default
+        // price, and no `plan` reached /manual-payments/submit at all, so an
+        // approved yearly transfer was granted 30 days. renewal.js has always
+        // done this correctly — manualUrl() in that file is the same line.
+        const cycle = planKey.replace(/_(egp|usd)$/, '');
+        window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}`;
     }
 
     // ─── The choice step ────────────────────────────────────────
@@ -593,8 +602,32 @@
         }
     }
 
+    /**
+     * Kashier bounced the payment.
+     *
+     * GET /api/payment/kashier/fail sends the visitor back here with
+     * `?error=failed`. The page it used to land on read that param and did
+     * nothing with it, so a failed card looked identical to arriving on the
+     * plans page by choice. Say it out loud, then strip the param so a reload
+     * or a back-button does not re-announce a failure that is over.
+     */
+    function reportRedirectError() {
+        const params = new URLSearchParams(location.search);
+        if (params.get('error') !== 'failed') return;
+
+        const msg = currentLang() === 'en'
+            ? 'The payment did not go through. Nothing was charged — you can try again or pay by InstaPay.'
+            : 'الدفع ماتمّش. مااتخصمش منك حاجة — تقدر تجرّب تاني أو تدفع بانستاباي.';
+        if (typeof showToast === 'function') showToast(msg, 'error');
+
+        params.delete('error');
+        const qs = params.toString();
+        history.replaceState({}, document.title, location.pathname + (qs ? '?' + qs : ''));
+    }
+
     function autoInit() {
         paint();
+        reportRedirectError();
         document.addEventListener('languagechange', paint);
         // The country picker and the geo lookup both write `user_currency` and
         // then call applyCurrencyUI. Repainting on that is what moves the cards
@@ -623,6 +656,6 @@
         compareHTML, renderCompare,
         methodsHTML, renderMethods,
         openCheckout, closeCheckout, startCardCheckout, startInstapay,
-        paint,
+        paint, reportRedirectError,
     };
 })();

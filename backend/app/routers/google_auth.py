@@ -118,7 +118,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     
     frontend_url = "https://ghawy.ai"
     if not user.is_active:
-        return RedirectResponse(f"{frontend_url}/payment.html?token={access_token}")
+        # Signed in but not subscribed → the plans page. /pricing replaced
+        # /payment; utils.js picks the token out of the query there exactly as
+        # it did on the old page, so the visitor arrives logged in.
+        return RedirectResponse(f"{frontend_url}/pricing?token={access_token}")
         
     if not user.onboarding_completed:
         return RedirectResponse(f"{frontend_url}/onboarding.html?token={access_token}")

@@ -152,6 +152,24 @@ const i18nDict = {
     payDelayHelp:     { ar: 'لو اتأخرنا أو حصلت أي مشكلة، تواصل مع الدعم على', en: 'If we are late or anything goes wrong, contact support on' },
     payOrEmailUs:     { ar: 'أو على الإيميل',              en: 'or by email at' },
     payReturnHome:    { ar: 'الرجوع للصفحة الرئيسية',      en: 'Return to Homepage' },
+    // The success line comes in two shapes. pay.js swaps the key on the same
+    // element (the way renderPreview swaps image/file wording) so a language
+    // toggle after submitting keeps whichever shape is on screen. The address
+    // itself lives in its own dir="ltr" span — never interpolated into the
+    // sentence, because an LTR address inside an Arabic line reorders.
+    paySuccessDescEmail: { ar: 'هنراجع طلبك وهنبعتلك تأكيد على الإيميل بتاعك:', en: 'We will review your request and send a confirmation to your email:' },
+
+    // ── pay.html → blocked (already-submitted / still-subscribed) ──
+    payBlockedPendingTitle: { ar: 'إنت سجّلت طلب خلاص',      en: 'You have already submitted a request' },
+    payBlockedPendingDesc:  { ar: 'طلبك لسه تحت المراجعة، فمش محتاج ترفع إيصال تاني.', en: 'Your request is still under review, so there is no need to upload another receipt.' },
+    payBlockedEmailNote:    { ar: 'أول ما نقبله هنبعتلك على الإيميل بتاعك:', en: 'As soon as it is approved we will email you at:' },
+    payBlockedEmailPlain:   { ar: 'أول ما نقبله هنبعتلك على الإيميل.', en: 'As soon as it is approved we will email you.' },
+    payBlockedActiveTitle:  { ar: 'اشتراكك لسه شغال',        en: 'Your subscription is still active' },
+    payBlockedActiveDesc:   { ar: 'مش محتاج تدفع تاني دلوقتي. تقدر تكمل تعلّم من الداشبورد.', en: 'There is nothing to pay right now. You can carry on from your dashboard.' },
+    payBlockedActiveUntil:  { ar: 'اشتراكك ساري لحد',        en: 'Active until' },
+    payBlockedRenewHint:    { ar: 'عايز تجدد بدري؟',          en: 'Want to renew early?' },
+    payBlockedRenewLink:    { ar: 'اتفضل من هنا',            en: 'Do it here' },
+    payBlockedDashboard:    { ar: 'روح للداشبورد',           en: 'Go to dashboard' },
     // pay.js runtime strings
     planMonthly:      { ar: 'شهري',                        en: 'Monthly' },
     planQuarterly:    { ar: '3 شهور',                      en: '3 Months' },
@@ -167,16 +185,9 @@ const i18nDict = {
     payErrNoReceipt:  { ar: 'من فضلك ارفع صورة الإيصال',   en: 'Please upload your receipt screenshot' },
     payErrSubmit:     { ar: 'مقدرناش نبعت الطلب',          en: 'Failed to submit request' },
 
-    // ── payment.html ──
-    logout:           { ar: 'تسجيل الخروج',                en: 'Logout' },
-    subscriptionPlan: { ar: 'خطة الاشتراك',                en: 'Subscription Plan' },
-    oneSubOpensAll:   { ar: 'اشتراك واحد يفتح لك جميع المحتويات', en: 'One subscription unlocks all content' },
-    accessAll:        { ar: 'وصول لجميع الكورسات والشروحات', en: 'Access to all courses and content' },
-    hours:            { ar: '60+ ساعة من المحتوى الحصري',  en: '60+ hours of exclusive content' },
-    community:        { ar: 'مجتمع ومتابعة شخصية',         en: 'Community & personal mentoring' },
-    newContent:       { ar: 'محتوى جديد بإستمرار',         en: 'Constantly updated content' },
-    subscribeNow:     { ar: 'انضم الآن 🚀',                en: 'Join Now 🚀' },
-    securePay:        { ar: '🔒 الدفع آمن 100% عبر Kashier', en: '🔒 100% secure payment via Kashier' },
+    // (payment.html's nine keys lived here. The page was retired in favour of
+    // /pricing — which carries its own data-ar/data-en rather than i18n keys —
+    // and no other page ever referenced them.)
 
     // ── profile-settings.html → Preferences ──
     preferences:      { ar: 'التفضيلات',                   en: 'Preferences' },

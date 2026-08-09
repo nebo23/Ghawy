@@ -37,14 +37,14 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="src/css/main.css?v=20260808b">
+    <link rel="stylesheet" href="src/css/main.css?v=20260809a">
 </head>
 
 <body>
 
     <!-- Shared navbar + drawer — single source in src/js/layout.js -->
     <div id="siteHeader"></div>
-    <script src="src/js/layout.js?v=20260808a"></script>
+    <script src="src/js/layout.js?v=20260809a"></script>
 
     <!-- ════════════════════════════════════════
      TRACKS
@@ -74,9 +74,9 @@
     <div id="siteFooter"></div>
     <script>GhawyLayout.mountFooter();</script>
 
-    <script src="src/js/i18n.js?v=20260808a"></script>
+    <script src="src/js/i18n.js?v=20260809a"></script>
     <!-- The single source for course + track + instructor data. -->
-    <script src="src/js/catalog.js?v=20260808a"></script>
+    <script src="src/js/catalog.js?v=20260809a"></script>
     <script src="src/js/utils.js?v=20260804"></script>
     <script>
         const C = window.GhawyCatalog;
@@ -125,31 +125,24 @@
         // ═══════════════════════════════════════════════════════════
         //   LIST VIEW — the page a visitor who knows nothing lands on
         // ═══════════════════════════════════════════════════════════
-        // Order is deliberate: explain what the two kinds ARE, put them
-        // side by side so the visitor can decide, and only then show the
-        // tracks themselves. Someone reading top to bottom should never hit
-        // a track name before they know what family it belongs to.
+        // Order is deliberate: show what the two kinds ARE, put them side by
+        // side so the visitor can decide, and only then show the tracks
+        // themselves. Someone reading top to bottom should never hit a track
+        // name before they know what family it belongs to.
+        //
+        // The two explainer cards carry that opening on their own. The client
+        // read the prose that used to sit above them — a page lead, a heading
+        // and a second lead all saying "there are two kinds, here is the
+        // difference" — as three restatements of what the cards already show,
+        // so the page now opens on the cards themselves.
         function renderList() {
             setSEO(SEO_INDEX);
 
-            setHead(
-                { ar: 'المسارات', en: 'Tracks' },
-                {
-                    ar: 'في غاوي نوعين مسارات: مسارات بتتعلم فيها الـ AI نفسه، ومسارات بتتعلم فيها تستخدم الـ AI في شغلك. الصفحة دي بتوريك الفرق بينهم وتخليك تعرف تدخل فين.',
-                    en: 'Ghawy has two kinds of track: ones where you learn AI itself, and ones where you learn to use AI inside your own work. This page shows you the difference so you know which door is yours.'
-                }
-            );
+            setHead({ ar: 'المسارات', en: 'Tracks' }, null);
 
             body.innerHTML = `
             <!-- ── A) What each kind is, then the head-to-head ── -->
             <section class="tr-section">
-                <h2 class="tr-section-title" data-ar="يعني إيه مسار تخصص ويعني إيه مسار تطبيق؟"
-                    data-en="What is a deep track, and what is an applied track?">يعني إيه مسار تخصص ويعني إيه مسار تطبيق؟</h2>
-                <p class="tr-section-lead"
-                    data-ar="الفرق بينهم مش في الصعوبة — الفرق في إنت رايح فين. اقرا السطرين دول الأول."
-                    data-en="The difference is not difficulty — it is where you are heading. Start with these two.">
-                    الفرق بينهم مش في الصعوبة — الفرق في إنت رايح فين. اقرا السطرين دول الأول.
-                </p>
                 <div class="tr-explain-grid">${C.familyExplainerHTML()}</div>
             </section>
 

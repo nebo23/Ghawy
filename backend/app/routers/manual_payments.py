@@ -145,6 +145,86 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
 
 
 # ══════════════════════════════════════════════════════════
+#  WHO MAY OPEN A NEW REQUEST
+# ══════════════════════════════════════════════════════════
+#
+# Two rules stop a second receipt from being uploaded:
+#
+#   - an open request. One review at a time — uploading again while the first
+#     is still pending only hands the reviewer two screenshots of the same
+#     transfer, and the member sits there expecting two subscriptions.
+#   - a subscription that has not run out yet. Paying again for a month you
+#     already own is the mistake this exists to prevent.
+#
+# The second rule has one deliberate exception. A member who came from
+# /renewal to renew early arrives at /pay with `intent=renew`, and must get
+# through — otherwise Instapay is closed to everyone whose subscription is
+# still alive, which is precisely the group renewing. The flag is
+# client-supplied and so forgeable, but forging it buys nothing: the
+# open-request rule above is unconditional, so the most a forged renew can do
+# is submit the one request the member could have submitted from /renewal
+# anyway.
+#
+# The messages are Arabic because the pages that surface them are. The
+# frontend does not depend on the wording — /pay reads `reason` from
+# /my-status and renders its own bilingual panel — so these are the fallback
+# for anything that only shows `detail`.
+
+RENEW_INTENT = "renew"
+
+BLOCK_MESSAGES = {
+    "pending": "عندك طلب دفع مسجّل بالفعل ولسه تحت المراجعة. استنى الموافقة الأول.",
+    "active": "اشتراكك لسه شغال، فمش محتاج ترفع طلب جديد. لو عايز تجدد بدري ادخل من صفحة التجديد.",
+}
+
+
+def _open_request(db: Session, email: str) -> Optional[ManualPaymentRequest]:
+    """The member's still-pending request, if they have one."""
+    return db.query(ManualPaymentRequest).filter(
+        ManualPaymentRequest.email == email,
+        ManualPaymentRequest.status == "pending",
+    ).order_by(ManualPaymentRequest.created_at.desc()).first()
+
+
+def _submission_state(db: Session, user: User, intent: Optional[str] = None) -> dict:
+    """Whether `user` may open a manual payment request, and if not, why.
+
+    Shared by /submit (which enforces it) and /my-status (which lets /pay show
+    the reason instead of the upload form), so the two can never disagree.
+    """
+    pending = _open_request(db, user.email)
+    if pending:
+        return {
+            "can_submit": False,
+            "reason": "pending",
+            "request_id": pending.id,
+            "request_ref": f"MANUAL-{pending.id}",
+            "submitted_at": to_cairo_iso(pending.created_at),
+            "end_at": to_cairo_iso(user.end_at),
+        }
+
+    renewing = (intent or "").strip().lower() == RENEW_INTENT
+    if user.is_active and not renewing:
+        return {
+            "can_submit": False,
+            "reason": "active",
+            "request_id": None,
+            "request_ref": None,
+            "submitted_at": None,
+            "end_at": to_cairo_iso(user.end_at),
+        }
+
+    return {
+        "can_submit": True,
+        "reason": None,
+        "request_id": None,
+        "request_ref": None,
+        "submitted_at": None,
+        "end_at": to_cairo_iso(user.end_at),
+    }
+
+
+# ══════════════════════════════════════════════════════════
 #  PUBLIC ENDPOINTS (no auth)
 # ══════════════════════════════════════════════════════════
 
@@ -153,6 +233,7 @@ async def submit_payment_request(
     amount: Optional[float] = Form(None),
     plan: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
+    intent: Optional[str] = Form(None),
     receipt: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -162,16 +243,11 @@ async def submit_payment_request(
     full_name = current_user.full_name
     phone = current_user.phone
 
-    # Check for existing pending request
-    existing_request = db.query(ManualPaymentRequest).filter(
-        ManualPaymentRequest.email == email,
-        ManualPaymentRequest.status == "pending",
-    ).first()
-    if existing_request:
-        raise HTTPException(
-            status_code=409,
-            detail="A pending payment request already exists for this email. Please wait for approval.",
-        )
+    # Already has an open request, or an unexpired subscription — see the
+    # comment above _submission_state for the renew exception.
+    state = _submission_state(db, current_user, intent)
+    if not state["can_submit"]:
+        raise HTTPException(status_code=409, detail=BLOCK_MESSAGES[state["reason"]])
 
     # Validate receipt file. The declared Content-Type is a first cheap gate,
     # but it is client-supplied and trivially spoofed, so the real check is the
@@ -251,7 +327,34 @@ async def submit_payment_request(
         "id": mpr.id,
         "status": "pending",
         "message": "Request submitted successfully",
+        # The success screen tells the member which inbox the confirmation is
+        # going to. It has to be the address the request was actually filed
+        # under — the one taken from the token above, never anything typed on
+        # the page — so it is returned from here rather than guessed.
+        "email": mpr.email,
     }
+
+
+@router.get("/my-status")
+def my_submission_status(
+    intent: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Can the signed-in member open a manual request right now?
+
+    /pay calls this before drawing the upload form: if the answer is no, it
+    shows the reason (an open request and its number, or a subscription that
+    has not run out) instead of letting someone upload a receipt that /submit
+    would only reject afterwards.
+
+    Authenticated on purpose. The neighbouring /status/{email} takes an
+    address from anyone; this one carries a request id and a subscription
+    expiry, so it answers only about the caller.
+    """
+    state = _submission_state(db, current_user, intent)
+    state["email"] = current_user.email
+    return state
 
 
 @router.get("/status/{email}")

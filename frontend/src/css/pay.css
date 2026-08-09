@@ -628,6 +628,59 @@ body {
     font-size: 13px;
     margin-bottom: 32px;
 }
+
+/* Blocked View — same shell as the success card, different reason.
+   `.success-details span` above is bold white so that values (the request
+   number, the email, the expiry date) read as values. The sentences that
+   introduce them are not values, so they opt back out. */
+.success-details .sd-lead {
+    color: #ccc;
+    font-weight: 400;
+}
+
+/* The email address is the thing the member is being asked to check, in both
+   the success and the blocked card. Keep it readable rather than decorative,
+   and let a long address wrap instead of pushing the card wide. */
+.pay-email {
+    color: #fff;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+/* Waiting on review is not success. Amber, not green. */
+.success-icon-wrap.is-waiting {
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.success-icon-wrap.is-waiting .success-icon {
+    color: #f59e0b;
+}
+
+.blocked-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+.blocked-renew {
+    color: #888;
+    font-size: 13px;
+    margin: 16px 0 0;
+}
+
+.blocked-renew a {
+    color: var(--gold, #c1ff11);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.blocked-renew a:hover,
+.blocked-renew a:focus-visible {
+    border-bottom-color: var(--gold, #c1ff11);
+}
   
 .pay-home-btn {
     display: inline-block;

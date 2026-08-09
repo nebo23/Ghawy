@@ -43,22 +43,175 @@ const selectedPlan = PLAN_PRICES[selectedPlanKey] || null;
 const renewIntent = (new URLSearchParams(location.search).get('intent') || '') === 'renew';
 
 const token = localStorage.getItem('token');
+
+// The address the backend has on file for this member. Filled by the gate
+// below and reused by the success screen, so what we promise to email is the
+// address the request was actually filed under — never anything typed here.
+let memberEmail = '';
+
+// The last refusal, kept so a language toggle can redraw the panel (the date
+// in it is formatted, not translated by the dictionary).
+let blockedState = null;
+
 if (!token) {
     localStorage.removeItem('user'); window.location.href = '/login';
-} else if (!renewIntent) {
-    // If user is already active, redirect them away from the payment screen
-    fetch(`${API}/profile/me?_t=`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-        .then(res => {
-            if (res.ok) return res.json();
-        })
-        .then(user => {
-            if (user && user.is_active) {
-                window.location.href = user.onboarding_completed ? 'dashboard.html' : 'onboarding.html';
-            }
-        })
-        .catch(() => { });
+} else {
+    gateSubmission();
+}
+
+/**
+ * Decide what this page shows before it shows anything.
+ *
+ * Two states mean there is nothing to upload: a request already under review,
+ * and a subscription that has not run out. Previously the second one silently
+ * bounced the member to the dashboard, which told them nothing, and the first
+ * was not checked at all — you picked a file, waited, and got an English 409
+ * in a red toast. Both now arrive as a panel that says which case it is.
+ *
+ * The single exception is an early renewal: /renewal sends an active member
+ * here with intent=renew, and that has to reach the form. It is passed through
+ * to the backend so both sides apply the same rule.
+ */
+async function gateSubmission() {
+    try {
+        const qs = renewIntent ? '?intent=renew' : '';
+        const res = await fetch(`${API}/manual-payments/my-status${qs}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        // Any non-OK answer falls through to the catch and opens the form.
+        // Deliberately including 401: the frontend is deployed from a bind
+        // mount and the backend from an image, so this file can be live for a
+        // while before /my-status exists — and this API answers 401, not 404,
+        // for a path it does not know. Signing members out of /pay because the
+        // backend has not caught up yet would be a far worse failure than
+        // showing a form the server will still refuse.
+        if (!res.ok) throw new Error(`my-status ${res.status}`);
+
+        const state = await res.json();
+        memberEmail = (state.email || '').trim();
+
+        if (state.can_submit) {
+            showFormView();
+            return;
+        }
+        renderBlocked(state);
+    } catch (err) {
+        // Fail open. /submit enforces the same two rules server-side, so the
+        // cost of guessing wrong here is one wasted upload; failing closed
+        // would lock out every member whose network blinked.
+        console.error('Could not check submission eligibility:', err);
+        showFormView();
+    }
+}
+
+function showFormView() {
+    const form = document.getElementById('pay-form-view');
+    if (form) form.style.display = '';
+}
+
+/**
+ * Draw the refusal. One card, two reasons — the wording, the icon and which
+ * rows appear are all driven off `state.reason`.
+ */
+function renderBlocked(state) {
+    blockedState = state;
+    const view = document.getElementById('pay-blocked-view');
+    if (!view) return;
+
+    const pending = state.reason === 'pending';
+
+    setKey('blocked-title', pending ? 'payBlockedPendingTitle' : 'payBlockedActiveTitle');
+    setKey('blocked-desc', pending ? 'payBlockedPendingDesc' : 'payBlockedActiveDesc');
+
+    // Waiting on a review is not success, so it does not get the green tick.
+    const wrap = document.getElementById('blocked-icon-wrap');
+    const icon = document.getElementById('blocked-icon');
+    wrap.classList.toggle('is-waiting', pending);
+    icon.setAttribute('data-lucide', pending ? 'clock' : 'check-circle');
+
+    // ── pending: request number, what happens next, how to chase us ──
+    const ref = document.getElementById('blocked-ref-row');
+    ref.hidden = !(pending && state.request_ref);
+    if (state.request_ref) document.getElementById('blocked-ref').textContent = state.request_ref;
+
+    document.getElementById('blocked-window').hidden = !pending;
+    document.getElementById('blocked-support').hidden = !pending;
+
+    const emailRow = document.getElementById('blocked-email-row');
+    emailRow.hidden = !pending;
+    if (pending) {
+        setEmailLine('blocked-email-lead', 'blocked-email', 'payBlockedEmailNote', 'payBlockedEmailPlain');
+    }
+
+    // ── still subscribed: until when, and the two ways out ──
+    const until = formatDate(state.end_at);
+    const untilRow = document.getElementById('blocked-until-row');
+    untilRow.hidden = pending || !until;
+    if (until) document.getElementById('blocked-until').textContent = until;
+
+    document.getElementById('blocked-dashboard-btn').hidden = pending;
+    document.getElementById('blocked-renew-row').hidden = pending;
+
+    // An active member with no recorded expiry would otherwise get an empty
+    // grey box.
+    const details = document.getElementById('blocked-details');
+    details.hidden = !pending && untilRow.hidden;
+
+    view.style.display = 'block';
+    if (window.lucide) window.lucide.createIcons();
+}
+
+/**
+ * Point an element at a different dictionary key and redraw it now, so a later
+ * language toggle keeps whichever wording ended up on screen.
+ */
+function setKey(id, key) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('data-i18n', key);
+    el.textContent = t(key);
+}
+
+/**
+ * "…we'll email you at: address" when we have one, and the plain full-stop
+ * sentence when we do not — never a dangling colon or the word "undefined".
+ */
+function setEmailLine(leadId, emailId, withKey, plainKey) {
+    const span = document.getElementById(emailId);
+    if (!span) return;
+
+    if (memberEmail) {
+        setKey(leadId, withKey);
+        span.textContent = memberEmail;
+        span.hidden = false;
+    } else {
+        setKey(leadId, plainKey);
+        span.textContent = '';
+        span.hidden = true;
+    }
+}
+
+/**
+ * A backend ISO timestamp as a date the member can read, in their language.
+ *
+ * Formatted in Africa/Cairo, not in the viewer's zone. A subscription expiry
+ * is a Cairo date — the backend sends it as Cairo-local with an offset — and
+ * formatting it locally makes a midnight expiry render as the previous day for
+ * anyone reading from further west.
+ */
+function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const locale = (document.documentElement.lang === 'en') ? 'en-GB' : 'ar-EG';
+    try {
+        return new Intl.DateTimeFormat(locale, {
+            year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Cairo',
+        }).format(d);
+    } catch (e) {
+        return String(iso).slice(0, 10);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -111,6 +264,12 @@ function renderPlanLabels() {
 }
 
 document.addEventListener('languagechange', renderPlanLabels);
+
+// The blocked panel carries a date, which the dictionary cannot translate, so
+// it has to be re-formatted rather than just re-keyed.
+document.addEventListener('languagechange', () => {
+    if (blockedState) renderBlocked(blockedState);
+});
 
 // Copy to clipboard
 /**
@@ -307,6 +466,13 @@ async function submitPayment() {
         formData.append('plan', selectedPlanKey);
     }
 
+    // Deliberate early renewal — tells the backend not to apply the "you are
+    // still subscribed" rule to a member who came here precisely because they
+    // are still subscribed and want to extend.
+    if (renewIntent) {
+        formData.append('intent', 'renew');
+    }
+
     formData.append('receipt', selectedFile);
 
     try {
@@ -321,6 +487,17 @@ async function submitPayment() {
         const data = await res.json();
 
         if (!res.ok) {
+            // 409 means the gate above and the backend disagreed — a second
+            // tab got there first, or the subscription was approved while this
+            // page sat open. Show the reason as a panel rather than flashing
+            // the backend's sentence in a red toast.
+            if (res.status === 409) {
+                document.getElementById('pay-form-view').style.display = 'none';
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+                await gateSubmission();
+                return;
+            }
             throw new Error(data.detail || t('payErrSubmit'));
         }
 
@@ -329,6 +506,11 @@ async function submitPayment() {
         document.getElementById('pay-success-view').style.display = 'block';
 
         document.getElementById('success-ref').innerText = `MANUAL-${data.id}`;
+
+        // The address the request was actually filed under. Prefer what the
+        // backend just echoed back over what the gate read earlier.
+        if (data.email) memberEmail = String(data.email).trim();
+        setEmailLine('success-desc', 'success-email', 'paySuccessDescEmail', 'paySuccessDesc');
 
     } catch (error) {
         console.error("Submit error:", error);

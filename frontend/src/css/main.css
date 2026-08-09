@@ -762,48 +762,6 @@ a {
 }
 
 /* ════════════════════════════════════════════════════════
-        STATS BAR
-      ════════════════════════════════════════════════════════ */
-.stats-bar {
-    padding: 44px 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-card);
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 24px;
-    text-align: center;
-}
-
-.stat-num {
-    font-size: clamp(2rem, 4vw, 2.8rem);
-    font-weight: 900;
-    font-family: "IBM Plex Mono", monospace;
-    line-height: 1;
-    margin-bottom: 6px;
-    background: linear-gradient(135deg,
-            var(--gold-light),
-            var(--gold-dark));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.stat-num .accent {
-    color: #D4AF37;
-    -webkit-text-fill-color: #D4AF37;
-}
-
-.stat-label {
-    font-size: 0.82rem;
-    color: var(--muted-light);
-    font-weight: 600;
-}
-
-/* ════════════════════════════════════════════════════════
         VIDEO REVIEWS GRID
       ════════════════════════════════════════════════════════ */
 /* Reviews Section */
@@ -813,8 +771,8 @@ a {
 
 /* ── Screenshot marquee (#reviewsMarquee, built by reviews.js) ──
    Rows of real chat screenshots drifting in alternating directions. The whole
-   thing is decorative to assistive tech; the readable testimonials are the
-   .rv-card grid underneath. */
+   thing is decorative to assistive tech — the words are pixels inside someone
+   else's screenshot, which is also why the images carry an empty alt. */
 .rvs-wrap {
     display: flex;
     flex-direction: column;
@@ -822,6 +780,13 @@ a {
     margin: 44px 0 56px;
     /* the rows are wider than the viewport by design — clip, never scroll */
     overflow: hidden;
+}
+
+/* The marquee used to have the written-review grid under it, and that bottom
+   margin was the gap between the two. It is now the last thing in the
+   section, so the margin would just stack onto the section's own padding. */
+.rvs-wrap:last-child {
+    margin-bottom: 0;
 }
 
 .rvs-row {
@@ -2444,7 +2409,6 @@ footer a:hover {
     }
 }
 
-
 /* ════════════════════════════════════════════════════════
         PRICING GRID, COMPARISON, PAYMENT METHODS, CHECKOUT STEP
         The grid rules used to be an inline <style> inside #payment on
@@ -2796,6 +2760,14 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     cursor: default;
 }
 
+/* openCheckout() hides the InstaPay option outside Egypt by setting the
+   `hidden` property. `display: flex` above outranks the browser's own
+   `[hidden] { display: none }`, so without this the option stayed on screen
+   and a visitor abroad was offered an Egyptian-only rail. */
+.pay-option[hidden] {
+    display: none;
+}
+
 .pay-option--primary {
     border-color: var(--gold-border);
 }
@@ -3089,11 +3061,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 36px;
-    }
-
     /* .offer-box {
           max-width: 820px;
         } */
@@ -3127,9 +3094,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
 }
 
 /* ── Laptop / Small Desktop (1025px–1279px) ── */
@@ -3155,9 +3119,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
 }
 
 /* ── Tablet (769px–1024px) ── */
@@ -3179,11 +3140,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         gap: 14px;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-    }
-
     .video-reviews-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 18px;
@@ -3198,8 +3154,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: repeat(2, 1fr);
         gap: 16px;
     }
-
-
 
     .offer-items {
         padding: 0 28px;
@@ -3254,15 +3208,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         gap: 12px;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
-
-    .stat-num {
-        font-size: 1.9rem;
-    }
-
     .chapters-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 14px;
@@ -3282,8 +3227,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: repeat(2, 1fr);
         gap: 14px;
     }
-
-
 
     .img-badge {
         position: static;
@@ -3424,32 +3367,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         font-size: 0.75rem;
     }
 
-    .stats-bar {
-        padding: 26px 0;
-    }
-
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-    }
-
-    .stats-grid> :last-child {
-        grid-column: 1 / -1;
-        /* ياخد الصف كله */
-        justify-self: center;
-        /* ويتمركز */
-        max-width: 220px;
-        /* عشان ما يتمددش زيادة */
-    }
-
-    .stat-num {
-        font-size: 1.65rem;
-    }
-
-    .stat-label {
-        font-size: 0.72rem;
-    }
-
     .reviews-section,
     .instructors-section,
     .why-section,
@@ -3529,8 +3446,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         margin-top: 12px;
         display: inline-block;
     }
-
-
 
     .offer-box {
         border-radius: 16px;
@@ -3894,10 +3809,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
         grid-template-columns: 1fr;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
     .countdown-num {
         width: 46px;
         height: 46px;
@@ -4099,7 +4010,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     color: var(--red);
     border-color: rgba(239, 68, 68, 0.4);
 }
-
 
 /* Hamburger */
 .hamburger {
@@ -5130,15 +5040,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     left: 12px;
 }
 
-/* ═══════════════════════════════════════════
-   ANIMATED COUNTER STATS
-═══════════════════════════════════════════ */
-.stat-num .counter-value {
-    font-family: "IBM Plex Mono", monospace;
-    color: #D4AF37;
-    -webkit-text-fill-color: #D4AF37;
-}
-
 @media (max-width: 480px) {
     .course-carousel-card {
         min-width: 260px;
@@ -5487,7 +5388,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     }
 }
 
-
 /* ════════════════════════════════════════
     PREMIUM COURSES CATALOG STYLES
 ════════════════════════════════════════ */
@@ -5647,7 +5547,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
 .courses-info-bar {
     transition: opacity 0.3s;
 }
-
 
 /* ═══════════════════════════════════════════════════════════════
    COURSE CATALOG — cards + instructor bar
@@ -7440,7 +7339,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
 }
 
 /* ─── Responsive: Laptop ─── */
-@media (max-width: 1199px) {}
 
 /* ─── Responsive: Tablet ─── */
 @media (max-width: 899px) {
@@ -7618,20 +7516,8 @@ h1.hero-heading-single>span {
     opacity: 0.8;
 }
 
-.stat-num-inline {
-    display: block;
-    font-size: 1rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1;
-}
-
-.stat-lbl-inline {
-    display: block;
-    font-size: 0.72rem;
-    color: #888;
-    margin-top: 2px;
-}
+/* (.stat-lbl-inline was the label under .stat-num-inline. That element went
+   with the stats bar, and nothing else ever carried this class.) */
 
 /* ── Hero stat cards (current design) ─────────────────────────
    These live OUTSIDE .hero-split now — a centred band spanning the whole
@@ -8116,7 +8002,6 @@ h1.hero-heading-single>span {
 
 }
 
-
 /* ── Hero Background Adjustments ── */
 /* ── Hero Background Adjustments ── */
 .hero {
@@ -8194,195 +8079,13 @@ h1.hero-heading-single>span {
 /* ════════════════════════════════════════
    MEMBER REVIEWS — rendered from src/js/reviews.js
 
-   This replaced a rotating stack: one card was promoted to a "hero" with a
-   Wistia play button buried inside it and three shrunken cards fanned behind,
-   cycling on a timer. The client's report was that people could not tell it
-   was interactive at all, so nobody ever opened a review. What is here now is
-   an ordinary grid — every card shows the name, the rating and the start of
-   the quote up front, and a labelled button opens the rest in place.
+   The written-review cards that used to live here (.rv-card in a .rv-grid,
+   with a "read the full review" toggle) were removed at the client's request
+   along with their markup. What is left is the shared empty state, which the
+   video rail and both screenshot grids still use — "nothing here yet" and
+   "this failed to render" must never look the same.
    ════════════════════════════════════════ */
-.rv-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    /* `start`, not `stretch`: an opened card grows on its own instead of
-       dragging the height of everything else on its row. */
-    align-items: start;
-    margin-top: 48px;
-}
-
-.rv-card {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 24px 22px;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-.rv-card:hover {
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-
-/* Avatar then name, in that order in the markup, so the row reads correctly
-   in both directions without a single left/right rule — the avatar lands on
-   the right in Arabic and on the left in English. */
-.rv-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-}
-
-.rv-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    object-fit: cover;
-}
-
-/* Same initials-on-the-brand-gradient placeholder the instructor cards use.
-   Real photos of the people quoted have not been delivered; `photo` in
-   reviews.js swaps this for an <img> the moment one is. */
-.rv-avatar-fallback {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-    color: #000;
-    font-weight: 900;
-    font-size: 0.85rem;
-    letter-spacing: -0.02em;
-}
-
-.rv-ident {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.rv-name {
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--white);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.rv-city {
-    font-size: 0.82rem;
-    color: var(--muted-light);
-}
-
-.rv-stars {
-    font-size: 0.95rem;
-    letter-spacing: 2px;
-    color: var(--gold);
-    line-height: 1;
-}
-
-/* The achievement chip. Green as an accent — a tinted hairline and the icon,
-   never a filled green block. */
-.rv-win {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    align-self: flex-start;
-    max-width: 100%;
-    padding: 6px 12px;
-    border: 1px solid rgba(193, 255, 17, 0.28);
-    border-radius: 999px;
-    background: rgba(193, 255, 17, 0.06);
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--off-white);
-}
-
-.rv-win i {
-    color: var(--gold);
-    font-size: 0.8rem;
-    flex-shrink: 0;
-}
-
-/* Clamped until the card is opened. reviews.js measures scrollHeight against
-   clientHeight after paint and only shows the toggle on the cards that are
-   actually cut off — a "read the full review" button under a review that is
-   already fully visible is its own small confusion.
-   Two lines, not three: at three, six of the seven quotes fitted whole and the
-   section had no visible interaction left at all on Arabic desktop. Two keeps
-   the cards an even height to scan and gives every card with more to say a
-   real control. */
-.rv-quote {
-    margin: 0;
-    font-size: 0.97rem;
-    line-height: 1.85;
-    color: var(--muted-light);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.rv-card.is-open .rv-quote {
-    display: block;
-    -webkit-line-clamp: unset;
-    overflow: visible;
-}
-
-/* A real <button>: pointer cursor, keyboard focus, Enter/Space and touch all
-   come for free, and the label says what it does. That is the entire fix for
-   "nobody could work out how to open one". */
-.rv-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    align-self: flex-start;
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.86rem;
-    font-weight: 800;
-    color: var(--gold);
-    transition: opacity 0.2s;
-}
-
-/* `display: inline-flex` above beats the UA stylesheet's `[hidden] {display:none}`,
-   so without this every card kept a "read the full review" button — including
-   the ones whose quote was already fully visible. Class+attribute outranks the
-   bare class, so no !important is needed. */
-.rv-toggle[hidden] {
-    display: none;
-}
-
-.rv-toggle:hover {
-    opacity: 0.75;
-}
-
-.rv-toggle:focus-visible {
-    outline: 2px solid var(--gold);
-    outline-offset: 4px;
-    border-radius: 4px;
-}
-
-.rv-toggle i {
-    font-size: 0.72rem;
-    transition: transform 0.25s;
-}
-
-.rv-card.is-open .rv-toggle i {
-    transform: rotate(180deg);
-}
-
 .rv-empty {
-    grid-column: 1 / -1;
     text-align: center;
     padding: 60px 20px;
     color: var(--muted-light);
@@ -8399,24 +8102,6 @@ h1.hero-heading-single>span {
 .rv-empty p {
     margin: 0;
     font-size: 0.95rem;
-}
-
-@media (max-width: 1000px) {
-    .rv-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
-        margin-top: 34px;
-    }
-}
-
-@media (max-width: 680px) {
-    .rv-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .rv-card {
-        padding: 20px 18px;
-    }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -8451,6 +8136,14 @@ h1.hero-heading-single>span {
     line-height: 1.8;
     color: #aaa;
     margin: 0;
+}
+
+/* A heading with no lead under it. The title's bottom margin exists to
+   separate it from that lead; with the lead gone (the /tracks index, since
+   its opening prose was dropped) it stacks on top of the head's own 48px and
+   leaves the first section floating. */
+.page-shell-head>.page-shell-title:only-child {
+    margin-bottom: 0;
 }
 
 /* /courses puts the catalog totals bar between the page heading and the
@@ -8688,15 +8381,34 @@ h1.hero-heading-single>span {
     margin: 0;
 }
 
-.footer-join-btn {
+/* The copy button and the mailto fallback under it. */
+.footer-join-actions {
     flex-shrink: 0;
-    padding: 12px 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Now a <button>, not an <a>: pressing it copies the address rather than
+   handing the browser a mailto: it may have no way to open. The address is on
+   the button's face on purpose — it has to stay readable whether or not the
+   copy works, so `dir="ltr"` keeps it from being reordered in Arabic. */
+.footer-join-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border: 0;
     border-radius: 100px;
     background: var(--gold);
     color: #000;
+    font-family: inherit;
     font-weight: 800;
     font-size: 0.88rem;
     text-decoration: none;
+    cursor: pointer;
     transition: filter 0.25s, transform 0.25s;
 }
 
@@ -8705,14 +8417,49 @@ h1.hero-heading-single>span {
     transform: translateY(-2px);
 }
 
+.footer-join-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.footer-join-btn:active {
+    transform: translateY(0);
+}
+
+/* Confirmation on the control itself, for anyone not watching the toast. */
+.footer-join-btn.is-copied {
+    filter: brightness(1.15);
+}
+
+.footer-join-btn.is-copied i::before {
+    content: "\f00c";
+    /* fa-check */
+}
+
+.footer-join-alt {
+    font-size: 0.76rem;
+    color: var(--muted-light);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s;
+}
+
+.footer-join-alt:hover,
+.footer-join-alt:focus-visible {
+    color: var(--off-white);
+}
+
 @media (max-width: 600px) {
     .footer-join {
         padding: 20px;
     }
 
+    .footer-join-actions {
+        width: 100%;
+    }
+
     .footer-join-btn {
         width: 100%;
-        text-align: center;
     }
 }
 
@@ -9032,14 +8779,6 @@ html[dir="ltr"] .hero-sub {
 
     .hero-stat-inline i {
         font-size: 1.3rem;
-    }
-
-    .stat-num-inline {
-        font-size: 1.1rem;
-    }
-
-    .stat-lbl-inline {
-        font-size: 0.75rem;
     }
 
     .hero-cta-row {
@@ -9464,14 +9203,10 @@ html[dir="ltr"] .hero-stats-cards {
 /* ═══════════════════════════════════════════════════════════════
    /reviews — the full wall of proof
    ═══════════════════════════════════════════════════════════════
-   The home page shows a teaser: a scrolling marquee and a few cards. This
-   page is where someone goes to actually read the lot, so the same data is
-   laid out still and in full — four sections, a filter, and a lightbox for
-   the screenshots (which are text, and unreadable at thumbnail size).
-
-   The written-review cards (.rv-card) are NOT restyled here. They are the
-   Phase-2 component and this page reuses them exactly as the home page has
-   them; only the sections around them are new. */
+   The home page shows a teaser: a scrolling marquee of screenshots. This page
+   is where someone goes to look at the lot, so the same data is laid out
+   still and in full — three sections, a filter, and a lightbox for the
+   screenshots (which are text, and unreadable at thumbnail size). */
 
 .rv-page .rv-section {
     margin-top: 64px;
@@ -9942,26 +9677,6 @@ body.rvlb-open {
     overflow: hidden;
 }
 
-/* ── Written reviews on /reviews ──
-   Masonry, not a 3-up grid. The quotes run from one line to five, so a grid
-   left every row ragged and — with seven reviews and three columns — stranded
-   the last card alone next to a two-card-wide hole. Columns pack them flush
-   with no hole anywhere and no dependence on the review count.
-
-   Scoped to `.rv-page` on purpose: the home page renders the same `.rv-card`
-   into the same `.rv-grid` and keeps its deliberate 3-up row. */
-.rv-page #reviewsGrid.rv-grid {
-    display: block;
-    columns: 3 300px;
-    column-gap: 22px;
-    margin-top: 0;
-}
-
-.rv-page #reviewsGrid .rv-card {
-    break-inside: avoid;
-    margin-bottom: 22px;
-}
-
 .rv-filter-empty {
     margin-top: 48px;
 }
@@ -9975,10 +9690,6 @@ body.rvlb-open {
        width, so the message can actually be read without the lightbox. */
     .rvg-grid,
     .rvg-grid--tall {
-        columns: 1;
-    }
-
-    .rv-page #reviewsGrid.rv-grid {
         columns: 1;
     }
 

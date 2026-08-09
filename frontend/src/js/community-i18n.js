@@ -3,7 +3,7 @@
  * Reads the same explicit preference key (ghawy_lang) written by
  * Settings → Preferences. Community default stays English; this file does
  * nothing unless the user explicitly chose Arabic. The public landing page
- * and the auth/payment funnel are NOT touched (they never load this file).
+ * and the auth/checkout funnel are NOT touched (they never load this file).
  *
  * How it works:
  *  - Exact-match dictionary (English → Arabic) applied to whole text nodes

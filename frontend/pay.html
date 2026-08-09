@@ -14,10 +14,10 @@
   <!-- Base styles. The ?v= is not optional: CSS is served with a 7-day cache,
        so without it a returning visitor keeps the stylesheet they already have
        for a week after any edit. This link was the one on the site missing it. -->
-  <link rel="stylesheet" href="src/css/main.css?v=20260808b">
+  <link rel="stylesheet" href="src/css/main.css?v=20260809a">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260808a">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260809a">
 
   <style>
     /* Language toggle — same look as the landing page button */
@@ -68,8 +68,15 @@
 
   <main class="pay-container">
 
-    <!-- Step 1 & 2 Wrapper (Form View) -->
-    <div id="pay-form-view">
+    <!-- Step 1 & 2 Wrapper (Form View)
+         Hidden until pay.js has asked the backend whether this member may open
+         a request at all. Someone with a request already under review, or a
+         subscription that has not run out, gets the panel below instead of a
+         form that /submit would only reject after they had picked a file. On a
+         network failure pay.js falls open and shows the form — the backend
+         still enforces the same two rules, so the worst case is the old
+         behaviour, not an unguarded upload. -->
+    <div id="pay-form-view" style="display:none;">
       <div class="pay-title-section text-center">
         <h1 data-i18n="payTitle">انضم لـ Ghawy عبر انستاباي</h1>
         <p data-i18n="paySubtitle">اتمّم الدفع بأمان وارفع إيصال التحويل عشان تدخل على طول.</p>
@@ -175,7 +182,15 @@
         <i data-lucide="check-circle" class="success-icon"></i>
       </div>
       <h2 data-i18n="paySuccessTitle">تم إرسال الطلب!</h2>
-      <p data-i18n="paySuccessDesc">هنراجع طلبك وهنبعتلك تأكيد على الإيميل.</p>
+      <!-- The address is a separate dir="ltr" span rather than part of the
+           sentence: an LTR email inside an Arabic line reorders around the dot
+           and the @ otherwise. pay.js swaps the lead's data-i18n key to the
+           "…على الإيميل بتاعك:" wording when it has an address, and leaves the
+           original full-stop sentence alone when it does not. -->
+      <p>
+        <span id="success-desc" data-i18n="paySuccessDesc">هنراجع طلبك وهنبعتلك تأكيد على الإيميل.</span>
+        <span id="success-email" class="pay-email" dir="ltr" hidden></span>
+      </p>
 
       <div class="success-details">
         <p><strong data-i18n="payRefId">رقم الطلب:</strong> <span id="success-ref" dir="ltr">---</span></p>
@@ -191,6 +206,53 @@
       <a href="index.html" class="pay-home-btn" data-i18n="payReturnHome">الرجوع للصفحة الرئيسية</a>
     </div>
 
+    <!-- Blocked View — shown instead of the form when the member already has a
+         request under review, or a subscription that has not run out. Both
+         reasons share this card; pay.js swaps the title, the wording and which
+         rows are visible. -->
+    <div id="pay-blocked-view" class="pay-card success-card" style="display:none;">
+      <div class="success-icon-wrap" id="blocked-icon-wrap">
+        <i data-lucide="clock" class="success-icon" id="blocked-icon"></i>
+      </div>
+      <h2 id="blocked-title" data-i18n="payBlockedPendingTitle">إنت سجّلت طلب خلاص</h2>
+      <p id="blocked-desc" data-i18n="payBlockedPendingDesc">طلبك لسه تحت المراجعة، فمش محتاج ترفع إيصال تاني.</p>
+
+      <div class="success-details" id="blocked-details">
+        <p id="blocked-ref-row" hidden>
+          <strong data-i18n="payRefId">رقم الطلب:</strong>
+          <span id="blocked-ref" dir="ltr">---</span>
+        </p>
+        <p id="blocked-until-row" hidden>
+          <strong data-i18n="payBlockedActiveUntil">اشتراكك ساري لحد</strong>
+          <span id="blocked-until" dir="ltr"></span>
+        </p>
+        <p id="blocked-email-row" hidden>
+          <span class="sd-lead" id="blocked-email-lead" data-i18n="payBlockedEmailPlain">أول ما نقبله هنبعتلك على
+            الإيميل.</span>
+          <span id="blocked-email" class="pay-email" dir="ltr" hidden></span>
+        </p>
+        <p class="success-window" id="blocked-window" data-i18n="payReviewWindow">عادة نقبل طلبك من ثواني إلى 12 ساعة
+          كحد أقصى.</p>
+        <p class="success-support" id="blocked-support">
+          <span class="sd-lead" data-i18n="payDelayHelp">لو اتأخرنا أو حصلت أي مشكلة، تواصل مع الدعم على</span>
+          <a href="tel:01033903334" dir="ltr">01033903334</a>
+          <span class="sd-lead" data-i18n="payOrEmailUs">أو على الإيميل</span>
+          <a href="mailto:support@ghawy.ai" dir="ltr">support@ghawy.ai</a>
+        </p>
+      </div>
+
+      <div class="blocked-actions">
+        <a href="dashboard.html" class="pay-home-btn" id="blocked-dashboard-btn" data-i18n="payBlockedDashboard"
+          hidden>روح للداشبورد</a>
+        <a href="index.html" class="pay-home-btn" data-i18n="payReturnHome">الرجوع للصفحة الرئيسية</a>
+      </div>
+
+      <p class="blocked-renew" id="blocked-renew-row" hidden>
+        <span data-i18n="payBlockedRenewHint">عايز تجدد بدري؟</span>
+        <a href="/renewal?intent=renew" data-i18n="payBlockedRenewLink">اتفضل من هنا</a>
+      </p>
+    </div>
+
   </main>
 
   <!-- Toast Notification Container -->
@@ -198,14 +260,14 @@
 
   <!-- Scripts -->
   <script src="src/js/utils.js?v=1785600000"></script>
-  <script src="src/js/i18n.js?v=20260808a"></script>
+  <script src="src/js/i18n.js?v=20260809a"></script>
 
   <!-- Loaded for its PLANS table only: pay.js reads the amounts from it so this
        page and the pricing cards can never quote different numbers. Nothing on
        this page has the containers it renders into, so it draws nothing. -->
-  <script src="src/js/pricing.js?v=20260808a"></script>
+  <script src="src/js/pricing.js?v=20260809a"></script>
 
-  <script src="src/js/pay.js?v=20260808a"></script>
+  <script src="src/js/pay.js?v=20260809a"></script>
   <script>
     window.lucide && window.lucide.createIcons();
   </script>

@@ -406,6 +406,46 @@
                 { ar: 'تقرأ أرقام الحملة وتاخد قرار أسرع', en: 'Read campaign numbers and decide faster' },
             ],
         },
+        // Claude Code was a course inside the automation track until the client
+        // said it is a track of its own, not one stop on someone else's road.
+        //
+        // `applied` and not `deep`: the deep family is about making AI the
+        // craft itself, while this is one tool pointed at work you already do.
+        // The one place the family does not fit is its "no technical
+        // background" line — this track does assume you already work with AI —
+        // so `startsFrom` says that outright rather than letting the family
+        // blurb speak for it.
+        //
+        // Everything below is drawn from the seven lessons the platform already
+        // has (course id 12): CLAUDE.md, context management, MCPs, Skills,
+        // Agents, and Use Cases & Build. Nothing here claims more than that.
+        'claude-code': {
+            slug: 'claude-code',
+            family: 'applied',
+            icon: 'fa-solid fa-terminal',
+            image: null,
+            name: { ar: 'كلود كود', en: 'Claude Code' },
+            short: { ar: 'الـ AI بيشتغل جوه مشروعك', en: 'AI working inside your project' },
+            about: {
+                ar: 'مسار كامل على كلود كود: تشغّله على مشروعك، تظبّطه بملف CLAUDE.md، تدير الكونتكست بتاعه، وتوصّله بأدواتك عن طريق الـ MCPs والـ Skills والـ Agents عشان ينفّذ شغل حقيقي مش بس يرد عليك.',
+                en: 'A full track on Claude Code: run it on your own project, set it up with a CLAUDE.md, manage its context, and wire it to your tools through MCPs, Skills and Agents so it does real work instead of just answering you.'
+            },
+            forWho: {
+                ar: 'أي حد بيبني حاجة — كود، أوتوميشن، أدوات داخلية — وعايز الـ AI يشتغل جوه شغله فعلاً مش في شباك دردشة لوحده.',
+                en: 'Anyone who builds things — code, automations, internal tools — and wants AI working inside the work itself rather than in a chat window beside it.'
+            },
+            startsFrom: {
+                ar: 'مش من الصفر. المسار ده بيفترض إنك بتستخدم الـ AI بالفعل ومرتاح في التعامل مع الملفات والتيرمينال.',
+                en: 'Not from zero. This track assumes you already use AI and are comfortable with files and a terminal.'
+            },
+            outcomes: [
+                { ar: 'تشغّل كلود كود على مشروعك وتخليه يفهم شغلك من ملف CLAUDE.md', en: 'Run Claude Code on your own project and have it learn your work from a CLAUDE.md' },
+                { ar: 'تدير الكونتكست بحيث ياخد باله من اللي يهم ويسيب اللي مش مهم', en: 'Manage its context so it holds on to what matters and drops what does not' },
+                { ar: 'توصّله بأدواتك الخارجية عن طريق الـ MCPs', en: 'Connect it to your external tools through MCPs' },
+                { ar: 'تبني Skills و Agents تنفّذ الخطوات اللي بتعيدها كل مرة', en: 'Build Skills and Agents that carry out the steps you repeat every time' },
+                { ar: 'تنفّذ حالات استخدام حقيقية من أول الفكرة لحد ما تشتغل', en: 'Take real use cases from the idea through to something that runs' },
+            ],
+        },
     };
 
     // ─── Courses ────────────────────────────────────────────────
@@ -488,13 +528,11 @@
         // public site did not know it existed. Numbers, thumbnail and lesson
         // list all came from the platform (course id 12).
         //
-        // Track: `automation`. The lessons are CLAUDE.md, context management,
-        // MCPs, Skills, Agents and "Use Cases & Build" — that is building
-        // systems that run themselves, which is what the automation track
-        // says it teaches. It is not Foundations (that track is "no
-        // background required" and this one assumes you already work with
-        // AI). The client has not confirmed the placement — see the note on
-        // prompt-engineering and client-acquisition.
+        // It sat in `automation` until the client said Claude Code is a course
+        // AND a track of its own, so it is now the only course in the
+        // `claude-code` track. Automation is unaffected by the move: it still
+        // holds the contiguous 2→5 run plus Client Acquisition, which is the
+        // whole of what the client described that track as.
         {
             slug: 'claude-code',
             courseId: 12,
@@ -502,7 +540,7 @@
             image: './imgs/course7.jpg',
             lessons: 7,
             duration: '5h 56m',
-            track: 'automation',
+            track: 'claude-code',
             instructor: 'mohamed-salah',
         },
 

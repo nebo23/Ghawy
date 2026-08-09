@@ -31,10 +31,13 @@ Disallow: /onboarding
 Disallow: /verify-email
 Disallow: /legacy-access
 Disallow: /renewal
-Disallow: /payment
 Disallow: /pay
 Disallow: /login
 Disallow: /register
+
+# /payment is deliberately NOT disallowed. It is gone as a page and is now a
+# 301 to /pricing, which is meant to rank — blocking it would stop crawlers
+# following the redirect and folding the old address into the new one.
 
 # Scratch pages
 Disallow: /_langtest

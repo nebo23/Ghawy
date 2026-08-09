@@ -180,8 +180,28 @@ ${navLinks(true)}
                         لو عندك خبرة أكتر من 3 سنين في مجالك وعايز تدي كورسات معانا، ابعتلنا على support@ghawy.ai بأكونتاتك وخبرتك وهتدرّب إيه.
                     </p>
                 </div>
-                <a class="footer-join-btn" href="mailto:support@ghawy.ai?subject=%D8%A7%D9%86%D8%B6%D9%85%D8%A7%D9%85%20%D9%83%D9%85%D8%AF%D8%B1%D8%A8%20-%20Ghawy"
-                   data-ar="ابعتلنا" data-en="Email us">ابعتلنا</a>
+                <!-- "ابعتلنا" used to be a bare mailto: link, and for a lot of
+                     people pressing it did nothing at all — a desktop with no
+                     mail client registered, or a browser not wired to Gmail,
+                     silently drops the request. No new tab, no error, no
+                     feedback. Verified: the click fires a mailto request that
+                     fails and the page does not move.
+
+                     So the address is now on the face of the button, and
+                     pressing it copies it. The mailto is still there as the
+                     second, smaller option for whoever does have a client
+                     set up — but nothing depends on it any more. -->
+                <div class="footer-join-actions">
+                    <button type="button" class="footer-join-btn" data-copy-email="support@ghawy.ai"
+                            data-ar-aria="انسخ الإيميل support@ghawy.ai"
+                            data-en-aria="Copy the email address support@ghawy.ai"
+                            aria-label="انسخ الإيميل support@ghawy.ai">
+                        <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                        <span dir="ltr">support@ghawy.ai</span>
+                    </button>
+                    <a class="footer-join-alt" href="mailto:support@ghawy.ai?subject=%D8%A7%D9%86%D8%B6%D9%85%D8%A7%D9%85%20%D9%83%D9%85%D8%AF%D8%B1%D8%A8%20-%20Ghawy"
+                       data-ar="أو افتح برنامج الإيميل" data-en="or open your mail app">أو افتح برنامج الإيميل</a>
+                </div>
             </div>
 
             <div class="footer-bottom">
@@ -292,7 +312,76 @@ ${navLinks(true)}
             return;
         }
         const token = (typeof getToken === 'function') ? getToken() : localStorage.getItem('token');
-        window.location.href = token ? 'payment.html' : 'register.html';
+        window.location.href = token ? '/pricing' : 'register.html';
+    }
+
+    // ─── Copy-to-clipboard ───────────────────────────────────────
+
+    /**
+     * Copy `text`, resolving true only if it actually landed somewhere.
+     *
+     * navigator.clipboard needs a secure context and a user gesture, and it
+     * still rejects on some browsers, so the old execCommand path is kept as
+     * the fallback rather than assumed dead. The textarea is positioned off
+     * screen instead of `display: none` — a hidden element cannot be selected,
+     * which is the usual reason this fallback "works" but copies nothing.
+     */
+    async function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (e) { /* fall through */ }
+        }
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0;';
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, text.length);
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * One delegated listener for every [data-copy-email] in the footer.
+     *
+     * Delegated from the document so it survives the footer being mounted
+     * late, and re-mounted on a language change, without ever binding twice.
+     */
+    function wireCopyEmail() {
+        if (document.documentElement.dataset.ghawyCopyWired === '1') return;
+        document.documentElement.dataset.ghawyCopyWired = '1';
+
+        document.addEventListener('click', async e => {
+            const btn = e.target.closest('[data-copy-email]');
+            if (!btn) return;
+            e.preventDefault();
+
+            const email = btn.getAttribute('data-copy-email');
+            const en = (typeof window.currentLang === 'function') && window.currentLang() === 'en';
+            const ok = await copyText(email);
+
+            // If the copy failed there is nothing to celebrate — say the
+            // address instead, so the visitor can still write it down. Never
+            // window.alert: the site uses toasts everywhere.
+            const msg = ok
+                ? (en ? 'Copied ' + email : 'اتنسخ ' + email)
+                : (en ? 'Could not copy. The address is ' + email
+                      : 'مقدرناش ننسخه. الإيميل هو ' + email);
+            if (typeof showToast === 'function') showToast(msg, ok ? 'success' : 'error');
+
+            // A moment of "done" on the button itself, for anyone who does not
+            // look at the corner the toast lands in.
+            btn.classList.add('is-copied');
+            setTimeout(() => btn.classList.remove('is-copied'), 1600);
+        });
     }
 
     // ─── Mounting ────────────────────────────────────────────────
@@ -310,7 +399,7 @@ ${navLinks(true)}
     }
 
     function mountFooter() {
-        mountInto('siteFooter', footerHTML());
+        if (mountInto('siteFooter', footerHTML())) wireCopyEmail();
     }
 
     window.GhawyLayout = { mountHeader, mountFooter, updateNavAuth, join };
