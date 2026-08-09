@@ -11,6 +11,7 @@ from app.routers.users import get_current_user
 from app.database import get_db
 from app.services.kashier_manager import verify_kashier_redirect_signature
 from app.services.payment_service import confirm_kashier_payment
+from app.services import coupon_service
 
 router = APIRouter(prefix="/payment", tags=["Payment"])
 
@@ -42,8 +43,38 @@ async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = PLAN_PRICES[data.plan_key]
-    server_amount = plan["amount"]
+    list_amount = plan["amount"]
     server_currency = plan["currency"]
+
+    # ── Coupon ──────────────────────────────────────────────────
+    # `data.coupon_code` is a NAME, and that is the only thing about a discount
+    # that crosses the wire. The percentage and the resulting price are read
+    # from the coupons table and computed here, next to PLAN_PRICES, for exactly
+    # the reason written at the top of this file.
+    #
+    # A code that is wrong, switched off, already used by this member or down to
+    # its last slot does NOT fail the request. It falls through to the full
+    # price and the answer carries `coupon` so the page can say why before it
+    # sends anyone to Kashier. Refusing to sell to someone because they mistyped
+    # a coupon would be a strange way to run a shop.
+    #
+    # reserve_redemption takes a row lock on the coupon and holds it until the
+    # commit below, so the count it based its decision on cannot have moved
+    # underneath it. Nothing between here and that commit does network I/O —
+    # create_kashier_payment_url only builds and signs a URL.
+    coupon_result = None
+    if (data.coupon_code or "").strip():
+        coupon_result = coupon_service.reserve_redemption(
+            db,
+            raw_code=data.coupon_code,
+            user_id=current_user.id,
+            amount=list_amount,
+            currency=server_currency,
+            plan_key=data.plan_key,
+            hold=True,
+        )
+
+    server_amount = float(coupon_result["final_amount"]) if (coupon_result and coupon_result["applied"]) else list_amount
 
     # NOTE: We intentionally do NOT delete the user's old PENDING Kashier payments here.
     # A payment can be SUCCESSful at Kashier while still PENDING on our side (e.g. the
@@ -65,6 +96,11 @@ async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(
     payment = Payment(
         user_id=current_user.id,
         method=PaymentMethod.KASHIER,
+        # The DISCOUNTED figure, which is also the figure inside the Kashier
+        # hash. _redirect_amounts_match() below compares what Kashier reports
+        # back against this column, so storing the list price here instead would
+        # make every discounted payment fail its amount check and sit
+        # unconfirmed. That is the single most breakable thing in this change.
         amount=server_amount,
         currency=server_currency,
         provider_order_id=order_id,
@@ -72,8 +108,23 @@ async def kashier_create(data: KashierCreateOrder, current_user: User = Depends(
         status=PaymentStatus.PENDING,
     )
     db.add(payment)
-    db.commit()
+    db.flush()  # need the id to link the redemption, still inside the lock
 
+    if coupon_result and coupon_result["applied"]:
+        coupon_service.attach_payment(db, coupon_result, payment.id)
+
+    db.commit()  # releases the coupon row lock
+
+    if coupon_result:
+        result["coupon"] = {
+            "applied": coupon_result["applied"],
+            "reason": coupon_result["reason"],
+            "message": coupon_result["message"],
+            "code": coupon_result["code"],
+            "discount_percent": coupon_result["discount_percent"],
+            "original_amount": float(list_amount),
+            "final_amount": float(server_amount),
+        }
     return result
 
 # ─── Kashier: بعد ما يرجع من صفحة الدفع ─────────────────────

@@ -2732,6 +2732,125 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     margin-inline-start: 8px;
 }
 
+/* With a coupon on, the summary carries two numbers and the one that matters
+   is the one being charged — so the list price is struck through and small and
+   the payable figure is the big one. Stacked rather than inline because
+   "3,500 3,150 EGP" on one line at phone width is a trap. */
+.pay-sum-name {
+    display: block;
+}
+
+.pay-sum-prices {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.pay-now {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--gold);
+}
+
+/* ── The coupon box ──
+   Sits between the price and the two payment options: after the member knows
+   what they are buying, before they pick a rail. Everything it displays comes
+   from the backend — see the note above the widget in pricing.js. */
+.coupon-box {
+    margin: 0 0 20px;
+    padding: 14px 14px 12px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 0.25s, background 0.25s;
+}
+
+.coupon-box.has-coupon {
+    border-style: solid;
+    border-color: var(--gold-border);
+    background: var(--gold-subtle);
+}
+
+.coupon-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted-light);
+}
+
+.coupon-row {
+    display: flex;
+    gap: 8px;
+}
+
+/* dir="ltr" on the input keeps a Latin code from reordering inside an RTL
+   page; text-align: start then puts the caret on the correct side for the
+   direction the field is actually in. */
+.coupon-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--off-white);
+    font-family: "Cairo", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: start;
+}
+
+.coupon-input:focus {
+    outline: none;
+    border-color: var(--gold-border);
+    box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.coupon-apply {
+    flex: 0 0 auto;
+    padding: 11px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-border);
+    background: var(--gold-subtle);
+    color: var(--gold);
+    font-family: "Cairo", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.25s, opacity 0.25s;
+}
+
+.coupon-apply:hover:not(:disabled) {
+    background: rgba(193, 255, 17, 0.16);
+}
+
+.coupon-apply:disabled {
+    cursor: default;
+    opacity: 0.65;
+}
+
+.coupon-note {
+    margin: 9px 2px 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.6;
+}
+
+.coupon-note.is-on {
+    color: var(--gold);
+}
+
+.coupon-note.is-off {
+    color: #f87171;
+}
+
+.coupon-note[hidden] {
+    display: none;
+}
+
 .pay-option {
     display: flex;
     align-items: flex-start;

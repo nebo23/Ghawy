@@ -98,6 +98,16 @@ def confirm_kashier_payment(db: Session, payment: Payment, source: str,
     payment.status = PaymentStatus.CONFIRMED
     payment.confirmed_at = datetime.utcnow()
 
+    # A coupon hold on this order becomes a spent slot now that the money has
+    # actually arrived. Deliberately inside the same transaction as the status
+    # change, so the two cannot end up disagreeing. It cannot raise and cannot
+    # refuse — if the coupon filled up while the member was on the payment page
+    # we honour the price they were quoted and log the overflow, because the
+    # only outcome worse than a thirty-first discount is taking someone's money
+    # and then not activating them.
+    from app.services import coupon_service
+    coupon_service.confirm_redemption(db, payment)
+
     if user:
         # Extend from the later of "now" or the current end date so an early
         # renewal doesn't shorten an active subscription.

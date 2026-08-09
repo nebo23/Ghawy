@@ -14,10 +14,10 @@
   <!-- Base styles. The ?v= is not optional: CSS is served with a 7-day cache,
        so without it a returning visitor keeps the stylesheet they already have
        for a week after any edit. This link was the one on the site missing it. -->
-  <link rel="stylesheet" href="src/css/main.css?v=20260809a">
+  <link rel="stylesheet" href="src/css/main.css?v=20260809b">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260809a">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260809b">
 
   <style>
     /* Language toggle — same look as the landing page button */
@@ -91,11 +91,35 @@
           <p class="step-desc" data-i18n="payStep1Desc">ابعت المبلغ بالظبط عبر انستاباي على الرقم اللي تحت، واحتفظ
             بسكرين شوت الإيصال.</p>
 
+          <!-- The amount box. With a coupon applied, `pi-was` appears above the
+               figure carrying the struck-through list price and `display-price`
+               becomes the discounted one — this is the number the member is
+               about to transfer by hand, so it has to be the prominent one and
+               it has to be right before they leave for their banking app. Both
+               values come from the backend; pay.js does no arithmetic. -->
           <div class="payment-info-box">
             <div class="pi-label"><span data-i18n="payAmountDue">المبلغ المطلوب</span> <span id="display-plan"
                 class="pi-plan-tag"></span></div>
+            <div class="pi-was" id="display-was" hidden><s><span id="display-was-amount"></span> <span
+                  class="pi-currency">EGP</span></s></div>
             <div class="pi-amount"><span id="display-price">600</span> <span class="pi-currency">EGP</span><span
                 id="display-period" class="pi-period"></span></div>
+            <div class="pi-coupon-on" id="display-coupon-line" hidden></div>
+          </div>
+
+          <!-- Coupon. Before the transfer step on purpose: someone who types a
+               code after they have already sent the money is out of luck, so
+               the discounted figure has to be settled while they are still
+               reading the amount. -->
+          <div class="coupon-box" id="pay-coupon-box">
+            <label class="coupon-label" for="pay-coupon-input" data-i18n="couponLabel">عندك كوبون خصم؟</label>
+            <div class="coupon-row">
+              <input class="coupon-input" id="pay-coupon-input" type="text" autocomplete="off" spellcheck="false"
+                dir="ltr" data-i18n-placeholder="couponPlaceholder" placeholder="اكتب الكود هنا">
+              <button class="coupon-apply" type="button" id="pay-coupon-btn" onclick="applyPayCoupon()"
+                data-i18n="couponApply">تطبيق</button>
+            </div>
+            <p class="coupon-note" id="pay-coupon-note" hidden></p>
           </div>
 
           <div class="payment-info-box">
@@ -260,14 +284,14 @@
 
   <!-- Scripts -->
   <script src="src/js/utils.js?v=1785600000"></script>
-  <script src="src/js/i18n.js?v=20260809a"></script>
+  <script src="src/js/i18n.js?v=20260809b"></script>
 
   <!-- Loaded for its PLANS table only: pay.js reads the amounts from it so this
        page and the pricing cards can never quote different numbers. Nothing on
        this page has the containers it renders into, so it draws nothing. -->
-  <script src="src/js/pricing.js?v=20260809a"></script>
+  <script src="src/js/pricing.js?v=20260809b"></script>
 
-  <script src="src/js/pay.js?v=20260809a"></script>
+  <script src="src/js/pay.js?v=20260809b"></script>
   <script>
     window.lucide && window.lucide.createIcons();
   </script>

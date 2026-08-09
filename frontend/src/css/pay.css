@@ -224,6 +224,57 @@ body {
     font-weight: 700;
     margin-inline-start: 4px;
 }
+
+/* ── Coupon applied ──
+   The list price, struck through, ABOVE the payable figure rather than beside
+   it: this member is about to type an amount into a banking app by hand, and
+   two numbers on one line is exactly how the wrong one gets transferred. The
+   big number under it stays the only thing that looks like the amount due. */
+.pi-was {
+    font-size: 17px;
+    font-weight: 600;
+    color: #777;
+    margin-bottom: 2px;
+}
+
+.pi-was s {
+    text-decoration-color: rgba(239, 68, 68, 0.8);
+}
+
+.pi-was .pi-currency {
+    font-size: 13px;
+}
+
+.pi-coupon-on {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #c1ff11;
+}
+
+.pi-was[hidden],
+.pi-coupon-on[hidden] {
+    display: none;
+}
+
+/* The coupon box itself is styled in main.css (.coupon-box and friends), which
+   pay.html loads first — this rail only needs the surface to match the darker
+   cards on this page rather than the translucent modal it was drawn for. */
+.pay-card .coupon-box {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+    margin-bottom: 16px;
+}
+
+.pay-card .coupon-box.has-coupon {
+    border-color: rgba(193, 255, 17, 0.4);
+    background: rgba(193, 255, 17, 0.05);
+}
+
+.pay-card .coupon-input {
+    background: #101010;
+    border-color: #2a2a2a;
+}
   
 .pi-copy-wrap {
     display: flex;

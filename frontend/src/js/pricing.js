@@ -371,6 +371,201 @@
         el.innerHTML = methodsHTML();
     }
 
+    // ─── Coupons ────────────────────────────────────────────────
+    //
+    // The rule this widget obeys, and the reason it looks thin: it does not
+    // know what a discount is. It sends a typed string to the backend and
+    // renders whatever comes back. There is no percentage in this file, no
+    // multiplication, and no list of valid codes — a coupon that "worked"
+    // according to JavaScript and then charged the full price would be the
+    // 3500-vs-4000 bug rebuilt on the client side.
+    //
+    // `applied` below is display state only. The code is re-checked, and the
+    // price recomputed, by /payment/kashier/create when the member actually
+    // pays; what is on screen here can be stale and nothing breaks.
+
+    let applied = null;   // the last successful preview, or null
+
+    const COUPON_TEXT = {
+        label:      { ar: 'عندك كوبون خصم؟', en: 'Have a discount code?' },
+        placeholder:{ ar: 'اكتب الكود هنا', en: 'Enter your code' },
+        apply:      { ar: 'تطبيق', en: 'Apply' },
+        applying:   { ar: 'بنتأكد...', en: 'Checking…' },
+        remove:     { ar: 'شيل الكوبون', en: 'Remove' },
+        // The one sentence that is composed here rather than sent whole: the
+        // percentage and the code both come from the backend response.
+        line:       { ar: 'خصم {pct}% بكوبون {code}', en: '{pct}% off with code {code}' },
+        empty:      { ar: 'اكتب كود الكوبون الأول', en: 'Type a code first' },
+        failed:     { ar: 'مقدرناش نتأكد من الكوبون دلوقتي. جرّب تاني.', en: 'We could not check that code right now. Please try again.' },
+        signin:     { ar: 'سجّل دخولك الأول عشان تستخدم كوبون', en: 'Sign in first to use a coupon' },
+    };
+
+    // Arabic wording for each refusal the backend can send. Keyed by its
+    // `reason`, never by parsing its message — the page must not be the thing
+    // that decides a coupon is finished.
+    const COUPON_REASONS = {
+        not_found:    { ar: 'الكود غلط', en: 'That code is not valid' },
+        inactive:     { ar: 'الكوبون ده مش شغال دلوقتي', en: 'That code is not active right now' },
+        exhausted:    { ar: 'الكوبون ده خلص', en: 'That code has run out' },
+        already_used: { ar: 'إنت مستخدم الكوبون ده قبل كده', en: 'You have already used that code' },
+    };
+
+    function couponReasonText(reason) {
+        return L(COUPON_REASONS[reason] || COUPON_TEXT.failed);
+    }
+
+    /** The applied code, for whoever is about to start a payment. */
+    function appliedCode() {
+        return applied ? applied.code : null;
+    }
+
+    function clearCoupon() {
+        applied = null;
+    }
+
+    /**
+     * Ask the backend what a code would do. Read-only — trying a code out must
+     * not consume one of the thirty.
+     */
+    async function previewCoupon(code, planKey) {
+        const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
+        const apiBase = typeof API !== 'undefined' ? API : '/api';
+        const res = await fetch(`${apiBase}/coupons/preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            // The code and the plan. No amount, no percentage — the server
+            // holds both and we would only be telling it something it knows
+            // better.
+            body: JSON.stringify({ code: code, plan_key: planKey }),
+        });
+        if (!res.ok) throw new Error(`coupon preview ${res.status}`);
+        return res.json();
+    }
+
+    function couponFieldHTML() {
+        return `
+        <div class="coupon-box" data-coupon-box>
+            <label class="coupon-label" for="couponInput" ${i18nAttrs(COUPON_TEXT.label)}>${esc(L(COUPON_TEXT.label))}</label>
+            <div class="coupon-row">
+                <input class="coupon-input" id="couponInput" type="text" autocomplete="off"
+                       spellcheck="false" dir="ltr" data-coupon-input
+                       data-ar-placeholder="${esc(COUPON_TEXT.placeholder.ar)}"
+                       data-en-placeholder="${esc(COUPON_TEXT.placeholder.en)}"
+                       placeholder="${esc(L(COUPON_TEXT.placeholder))}">
+                <button class="coupon-apply" type="button" data-coupon-apply
+                        ${i18nAttrs(COUPON_TEXT.apply)}>${esc(L(COUPON_TEXT.apply))}</button>
+            </div>
+            <p class="coupon-note" data-coupon-note hidden></p>
+        </div>`;
+    }
+
+    /**
+     * Redraw the price summary and the coupon note from `applied`.
+     *
+     * When a coupon is on, the old price is struck through and the new one is
+     * the prominent number — the member is about to be sent to a payment page
+     * and the figure they see here has to be the figure they are charged.
+     */
+    function paintCouponState(root, p) {
+        const note = root.querySelector('[data-coupon-note]');
+        const box = root.querySelector('[data-coupon-box]');
+        const summary = root.querySelector('[data-pay-summary]');
+        const c = esc(L(p.currency));
+
+        if (applied) {
+            const line = L(COUPON_TEXT.line)
+                .replace('{pct}', money(applied.discount_percent))
+                .replace('{code}', applied.code);
+            note.textContent = line;
+            note.hidden = false;
+            note.className = 'coupon-note is-on';
+            if (box) box.classList.add('has-coupon');
+
+            const name = esc(L(p.name));
+            summary.innerHTML = `
+                <span class="pay-sum-name">${name}</span>
+                <span class="pay-sum-prices">
+                    <s class="pay-was">${esc(money(applied.original_amount))} ${c}</s>
+                    <strong class="pay-now">${esc(money(applied.final_amount))} ${c}</strong>
+                </span>`;
+        } else {
+            note.hidden = true;
+            note.textContent = '';
+            if (box) box.classList.remove('has-coupon');
+            paintPlainSummary(root, p);
+        }
+    }
+
+    function paintPlainSummary(root, p) {
+        const summary = root.querySelector('[data-pay-summary]');
+        const c = esc(L(p.currency));
+        const line = {
+            ar: `${L(p.name)} — ${money(p.amount)} ${L(p.currency)}`,
+            en: `${L(p.name)} — ${money(p.amount)} ${L(p.currency)}`,
+        };
+        summary.innerHTML = p.was
+            ? `<span ${i18nAttrs(line)}>${esc(L(line))}</span> <s class="pay-was">${esc(money(p.was))} ${c}</s>`
+            : `<span ${i18nAttrs(line)}>${esc(L(line))}</span>`;
+    }
+
+    /** The Apply button. Loading state on the button, result in the note. */
+    async function handleApply(root, btn) {
+        const input = root.querySelector('[data-coupon-input]');
+        const note = root.querySelector('[data-coupon-note]');
+        const planKey = root.dataset.plan;
+        const p = plan(planKey);
+        const code = (input.value || '').trim();
+
+        if (!code) {
+            note.textContent = L(COUPON_TEXT.empty);
+            note.className = 'coupon-note is-off';
+            note.hidden = false;
+            input.focus();
+            return;
+        }
+
+        const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
+        if (!token) {
+            if (typeof showToast === 'function') showToast(L(COUPON_TEXT.signin), 'error');
+            return;
+        }
+
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+        btn.textContent = L(COUPON_TEXT.applying);
+
+        try {
+            const result = await previewCoupon(code, p.planKey);
+            if (result.applied) {
+                applied = result;
+                paintCouponState(root, p);
+            } else {
+                applied = null;
+                // Straight from the backend's `reason`. The page never decides
+                // for itself that a code is used up or finished.
+                const msg = couponReasonText(result.reason);
+                note.textContent = msg;
+                note.className = 'coupon-note is-off';
+                note.hidden = false;
+                if (typeof showToast === 'function') showToast(msg, 'error');
+                paintPlainSummary(root, p);
+            }
+        } catch (err) {
+            console.error('Coupon check failed:', err);
+            applied = null;
+            if (typeof showToast === 'function') showToast(L(COUPON_TEXT.failed), 'error');
+            paintPlainSummary(root, p);
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('is-loading');
+            btn.innerHTML = original;
+        }
+    }
+
     // ─── Checkout ───────────────────────────────────────────────
 
     /**
@@ -416,15 +611,34 @@
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
+                    // amount and currency are ignored server-side (PLAN_PRICES
+                    // is the source of truth) and are only still sent so an
+                    // older backend keeps working. plan_key and coupon_code are
+                    // the two fields that actually decide anything.
                     amount: data.amount,
                     currency: cur,
                     plan_key: data.planKey,
+                    coupon_code: appliedCode(),
                 }),
             });
             const result = await response.json();
             const checkoutUrl = result.payment_url || result.approval_url;
 
             if (response.ok && checkoutUrl) {
+                // The backend takes the coupon decision again, under a lock, at
+                // this moment — so a code that was fine when Apply was pressed
+                // can be finished by now. Say so before the redirect rather
+                // than letting the member discover it on the Kashier page,
+                // where the amount would silently be the full price.
+                if (result.coupon && !result.coupon.applied) {
+                    if (typeof showToast === 'function') {
+                        showToast(couponReasonText(result.coupon.reason), 'error');
+                    }
+                    applied = null;
+                    // Hold them here for a moment so the toast is readable
+                    // before the page navigates away.
+                    await new Promise(r => setTimeout(r, 2200));
+                }
                 window.location.href = checkoutUrl;
                 return;
             }
@@ -459,7 +673,12 @@
         // approved yearly transfer was granted 30 days. renewal.js has always
         // done this correctly — manualUrl() in that file is the same line.
         const cycle = planKey.replace(/_(egp|usd)$/, '');
-        window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}`;
+        // Carry the code across so nobody types it twice. It travels as a bare
+        // string and /pay re-checks it against the backend on arrival — the URL
+        // is not being trusted for anything, it is saving a member some typing.
+        const code = appliedCode();
+        const couponQS = code ? `&coupon=${encodeURIComponent(code)}` : '';
+        window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}${couponQS}`;
     }
 
     // ─── The choice step ────────────────────────────────────────
@@ -488,6 +707,8 @@
             <h3 class="card-title" id="payChoiceTitle" data-ar="اختار طريقة الدفع"
                 data-en="Choose how to pay">اختار طريقة الدفع</h3>
             <p class="card-sub" data-pay-summary></p>
+
+            ${couponFieldHTML()}
 
             <button class="pay-option pay-option--primary" type="button" data-pay-card>
                 <span class="pay-option-icon"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></span>
@@ -531,6 +752,14 @@
             startInstapay(el.dataset.plan);
         });
 
+        const applyBtn = el.querySelector('[data-coupon-apply]');
+        applyBtn.addEventListener('click', function () { handleApply(el, this); });
+        // Enter in the field applies rather than submitting anything — the box
+        // sits inside a dialog, and a stray form submit would close it.
+        el.querySelector('[data-coupon-input]').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); handleApply(el, applyBtn); }
+        });
+
         return el;
     }
 
@@ -546,20 +775,24 @@
         const p = plan(planKey, cur);
         if (!p) return;
 
+        const planChanged = modal.dataset.plan !== planKey;
         modal.dataset.plan = planKey;
+
+        // A coupon is a percentage off ONE plan's price, and the applied state
+        // carries that plan's numbers. Switching plans has to drop it, or the
+        // modal would show a yearly discount against a monthly price.
+        if (planChanged) {
+            clearCoupon();
+            const input = modal.querySelector('[data-coupon-input]');
+            if (input) input.value = '';
+        }
 
         // The summary repeats the price the visitor just clicked, with the
         // struck-through reference still attached — the last screen before a
-        // payment is the worst place to make someone remember a number.
-        const c = esc(L(p.currency));
-        const summary = modal.querySelector('[data-pay-summary]');
-        const line = {
-            ar: `${L(p.name)} — ${money(p.amount)} ${L(p.currency)}`,
-            en: `${L(p.name)} — ${money(p.amount)} ${L(p.currency)}`,
-        };
-        summary.innerHTML = p.was
-            ? `<span ${i18nAttrs(line)}>${esc(L(line))}</span> <s class="pay-was">${esc(money(p.was))} ${c}</s>`
-            : `<span ${i18nAttrs(line)}>${esc(L(line))}</span>`;
+        // payment is the worst place to make someone remember a number. With a
+        // coupon on, the struck-through number becomes the list price and the
+        // prominent one is what they will actually be charged.
+        paintCouponState(modal, p);
 
         // Instapay is an Egyptian rail; abroad there is nothing behind it.
         modal.querySelector('[data-pay-instapay]').hidden = cur !== 'EGP';
@@ -629,6 +862,15 @@
         paint();
         reportRedirectError();
         document.addEventListener('languagechange', paint);
+        // The modal's summary and coupon note are composed in JS from backend
+        // numbers, so i18n.js's attribute pass cannot retranslate them — they
+        // have to be rebuilt.
+        document.addEventListener('languagechange', () => {
+            if (modal && modal.classList.contains('open')) {
+                const p = plan(modal.dataset.plan);
+                if (p) paintCouponState(modal, p);
+            }
+        });
         // The country picker and the geo lookup both write `user_currency` and
         // then call applyCurrencyUI. Repainting on that is what moves the cards
         // from EGP to USD without a reload.
@@ -657,5 +899,10 @@
         methodsHTML, renderMethods,
         openCheckout, closeCheckout, startCardCheckout, startInstapay,
         paint, reportRedirectError,
+        // Shared with pay.js, which runs the same coupon rules on the Instapay
+        // screen. Exported rather than copied so there is one set of refusal
+        // wordings and one preview call for the whole site.
+        COUPON_TEXT, COUPON_REASONS, couponReasonText, previewCoupon,
+        appliedCode, clearCoupon,
     };
 })();

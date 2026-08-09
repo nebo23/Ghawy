@@ -846,6 +846,129 @@
 .mpr-detail-row span { color: #888; }
 .mpr-detail-row strong { color: #fff; }
 
+/* The server's own figure for what this member owed. Coloured so the reviewer's
+   eye lands on it rather than on the claimed amount above it — comparing the
+   receipt against the wrong one of the two is how a discounted transfer gets
+   rejected for being short. */
+.mpr-expected strong { color: #c1ff11; }
+.mpr-coupon strong { color: #3f8ff9; letter-spacing: 0.03em; }
+
+/* ── Coupons tab ── */
+.coupon-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 20px;
+}
+
+.coupon-admin-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.coupon-admin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.coupon-admin-code {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+
+.coupon-admin-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #888;
+}
+
+.coupon-admin-count {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #888;
+}
+
+.coupon-admin-count strong {
+  font-size: 26px;
+  color: #fff;
+  margin-inline-end: 4px;
+}
+
+.coupon-admin-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: #2a2a2a;
+  overflow: hidden;
+}
+
+.coupon-admin-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s;
+}
+
+.coupon-admin-bar span.ok { background: #c1ff11; }
+.coupon-admin-bar span.low { background: #f59e0b; }
+.coupon-admin-bar span.gone { background: #ef4444; }
+
+.coupon-admin-remaining {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ccc;
+}
+
+.coupon-admin-holds {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #f59e0b;
+}
+
+.coupon-admin-table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.coupon-admin-table th {
+  text-align: start;
+  padding: 8px 6px;
+  color: #888;
+  font-weight: 600;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.coupon-admin-table td {
+  padding: 9px 6px;
+  color: #ddd;
+  border-bottom: 1px solid #222;
+  vertical-align: top;
+}
+
+.coupon-admin-table tr:last-child td { border-bottom: none; }
+
+.cr-name { color: #fff; font-weight: 600; }
+.cr-email { color: #777; font-size: 11.5px; margin-top: 2px; }
+.cr-amount { white-space: nowrap; }
+
+/* A released or abandoned row is history, not a live claim — it stays legible
+   but stops competing with the rows that actually hold a slot. */
+.cr-released,
+.cr-expired { opacity: 0.5; }
+
+@media (max-width: 520px) {
+  .coupon-admin-grid { grid-template-columns: 1fr; }
+}
+
 .mpr-receipt {
   display: flex;
   align-items: center;

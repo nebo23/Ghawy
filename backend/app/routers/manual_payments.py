@@ -20,6 +20,7 @@ from app.database import get_db
 from app.models import User, ManualPaymentRequest, Payment, PaymentMethod, PaymentStatus
 from app.routers.users import get_current_user
 from app.services.payment_service import to_cairo_iso, CAIRO_TZ
+from app.services import coupon_service
 from app.services.email_service import (
     send_admin_payment_notification,
     send_payment_approval_email,
@@ -94,7 +95,17 @@ def _record_manual_payment(db: Session, req: ManualPaymentRequest, user: User, w
         return existing
 
     plan = (req.plan or DEFAULT_PLAN).lower()
-    amount = float(req.amount) if req.amount else PLAN_DEFAULT_AMOUNT_EGP.get(plan, 600)
+    # Revenue is what we worked out they owed, in preference to what they typed.
+    # `req.amount` is a claim; `expected_amount` is the server's own figure and
+    # already carries any coupon, so a discounted subscription is recorded at
+    # 3150 rather than at the 3500 list price. The typed value stays as the last
+    # fallback for requests filed before that column existed.
+    if req.expected_amount is not None:
+        amount = float(req.expected_amount)
+    elif req.amount:
+        amount = float(req.amount)
+    else:
+        amount = PLAN_DEFAULT_AMOUNT_EGP.get(plan, 600)
     payment = Payment(
         user_id=user.id,
         method=PaymentMethod.MANUAL,
@@ -131,6 +142,11 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
         "email": req.email,
         "phone": req.phone,
         "amount": float(req.amount) if req.amount else None,
+        # What we worked out they owed, and the code that got them there. The
+        # reviewer compares the receipt against `expected_amount`, not against
+        # the plan's list price — see the note on the column in models.py.
+        "expected_amount": float(req.expected_amount) if req.expected_amount is not None else None,
+        "coupon_code": req.coupon_code,
         "plan": req.plan,
         "notes": req.notes,
         "receipt_url": req.receipt_url,
@@ -230,10 +246,16 @@ def _submission_state(db: Session, user: User, intent: Optional[str] = None) -> 
 
 @router.post("/submit")
 async def submit_payment_request(
+    # What the member says they transferred. Left exactly as it was — a claim,
+    # typed on the page, which the reviewer checks against the receipt image.
     amount: Optional[float] = Form(None),
     plan: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
     intent: Optional[str] = Form(None),
+    # A coupon NAME. Never a percentage and never a price: `expected_amount` is
+    # worked out below from PLAN_PRICES and the coupons table, and that is the
+    # figure the reviewer compares against.
+    coupon_code: Optional[str] = Form(None),
     receipt: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -280,6 +302,45 @@ async def submit_payment_request(
     if normalized_plan not in PLAN_DURATION_DAYS:
         normalized_plan = DEFAULT_PLAN
 
+    # ── What this member actually owed ──────────────────────────
+    # Worked out here, from the plan and any coupon, and stored alongside the
+    # amount they typed. The reviewer needs a number the payer could not touch:
+    # without it a discounted transfer looks like an underpayment and gets
+    # rejected by someone comparing it against the full list price.
+    #
+    # The slot is taken NOW, not on approval. There is no start-versus-confirm
+    # dilemma on this rail — the member has already moved the money by hand, and
+    # holding the slot until a human gets round to reviewing would let the
+    # thirty be oversold many times over while requests queue up. If the request
+    # is rejected the slot goes back (see reject_request below).
+    from app.routers.payment import PLAN_PRICES
+    list_amount = PLAN_PRICES.get(f"{normalized_plan}_egp", {}).get(
+        "amount", PLAN_DEFAULT_AMOUNT_EGP.get(normalized_plan, 600)
+    )
+    expected_amount = float(list_amount)
+    stored_coupon = None
+    coupon_result = None
+
+    if (coupon_code or "").strip():
+        coupon_result = coupon_service.reserve_redemption(
+            db,
+            raw_code=coupon_code,
+            user_id=current_user.id,
+            amount=list_amount,
+            currency="EGP",
+            plan_key=f"{normalized_plan}_egp",
+            hold=False,
+        )
+        if coupon_result["applied"]:
+            expected_amount = float(coupon_result["final_amount"])
+            stored_coupon = coupon_service.normalize_code(coupon_code)
+        else:
+            # A code that did not take is not a reason to refuse a receipt. The
+            # member is told on the page before they transfer; if they typed it
+            # wrong and paid the full price anyway, the request still stands.
+            logger.info("🎟️ Coupon %r not applied for manual request by user %s (%s)",
+                        coupon_code, current_user.id, coupon_result["reason"])
+
     # Create request
     mpr = ManualPaymentRequest(
         full_name=full_name,
@@ -287,12 +348,25 @@ async def submit_payment_request(
         phone=phone,
         receipt_url=receipt_url,
         amount=amount,
+        expected_amount=expected_amount,
+        coupon_code=stored_coupon,
         plan=normalized_plan,
         notes=notes.strip() if notes else None,
         status="pending",
     )
     db.add(mpr)
-    db.commit()
+    db.flush()  # id needed to link the redemption, still inside the coupon lock
+
+    if stored_coupon:
+        redemption = coupon_result.get("_redemption")
+        if redemption is not None:
+            redemption.manual_request_id = mpr.id
+        else:
+            # reserve_redemption refreshed this member's existing row rather
+            # than inserting one — repoint it at the request they just filed.
+            coupon_service.link_manual_request(db, stored_coupon, current_user.id, mpr.id)
+
+    db.commit()  # releases the coupon row lock
     db.refresh(mpr)
 
     # Send admin notification email (non-blocking)
@@ -577,6 +651,14 @@ def reject_request(
     req.rejection_reason = body.reason
     req.reviewed_by = current_user.id
     req.reviewed_at = now
+
+    # The slot goes back in the pool. Same transaction as the rejection itself,
+    # so a coupon can never be left holding a slot for a request that was turned
+    # down. The row is kept (status released) — the member may use the code
+    # again, which is the point: a blurry screenshot should not cost them the
+    # discount they were promised.
+    coupon_service.release_for_manual_request(db, req.id)
+
     db.commit()
 
     # Send rejection email

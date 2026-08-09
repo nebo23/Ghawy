@@ -36,6 +36,7 @@ function initTabs() {
     'payments': 'Payments & Subscriptions',
     'analytics': 'Platform Analytics',
     'pending-requests': 'Pending Requests',
+    'coupons': 'Discount Coupons',
     'live-sessions': 'Live Sessions',
     'guest-of-honors': 'Guest of Honors',
     'courses': 'Courses Management',
@@ -77,6 +78,12 @@ function initTabs() {
         mprCurrentPage = 1;
         loadPendingRequestsTab();
         loadBirthdayClaims();
+      }
+      if (target === 'coupons') {
+        // Reloaded on every visit rather than cached: the whole point of the
+        // panel is the remaining count, and a stale one is worse than a
+        // second's wait.
+        loadCouponsTab();
       }
       if (target === 'live-sessions') {
         loadLiveSessionsTab();
@@ -1802,6 +1809,24 @@ function renderMprCards(requests, container) {
       : `<div class="mpr-phone">No phone</div>`;
     const planLabel = MPR_PLAN_LABELS[req.plan] || (req.plan ? req.plan : '—');
 
+    // What the member OWED, worked out server-side, next to what they say they
+    // sent. Without this the reviewer compares a discounted transfer against
+    // the full list price, sees a shortfall, and rejects a perfectly good
+    // payment — which is the specific mistake a coupon on a manual rail
+    // invites. "Claimed" above is relabelled from "Amount" for the same reason:
+    // that number is typed by the payer and was never authoritative.
+    const expectedHtml = req.expected_amount != null ? `
+        <div class="mpr-detail-row mpr-expected">
+          <span>Expected</span>
+          <strong>${req.expected_amount} EGP</strong>
+        </div>` : '';
+
+    const couponHtml = req.coupon_code ? `
+        <div class="mpr-detail-row mpr-coupon">
+          <span>Coupon</span>
+          <strong>${escapeHtml(req.coupon_code)}</strong>
+        </div>` : '';
+
     let actionsHtml = '';
 
     if (req.status === 'pending') {
@@ -1835,9 +1860,11 @@ function renderMprCards(requests, container) {
       
       <div class="mpr-details">
         <div class="mpr-detail-row">
-          <span>Amount</span>
+          <span>Claimed</span>
           <strong>${req.amount ? req.amount + ' EGP' : '--'}</strong>
         </div>
+        ${expectedHtml}
+        ${couponHtml}
         <div class="mpr-detail-row">
           <span>Plan</span>
           <strong>${planLabel}</strong>
@@ -1863,6 +1890,100 @@ function renderMprCards(requests, container) {
     container.appendChild(card);
   });
   window.lucide && window.lucide.createIcons();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COUPONS
+// ═══════════════════════════════════════════════════════════
+//
+// Read-only. The client's question is "how close is this code to running out",
+// so `used / max` and the bar are the headline and the redemption list sits
+// under it.
+//
+// `used` counts confirmed redemptions PLUS live holds — a hold is a Kashier
+// checkout opened at the discount but not yet paid, and it expires by itself
+// after 30 minutes. It is shown separately rather than folded in silently,
+// because a panel that says 30/30 and then reads 27/30 half an hour later with
+// no explanation looks broken.
+
+const COUPON_STATUS_LABELS = {
+  active: 'Used',
+  pending: 'Holding',
+  expired: 'Abandoned',
+  released: 'Released',
+};
+
+async function loadCouponsTab() {
+  const container = document.getElementById('coupons-container');
+  container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>`;
+
+  try {
+    const res = await authFetch(`${API}/coupons/admin`);
+    if (!res.ok) throw new Error('Failed to load coupons');
+    const data = await res.json();
+
+    if (!data.coupons || data.coupons.length === 0) {
+      container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">No coupons configured.</div>`;
+      return;
+    }
+
+    container.innerHTML = data.coupons.map(renderCouponCard).join('');
+    window.lucide && window.lucide.createIcons();
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = `<div style="padding: 40px; text-align: center; color: #ef4444; grid-column: 1 / -1;">Error loading coupons</div>`;
+  }
+}
+
+function renderCouponCard(c) {
+  const pct = c.max_redemptions ? Math.min(100, Math.round((c.used / c.max_redemptions) * 100)) : 0;
+  // Amber past three-quarters, red when it is gone — the panel exists so the
+  // client sees a code running low without having to read the numbers.
+  let barClass = 'ok';
+  if (c.remaining === 0) barClass = 'gone';
+  else if (pct >= 75) barClass = 'low';
+
+  const holdsNote = c.holds
+    ? `<div class="coupon-admin-holds">${c.holds} unpaid hold${c.holds === 1 ? '' : 's'} — released automatically if not paid within 30 minutes</div>`
+    : '';
+
+  const rows = c.redemptions.length
+    ? c.redemptions.map(r => `
+        <tr class="cr-${r.status}">
+          <td>${r.slot_no != null ? '#' + r.slot_no : '—'}</td>
+          <td>
+            <div class="cr-name">${escapeHtml(r.user_name || '—')}</div>
+            <div class="cr-email">${escapeHtml(r.user_email || '')}</div>
+          </td>
+          <td>${escapeHtml(COUPON_STATUS_LABELS[r.status] || r.status)}</td>
+          <td>${r.method === 'instapay' ? 'InstaPay' : 'Card'}</td>
+          <td class="cr-amount">${r.final_amount != null ? r.final_amount + ' ' + (r.currency || '') : '—'}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="5" style="text-align:center;color:#888;padding:18px;">Nobody has used this code yet.</td></tr>`;
+
+  return `
+    <div class="coupon-admin-card">
+      <div class="coupon-admin-head">
+        <div>
+          <div class="coupon-admin-code">${escapeHtml(c.code)}</div>
+          <div class="coupon-admin-sub">${c.discount_percent}% off${c.is_active ? '' : ' · disabled'}</div>
+        </div>
+        <div class="coupon-admin-count">
+          <strong>${c.used}</strong><span>/ ${c.max_redemptions}</span>
+        </div>
+      </div>
+
+      <div class="coupon-admin-bar"><span class="${barClass}" style="width:${pct}%"></span></div>
+      <div class="coupon-admin-remaining">${c.remaining} left</div>
+      ${holdsNote}
+
+      <table class="coupon-admin-table">
+        <thead>
+          <tr><th>Slot</th><th>Member</th><th>Status</th><th>Method</th><th>Paid</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function renderMprPagination(page, pages) {

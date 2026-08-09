@@ -185,6 +185,22 @@ const i18nDict = {
     payErrNoReceipt:  { ar: 'من فضلك ارفع صورة الإيصال',   en: 'Please upload your receipt screenshot' },
     payErrSubmit:     { ar: 'مقدرناش نبعت الطلب',          en: 'Failed to submit request' },
 
+    // ── coupons (pay.html; the pricing modal carries its own data-ar/data-en) ──
+    // The refusal wordings are NOT here: they live in pricing.js keyed by the
+    // backend's `reason`, and pay.js reads them from there, so both screens say
+    // the same thing about the same code. Only what the /pay markup and its own
+    // runtime strings need is in this dictionary.
+    couponLabel:      { ar: 'عندك كوبون خصم؟',             en: 'Have a discount code?' },
+    couponPlaceholder:{ ar: 'اكتب الكود هنا',              en: 'Enter your code' },
+    couponApply:      { ar: 'تطبيق',                       en: 'Apply' },
+    couponApplying:   { ar: 'بنتأكد...',                   en: 'Checking…' },
+    couponApplied:    { ar: 'تم تطبيق الكوبون',            en: 'Coupon applied' },
+    couponEmpty:      { ar: 'اكتب كود الكوبون الأول',      en: 'Type a code first' },
+    couponFailed:     { ar: 'مقدرناش نتأكد من الكوبون دلوقتي. جرّب تاني.', en: 'We could not check that code right now. Please try again.' },
+    // {pct} and {code} are filled from the backend's answer, never from a
+    // number written on this page.
+    couponLine:       { ar: 'خصم {pct}% بكوبون {code}',    en: '{pct}% off with code {code}' },
+
     // (payment.html's nine keys lived here. The page was retired in favour of
     // /pricing — which carries its own data-ar/data-en rather than i18n keys —
     // and no other page ever referenced them.)

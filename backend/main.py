@@ -4,13 +4,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, legacy_access, help_center, exams, birthday, email_campaigns, stats
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, legacy_access, help_center, exams, birthday, email_campaigns, stats, coupons
 import os
 import logging
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment, CommunityFeedback
+from app.models import User, Payment, Category, Channel, ChatMember, MemberRole, ChannelType, Course, Lesson, MessageRead, Message, Guest, GuestSession, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment, CommunityFeedback, Coupon
 from app.routers.users import get_current_user, get_current_admin_user
 from pathlib import Path
 
@@ -226,6 +226,24 @@ def seed_defaults():
                         ))
                 db.commit()
 
+        # ── Discount coupons ──
+        # The Alembic migration seeds these too. This is the belt to that
+        # braces: a database brought up through Base.metadata.create_all()
+        # rather than through Alembic still ends up with both codes, and an
+        # accidental delete comes back on the next boot. Existing rows are left
+        # exactly as they are — the limit or the percentage may have been tuned
+        # from the admin side, and re-seeding must not undo that.
+        for code, display in (("monzer", "Monzer"), ("os10", "Os10")):
+            if not db.query(Coupon).filter(Coupon.code == code).first():
+                db.add(Coupon(
+                    code=code,
+                    display_code=display,
+                    discount_percent=10,
+                    max_redemptions=30,
+                    is_active=True,
+                ))
+        db.commit()
+
     finally:
         db.close()
 
@@ -277,6 +295,7 @@ app.mount("/static", StaticFiles(directory=str(BACKEND_DIR / "static")), name="s
 # ✅ Routers كلها بعد app
 app.include_router(users.router)
 app.include_router(payment.router)
+app.include_router(coupons.router)
 app.include_router(webhooks.router)
 app.include_router(chat.router)
 app.include_router(ws.router)

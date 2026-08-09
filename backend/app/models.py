@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Numeric, Enum, Text, ForeignKey, text, UniqueConstraint, Index, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -170,6 +170,144 @@ class Payment(Base):
     plan_key = Column(String, nullable=True)  # monthly_egp, yearly_egp, monthly_usd, yearly_usd
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     confirmed_at = Column(DateTime, nullable=True)
+
+
+# ═══════════════════════════════════════════
+#  DISCOUNT COUPONS
+# ═══════════════════════════════════════════
+#
+# Two tables rather than a counter column on `coupons`.
+#
+# A `times_used` integer would answer "how many left" and nothing else. The
+# brief asks for three more things a counter cannot give: who redeemed a code
+# (the admin panel lists them), the ability to hand a slot back when a manual
+# request is rejected, and — the important one — a DATABASE-level rule that one
+# member cannot take the same coupon twice. That last one is a unique index over
+# (coupon, member), and an index needs a row per redemption to sit on.
+#
+# So: `coupons` is the definition, `coupon_redemptions` is one row per member
+# per coupon, and the count of live rows IS the usage counter. There is no
+# second copy of the number to drift out of sync — the same lesson the pricing
+# bug taught this codebase.
+
+
+class CouponRedemptionStatus(str, enum.Enum):
+    """Where a redemption sits between "started paying" and "counted".
+
+    PENDING  — a Kashier order was created at the discounted price but has not
+               been paid yet. Holds a slot, but only until `expires_at`; see
+               coupon_service for why an abandoned checkout must not burn one of
+               the thirty forever.
+    ACTIVE   — the slot is spent: a confirmed Kashier payment, or a manual
+               request that is pending or approved.
+    EXPIRED  — a hold that lapsed. Written by coupon_service when it next takes
+               the coupon's lock, rather than by a background job: the state has
+               to be made explicit so the row lets go of its slot number, and
+               the lock is the only place that can safely do it.
+    RELEASED — a manual request was rejected. The slot goes back in the pool and
+               the member may use the code again; the row is kept for history.
+
+    Only PENDING and ACTIVE occupy a slot, and only those two hold a `slot_no`.
+    """
+    PENDING = "pending"
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    RELEASED = "released"
+
+    @classmethod
+    def holding(cls):
+        """The statuses that occupy one of a coupon's slots."""
+        return (cls.PENDING.value, cls.ACTIVE.value)
+
+
+class Coupon(Base):
+    __tablename__ = "coupons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # Stored lowercase, always. Every lookup lowercases its input first, so
+    # `monzer`, `MONZER` and `Monzer` are one code and the unique index below is
+    # what makes them one code rather than a rule someone has to remember.
+    code = Column(String(64), nullable=False, unique=True, index=True)
+    # What the member sees on screen and on the receipt — "Monzer", not "monzer".
+    display_code = Column(String(64), nullable=True)
+    discount_percent = Column(Numeric(5, 2), nullable=False)
+    max_redemptions = Column(Integer, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+
+    redemptions = relationship("CouponRedemption", back_populates="coupon")
+
+    @property
+    def label(self) -> str:
+        return self.display_code or self.code
+
+
+class CouponRedemption(Base):
+    """One member's claim on one coupon.
+
+    `slot_no` is the belt to the row-lock's braces: "you are the Nth of thirty".
+    Under the lock in coupon_service it is assigned the LOWEST number not
+    currently held, and the unique index on (coupon_id, slot_no) means two
+    transactions that somehow both decided they were number 30 cannot both land
+    — the second one hits the index and rolls back.
+
+    Lowest-free rather than count+1, which was the first attempt and is wrong:
+    the moment any slot is handed back (a rejected manual request, a lapsed
+    hold) the count and the highest number in use stop agreeing, and count+1
+    starts naming a slot somebody already holds.
+
+    NULL whenever the row is not holding anything — released and expired rows
+    let go of their number so the next member can have it, and NULLs do not
+    collide in a unique index.
+    """
+    __tablename__ = "coupon_redemptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    coupon_id = Column(Integer, ForeignKey("coupons.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Exactly one of these is set, depending on which rail the member took.
+    payment_id = Column(Integer, ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+    manual_request_id = Column(Integer, ForeignKey("manual_payment_requests.id", ondelete="SET NULL"), nullable=True)
+
+    status = Column(String(16), nullable=False, default=CouponRedemptionStatus.PENDING.value, index=True)
+    slot_no = Column(Integer, nullable=True)
+
+    # The arithmetic, kept so the admin panel and any later dispute can see what
+    # was actually charged and why — not recomputed from a percentage that may
+    # have been edited since.
+    original_amount = Column(Numeric(12, 2), nullable=False)
+    final_amount = Column(Numeric(12, 2), nullable=False)
+    currency = Column(String(8), nullable=False, default="EGP")
+    plan_key = Column(String, nullable=True)
+
+    # Only meaningful while PENDING — the moment the hold lapses.
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    confirmed_at = Column(DateTime, nullable=True)
+    released_at = Column(DateTime, nullable=True)
+
+    coupon = relationship("Coupon", back_populates="redemptions")
+    user = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("coupon_id", "slot_no", name="uq_coupon_redemption_slot"),
+        # One live claim per (coupon, member) — the rule that stops the same
+        # person taking the same coupon twice, held by the database rather than
+        # by an `if` in a request handler. Partial, so a member whose manual
+        # request was rejected can use the code again while the released row
+        # stays for the record.
+        #
+        # Declared here as well as in the migration because main.py still calls
+        # Base.metadata.create_all() on boot: a database created down that path
+        # rather than through Alembic has to come out with the same guarantees.
+        Index(
+            "uq_coupon_redemption_live",
+            "coupon_id", "user_id",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'active')"),
+        ),
+    )
 
 
 # ═══════════════════════════════════════════
@@ -685,7 +823,14 @@ class ManualPaymentRequest(Base):
     email = Column(String, nullable=False)
     phone = Column(String, nullable=True)
     receipt_url = Column(String, nullable=False)       # uploaded screenshot path
-    amount = Column(Numeric(12, 2), nullable=True)     # optional, what they claim to have paid
+    amount = Column(Numeric(12, 2), nullable=True)     # optional, what they CLAIM to have paid — user-supplied
+    # What the member actually owed, worked out server-side from the plan and
+    # any coupon. `amount` above is typed by the payer and so is a claim, not a
+    # figure; the reviewer needs a number the payer could not touch to compare
+    # the receipt against, or a discounted transfer looks short and gets
+    # rejected by mistake.
+    expected_amount = Column(Numeric(12, 2), nullable=True)
+    coupon_code = Column(String(64), nullable=True)    # lowercase code, or NULL
     plan = Column(String, nullable=True)               # monthly | quarterly | yearly (drives subscription length)
     notes = Column(Text, nullable=True)                # any notes from user
     status = Column(String, default="pending")         # pending | approved | rejected

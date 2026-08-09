@@ -42,6 +42,18 @@ const selectedPlan = PLAN_PRICES[selectedPlanKey] || null;
 // anyone whose subscription hasn't lapsed yet.
 const renewIntent = (new URLSearchParams(location.search).get('intent') || '') === 'renew';
 
+// A code carried over from the pricing modal, so nobody types it twice. It is
+// only a prefill: it goes through the same backend check as anything typed
+// here, and the real decision is taken again by /manual-payments/submit.
+const prefillCoupon = (new URLSearchParams(location.search).get('coupon') || '').trim();
+
+// The applied coupon, as the backend described it. Display state only — this
+// file never multiplies anything by 0.9. The amount recorded against the
+// request is worked out server-side from the plan and the code; if this and
+// the server ever disagreed, the server is right and the member is charged
+// what the server says.
+let appliedCoupon = null;
+
 const token = localStorage.getItem('token');
 
 // The address the backend has on file for this member. Filled by the gate
@@ -222,6 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (insta) setInstapayDisplay(insta.textContent.trim());
     loadPaymentConfig();
     setupDragAndDrop();
+
+    const couponInput = document.getElementById('pay-coupon-input');
+    if (couponInput) {
+        couponInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); applyPayCoupon(); }
+        });
+        // A code carried in from the pricing modal is applied for them, quietly
+        // — they already pressed Apply once on the other page.
+        if (prefillCoupon) {
+            couponInput.value = prefillCoupon;
+            applyPayCoupon(true);
+        }
+    }
 });
 
 // Load config from backend
@@ -242,8 +267,16 @@ async function loadPaymentConfig() {
             }
         }
         // Price/period follow the chosen plan; fall back to the backend default (monthly).
+        //
+        // A coupon prefilled from the pricing page is applied in parallel with
+        // this request, so whichever finishes second must not overwrite the
+        // other. If a discount has already landed, leave the amount alone —
+        // otherwise the box flips back to the full price after the member has
+        // been shown the discounted one, which is the worst possible moment for
+        // a number to change.
         if (selectedPlan) {
-            document.getElementById('display-price').innerText = selectedPlan.amount;
+            if (appliedCoupon) renderCouponedAmount();
+            else document.getElementById('display-price').innerText = selectedPlan.amount;
             renderPlanLabels();
         } else {
             document.getElementById('display-price').innerText = config.subscription_price;
@@ -253,6 +286,127 @@ async function loadPaymentConfig() {
         showToast(t('payErrLoadConfig'), "error");
     }
 }
+
+// ─── Coupon ───────────────────────────────────────────────────
+//
+// Same rule as the pricing modal: this widget sends a string and renders the
+// answer. The wordings and the preview call come from pricing.js (loaded by
+// this page for its PLANS table anyway) so the two screens cannot end up
+// telling a member different things about the same code.
+
+function couponReasonText(reason) {
+    const P = window.GhawyPricing;
+    if (P && typeof P.couponReasonText === 'function') return P.couponReasonText(reason);
+    return t('couponFailed');
+}
+
+/** Put the amount box back to the plain, undiscounted state. */
+function renderPlainAmount() {
+    const price = document.getElementById('display-price');
+    if (price && selectedPlan) price.innerText = selectedPlan.amount;
+    document.getElementById('display-was').hidden = true;
+    document.getElementById('display-coupon-line').hidden = true;
+}
+
+/** Draw the discounted amount, both numbers, from the backend's figures. */
+function renderCouponedAmount() {
+    if (!appliedCoupon) return renderPlainAmount();
+
+    document.getElementById('display-price').innerText = appliedCoupon.final_amount;
+    document.getElementById('display-was-amount').innerText = appliedCoupon.original_amount;
+    document.getElementById('display-was').hidden = false;
+
+    const line = document.getElementById('display-coupon-line');
+    line.innerText = t('couponLine')
+        .replace('{pct}', appliedCoupon.discount_percent)
+        .replace('{code}', appliedCoupon.code);
+    line.hidden = false;
+
+    const box = document.getElementById('pay-coupon-box');
+    if (box) box.classList.add('has-coupon');
+
+    const note = document.getElementById('pay-coupon-note');
+    note.innerText = t('couponApplied');
+    note.className = 'coupon-note is-on';
+    note.hidden = false;
+}
+
+function showCouponRefusal(reason) {
+    appliedCoupon = null;
+    const note = document.getElementById('pay-coupon-note');
+    const msg = couponReasonText(reason);
+    note.innerText = msg;
+    note.className = 'coupon-note is-off';
+    note.hidden = false;
+    document.getElementById('pay-coupon-box').classList.remove('has-coupon');
+    renderPlainAmount();
+    return msg;
+}
+
+/**
+ * The Apply button. `silent` is the on-load pass for a code carried over from
+ * the pricing page — a refusal there goes in the note but not in a toast,
+ * because the member has not pressed anything yet.
+ */
+async function applyPayCoupon(silent) {
+    const input = document.getElementById('pay-coupon-input');
+    const btn = document.getElementById('pay-coupon-btn');
+    const note = document.getElementById('pay-coupon-note');
+    const code = (input.value || '').trim();
+
+    if (!code) {
+        note.innerText = t('couponEmpty');
+        note.className = 'coupon-note is-off';
+        note.hidden = false;
+        input.focus();
+        return;
+    }
+    if (!selectedPlan) return;
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerText = t('couponApplying');
+
+    try {
+        const res = await fetch(`${API}/coupons/preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            // The code and which plan it is against. No price and no
+            // percentage — both live on the server.
+            body: JSON.stringify({ code: code, plan_key: `${selectedPlanKey}_egp` }),
+        });
+        if (!res.ok) throw new Error(`coupon preview ${res.status}`);
+        const result = await res.json();
+
+        if (result.applied) {
+            appliedCoupon = result;
+            renderCouponedAmount();
+            if (!silent) showToast(t('couponApplied'), 'success');
+        } else {
+            const msg = showCouponRefusal(result.reason);
+            if (!silent) showToast(msg, 'error');
+        }
+    } catch (err) {
+        console.error('Coupon check failed:', err);
+        appliedCoupon = null;
+        renderPlainAmount();
+        if (!silent) showToast(t('couponFailed'), 'error');
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+        btn.innerHTML = original;
+    }
+}
+
+// The note and the discount line are composed in JS from backend numbers, so
+// i18n.js's attribute pass cannot retranslate them — redraw on toggle.
+document.addEventListener('languagechange', () => {
+    if (appliedCoupon) renderCouponedAmount();
+});
 
 // Plan name + billing period are written by JS, so re-render them on toggle.
 function renderPlanLabels() {
@@ -464,6 +618,14 @@ async function submitPayment() {
     // Send the chosen plan so approval grants the matching subscription length.
     if (selectedPlan) {
         formData.append('plan', selectedPlanKey);
+    }
+
+    // The coupon NAME only. The backend recomputes the expected amount from
+    // the plan and the code and stores that against the request — what is in
+    // `amount` above is still the member's own claim, which is what the
+    // reviewer checks the receipt against.
+    if (appliedCoupon) {
+        formData.append('coupon_code', appliedCoupon.code);
     }
 
     // Deliberate early renewal — tells the backend not to apply the "you are

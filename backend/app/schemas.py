@@ -126,10 +126,17 @@ class ResendVerificationRequest(BaseModel):
 
 
 class KashierCreateOrder(BaseModel):
+    # `amount` and `currency` are accepted and then ignored — the router reads
+    # both out of PLAN_PRICES. They stay on the model only so older frontends
+    # that still send them are not rejected by validation.
     amount: float
     currency: str = "EGP"
     plan_key: str = "monthly_egp"
     user_email: str = ""
+    # A coupon NAME, and nothing else. There is deliberately no
+    # `discount_percent` or `final_amount` field here — the price after a
+    # discount is worked out server-side, same rule as the plan price itself.
+    coupon_code: Optional[str] = None
 
 class KashierOrderOut(BaseModel):
     payment_url: str
