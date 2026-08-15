@@ -22,6 +22,23 @@ from app.models import PhoneOTP
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
 
+# ─── Avatar upload types ───────────────────────────────────
+# The extension an avatar is stored under must come from this map, never from
+# the uploaded filename. Both upload endpoints used to do
+# `os.path.splitext(file.filename)[1]`, which let the client choose it: send
+# evil.html with Content-Type "image/png" — a header the same client writes —
+# and the file lands under /uploads/ or /static/ as .html, served from
+# ghawy.ai. Anything it runs is same-origin, so it can read the auth token out
+# of localStorage and act as whoever opens it, and the chat is right there to
+# pass the link around. Deciding the extension here keeps the stored name
+# within these three regardless of what was sent.
+AVATAR_TYPE_EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
+
 # ─── Plan Labels (shared) ──────────────────────────────────
 # Deliberately NO price here. This table used to carry an `amount` per plan —
 # 10 EGP monthly, 3000 yearly — which was never read by anything (the endpoint
@@ -201,15 +218,15 @@ def upload_avatar(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
+    ext = AVATAR_TYPE_EXTENSIONS.get(file.content_type)
+    if ext is None:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, WEBP files allowed")
 
     # Create directory if it doesn't exist
     upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "avatars")
     os.makedirs(upload_dir, exist_ok=True)
 
-    # Generate unique filename
-    ext = os.path.splitext(file.filename)[1]
+    # Generate unique filename — extension from the map, not from file.filename
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(upload_dir, filename)
 
@@ -287,8 +304,8 @@ def upload_avatar_onboarding(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    allowed = {"image/jpeg", "image/png", "image/webp"}
-    if file.content_type not in allowed:
+    ext = AVATAR_TYPE_EXTENSIONS.get(file.content_type)
+    if ext is None:
         raise HTTPException(status_code=400, detail="Only JPG, PNG, WEBP files allowed")
 
     # Check file size (5MB max)
@@ -302,7 +319,7 @@ def upload_avatar_onboarding(
     static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "avatars")
     os.makedirs(static_dir, exist_ok=True)
 
-    ext = os.path.splitext(file.filename)[1] or ".png"
+    # Extension from the validated content type, not from file.filename
     filename = f"{current_user.id}{ext}"
     filepath = os.path.join(static_dir, filename)
 
