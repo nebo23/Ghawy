@@ -109,11 +109,10 @@ def confirm_kashier_payment(db: Session, payment: Payment, source: str,
     coupon_service.confirm_redemption(db, payment)
 
     if user:
-        # Extend from the later of "now" or the current end date so an early
+        # Extends from the later of "now" or the current end date, so an early
         # renewal doesn't shorten an active subscription.
-        base = user.end_at if (user.end_at and user.end_at > datetime.utcnow()) else datetime.utcnow()
-        user.end_at = base + timedelta(days=days)
-        user.is_active = True
+        from app.services.subscription_service import extend_subscription
+        extend_subscription(user, days)
 
     db.commit()
     logger.info("✅ Payment CONFIRMED via %s | order=%s | user=%s",

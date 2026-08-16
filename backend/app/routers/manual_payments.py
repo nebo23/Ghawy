@@ -20,6 +20,7 @@ from app.database import get_db
 from app.models import User, ManualPaymentRequest, Payment, PaymentMethod, PaymentStatus
 from app.routers.users import get_current_user
 from app.services.payment_service import to_cairo_iso, CAIRO_TZ
+from app.services.subscription_service import extend_subscription
 from app.services import coupon_service
 from app.services.email_service import (
     send_admin_payment_notification,
@@ -432,9 +433,25 @@ def my_submission_status(
 
 
 @router.get("/status/{email}")
-def check_request_status(email: str, db: Session = Depends(get_db)):
-    """Check status of a submitted payment request by email."""
+def check_request_status(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Status of the caller's own most recent payment request.
+
+    The address used to come only from the path and the route took no token, so
+    anyone could ask after anybody: whether an address belongs to a member who
+    has paid, and the free-text reason a receipt was turned down. The signed-in
+    caller may now only ask about themselves — staff aside, who review these on
+    the dashboard. Nothing in the frontend calls this; /my-status, which reads
+    the address off the token, is what /pay uses.
+    """
     email = email.strip().lower()
+    is_staff = current_user.is_admin or getattr(current_user, "is_owner", False)
+    if email != (current_user.email or "").strip().lower() and not is_staff:
+        raise HTTPException(status_code=403, detail="You can only check your own payment request")
+
     request = db.query(ManualPaymentRequest).filter(
         ManualPaymentRequest.email == email,
     ).order_by(ManualPaymentRequest.created_at.desc()).first()
@@ -573,8 +590,10 @@ def approve_request(
         user.subscription_source = "manual_payment"
         # Subscription length follows the plan chosen at submission (defaults to monthly/30d).
         plan_days = PLAN_DURATION_DAYS.get(req.plan or DEFAULT_PLAN, 30)
-        # Always extend from now (approval time), not from previous end_at
-        user.end_at = now + timedelta(days=plan_days)
+        # Add the plan on top of any days the member still has. Renewing early
+        # must never cost them the remainder — approving a month for someone
+        # with 5 days left has to leave them 35, not 30.
+        extend_subscription(user, plan_days, now=now)
 
         # Record a confirmed manual Payment so it appears in the Payments tab
         # (filterable by the "manual" method) and in revenue analytics.

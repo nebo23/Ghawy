@@ -398,11 +398,37 @@ def get_public_profile(
 
 # ─── Get Any Member Profile ────────────────────────────────
 @router.get("/{user_id}", response_model=UserMemberOut)
-def get_member_profile(user_id: int, db: Session = Depends(get_db)):
+def get_member_profile(
+    user_id: int,
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """One member's profile card, for a signed-in member.
+
+    This took no token at all and returned `email` in the body, so walking
+    /profile/1, /profile/2, … dumped the address of every person who has ever
+    registered — together with their is_admin/is_owner flags, which named the
+    accounts worth attacking. Nothing in the frontend ever called it: the
+    profile panel, the chat popovers and the AI-updates cards all use
+    /profile/{id}/public, which has always required a member and has never
+    carried an address.
+
+    An address is still returned to the person it belongs to and to staff,
+    since the team dashboard reasonably shows one. For everyone else the field
+    is dropped rather than the request refused — a member looking at another
+    member's card is normal, learning their email is not.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+
+    is_staff = current_user.is_admin or getattr(current_user, "is_owner", False)
+    if user.id == current_user.id or is_staff:
+        return user
+
+    out = UserMemberOut.model_validate(user)
+    out.email = None
+    return out
 
 
 # ─── Change Password ────────────────────────────────────────

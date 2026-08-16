@@ -9,7 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from app.database import SessionLocal
-from app.models import User, Message, ChatMember, Channel, MessageType
+from app.models import User, Message, ChatMember, Channel, ChannelType, MessageType
 from app.services.ws_manager import manager
 from app.services.chat_reactions import get_reaction_summary, set_message_reaction
 from app.services.mentions_service import process_admin_mentions
@@ -230,6 +230,34 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.debug(f"WS cleanup error for user {user_id}: {cleanup_err}")
 
 
+def _may_post_to_channel(db: Session, channel_id, user_id: int) -> bool:
+    """May this user write into this channel?
+
+    Community (group/announcement) channels are open to every active member and
+    auto-join on first use — that is the product. A DM belongs to the two people
+    /chat/dm put in it, so it needs an existing membership row and never grants
+    one. Mirrors ensure_channel_access in routers/chat.py; the two must agree,
+    or a rule enforced over HTTP is simply bypassed over the socket.
+    """
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    if not channel:
+        return False
+
+    membership = db.query(ChatMember).filter(
+        ChatMember.channel_id == channel_id,
+        ChatMember.user_id == user_id,
+    ).first()
+
+    if channel.channel_type == ChannelType.DM:
+        return membership is not None
+
+    if not membership:
+        db.add(ChatMember(channel_id=channel_id, user_id=user_id))
+        db.commit()
+        manager.subscribe(user_id, [channel_id])
+    return True
+
+
 async def handle_send_message(user_id: int, data: dict):
     """Process and broadcast a new chat message."""
     channel_id = data.get("channel_id")
@@ -252,6 +280,16 @@ async def handle_send_message(user_id: int, data: dict):
     with db_session() as db:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
+            return
+
+        # The channel_id arrives in a socket frame the client writes, and until
+        # this check it was used verbatim — so a member could address a frame at
+        # a DM channel between two other people and have it delivered to both.
+        # The REST path enforces the same rule; see ensure_channel_access in
+        # routers/chat.py.
+        if not _may_post_to_channel(db, channel_id, user_id):
+            logger.warning("WS user %s tried to post into channel %s without access",
+                           user_id, channel_id)
             return
 
         # Save to database

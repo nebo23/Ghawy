@@ -8,6 +8,7 @@ see app/services/coupon_service.py. This router exists so a member can be told
 "that code is finished" before they reach the transfer screen instead of after.
 """
 import logging
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -25,6 +26,39 @@ from app.services import coupon_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/coupons", tags=["Coupons"])
+
+
+# ── Guessing the codes ───────────────────────────────────────────────────────
+#
+# Coupon codes are words a person chose — "monzer", "os10" — and /preview is a
+# free oracle that says whether any given word is one of them. Behind a login,
+# but a login costs one signup, and the general /api/ rate limit is 30 r/s: a
+# member could work through a wordlist and find every live code in minutes.
+#
+# So a member gets a budget of wrong guesses. Correct codes never count against
+# it — someone applying a code they were legitimately given, on three different
+# plans, is not guessing. Only misses do, and 12 of them per 10 minutes is far
+# more than a person who was told a code will ever need.
+#
+# In-memory, like the verification-attempt counter in users.py: one worker, and
+# a lost counter after a restart is a fresh 10-minute window, not a hole.
+_MISS_LIMIT = 12
+_MISS_WINDOW_SECONDS = 600
+_coupon_misses: dict[int, list[float]] = {}
+
+
+def _record_miss(user_id: int) -> None:
+    now = time.time()
+    misses = [t for t in _coupon_misses.get(user_id, []) if now - t < _MISS_WINDOW_SECONDS]
+    misses.append(now)
+    _coupon_misses[user_id] = misses
+
+
+def _too_many_misses(user_id: int) -> bool:
+    now = time.time()
+    misses = [t for t in _coupon_misses.get(user_id, []) if now - t < _MISS_WINDOW_SECONDS]
+    _coupon_misses[user_id] = misses
+    return len(misses) >= _MISS_LIMIT
 
 
 class CouponPreviewIn(BaseModel):
@@ -61,6 +95,17 @@ def preview(
     if not plan:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
+    # Out of guesses — answered as an ordinary "that code is wrong" so the page
+    # renders its normal message and a wordlist learns nothing from the reply.
+    if _too_many_misses(current_user.id):
+        logger.warning("🎟️🚫 Coupon guess limit hit by user %s", current_user.id)
+        return {
+            **coupon_service._result(False, coupon_service.REASON_NOT_FOUND),
+            "currency": plan["currency"],
+            "plan_key": body.plan_key,
+            "original_amount": float(plan["amount"]),
+        }
+
     result = coupon_service.preview_coupon(
         db,
         raw_code=body.code,
@@ -68,6 +113,12 @@ def preview(
         amount=plan["amount"],
         currency=plan["currency"],
     )
+
+    # Only a code that does not exist counts as a guess. "Already used",
+    # "exhausted" and "inactive" are all answers about a real code the member
+    # evidently knows, and a member re-checking one must not be locked out.
+    if result.get("reason") == coupon_service.REASON_NOT_FOUND:
+        _record_miss(current_user.id)
     result["currency"] = plan["currency"]
     result["plan_key"] = body.plan_key
     # `original_amount` is filled in even on a refusal, so the page can put the

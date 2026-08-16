@@ -24,6 +24,7 @@ from app.models import LegacyEmail, User
 from app.routers.users import create_token, hash_password
 from app.services.email_service import send_legacy_otp_email
 from app.services.name_utils import split_full_name
+from app.services.subscription_service import extend_subscription
 
 logger = logging.getLogger(__name__)
 
@@ -153,12 +154,14 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
         user.hashed_password = hashed_pwd
         user.onboarding_completed = False  # Must complete onboarding first
 
-    # 3. Activate with 30-day free subscription
+    # 3. Activate with 30-day free subscription, added on top of anything the
+    #    account already has — a returning member who is mid-subscription must
+    #    not lose the remainder by redeeming the promo.
     user.is_active = True
     user.is_verified = True
     user.is_legacy_redeemed = True
     user.subscription_source = "legacy_promo"
-    user.end_at = now + timedelta(days=30)
+    extend_subscription(user, 30, now=now)
 
     db.commit()
     db.refresh(user)

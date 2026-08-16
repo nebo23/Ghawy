@@ -23,6 +23,54 @@ from pathlib import Path as FilePath
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
+# ── Who is allowed inside a channel ──────────────────────────────────────────
+#
+# The community channels are open by design: any active member may read and
+# post in them, and the first read auto-creates their membership row. A DM is
+# the opposite — it belongs to exactly the two people /chat/dm put in it.
+#
+# That distinction was never enforced. Reading a channel auto-joined the caller
+# to *any* id, DMs included, so an active member could walk the sequential
+# channel ids and read every private conversation on the site — and, having
+# been auto-joined, keep receiving them live over the WebSocket. Posting and
+# the member roster checked nothing at all.
+#
+# So membership for a DM is now a precondition rather than something a request
+# grants itself. `ensure_channel_access` is the single gate; every read, write
+# and roster path calls it, and the DM branch never creates a membership row.
+def ensure_channel_access(db: Session, channel_id: int, user: User, *, auto_join: bool = False):
+    """Return the channel if `user` may use it, else raise 403/404.
+
+    `auto_join=True` creates the membership row for an open community channel
+    (the historical behaviour of the read path). It never applies to a DM: a
+    request must not be able to make itself a participant in someone else's
+    conversation.
+    """
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    membership = db.query(ChatMember).filter(
+        ChatMember.channel_id == channel_id,
+        ChatMember.user_id == user.id,
+    ).first()
+
+    if channel.channel_type == ChannelType.DM:
+        if not membership:
+            # 404, not 403: confirming that a DM exists between two named
+            # people is itself the thing being protected here.
+            raise HTTPException(status_code=404, detail="Channel not found")
+        return channel
+
+    if not membership and auto_join:
+        membership = ChatMember(channel_id=channel_id, user_id=user.id, role=MemberRole.MEMBER)
+        db.add(membership)
+        db.commit()
+        manager.subscribe(user.id, [channel_id])
+
+    return channel
+
+
 BACKEND_DIR = FilePath(__file__).resolve().parent.parent.parent
 START_HERE_CONFIG = BACKEND_DIR / "static" / "config" / "start_here.json"
 
@@ -579,21 +627,9 @@ def list_messages(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    # Auto-join user to channel if not a member
-    membership = db.query(ChatMember).filter(
-        ChatMember.channel_id == channel_id,
-        ChatMember.user_id == current_user.id,
-    ).first()
-    if not membership:
-        member = ChatMember(
-            channel_id=channel_id,
-            user_id=current_user.id,
-            role=MemberRole.MEMBER,
-        )
-        db.add(member)
-        db.commit()
-        manager.subscribe(current_user.id, [channel_id])
-        membership = member
+    # Open community channels auto-join on first read; a DM requires that the
+    # caller already be one of its two participants. See ensure_channel_access.
+    ensure_channel_access(db, channel_id, current_user, auto_join=True)
 
     q = db.query(Message).filter(Message.channel_id == channel_id, Message.is_deleted == False)
 
@@ -636,9 +672,10 @@ def send_message(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    channel = db.query(Channel).filter(Channel.id == channel_id).first()
-    if not channel:
-        raise HTTPException(status_code=404, detail="Channel not found")
+    # Posting into a DM you are not part of was possible until this check
+    # existed — the message landed in the conversation and broadcast to both
+    # real participants.
+    ensure_channel_access(db, channel_id, current_user, auto_join=True)
 
     msg = Message(
         channel_id=channel_id,
@@ -869,8 +906,13 @@ def mark_community_channel_read(
 @router.get("/channels/{channel_id}/members")
 def list_channel_members(
     channel_id: int,
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
+    # Was open to the whole internet: names and avatars of every member, and —
+    # because DM channels have rosters too — who is talking to whom privately.
+    ensure_channel_access(db, channel_id, current_user)
+
     members = (
         db.query(ChatMember)
         .filter(ChatMember.channel_id == channel_id)

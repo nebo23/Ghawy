@@ -37,6 +37,7 @@ from app.models import (
     MessageType,
 )
 from app.routers.users import get_current_user
+from app.services.subscription_service import extend_subscription
 
 logger = logging.getLogger(__name__)
 
@@ -248,9 +249,7 @@ def approve_birthday_claim(
     # نفس منطق تمديد الاشتراك المستخدم في payment_service: نبني من end_at
     # الحالي لو لسه شغال، وإلا من دلوقتي
     now = datetime.utcnow()
-    base = user.end_at if (user.end_at and user.end_at > now) else now
-    user.end_at = base + timedelta(days=GIFT_DAYS)
-    user.is_active = True
+    extend_subscription(user, GIFT_DAYS, now=now)
     user.birthday_gift_year = claim.year
 
     claim.status = "approved"

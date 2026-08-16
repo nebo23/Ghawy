@@ -11,6 +11,7 @@ from starlette.responses import StreamingResponse
 from datetime import datetime, timedelta
 import csv
 import io
+import logging
 
 from app.database import get_db
 from app.models import (
@@ -19,7 +20,9 @@ from app.models import (
 )
 from app.routers.users import get_current_user
 from app.services.name_utils import split_full_name
+from app.services.subscription_service import extend_subscription
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -244,7 +247,8 @@ async def toggle_active(
 
 
 class SetSubscriptionRequest(BaseModel):
-    days: int = 30  # عدد الأيام من دلوقتي
+    days: int = 30           # عدد الأيام اللي هتتضاف
+    mode: str = "extend"     # "extend" = فوق المتبقي (الافتراضي) | "set" = من دلوقتي بالظبط
 
 
 @router.patch("/users/{user_id}/set-subscription")
@@ -254,7 +258,17 @@ def set_subscription(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Set subscription end_at to now + N days and activate the user."""
+    """Add N days to a user's subscription and activate them.
+
+    The dashboard button is labelled "Extend Subscription", and this now does
+    what that says: the days go on top of whatever the member has left. It used
+    to assign `now + days` outright, so extending an active member by a month
+    quietly deleted their remaining days.
+
+    `mode="set"` keeps the old assign-outright behaviour available for
+    corrections (fixing a wrong grant, shortening after a refund), where
+    overwriting is the actual intent.
+    """
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -262,15 +276,31 @@ def set_subscription(
         raise HTTPException(status_code=404, detail="User not found")
 
     now = datetime.utcnow()
-    user.is_active = True
-    user.end_at = now + timedelta(days=data.days)
+    previous_end_at = user.end_at
+
+    if data.mode == "set":
+        user.is_active = True
+        user.end_at = now + timedelta(days=data.days)
+    else:
+        extend_subscription(user, data.days, now=now)
+
     db.commit()
+
+    logger.info(
+        "📅 Subscription %s by admin_id=%s: user_id=%s %+dd | %s -> %s",
+        data.mode, current_user.id, user.id, data.days, previous_end_at, user.end_at,
+    )
 
     return {
         "user_id": user.id,
         "is_active": True,
+        "mode": data.mode,
+        "previous_end_at": previous_end_at.isoformat() if previous_end_at else None,
         "end_at": user.end_at.isoformat(),
-        "message": f"Subscription set for {data.days} days (expires {user.end_at.strftime('%Y-%m-%d')})",
+        "message": (
+            f"Subscription {'set to' if data.mode == 'set' else 'extended by'} "
+            f"{data.days} days (expires {user.end_at.strftime('%Y-%m-%d')})"
+        ),
     }
 
 
@@ -280,15 +310,23 @@ def toggle_admin(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Toggle a user's is_admin status."""
+    """Toggle a user's is_admin status. An owner's flag is off limits to admins."""
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # toggle-owner is already owner-only, but nothing stopped an admin from
+    # stripping is_admin off an owner and locking them out of the admin half of
+    # their own dashboard.
+    if getattr(user, "is_owner", False) and not getattr(current_user, "is_owner", False):
+        raise HTTPException(status_code=403, detail="Only an owner can change an owner's admin status")
+
     user.is_admin = not user.is_admin
     db.commit()
+    logger.info("🛡️ is_admin=%s for user_id=%s set by admin_id=%s",
+                user.is_admin, user.id, current_user.id)
 
     return {
         "user_id": user.id,
@@ -373,15 +411,29 @@ def reset_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Reset a user's password (admin only)."""
+    """Reset a member's password. Admins may not reset an owner's.
+
+    Support resets passwords for members who are locked out, which is why this
+    is open to admins. But an owner's password is the key to the owner-only
+    half of the dashboard — coupons, pricing, deletions, the email sender — and
+    an admin who could rewrite it could simply log in as the owner and grant
+    themselves everything. That made every owner-only gate in the codebase
+    decorative. Owner accounts are therefore resettable only by an owner.
+    """
     require_admin(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    if getattr(user, "is_owner", False) and not getattr(current_user, "is_owner", False):
+        logger.warning("🚨 Admin %s attempted to reset owner %s's password",
+                       current_user.id, user.id)
+        raise HTTPException(status_code=403, detail="Only an owner can reset an owner's password")
+
     user.hashed_password = pwd_context.hash(data.new_password)
     db.commit()
+    logger.info("🔑 Password reset for user_id=%s by admin_id=%s", user.id, current_user.id)
 
     return {"message": f"Password reset successfully for {user.full_name}"}
 
