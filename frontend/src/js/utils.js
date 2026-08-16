@@ -509,13 +509,21 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
     `;
   }
 
+  // Everything below is other people's text — a notification body is built
+  // around the sender's display name, a DM preview is a message somebody wrote
+  // — and it lands in innerHTML. Unescaped, a member who renamed themselves to
+  // an <img onerror> tag and then reacted to your post ran script in your
+  // browser the moment you opened the bell, on our origin, with the token in
+  // localStorage. The bell is on every page, so that reached everyone.
+  // escapeHtml on every interpolation of it, without exception.
   notifs.forEach(n => {
+     const link = String(n.link || '#').replace(/[\\'"]/g, '');
      html += `
-        <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${n.id}, '${n.link || '#'}')">
+        <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${Number(n.id)}, '${link}')">
             <div class="notif-item-av"><i class="fa-solid fa-bell" style="color:var(--gold)"></i></div>
             <div class="notif-item-body">
-                <div class="notif-item-name">${n.title}</div>
-                <div class="notif-item-text">${n.body}</div>
+                <div class="notif-item-name">${escapeHtml(n.title)}</div>
+                <div class="notif-item-text">${escapeHtml(n.body)}</div>
             </div>
             ${!n.is_read ? `<div class="notif-item-count">1</div>` : ''}
         </div>
@@ -533,19 +541,23 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
 
     const preview = formattedMsg ? formattedMsg.substring(0, 40) + (formattedMsg.length > 40 ? '...' : '') : 'Sent you a message';
 
-    const safeName = u.full_name.replace(/'/g, "\\'");
+    // The name goes into a JS string inside an onclick attribute, so it needs
+    // both escapes: the backslash pass keeps it inside the quotes, escapeHtml
+    // keeps the whole attribute from being closed early.
+    const safeName = escapeHtml(String(u.full_name || '').replace(/[\\']/g, ''));
+    const safeChannel = encodeURIComponent(dm.channel_name || '');
     const onClickAction = isDmChat
-      ? `activeDmUserName='${safeName}'; selectChannel('${dm.channel_name}'); toggleNotifPanel();`
-      : `window.location.href='direct-messages.html?v=4&channel=${dm.channel_name}'`;
+      ? `activeDmUserName='${safeName}'; selectChannel('${safeChannel}'); toggleNotifPanel();`
+      : `window.location.href='direct-messages.html?v=4&channel=${safeChannel}'`;
 
     html += `
         <div class="notif-item" onclick="${onClickAction}">
-            <div class="notif-item-av"><img src="${av}" onerror="this.src='./imgs/ghawi-logo.png'"/></div>
+            <div class="notif-item-av"><img src="${escapeHtml(av)}" onerror="this.src='./imgs/ghawi-logo.png'"/></div>
             <div class="notif-item-body">
-                <div class="notif-item-name">${u.full_name}</div>
-                <div class="notif-item-text">${preview}</div>
+                <div class="notif-item-name">${escapeHtml(u.full_name)}</div>
+                <div class="notif-item-text">${escapeHtml(preview)}</div>
             </div>
-            ${dm.unread_count > 0 ? `<div class="notif-item-count">${dm.unread_count}</div>` : ''}
+            ${dm.unread_count > 0 ? `<div class="notif-item-count">${Number(dm.unread_count)}</div>` : ''}
         </div>
         `;
   });

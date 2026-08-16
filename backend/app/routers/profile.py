@@ -161,6 +161,24 @@ def get_my_profile(
 
 
 # ─── Update My Profile ──────────────────────────────────────
+def _clean_display_text(value: str, limit: int) -> str:
+    """Strip markup characters out of a name or bio, and cap the length.
+
+    A display name is echoed into notification bodies ("X reacted to your
+    post"), DM previews and member lists, and those land in innerHTML on pages
+    all over the site. The rendering side escapes now, which is the real fix —
+    this just means a single missed escape somewhere in the frontend is no
+    longer a working payload.
+
+    Only the angle brackets go: they are what turns text into markup, and no
+    name needs them. Apostrophes stay — "Mu'men", "MOH'D" and their like are
+    real members' names, and mangling those to save a character class the
+    escaping already handles would be a worse bug than the one being fixed.
+    """
+    cleaned = (value or "").replace("<", "").replace(">", "")
+    return cleaned.strip()[:limit]
+
+
 @router.put("/me", response_model=UserMemberOut)
 def update_my_profile(
     data: UserProfileUpdate,
@@ -168,11 +186,11 @@ def update_my_profile(
     db: Session = Depends(get_db),
 ):
     if data.full_name is not None:
-        current_user.full_name = data.full_name
+        current_user.full_name = _clean_display_text(data.full_name, limit=80)
         # Keep the split columns in step with the display name.
-        current_user.first_name, current_user.last_name = split_full_name(data.full_name)
+        current_user.first_name, current_user.last_name = split_full_name(current_user.full_name)
     if data.bio is not None:
-        current_user.bio = data.bio
+        current_user.bio = _clean_display_text(data.bio, limit=500)
     if data.avatar_url is not None:
         current_user.avatar_url = data.avatar_url
     if data.social_media_url is not None:

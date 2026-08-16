@@ -1604,7 +1604,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=1785600000"></script>
+    <script src="src/js/utils.js?v=1786000000"></script>
 
     <style>
         /* Custom Modal */
@@ -4774,12 +4774,17 @@
 
                 let html = '';
                 res.forEach(n => {
+                    // A notification body is built around the sender's display
+                    // name, which the sender chooses. Unescaped here it was a
+                    // stored XSS: rename yourself to an <img onerror> tag, react
+                    // to someone's post, and your script ran in their browser.
+                    const link = String(n.link || '#').replace(/[\\'"]/g, '');
                     html += `
-                    <div class="notif-item ${n.is_read ? 'read' : 'unread'}" onclick="markNotificationRead(${n.id}, '${n.link}')" style="cursor:pointer; ${n.is_read ? 'opacity:0.7;' : 'font-weight:bold;'}">
+                    <div class="notif-item ${n.is_read ? 'read' : 'unread'}" onclick="markNotificationRead(${Number(n.id)}, '${link}')" style="cursor:pointer; ${n.is_read ? 'opacity:0.7;' : 'font-weight:bold;'}">
                         <div class="notif-item-body">
-                            <div class="notif-item-name">${n.title}</div>
-                            <div class="notif-item-text">${n.body}</div>
-                            <div class="notif-item-time" style="font-size:10px; color:#888;">${n.time_ago}</div>
+                            <div class="notif-item-name">${escHtml(n.title)}</div>
+                            <div class="notif-item-text">${escHtml(n.body)}</div>
+                            <div class="notif-item-time" style="font-size:10px; color:#888;">${escHtml(n.time_ago)}</div>
                         </div>
                     </div>`;
                 });
