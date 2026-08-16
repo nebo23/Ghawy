@@ -40,3 +40,9 @@ Thumbs.db
 # Node (if any frontend tooling)
 node_modules/
 backups/
+
+# TLS material. The live cert lives in the letsencrypt volume; these were a
+# stale June copy that got committed — a private key has no business in a repo,
+# even a private one, and tracking the directory means the next renewal copied
+# here would be committed too.
+ssl/
