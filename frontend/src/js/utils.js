@@ -268,35 +268,9 @@ async function requireActiveUser() {
   }
 }
 
-async function initCurrency() {
-  const cachedCurrency = localStorage.getItem('user_currency');
-  if (cachedCurrency) {
-    return cachedCurrency;
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-    clearTimeout(timeoutId);
-    const data = await res.json();
-
-    if (data && data.country_code) {
-      if (data.country_code.toUpperCase() === 'EG') {
-        localStorage.setItem('user_currency', 'EGP');
-        return 'EGP';
-      } else {
-        localStorage.setItem('user_currency', 'USD');
-        return 'USD';
-      }
-    }
-  } catch (err) {
-    console.warn('Geolocation failed, defaulting to EGP');
-  }
-
-  localStorage.setItem('user_currency', 'EGP');
-  return 'EGP';
-}
+// initCurrency() used to sit here: an ipapi.co lookup that stamped
+// `user_currency` as USD for anyone outside Egypt. Nothing called it any more,
+// and prices are quoted to everyone in Egyptian pounds now, so it is gone.
 
 // ─── Heartbeat System ──────────────────────────────────────
 function startHeartbeat() {

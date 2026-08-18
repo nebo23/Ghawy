@@ -18,13 +18,18 @@ router = APIRouter(prefix="/payment", tags=["Payment"])
 # ─── Server-side authoritative pricing ─────────────────────
 # Frontend prices in payment.js are display-only. These are the SOURCE OF TRUTH.
 # Any mismatch between this dict and frontend pricing means the frontend is stale.
+#
+# EGP only. There used to be three more rows here — monthly/quarterly/yearly_usd
+# — shown to visitors an IP lookup placed outside Egypt. In the whole history of
+# the table not one USD order was ever confirmed (89 of them, all abandoned at
+# the gateway), and the platform now quotes one price list, in Egyptian pounds,
+# to everybody. The keys are gone rather than merely unlinked so a stale cached
+# page cannot open a dollar checkout: an old `*_usd` plan_key falls into the
+# "Invalid plan" branch below.
 PLAN_PRICES = {
     "monthly_egp":   {"amount": 600,   "currency": "EGP"},
     "quarterly_egp": {"amount": 1200,  "currency": "EGP"},
     "yearly_egp":    {"amount": 3500,  "currency": "EGP"},
-    "monthly_usd":   {"amount": 20,    "currency": "USD"},
-    "quarterly_usd": {"amount": 35,    "currency": "USD"},
-    "yearly_usd":    {"amount": 100,   "currency": "USD"},
 }
 
 

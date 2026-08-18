@@ -50,9 +50,6 @@ PLAN_LABELS = {
     "monthly_egp":   {"label": "شهري",       "currency": "EGP", "days": 30},
     "quarterly_egp": {"label": "تلت شهور",   "currency": "EGP", "days": 90},
     "yearly_egp":    {"label": "سنوي",        "currency": "EGP", "days": 365},
-    "monthly_usd":   {"label": "Monthly",     "currency": "USD", "days": 30},
-    "quarterly_usd": {"label": "Quarterly",   "currency": "USD", "days": 90},
-    "yearly_usd":    {"label": "Yearly",      "currency": "USD", "days": 365},
 }
 
 

@@ -99,63 +99,6 @@
                 },
             },
         },
-        // The USD ladder is the old one, converted at the same shape: it is
-        // what PayPal is already configured for and the client's brief was
-        // about the Egyptian prices. Flagged in the hand-over — if the EGP
-        // prices move, someone has to decide whether these follow.
-        USD: {
-            monthly: {
-                key: 'monthly',
-                planKey: 'monthly_usd',
-                amount: 20,
-                was: null,
-                currency: { ar: '$', en: '$' },
-                name: { ar: 'اشتراك شهري', en: 'Monthly subscription' },
-                period: { ar: 'شهرياً', en: 'per month' },
-                blurb: {
-                    ar: 'تجربة شهرية مرنة علشان تبدأ وتشوف بنفسك',
-                    en: 'A flexible month so you can start and see for yourself',
-                },
-                badge: null,
-            },
-            quarterly: {
-                key: 'quarterly',
-                planKey: 'quarterly_usd',
-                amount: 35,
-                was: 60,
-                currency: { ar: '$', en: '$' },
-                name: { ar: 'اشتراك ربع سنوي', en: 'Quarterly subscription' },
-                period: { ar: 'كل 3 شهور', en: 'every 3 months' },
-                blurb: {
-                    ar: 'أكثر اتزان، للي عايز يبني نتيجة حقيقية خلال أشهر',
-                    en: 'The balanced one, for building a real result over months',
-                },
-                badge: { ar: 'الأكثر مبيعاً', en: 'Best seller' },
-                // 60 − 35 = 25, against a 20 monthly — a month free, same as EGP.
-                extra: {
-                    ar: 'كأنك واخد شهر مجاني',
-                    en: 'Like getting a month free',
-                },
-            },
-            yearly: {
-                key: 'yearly',
-                planKey: 'yearly_usd',
-                amount: 100,
-                was: 240,
-                currency: { ar: '$', en: '$' },
-                name: { ar: 'اشتراك سنوي', en: 'Yearly subscription' },
-                period: { ar: 'سنوياً', en: 'per year' },
-                blurb: {
-                    ar: 'أكثر توفير والتزام لجميع الكورسات',
-                    en: 'The most saving and the most commitment, across every course',
-                },
-                badge: { ar: 'أفضل صفقة توفير', en: 'Best value' },
-                extra: {
-                    ar: 'كأنك واخد 6 شهور مجاناً',
-                    en: 'Like getting 6 months free',
-                },
-            },
-        },
     };
 
     // ─── The comparison ─────────────────────────────────────────
@@ -259,14 +202,17 @@
     }
 
     /**
-     * EGP unless the visitor has been placed outside Egypt.
+     * Always EGP.
      *
-     * `user_currency` is written by the country picker and the geo lookup in
-     * main.js. Reading it rather than calling anything means this file has no
-     * network I/O of its own and renders instantly.
+     * There used to be a second, USD ladder here, picked by an IP lookup and a
+     * `user_currency` key in localStorage. The client asked for one price list
+     * shown to everybody, in Egyptian pounds, so the ladder, the lookup and the
+     * key are gone. The function stays because the render and the checkout both
+     * read a currency, and one place to change it is better than a literal
+     * scattered through the file.
      */
     function currency() {
-        return localStorage.getItem('user_currency') === 'USD' ? 'USD' : 'EGP';
+        return 'EGP';
     }
 
     function plan(key, cur) {
@@ -604,14 +550,12 @@
      * it does differently is that the button that reaches it is now inside the
      * choice modal rather than on the card, so `trigger` is that button.
      *
-     * There used to be a branch here that sent a USD visitor to
-     * `payment.html?method=paypal`. Nothing on the other side handled it:
-     * `window.handlePayPalPayment` was never defined anywhere in the repo, and
-     * payment.html ignored `method` and rendered the EGP plans through Kashier
-     * regardless. So it was a detour that landed on the same rail one page
-     * later. Kashier takes the USD plan keys directly — PLAN_PRICES in
-     * backend/app/routers/payment.py carries all six — so both currencies now
-     * go straight through the call below.
+     * There is one rail and one currency: every card payment is an EGP order
+     * through Kashier. An earlier version branched here to a PayPal page for
+     * visitors priced in dollars — a page that never existed — and dollar
+     * pricing itself is gone now, so PLAN_PRICES in
+     * backend/app/routers/payment.py carries the three EGP plans and nothing
+     * else.
      */
     async function startCardCheckout(planKey, trigger) {
         const cur = currency();
@@ -866,10 +810,10 @@
         // prominent one is what they will actually be charged.
         paintCouponState(modal, p);
 
-        // Both manual rails are Egyptian; abroad there is nothing behind them.
-        const egyptOnly = cur !== 'EGP';
-        modal.querySelector('[data-pay-instapay]').hidden = egyptOnly;
-        modal.querySelector('[data-pay-vodafone]').hidden = egyptOnly;
+        // Both manual rails used to be hidden outside Egypt, because the cards
+        // abroad were priced in dollars and the transfer is an Egyptian one.
+        // With one EGP price list for everybody there is nothing left to hide
+        // them by, so both rails are always offered.
 
         if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(modal);
         modal.classList.add('open');
@@ -945,18 +889,10 @@
                 if (p) paintCouponState(modal, p);
             }
         });
-        // The country picker and the geo lookup both write `user_currency` and
-        // then call applyCurrencyUI. Repainting on that is what moves the cards
-        // from EGP to USD without a reload.
-        const original = window.applyCurrencyUI;
-        if (typeof original === 'function' && !original.ghawyPricingWrapped) {
-            window.applyCurrencyUI = function () {
-                const out = original.apply(this, arguments);
-                paint();
-                return out;
-            };
-            window.applyCurrencyUI.ghawyPricingWrapped = true;
-        }
+        // There was a hook here that wrapped applyCurrencyUI so the cards
+        // repainted when the country picker switched the visitor to dollars.
+        // Prices no longer depend on where anyone is, so the only thing that
+        // still moves them is a language change, handled above.
     }
 
     if (document.readyState === 'loading') {

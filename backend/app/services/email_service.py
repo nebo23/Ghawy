@@ -333,9 +333,6 @@ _RENEWAL_PLAN_LABELS = {
     "monthly_egp":   {"label": "الشهري",   "renew_label": "جدّد اشتراكك الشهري"},
     "quarterly_egp": {"label": "تلت شهور", "renew_label": "جدّد اشتراكك"},
     "yearly_egp":    {"label": "السنوي",   "renew_label": "جدّد اشتراكك السنوي"},
-    "monthly_usd":   {"label": "الشهري",   "renew_label": "جدّد اشتراكك الشهري"},
-    "quarterly_usd": {"label": "تلت شهور", "renew_label": "جدّد اشتراكك"},
-    "yearly_usd":    {"label": "السنوي",   "renew_label": "جدّد اشتراكك السنوي"},
 }
 
 
@@ -345,7 +342,8 @@ def _plan_price_str(plan_key: str) -> str:
         from app.routers.payment import PLAN_PRICES  # lazy: تفادي circular import
         p = PLAN_PRICES.get(plan_key)
         if p:
-            return f"{p['amount']:,} جنيه" if p["currency"] == "EGP" else f"${p['amount']}"
+            # كل الباقات بالجنيه المصري — مفيش تسعير بالدولار.
+            return f"{p['amount']:,} جنيه"
     except Exception:
         pass
     return ""

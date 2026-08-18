@@ -738,91 +738,17 @@ window.updateWelcomeMessage = function () {
     }
 };
 
-window.applyCurrencyUI = function (currency) {
-    const isUSD = currency === 'USD';
-
-    document.querySelectorAll('.offer-value').forEach(el => {
-        if (!el.hasAttribute('data-egp')) el.setAttribute('data-egp', el.innerText);
-        const egp = el.getAttribute('data-egp');
-        if (isUSD) {
-            if (egp.includes('15,000')) el.innerText = '300 USD';
-            else if (egp.includes('3,500')) el.innerText = '70 USD';
-            else if (egp.includes('2,500')) el.innerText = '50 USD';
-            else if (egp.includes('5,000')) el.innerText = '100 USD';
-            else if (egp.includes('4,000')) el.innerText = '80 USD';
-        } else {
-            el.innerText = egp;
-        }
-    });
-
-    document.querySelectorAll('.strike').forEach(el => {
-        if (!el.hasAttribute('data-egp')) el.setAttribute('data-egp', el.innerText);
-        const egp = el.getAttribute('data-egp');
-        if (isUSD && egp.includes('30,000')) el.innerText = '600 USD';
-        else el.innerText = egp;
-    });
-
-    document.querySelectorAll('.price-big').forEach(el => {
-        if (!el.hasAttribute('data-egp')) el.setAttribute('data-egp', el.innerText);
-        const egp = el.getAttribute('data-egp');
-        if (isUSD && egp.includes('2,999')) el.innerText = '60';
-        else el.innerText = egp;
-    });
-
-    document.querySelectorAll('.price-currency, .pricing-currency').forEach(el => {
-        el.innerText = isUSD ? 'USD' : 'ج.م';
-    });
-
-    const priceAmount = document.getElementById('priceAmount');
-    if (priceAmount) {
-        if (!priceAmount.hasAttribute('data-egp')) priceAmount.setAttribute('data-egp', priceAmount.innerText);
-        const egp = priceAmount.getAttribute('data-egp');
-        if (isUSD && egp.includes('500')) priceAmount.innerText = '15';
-        else if (isUSD && egp.includes('333')) priceAmount.innerText = '10';
-        else priceAmount.innerText = egp;
-    }
-
-    const priceNote = document.getElementById('priceNote');
-    if (priceNote) {
-        if (!priceNote.hasAttribute('data-egp')) priceNote.setAttribute('data-egp', priceNote.innerText);
-        const egp = priceNote.getAttribute('data-egp');
-        if (isUSD && egp.includes('4,000')) {
-            priceNote.innerText = 'تدفع $80 سنوياً بدلاً من $120';
-        } else {
-            priceNote.innerText = egp;
-        }
-    }
-
-    // The #vs-price-* elements this used to rewrite belonged to the value
-    // stack (10,000 for the program, a 30,000 anchor, four priced bonuses).
-    // The client asked for that section to go and for no amount to appear
-    // outside the pricing cards, so the section — and this currency table with
-    // it — is gone. Only the real plan prices are converted now.
-
-    document.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0 && el.textContent) {
-            if (!el.hasAttribute('data-egp')) el.setAttribute('data-egp', el.textContent);
-            const egp = el.getAttribute('data-egp');
-            if (isUSD && (egp.includes('ج.م 2,999 فقط') || egp.includes('EGP 2,999 فقط'))) {
-                el.textContent = egp.replace(/ج\.م 2,999 فقط|EGP 2,999 فقط/g, '60$ فقط');
-            } else if (!isUSD && (egp.includes('ج.م 2,999 فقط') || egp.includes('EGP 2,999 فقط'))) {
-                el.textContent = egp;
-            }
-        }
-    });
-};
+// The currency rewrite that lived here is gone. It swapped a table of hard-
+// coded EGP amounts for dollar ones when the visitor was placed outside
+// Egypt, and every element it looked for (.offer-value, .strike, .price-big,
+// #priceAmount, #priceNote) had already been removed from the pages. The
+// plans now render from src/js/pricing.js in Egyptian pounds for everyone.
 
 window.handleCountryChange = function (country) {
     populateGovernorates(country);
     if (window.updateWelcomeMessage) window.updateWelcomeMessage();
-
-    if (country && country !== 'مصر') {
-        window.applyCurrencyUI('USD');
-        localStorage.setItem('user_currency', 'USD');
-    } else {
-        window.applyCurrencyUI('EGP');
-        localStorage.setItem('user_currency', 'EGP');
-    }
+    // Picking a country no longer changes any price: everyone is quoted in
+    // Egyptian pounds.
 };
 
 async function getGeoLocation() {
@@ -892,7 +818,6 @@ async function getGeoLocation() {
         if (data.error) throw new Error("فشل تحديد الموقع");
 
         const englishCountry = data.country_name || 'Egypt';
-        const isEgypt = (englishCountry === 'Egypt');
         const arabicCountry = typeof countryMap !== 'undefined' && countryMap[englishCountry] ? countryMap[englishCountry] : englishCountry;
 
         const englishRegion = data.region || data.city || 'Unknown';
@@ -903,15 +828,6 @@ async function getGeoLocation() {
         let flag = '🇪🇬';
         if (data.country_code && data.country_code.length === 2) {
             flag = data.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
-        }
-
-        // Apply currency immediately based on IP
-        if (!isEgypt) {
-            if (window.applyCurrencyUI) window.applyCurrencyUI('USD');
-            localStorage.setItem('user_currency', 'USD');
-        } else {
-            if (window.applyCurrencyUI) window.applyCurrencyUI('EGP');
-            localStorage.setItem('user_currency', 'EGP');
         }
 
         applyValues(englishCountry, englishRegion, dial, flag, arabicCountry);
@@ -926,14 +842,6 @@ async function getGeoLocation() {
         // Fallback: check timezone if API fails (e.g., Adblocker)
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const isEgyptFallback = (tz === 'Africa/Cairo');
-
-        if (!isEgyptFallback) {
-            if (window.applyCurrencyUI) window.applyCurrencyUI('USD');
-            localStorage.setItem('user_currency', 'USD');
-        } else {
-            if (window.applyCurrencyUI) window.applyCurrencyUI('EGP');
-            localStorage.setItem('user_currency', 'EGP');
-        }
 
         const fallbackCountry = isEgyptFallback ? 'Egypt' : 'Unknown';
         const fallbackGov = isEgyptFallback ? 'Cairo' : 'Unknown';

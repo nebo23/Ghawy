@@ -1457,10 +1457,10 @@
     <script src="src/js/reviews.js?v=20260809c"></script>
     <!-- Plans, prices, the comparison and the checkout step — shared with
          /pricing so the two pages cannot quote different numbers. -->
-    <script src="src/js/pricing.js?v=20260818a"></script>
+    <script src="src/js/pricing.js?v=20260818b"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
     <script src="src/js/faq.js?v=20260808a"></script>
-    <script src="src/js/main.js?v=20260808a"></script>
+    <script src="src/js/main.js?v=20260818b"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant
@@ -1859,9 +1859,9 @@
         });
 
         // The currency rewrite that lived here is gone with the single price it
-        // rewrote. src/js/pricing.js repaints the cards from PLANS when
-        // applyCurrencyUI fires, so EGP/USD is handled in one place for the
-        // home page and /pricing together.
+        // rewrote. src/js/pricing.js renders the cards from PLANS, in Egyptian
+        // pounds, for every visitor — the home page and /pricing read the same
+        // list and there is no second currency to switch to.
 
         // --- Handle OAuth Token from URL ---
         const urlParams = new URLSearchParams(window.location.search);
