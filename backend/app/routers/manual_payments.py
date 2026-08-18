@@ -1,5 +1,5 @@
 """
-Manual Payment Requests — Instapay flow.
+Manual Payment Requests — Instapay / Vodafone Cash flow.
 Public endpoints for submission + Admin endpoints for review/approve/reject.
 """
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
@@ -75,6 +75,24 @@ def _sniff_receipt_type(content: bytes) -> Optional[str]:
 PLAN_DURATION_DAYS = {"monthly": 30, "quarterly": 90, "yearly": 365}
 DEFAULT_PLAN = "monthly"
 
+# The manual rails. Both land in the same review queue and both grant the same
+# subscription on approval — the only thing that differs is which account the
+# money was sent to, which is exactly what the reviewer needs in order to find
+# the transfer. Anything unrecognised falls back to Instapay, the rail that
+# every request predating this field came in on.
+MANUAL_METHODS = {"instapay", "vodafone_cash"}
+DEFAULT_METHOD = "instapay"
+
+
+def _normalize_method(raw: Optional[str]) -> str:
+    """Map what the page sent onto one of MANUAL_METHODS."""
+    value = (raw or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if value in ("vodafone", "vodafone_cash", "vfcash", "vf_cash"):
+        return "vodafone_cash"
+    if value in MANUAL_METHODS:
+        return value
+    return DEFAULT_METHOD
+
 # Fallback EGP price per plan when the member didn't state an amount.
 # Mirrors PLANS.EGP in frontend/src/js/pricing.js — the yearly plan moved from
 # 4000 to 3500 and this was still recording the old figure on any submission
@@ -149,6 +167,9 @@ def _request_to_dict(req: ManualPaymentRequest) -> dict:
         "expected_amount": float(req.expected_amount) if req.expected_amount is not None else None,
         "coupon_code": req.coupon_code,
         "plan": req.plan,
+        # Which wallet to check the receipt against. Rows filed before the
+        # second rail existed have no value and were all Instapay.
+        "method": req.method or DEFAULT_METHOD,
         "notes": req.notes,
         "receipt_url": req.receipt_url,
         "status": req.status,
@@ -251,6 +272,10 @@ async def submit_payment_request(
     # typed on the page, which the reviewer checks against the receipt image.
     amount: Optional[float] = Form(None),
     plan: Optional[str] = Form(None),
+    # Which manual rail the transfer was made on — instapay | vodafone_cash.
+    # Display/routing information for the reviewer only: it never changes the
+    # price, the plan, or what approval grants.
+    method: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
     intent: Optional[str] = Form(None),
     # A coupon NAME. Never a percentage and never a price: `expected_amount` is
@@ -303,6 +328,8 @@ async def submit_payment_request(
     if normalized_plan not in PLAN_DURATION_DAYS:
         normalized_plan = DEFAULT_PLAN
 
+    normalized_method = _normalize_method(method)
+
     # ── What this member actually owed ──────────────────────────
     # Worked out here, from the plan and any coupon, and stored alongside the
     # amount they typed. The reviewer needs a number the payer could not touch:
@@ -352,6 +379,7 @@ async def submit_payment_request(
         expected_amount=expected_amount,
         coupon_code=stored_coupon,
         plan=normalized_plan,
+        method=normalized_method,
         notes=notes.strip() if notes else None,
         status="pending",
     )
@@ -377,6 +405,7 @@ async def submit_payment_request(
             email=mpr.email,
             phone=mpr.phone,
             amount=mpr.amount,
+            method=mpr.method or DEFAULT_METHOD,
             created_at=mpr.created_at.replace(tzinfo=timezone.utc).astimezone(CAIRO_TZ).strftime("%Y-%m-%d %H:%M") if mpr.created_at else "N/A",
         )
     except Exception as exc:
@@ -390,6 +419,7 @@ async def submit_payment_request(
         "email": mpr.email,
         "phone": mpr.phone or "",
         "amount": float(mpr.amount) if mpr.amount else None,
+        "method": mpr.method or DEFAULT_METHOD,
         "notes": mpr.notes or "",
         "receipt_url": f"{frontend_url}{mpr.receipt_url}",
         "submitted_at": to_cairo_iso(mpr.created_at),

@@ -30,10 +30,10 @@
 // ── Payment ──
 // The Kashier and PayPal calls below are lifted from the inline script that
 // used to sit in index.html, unchanged. What changed is what comes before
-// them: the card's button no longer starts a payment. It opens a step with two
-// options, because Instapay is manual, Egypt-only, and does NOT open access
-// immediately — a visitor who picks it needs to be told that before they pay,
-// not after.
+// them: the card's button no longer starts a payment. It opens a step with the
+// payment choices, because the manual rails (Instapay, Vodafone Cash) are
+// Egypt-only and do NOT open access immediately — a visitor who picks one needs
+// to be told that before they pay, not after.
 
 (function () {
     'use strict';
@@ -686,7 +686,14 @@
         }
     }
 
-    function startInstapay(planKey) {
+    /**
+     * Send the visitor to /pay for one of the manual rails.
+     *
+     * `method` is 'instapay' or 'vodafone' — the two differ only in which
+     * wallet the transfer goes to, so they share one page and one function
+     * rather than a copy each.
+     */
+    function startManual(planKey, method) {
         localStorage.setItem('ghawy_selected_plan', planKey);
         const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
         if (!token) {
@@ -707,8 +714,15 @@
         // is not being trusted for anything, it is saving a member some typing.
         const code = appliedCode();
         const couponQS = code ? `&coupon=${encodeURIComponent(code)}` : '';
-        window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}${couponQS}`;
+        // Instapay is the default on /pay, so its link stays exactly the URL it
+        // has always been — nothing that already points at pay.html?plan=… has
+        // to change, and an old bookmark still lands on the right rail.
+        const methodQS = (method && method !== 'instapay') ? `&method=${encodeURIComponent(method)}` : '';
+        window.location.href = `pay.html?plan=${encodeURIComponent(cycle)}${couponQS}${methodQS}`;
     }
+
+    // The name every existing caller uses.
+    function startInstapay(planKey) { startManual(planKey, 'instapay'); }
 
     // ─── The choice step ────────────────────────────────────────
 
@@ -717,14 +731,15 @@
     /**
      * "اشترك الآن" opens this instead of starting a payment.
      *
-     * Two options, and they are not equivalent: the card/wallet route opens
-     * access the moment Kashier confirms, while Instapay is a receipt a human
-     * reviews. Someone who pays by Instapay expecting to be let straight in
-     * will file a support ticket within the minute, so the warning is on the
-     * option itself and not in small print underneath it.
+     * Three options, and they are not equivalent: the card/wallet route opens
+     * access the moment Kashier confirms, while the two manual rails (Instapay
+     * and Vodafone Cash) are a receipt a human reviews. Someone who transfers
+     * by hand expecting to be let straight in will file a support ticket within
+     * the minute, so the warning is on each option itself and not in small
+     * print underneath them.
      *
-     * Instapay is hidden outside Egypt — it is an Egyptian rail and there is
-     * nothing a visitor abroad could do with it.
+     * Both manual rails are hidden outside Egypt — they are Egyptian rails and
+     * there is nothing a visitor abroad could do with either.
      */
     function buildModal() {
         const el = document.createElement('div');
@@ -768,6 +783,27 @@
                     </span>
                 </span>
             </button>
+
+            <button class="pay-option" type="button" data-pay-vodafone>
+                <span class="pay-option-icon"><img src="imgs/payment/vodafone-cash.jpg"
+                        alt="فودافون كاش" data-ar-alt="فودافون كاش" data-en-alt="Vodafone Cash"
+                        width="40" height="26" loading="lazy" decoding="async" /></span>
+                <span class="pay-option-body">
+                    <!-- No "يدوي" in the title the way the Instapay option has it:
+                         the brand name is two words longer and the line wrapped.
+                         The warning directly underneath already says the transfer
+                         is done by hand and reviewed by a person. -->
+                    <span class="pay-option-title" data-ar="فودافون كاش — للمصريين بس"
+                        data-en="Vodafone Cash — Egypt only">فودافون كاش — للمصريين بس</span>
+                    <span class="pay-option-warn">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        <span data-ar="الدخول مش فوري: بتحوّل من محفظتك وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما نتأكد."
+                            data-en="Access is NOT instant: you transfer from your wallet, upload the receipt, and we review it by hand and open your access once it checks out.">الدخول
+                            مش فوري: بتحوّل من محفظتك وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما
+                            نتأكد.</span>
+                    </span>
+                </span>
+            </button>
         </div>`;
         document.body.appendChild(el);
 
@@ -782,7 +818,10 @@
             startCardCheckout(el.dataset.plan, this);
         });
         el.querySelector('[data-pay-instapay]').addEventListener('click', () => {
-            startInstapay(el.dataset.plan);
+            startManual(el.dataset.plan, 'instapay');
+        });
+        el.querySelector('[data-pay-vodafone]').addEventListener('click', () => {
+            startManual(el.dataset.plan, 'vodafone');
         });
 
         const applyBtn = el.querySelector('[data-coupon-apply]');
@@ -827,8 +866,10 @@
         // prominent one is what they will actually be charged.
         paintCouponState(modal, p);
 
-        // Instapay is an Egyptian rail; abroad there is nothing behind it.
-        modal.querySelector('[data-pay-instapay]').hidden = cur !== 'EGP';
+        // Both manual rails are Egyptian; abroad there is nothing behind them.
+        const egyptOnly = cur !== 'EGP';
+        modal.querySelector('[data-pay-instapay]').hidden = egyptOnly;
+        modal.querySelector('[data-pay-vodafone]').hidden = egyptOnly;
 
         if (typeof window.applyLanguageTo === 'function') window.applyLanguageTo(modal);
         modal.classList.add('open');
@@ -930,7 +971,7 @@
         planCardHTML, renderPlans,
         compareHTML, renderCompare,
         methodsHTML, renderMethods,
-        openCheckout, closeCheckout, startCardCheckout, startInstapay,
+        openCheckout, closeCheckout, startCardCheckout, startInstapay, startManual,
         paint, reportRedirectError,
         // Shared with pay.js, which runs the same coupon rules on the Instapay
         // screen. Exported rather than copied so there is one set of refusal

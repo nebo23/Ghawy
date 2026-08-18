@@ -1,6 +1,6 @@
 /**
  * pay.js
- * Logic for the public Instapay submission form
+ * Logic for the public manual-payment submission form (Instapay / Vodafone Cash)
  */
 
 let selectedFile = null;
@@ -36,6 +36,69 @@ Object.keys(PLAN_PRICES).forEach(key => {
 // Resolve the selected plan from the URL (defaults to monthly).
 const selectedPlanKey = (new URLSearchParams(location.search).get('plan') || 'monthly').toLowerCase();
 const selectedPlan = PLAN_PRICES[selectedPlanKey] || null;
+
+// ─── Which manual rail this visit is for ──────────────────────
+//
+// Instapay and Vodafone Cash are the same flow — transfer by hand, upload the
+// receipt, wait for a human — and differ only in where the money goes. So they
+// share this one page rather than getting a copy each, which is what would
+// guarantee that a fix to the coupon box or the upload guard lands on one of
+// them and not the other. Everything that differs lives in this table.
+//
+// `number` is the value the page ships with, and is what a payer sees if the
+// config request fails; `configKey` is the field on /config/payment-info that
+// overrides it when the server has a real value configured.
+//
+// `linkFor` builds the button under the box. Instapay's handle IS a payment
+// link, so it opens the transfer directly. Vodafone Cash has no such link —
+// the transfer is made from the wallet — so the button dials *9#, the standard
+// Vodafone Cash menu, which is the closest thing to "take me there" that rail
+// has. On desktop it is inert, which is why the number above it (copyable) is
+// the primary element and the button is not load-bearing.
+const PAY_METHODS = {
+    instapay: {
+        key: 'instapay',
+        formValue: 'instapay',
+        number: 'https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU',
+        configKey: 'instapay_number',
+        logo: 'imgs/payment/instapay.png',
+        altAr: 'انستاباي',
+        altEn: 'InstaPay',
+        ctaIcon: 'wallet',
+        pageTitleKey: 'payPageTitle',
+        titleKey: 'payTitle',
+        step1Key: 'payStep1Desc',
+        numberLabelKey: 'payInstapayNumber',
+        ctaKey: 'payNowInstapay',
+        copiedKey: 'payCopiedToast',
+        linkFor: value => (/^https?:\/\//i.test(value) ? value : null),
+    },
+    vodafone: {
+        key: 'vodafone',
+        formValue: 'vodafone_cash',
+        number: '01068928758',
+        configKey: 'vodafone_cash_number',
+        logo: 'imgs/payment/vodafone-cash.jpg',
+        altAr: 'فودافون كاش',
+        altEn: 'Vodafone Cash',
+        ctaIcon: 'smartphone',
+        pageTitleKey: 'payPageTitleVf',
+        titleKey: 'payTitleVf',
+        step1Key: 'payStep1DescVf',
+        numberLabelKey: 'payVodafoneNumber',
+        ctaKey: 'payNowVodafone',
+        copiedKey: 'payCopiedToastVf',
+        // *9# is the Vodafone Cash menu, not a transfer to us — it just saves
+        // the payer digging for the app. tel: is encoded because a bare # in
+        // an href is a fragment.
+        linkFor: () => 'tel:*9%23',
+    },
+};
+
+// ?method= — anything unknown is Instapay, which is what every link to this
+// page carried before the second rail existed.
+const rawMethod = (new URLSearchParams(location.search).get('method') || '').toLowerCase().trim();
+const payMethod = PAY_METHODS[rawMethod === 'vodafone_cash' ? 'vodafone' : rawMethod] || PAY_METHODS.instapay;
 
 // An active member who came here on purpose to renew early (from /renewal)
 // must be allowed to stay — otherwise the Instapay option is unreachable for
@@ -227,11 +290,10 @@ function formatDate(iso) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Normalise the hardcoded fallback in the markup through the same path the
-    // backend value takes, so `data-full` is populated even when the config
-    // request fails and the copy button still copies a working link.
-    const insta = document.getElementById('display-instapay');
-    if (insta) setInstapayDisplay(insta.textContent.trim());
+    // Paint the chosen rail FIRST. The markup ships with the Instapay wording
+    // and number, so anything that reads the box before this runs would read
+    // the wrong wallet on a Vodafone Cash visit.
+    applyMethodToPage();
     loadPaymentConfig();
     setupDragAndDrop();
 
@@ -256,15 +318,12 @@ async function loadPaymentConfig() {
         if (!res.ok) throw new Error("Failed to load config");
         const config = await res.json();
 
-        // Only override the hardcoded link if the backend has a real value configured
-        // (default placeholder "xxxx" / empty would otherwise hide the payment link).
-        const instapay = config.instapay_number;
-        if (instapay && instapay !== "xxxx") {
-            setInstapayDisplay(instapay);
-            // If it's a full payment URL, point the "Pay now" button to it too.
-            if (/^https?:\/\//i.test(instapay)) {
-                document.getElementById('pi-instapay-link').href = instapay;
-            }
+        // Only override the hardcoded number if the backend has a real value
+        // configured for THIS rail (the default placeholder "xxxx" / empty
+        // would otherwise wipe a number the payer actually needs).
+        const configured = config[payMethod.configKey];
+        if (configured && configured !== "xxxx") {
+            setMethodNumber(configured);
         }
         // Price/period follow the chosen plan; fall back to the backend default (monthly).
         //
@@ -425,11 +484,55 @@ document.addEventListener('languagechange', () => {
     if (blockedState) renderBlocked(blockedState);
 });
 
-// Copy to clipboard
+// ─── The chosen rail on screen ────────────────────────────────
+
 /**
- * Put the Instapay handle on screen without letting it wrap.
+ * Repoint the whole transfer card at `payMethod`.
  *
- * The raw value is a full URL — "https://ipn.eg/S/salahabouzeid2/instapay/
+ * Every difference between the two rails is a swap here: the wording (by
+ * pointing the same elements at different dictionary keys, so a later language
+ * toggle keeps whichever rail is on screen rather than reverting to the
+ * Instapay strings baked into the markup), the brand mark, the number, and
+ * where the button underneath goes.
+ */
+function applyMethodToPage() {
+    setKey('pay-page-title', payMethod.pageTitleKey);
+    setKey('pay-title', payMethod.titleKey);
+    setKey('pay-step1-desc', payMethod.step1Key);
+    setKey('pi-number-label', payMethod.numberLabelKey);
+    setKey('pi-cta-text', payMethod.ctaKey);
+
+    const logo = document.getElementById('pi-method-logo');
+    if (logo) {
+        logo.src = payMethod.logo;
+        logo.setAttribute('data-ar-alt', payMethod.altAr);
+        logo.setAttribute('data-en-alt', payMethod.altEn);
+        logo.alt = (document.documentElement.lang === 'en') ? payMethod.altEn : payMethod.altAr;
+    }
+
+    const icon = document.getElementById('pi-cta-icon');
+    // Lucide replaces the <i> with an <svg> on createIcons(), so re-point
+    // whichever of the two is currently in the DOM and let it redraw.
+    if (icon) {
+        const fresh = document.createElement('i');
+        fresh.id = 'pi-cta-icon';
+        fresh.setAttribute('data-lucide', payMethod.ctaIcon);
+        icon.replaceWith(fresh);
+    }
+
+    // The value the page ships with, put through the same path a backend value
+    // takes — so `data-full` is populated and the copy button works even when
+    // /config/payment-info never answers.
+    setMethodNumber(payMethod.number);
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+/**
+ * Put this rail's number on screen without letting it wrap, and point the
+ * button under it at wherever that number leads.
+ *
+ * The Instapay value is a full URL — "https://ipn.eg/S/salahabouzeid2/instapay/
  * 8D6xNU" — and at the width of that box it broke across two lines, mid-word,
  * which is what the client saw and disliked. Two things fix it and neither
  * loses information:
@@ -438,14 +541,38 @@ document.addEventListener('languagechange', () => {
  *     that tell a payer nothing.
  *   - `data-full` keeps the real value, and it is what the copy button and
  *     the title tooltip use. So what gets copied is always the complete,
- *     working link no matter how the label is shortened or ellipsised by CSS.
+ *     working value no matter how the label is shortened or ellipsised by CSS.
+ *
+ * A Vodafone Cash wallet number is short and is copied verbatim; the same code
+ * path handles it because nothing above is Instapay-specific.
  */
-function setInstapayDisplay(value) {
+function setMethodNumber(value) {
     const el = document.getElementById('display-instapay');
     if (!el || !value) return;
     el.dataset.full = value;
     el.title = value;
     el.textContent = String(value).replace(/^https?:\/\//i, '');
+
+    const link = document.getElementById('pi-instapay-link');
+    if (!link) return;
+    const href = payMethod.linkFor(value);
+    if (href) {
+        link.href = href;
+        link.hidden = false;
+        // A tel: link must not open a tab; an Instapay payment link must.
+        if (/^tel:/i.test(href)) {
+            link.removeAttribute('target');
+            link.removeAttribute('rel');
+        } else {
+            link.target = '_blank';
+            link.rel = 'noopener';
+        }
+    } else {
+        // No sensible destination for this rail — the copyable number above is
+        // the whole instruction, and a button that goes nowhere is worse than
+        // no button.
+        link.hidden = true;
+    }
 }
 
 function copyInstapay() {
@@ -455,7 +582,7 @@ function copyInstapay() {
     if (!text || text === "---") return;
 
     navigator.clipboard.writeText(text).then(() => {
-        showToast(t('payCopiedToast'), 'success');
+        showToast(t(payMethod.copiedKey), 'success');
         const btn = document.getElementById('copy-instapay-btn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = `<i data-lucide="check"></i> ${t('payCopied')}`;
@@ -619,6 +746,11 @@ async function submitPayment() {
     if (selectedPlan) {
         formData.append('plan', selectedPlanKey);
     }
+
+    // Which wallet the transfer was made to. The reviewer cannot match a
+    // receipt without it — the two rails settle into different accounts — and
+    // it changes nothing about the price or what approval grants.
+    formData.append('method', payMethod.formValue);
 
     // The coupon NAME only. The backend recomputes the expected amount from
     // the plan and the code and stores that against the request — what is in

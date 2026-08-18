@@ -117,7 +117,11 @@ const i18nDict = {
     inviteWelcomeSub: { ar: 'اختار كلمة مرور عشان تكمّل تسجيلك', en: 'Choose a password to complete your registration' },
     completeRegistration: { ar: 'إكمال التسجيل',           en: 'Complete Registration' },
 
-    // ── pay.html (Instapay) ──
+    // ── pay.html (Instapay / Vodafone Cash) ──
+    // /pay serves both manual rails off one page. The keys below are the
+    // Instapay wording it ships with; pay.js points the same elements at the
+    // `…Vf` variants further down when ?method=vodafone, so a language toggle
+    // after that keeps whichever rail is on screen.
     payPageTitle:     { ar: 'الدفع عبر انستاباي — Ghawy',   en: 'Pay with Instapay — Ghawy' },
     backToHome:       { ar: 'رجوع للرئيسية',               en: 'Back to Home' },
     payTitle:         { ar: 'انضم لـ غاوي عبر انستاباي',   en: 'Join Ghawy via Instapay' },
@@ -130,6 +134,12 @@ const i18nDict = {
     payCopy:          { ar: 'نسخ',                         en: 'Copy' },
     payCopied:        { ar: 'اتنسخ',                       en: 'Copied' },
     payNowInstapay:   { ar: 'ادفع دلوقتي عبر انستاباي',    en: 'Pay now via Instapay' },
+    // Vodafone Cash — the same five strings, for the same five elements.
+    payPageTitleVf:   { ar: 'الدفع عبر فودافون كاش — Ghawy', en: 'Pay with Vodafone Cash — Ghawy' },
+    payTitleVf:       { ar: 'انضم لـ غاوي عبر فودافون كاش', en: 'Join Ghawy via Vodafone Cash' },
+    payStep1DescVf:   { ar: 'ابعت المبلغ بالظبط من محفظة فودافون كاش على الرقم اللي تحت، واحتفظ بسكرين شوت الإيصال.', en: 'Send the exact amount from your Vodafone Cash wallet to the number below. Keep the receipt screenshot.' },
+    payVodafoneNumber:{ ar: 'رقم فودافون كاش',             en: 'Vodafone Cash Number' },
+    payNowVodafone:   { ar: 'افتح فودافون كاش (‎*9#‎)',      en: 'Open Vodafone Cash (*9#)' },
     payScreenshotWarn:{ ar: 'خد بالك: لازم تصوّر شاشة نجاح التحويل.', en: 'Please make sure to screenshot the successful transfer screen.' },
     payStep2:         { ar: 'الخطوة 2',                    en: 'Step 2' },
     payStep2Title:    { ar: 'ارفع الإيصال',                en: 'Submit your receipt' },
@@ -180,6 +190,7 @@ const i18nDict = {
     periodYearly:     { ar: '/ سنة',                       en: '/ year' },
     payErrLoadConfig: { ar: 'حصلت مشكلة في تحميل بيانات الدفع', en: 'Error loading payment information' },
     payCopiedToast:   { ar: 'تم نسخ رقم انستاباي!',        en: 'Instapay number copied!' },
+    payCopiedToastVf: { ar: 'تم نسخ رقم فودافون كاش!',     en: 'Vodafone Cash number copied!' },
     payCopyFailed:    { ar: 'مقدرناش ننسخ النص',           en: 'Failed to copy text' },
     payErrFileType:   { ar: 'نوع الملف مش مدعوم. ارفع JPG أو PNG أو WebP أو PDF.', en: 'Invalid file type. Please upload a JPG, PNG, WebP, or PDF.' },
     payErrFileSize:   { ar: 'الملف كبير أوي. الحد الأقصى 5 ميجا.', en: 'File too large. Maximum size is 5MB.' },

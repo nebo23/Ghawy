@@ -304,6 +304,28 @@ body {
     line-height: 1.5;
 }
 
+/* The number box's caption line: the label on one side, the rail's brand mark
+   on the other, so a payer can tell at a glance which wallet they are about to
+   transfer to. Both marks are drawn for white — vodafone-cash.jpg is a JPEG
+   with a baked-in white background — so the chip behind them is pure #fff and
+   not an off-white that would show the JPEG as a visible rectangle. */
+.pi-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.pi-method-logo {
+    height: 28px;
+    width: auto;
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 6px;
+    padding: 3px 7px;
+    box-sizing: content-box;
+}
+
 .pi-copy-btn {
     flex-shrink: 0;
 }

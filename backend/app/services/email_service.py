@@ -172,14 +172,26 @@ def send_legacy_otp_email(to_email: str, code: str) -> None:
 #  MANUAL PAYMENT EMAILS
 # ═══════════════════════════════════════════════════════
 
+# Which wallet the reviewer has to open to find the transfer. Optional and
+# defaulted so any older caller that does not pass one still sends a valid mail.
+MANUAL_METHOD_LABELS = {
+    "instapay": ("انستاباي", "InstaPay"),
+    "vodafone_cash": ("فودافون كاش", "Vodafone Cash"),
+}
+
+
 def send_admin_payment_notification(
     full_name: str,
     email: str,
     phone: str,
     amount: float,
     created_at: str,
+    method: str = "instapay",
 ) -> None:
     """Notify admin team about a new manual payment submission."""
+    method_ar, method_en = MANUAL_METHOD_LABELS.get(
+        (method or "instapay"), MANUAL_METHOD_LABELS["instapay"]
+    )
     frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai")
     admin_email = os.getenv("ADMIN_EMAIL", "mosalah@ghawy.ai")
 
@@ -190,6 +202,7 @@ def send_admin_payment_notification(
         f"Email: {email}\n"
         f"Phone: {phone or 'N/A'}\n"
         f"Amount: {amount or 'N/A'} EGP\n"
+        f"Method: {method_en}\n"
         f"Submitted: {created_at}\n\n"
         f"Review it here: {frontend_url}/teamdashboard.html#pending-requests"
     )
@@ -210,6 +223,7 @@ def send_admin_payment_notification(
             {_row('الإيميل', email)}
             {_row('الموبايل', phone or 'N/A')}
             {_row('المبلغ', f"{amount or 'N/A'} EGP")}
+            {_row('طريقة التحويل', method_ar)}
             {_row('التاريخ', created_at, last=True)}
           </table>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px;"><tr>

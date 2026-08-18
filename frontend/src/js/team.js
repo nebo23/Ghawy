@@ -1787,6 +1787,15 @@ const MPR_PLAN_LABELS = {
   yearly: 'Yearly (365 days)',
 };
 
+// Which wallet the transfer landed in. The two manual rails settle into
+// different accounts, so a reviewer who does not know which one this receipt
+// belongs to is checking the wrong statement. Requests filed before the second
+// rail existed have no method and were all Instapay.
+const MPR_METHOD_LABELS = {
+  instapay: 'InstaPay',
+  vodafone_cash: 'Vodafone Cash',
+};
+
 function renderMprCards(requests, container) {
   container.innerHTML = '';
 
@@ -1808,6 +1817,7 @@ function renderMprCards(requests, container) {
       ? `<a class="mpr-phone" href="https://wa.me/${toWaMeNumber(req.phone)}" target="_blank" rel="noopener" title="Open WhatsApp">${escapeHtml(req.phone)}</a>`
       : `<div class="mpr-phone">No phone</div>`;
     const planLabel = MPR_PLAN_LABELS[req.plan] || (req.plan ? req.plan : '—');
+    const methodLabel = MPR_METHOD_LABELS[req.method] || MPR_METHOD_LABELS.instapay;
 
     // What the member OWED, worked out server-side, next to what they say they
     // sent. Without this the reviewer compares a discounted transfer against
@@ -1868,6 +1878,10 @@ function renderMprCards(requests, container) {
         <div class="mpr-detail-row">
           <span>Plan</span>
           <strong>${planLabel}</strong>
+        </div>
+        <div class="mpr-detail-row">
+          <span>Sent via</span>
+          <strong>${escapeHtml(methodLabel)}</strong>
         </div>
         <div class="mpr-detail-row">
           <span>Date</span>

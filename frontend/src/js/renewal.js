@@ -65,8 +65,9 @@ const T = {
     securePay: { ar: 'الدفع آمن 100% عبر Kashier', en: '100% secure payment via Kashier' },
     or: { ar: 'أو', en: 'or' },
     payInstapay: { ar: 'ادفع عبر انستاباي', en: 'Pay with InstaPay' },
-    manualNoteRenew: { ar: 'انستاباي بيتراجع يدويًا، والاشتراك بيتحسب من <b>يوم الموافقة</b> — يعني الأيام الباقية معاك دلوقتي مش هتتضاف عليه. لو عايز الأيام تتجمّع، ادفع بالكارت.', en: 'InstaPay is reviewed by hand and the subscription is counted from the <b>day it is approved</b> — the days you have left now will not be added to it. If you want the days to stack, pay by card.' },
-    manualNoteLocked: { ar: 'انستاباي محتاج مراجعة يدوية من الفريق، فالتفعيل مش فوري زي الكارت.', en: 'InstaPay needs a manual review by the team, so activation is not instant the way card payment is.' },
+    payVodafone: { ar: 'ادفع عبر فودافون كاش', en: 'Pay with Vodafone Cash' },
+    manualNoteRenew: { ar: 'التحويل اليدوي بيتراجع بإيدينا، والاشتراك بيتحسب من <b>يوم الموافقة</b> — يعني الأيام الباقية معاك دلوقتي مش هتتضاف عليه. لو عايز الأيام تتجمّع، ادفع بالكارت.', en: 'A manual transfer is reviewed by hand and the subscription is counted from the <b>day it is approved</b> — the days you have left now will not be added to it. If you want the days to stack, pay by card.' },
+    manualNoteLocked: { ar: 'التحويل اليدوي محتاج مراجعة من الفريق، فالتفعيل مش فوري زي الكارت.', en: 'A manual transfer needs a review by the team, so activation is not instant the way card payment is.' },
     // المعاينة
     willRunUntil: { ar: 'اشتراكك هيشتغل لحد {date}', en: 'Your subscription will run until {date}' },
     totalUntil: { ar: 'المجموع <b>{days}</b> · لحد {date}', en: 'Total <b>{days}</b> · until {date}' },
@@ -254,12 +255,16 @@ function previewBoxHtml() {
   </div>`;
 }
 
-/** رابط الدفع اليدوي (انستاباي) — نفس اللي بيعمله startInstapay() في
- *  pricing.js: pay.html بياخد الـ cycle من غير لاحقة العملة. و`intent=renew`
- *  بيخلّي pay.js يسيب العضو المفعّل يكمّل بدل ما يرميه على الداشبورد. */
-function manualUrl() {
+/** رابط الدفع اليدوي (انستاباي أو فودافون كاش) — نفس اللي بيعمله startManual()
+ *  في pricing.js: pay.html بياخد الـ cycle من غير لاحقة العملة. و`intent=renew`
+ *  بيخلّي pay.js يسيب العضو المفعّل يكمّل بدل ما يرميه على الداشبورد.
+ *
+ *  انستاباي هو الافتراضي على /pay، فرابطه بيفضل زي ما هو من غير `method` —
+ *  أي لينك قديم لسه بيوصل نفس المكان. */
+function manualUrl(method) {
     const cycle = selectedPlan.replace(/_(egp|usd)$/, '');
-    return `/pay?plan=${encodeURIComponent(cycle)}` + (mode === 'renew' ? '&intent=renew' : '');
+    const methodQS = (method && method !== 'instapay') ? `&method=${encodeURIComponent(method)}` : '';
+    return `/pay?plan=${encodeURIComponent(cycle)}` + (mode === 'renew' ? '&intent=renew' : '') + methodQS;
 }
 
 function payButtonHtml(label) {
@@ -285,6 +290,10 @@ function payButtonHtml(label) {
   <button type="button" class="rn-instapay" id="rnManualBtn">
     <i class="fa-solid fa-wallet"></i>
     <span>${esc(L(T.payInstapay))}</span>
+  </button>
+  <button type="button" class="rn-instapay" id="rnVodafoneBtn">
+    <i class="fa-solid fa-mobile-screen-button"></i>
+    <span>${esc(L(T.payVodafone))}</span>
   </button>
   ${manualNote}`;
 }
@@ -418,7 +427,9 @@ function bindCard() {
     const payBtn = document.getElementById('rnPayBtn');
     if (payBtn) payBtn.addEventListener('click', pay);
     const manualBtn = document.getElementById('rnManualBtn');
-    if (manualBtn) manualBtn.addEventListener('click', () => { window.location.href = manualUrl(); });
+    if (manualBtn) manualBtn.addEventListener('click', () => { window.location.href = manualUrl('instapay'); });
+    const vodafoneBtn = document.getElementById('rnVodafoneBtn');
+    if (vodafoneBtn) vodafoneBtn.addEventListener('click', () => { window.location.href = manualUrl('vodafone'); });
     bindLogout();
 }
 

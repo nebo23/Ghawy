@@ -47,7 +47,7 @@
     </script>
     <!-- End Google tag -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="payPageTitle">الدفع عبر انستاباي — Ghawy</title>
+  <title id="pay-page-title" data-i18n="payPageTitle">الدفع عبر انستاباي — Ghawy</title>
   <link rel="icon" type="image/png" href="./imgs/community-logo.png">
 
   <!-- Fonts & Icons -->
@@ -60,7 +60,7 @@
   <link rel="stylesheet" href="src/css/main.css?v=20260809e">
 
   <!-- Specific page styles -->
-  <link rel="stylesheet" href="src/css/pay.css?v=20260809c">
+  <link rel="stylesheet" href="src/css/pay.css?v=20260818a">
 
   <style>
     /* Language toggle — same look as the landing page button */
@@ -125,7 +125,7 @@
          behaviour, not an unguarded upload. -->
     <div id="pay-form-view" style="display:none;">
       <div class="pay-title-section text-center">
-        <h1 data-i18n="payTitle">انضم لـ غاوي عبر انستاباي</h1>
+        <h1 id="pay-title" data-i18n="payTitle">انضم لـ غاوي عبر انستاباي</h1>
         <p data-i18n="paySubtitle">اتمّم الدفع بأمان وارفع إيصال التحويل عشان تدخل على طول.</p>
       </div>
 
@@ -135,8 +135,8 @@
         <div class="pay-card step-card">
           <div class="step-badge" data-i18n="payStep1">الخطوة 1</div>
           <h2 data-i18n="payStep1Title">حوّل المبلغ</h2>
-          <p class="step-desc" data-i18n="payStep1Desc">ابعت المبلغ بالظبط عبر انستاباي على الرقم اللي تحت، واحتفظ
-            بسكرين شوت الإيصال.</p>
+          <p class="step-desc" id="pay-step1-desc" data-i18n="payStep1Desc">ابعت المبلغ بالظبط عبر انستاباي على الرقم
+            اللي تحت، واحتفظ بسكرين شوت الإيصال.</p>
 
           <!-- The amount box. With a coupon applied, `pi-was` appears above the
                figure carrying the struck-through list price and `display-price`
@@ -169,10 +169,22 @@
             <p class="coupon-note" id="pay-coupon-note" hidden></p>
           </div>
 
+          <!-- One box, two rails. Which wallet this is — the label, the mark
+               and the destination — is set by pay.js from ?method= in the URL,
+               so /pay is a single page rather than two that would drift apart.
+               The markup ships with the Instapay values because that is the
+               default method. -->
           <div class="payment-info-box">
-            <div class="pi-label" data-i18n="payInstapayNumber">رقم انستاباي</div>
+            <div class="pi-label pi-label-row">
+              <span id="pi-number-label" data-i18n="payInstapayNumber">رقم انستاباي</span>
+              <!-- The brand mark of whichever rail is on screen. Both files are
+                   drawn for white (vodafone-cash.jpg has a baked-in white
+                   background), so the chip behind them is pure #fff. -->
+              <img class="pi-method-logo" id="pi-method-logo" src="imgs/payment/instapay.png" alt="انستاباي"
+                data-ar-alt="انستاباي" data-en-alt="InstaPay" width="63" height="28" decoding="async">
+            </div>
             <div class="pi-copy-wrap">
-              <!-- The Instapay handle/link stays LTR in both languages -->
+              <!-- The handle/number stays LTR in both languages -->
               <div class="pi-number" id="display-instapay" dir="ltr">
                 https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU</div>
               <button class="pi-copy-btn" id="copy-instapay-btn" onclick="copyInstapay()">
@@ -183,7 +195,8 @@
 
           <a href="https://ipn.eg/S/salahabouzeid2/instapay/8D6xNU" target="_blank" rel="noopener"
             class="pi-instapay-link" id="pi-instapay-link">
-            <i data-lucide="wallet"></i> <span data-i18n="payNowInstapay">ادفع دلوقتي عبر انستاباي</span>
+            <i data-lucide="wallet" id="pi-cta-icon"></i>
+            <span id="pi-cta-text" data-i18n="payNowInstapay">ادفع دلوقتي عبر انستاباي</span>
           </a>
 
           <div class="pi-warning">
@@ -331,14 +344,14 @@
 
   <!-- Scripts -->
   <script src="src/js/utils.js?v=1786000000"></script>
-  <script src="src/js/i18n.js?v=20260809d"></script>
+  <script src="src/js/i18n.js?v=20260818a"></script>
 
   <!-- Loaded for its PLANS table only: pay.js reads the amounts from it so this
        page and the pricing cards can never quote different numbers. Nothing on
        this page has the containers it renders into, so it draws nothing. -->
-  <script src="src/js/pricing.js?v=20260809d"></script>
+  <script src="src/js/pricing.js?v=20260818a"></script>
 
-  <script src="src/js/pay.js?v=20260809b"></script>
+  <script src="src/js/pay.js?v=20260818a"></script>
   <script>
     window.lucide && window.lucide.createIcons();
   </script>

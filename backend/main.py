@@ -364,6 +364,11 @@ def get_payment_info():
     """Public endpoint to get payment details for manual flow."""
     return {
         "instapay_number": os.getenv("INSTAPAY_NUMBER", "xxxx"),
+        # The second manual rail. Same contract as the Instapay value above:
+        # the page ships with the real number hardcoded and only swaps it out
+        # when this env var carries something other than the placeholder, so a
+        # missing variable can never blank the number a payer needs.
+        "vodafone_cash_number": os.getenv("VODAFONE_CASH_NUMBER", "xxxx"),
         "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "600"),
         "currency": "EGP"
     }

@@ -366,6 +366,13 @@ body.renewal-page {
     gap: 8px;
 }
 
+/* The two manual rails sit one under the other with nothing between them —
+   the "أو" divider above belongs to the card-vs-manual split, not to the split
+   between Instapay and Vodafone Cash. */
+.rn-instapay + .rn-instapay {
+    margin-top: 10px;
+}
+
 .rn-instapay:hover {
     background: var(--gold);
     border-color: var(--gold);

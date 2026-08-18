@@ -812,7 +812,7 @@ class LiveAttendee(Base):
     user = relationship("User")
 
 # ═══════════════════════════════════════════
-#  MANUAL PAYMENT REQUESTS (Instapay)
+#  MANUAL PAYMENT REQUESTS (Instapay / Vodafone Cash)
 # ═══════════════════════════════════════════
 
 class ManualPaymentRequest(Base):
@@ -832,6 +832,12 @@ class ManualPaymentRequest(Base):
     expected_amount = Column(Numeric(12, 2), nullable=True)
     coupon_code = Column(String(64), nullable=True)    # lowercase code, or NULL
     plan = Column(String, nullable=True)               # monthly | quarterly | yearly (drives subscription length)
+    # Which manual rail the money came in on: "instapay" or "vodafone_cash".
+    # The reviewer has to know WHICH account to look in before they can match a
+    # receipt against anything — the two wallets are separate, so a request with
+    # no method is a receipt nobody can check. NULL means a request filed before
+    # this column existed, and those were all Instapay.
+    method = Column(String(20), nullable=True, default="instapay")
     notes = Column(Text, nullable=True)                # any notes from user
     status = Column(String, default="pending")         # pending | approved | rejected
     invite_token = Column(String, nullable=True, unique=True)  # one-time registration token
