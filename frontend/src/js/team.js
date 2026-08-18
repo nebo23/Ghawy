@@ -884,6 +884,21 @@ let payCurrentPage = 1;
 const PAY_LIMIT = 20;
 let paySearchTimeout;
 
+// What the rail is CALLED on screen. The API stopped saying "manual" — that
+// was two different wallets under one word, and an admin looking at a row
+// still had to open the request to find out which account to check. Anything
+// unrecognised falls back to InstaPay, which is what every manual payment
+// filed before Vodafone Cash existed was.
+const RAIL_LABELS = {
+  kashier: 'Kashier',
+  instapay: 'InstaPay',
+  vodafone_cash: 'Vodafone Cash',
+};
+
+function railLabel(rail) {
+  return RAIL_LABELS[rail] || RAIL_LABELS.instapay;
+}
+
 async function loadPaymentsTab() {
   await Promise.all([loadPaymentStats(), loadPayments()]);
   initPaymentFilters();
@@ -960,7 +975,7 @@ async function loadPayments() {
       const dateFormatted = formatDateTime(p.date);
       const statusClass = p.status || 'pending';
       const statusLabel = (p.status || 'pending').charAt(0).toUpperCase() + (p.status || 'pending').slice(1);
-      const methodLabel = (p.method || '').charAt(0).toUpperCase() + (p.method || '').slice(1);
+      const methodLabel = railLabel(p.method);
       const refShort = p.reference ? (p.reference.length > 12 ? p.reference.slice(0, 12) + '…' : p.reference) : '—';
       const refFull = p.reference || '';
 
@@ -1415,6 +1430,7 @@ let analyticsRange = '30d';
 let chartMembers = null;
 let chartRevenue = null;
 let chartSubs = null;
+let chartMethods = null;
 
 async function loadAnalyticsTab() {
   // Set Chart.js defaults
@@ -1444,7 +1460,8 @@ async function refreshAnalytics() {
     loadKPIs(),
     loadMembersChart(),
     loadRevenueChart(),
-    loadSubsChart()
+    loadSubsChart(),
+    loadMethodsChart()
   ]);
 }
 
@@ -1571,6 +1588,93 @@ async function loadSubsChart() {
       },
       plugins: [{
         id: 'centerText',
+        beforeDraw(chart) {
+          const { ctx, chartArea } = chart;
+          const centerX = (chartArea.left + chartArea.right) / 2;
+          const centerY = (chartArea.top + chartArea.bottom) / 2;
+          ctx.save();
+          ctx.font = 'bold 28px inherit';
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(total, centerX, centerY);
+          ctx.restore();
+        }
+      }]
+    });
+  } catch (e) { }
+}
+
+
+// How the money came in. Same doughnut as Subscription Types, and deliberately
+// so — it is the same question asked of the payment instead of the plan.
+//
+// It counts payments that WENT THROUGH (the endpoint filters to confirmed), so
+// it is not comparable to the raw row count in the Payments tab: most Kashier
+// rows there are abandoned checkouts. Neither chart follows the range buttons
+// above them; both are all-time.
+async function loadMethodsChart() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/payment-method-breakdown`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const rails = ['kashier', 'instapay', 'vodafone_cash'];
+    const values = rails.map(r => data[r] || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+    const memberCounts = data.members || {};
+    const revenue = data.revenue || {};
+
+    const label = document.getElementById('methods-total-label');
+    if (label) {
+      label.textContent = total
+        ? `${total} completed payment${total === 1 ? '' : 's'} — all time`
+        : 'No completed payments yet';
+    }
+
+    if (chartMethods) chartMethods.destroy();
+    const ctx = document.getElementById('chart-methods').getContext('2d');
+    chartMethods = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: rails.map(railLabel),
+        datasets: [{
+          data: values,
+          backgroundColor: ['#3f8ff9', '#7c3aed', '#ef4444'],
+          borderWidth: 0,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+          },
+          tooltip: {
+            callbacks: {
+              // "40 payments" on its own hides the renewals: the member count
+              // is the other half of the answer, and the revenue says which
+              // rail is actually carrying the business.
+              label(item) {
+                const count = values[item.dataIndex];
+                const share = total ? Math.round((count / total) * 100) : 0;
+                return ` ${count} payment${count === 1 ? '' : 's'} (${share}%)`;
+              },
+              afterLabel(item) {
+                const rail = rails[item.dataIndex];
+                const people = memberCounts[rail] || 0;
+                const money = Number(revenue[rail] || 0);
+                return ` ${people} member${people === 1 ? '' : 's'} · EGP ${money.toLocaleString()}`;
+              }
+            }
+          }
+        }
+      },
+      plugins: [{
+        id: 'centerTextMethods',
         beforeDraw(chart) {
           const { ctx, chartArea } = chart;
           const centerX = (chartArea.left + chartArea.right) / 2;

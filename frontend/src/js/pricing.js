@@ -670,6 +670,28 @@
 
     // ─── The choice step ────────────────────────────────────────
 
+    // The Egyptian flag, inline rather than an <img>: it is 300 bytes of markup
+    // that needs no request and no cache-bust, and it inherits the modal's own
+    // sizing. Drawn with rounded ends on the red and black bands instead of a
+    // <clipPath> — the mark is rendered twice on the same screen, and a clip
+    // path would have meant a duplicate id in the document.
+    const EGYPT_FLAG_SVG = `<svg class="pay-title-mark pay-title-flag" viewBox="0 0 21 14"
+                            width="21" height="14" aria-hidden="true" focusable="false">
+                            <path d="M0 2a2 2 0 0 1 2-2h17a2 2 0 0 1 2 2v2.67H0Z" fill="#CE1126" />
+                            <path d="M0 4.67h21v4.66H0Z" fill="#fff" />
+                            <path d="M0 9.33h21V12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2Z" fill="#000" />
+                            <path d="M10.5 5.15c1.02 0 1.72.55 1.72 1.35 0 .92-.77 1.65-1.72 1.65s-1.72-.73-1.72-1.65c0-.8.7-1.35 1.72-1.35Z"
+                                fill="#C09300" />
+                            <rect x="0.4" y="0.4" width="20.2" height="13.2" rx="1.7" fill="none"
+                                stroke="rgba(0,0,0,0.35)" stroke-width="0.8" />
+                        </svg>`;
+
+    // One sentence, one wording, both manual rails. The upper bound is the part
+    // that does the work: "not instant" on its own reads as "who knows when",
+    // and that is what sends someone to support an hour later.
+    const MANUAL_TIMING_AR = 'الدخول مش فوري: بتحوّل وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا. المراجعة بتاخد من ثواني لـ 12 ساعة كحد أقصى.';
+    const MANUAL_TIMING_EN = 'Access is not instant: you transfer, upload the receipt, and we review it ourselves. Review takes anywhere from a few seconds up to 12 hours at most.';
+
     let modal = null;
 
     /**
@@ -679,8 +701,19 @@
      * access the moment Kashier confirms, while the two manual rails (Instapay
      * and Vodafone Cash) are a receipt a human reviews. Someone who transfers
      * by hand expecting to be let straight in will file a support ticket within
-     * the minute, so the warning is on each option itself and not in small
+     * the minute, so the timing is stated on each option itself and not in small
      * print underneath them.
+     *
+     * It is stated the way a fact is, in the same muted grey as the card's own
+     * note, and not as a hazard: the amber triangle this used to carry read as
+     * "something is wrong with this option" and was talking people out of the
+     * rail most of them actually use. What the note has to do is set the wait
+     * (seconds to 12 hours), not frighten anyone off.
+     *
+     * The flag/globe mark on each title says where the rail works before the
+     * text does — the two manual rails are Egyptian-only, the card is not. It
+     * sits OUTSIDE the data-ar/data-en span on purpose: those attributes write
+     * textContent and would wipe any markup nested inside them.
      *
      * Both manual rails are hidden outside Egypt — they are Egyptian rails and
      * there is nothing a visitor abroad could do with either.
@@ -703,8 +736,11 @@
                         alt="فيزا" data-ar-alt="فيزا" data-en-alt="Visa"
                         width="40" height="26" loading="lazy" decoding="async" /></span>
                 <span class="pay-option-body">
-                    <span class="pay-option-title" data-ar="دفع بالبطاقة أو المحفظة"
-                        data-en="Pay by card or wallet">دفع بالبطاقة أو المحفظة</span>
+                    <span class="pay-option-title">
+                        <i class="fa-solid fa-earth-africa pay-title-mark" aria-hidden="true"></i>
+                        <span data-ar="دفع بالبطاقة أو المحفظة"
+                            data-en="Pay by card or wallet">دفع بالبطاقة أو المحفظة</span>
+                    </span>
                     <span class="pay-option-note" data-ar="فيزا، ماستركارد، ميزة، ومحافظ الموبايل — متاح للمصريين ودولياً. الوصول بيتفتح فوراً بعد ما الدفع ينجح."
                         data-en="Visa, Mastercard, Meeza and mobile wallets — available in Egypt and internationally. Access opens the moment the payment succeeds.">فيزا،
                         ماستركارد، ميزة، ومحافظ الموبايل — متاح للمصريين ودولياً. الوصول بيتفتح فوراً بعد ما الدفع
@@ -712,19 +748,24 @@
                 </span>
             </button>
 
+            <!-- The titles are the rail's own name and nothing else. "يدوي"
+                 used to sit in the Instapay one: it is our word for how the
+                 payment is processed, not anything the payer does differently,
+                 and next to an instant card option it read as the worse
+                 choice. The note underneath says the part that matters — a
+                 person reviews it, and how long that takes. -->
             <button class="pay-option" type="button" data-pay-instapay>
                 <span class="pay-option-icon"><img src="imgs/payment/instapay.png"
                         alt="انستاباي" data-ar-alt="انستاباي" data-en-alt="InstaPay"
                         width="40" height="26" loading="lazy" decoding="async" /></span>
                 <span class="pay-option-body">
-                    <span class="pay-option-title" data-ar="انستاباي يدوي — للمصريين بس"
-                        data-en="Manual InstaPay — Egypt only">انستاباي يدوي — للمصريين بس</span>
-                    <span class="pay-option-warn">
-                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                        <span data-ar="الدخول مش فوري: بتحوّل وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما نتأكد."
-                            data-en="Access is NOT instant: you transfer, upload the receipt, and we review it by hand and open your access once it checks out.">الدخول
-                            مش فوري: بتحوّل وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما نتأكد.</span>
+                    <span class="pay-option-title">
+                        ${EGYPT_FLAG_SVG}
+                        <span data-ar="انستاباي — للمصريين بس"
+                            data-en="InstaPay — Egypt only">انستاباي — للمصريين بس</span>
                     </span>
+                    <span class="pay-option-note" data-ar="${MANUAL_TIMING_AR}"
+                        data-en="${MANUAL_TIMING_EN}">${MANUAL_TIMING_AR}</span>
                 </span>
             </button>
 
@@ -733,19 +774,13 @@
                         alt="فودافون كاش" data-ar-alt="فودافون كاش" data-en-alt="Vodafone Cash"
                         width="40" height="26" loading="lazy" decoding="async" /></span>
                 <span class="pay-option-body">
-                    <!-- No "يدوي" in the title the way the Instapay option has it:
-                         the brand name is two words longer and the line wrapped.
-                         The warning directly underneath already says the transfer
-                         is done by hand and reviewed by a person. -->
-                    <span class="pay-option-title" data-ar="فودافون كاش — للمصريين بس"
-                        data-en="Vodafone Cash — Egypt only">فودافون كاش — للمصريين بس</span>
-                    <span class="pay-option-warn">
-                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                        <span data-ar="الدخول مش فوري: بتحوّل من محفظتك وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما نتأكد."
-                            data-en="Access is NOT instant: you transfer from your wallet, upload the receipt, and we review it by hand and open your access once it checks out.">الدخول
-                            مش فوري: بتحوّل من محفظتك وترفع صورة الإيصال، وإحنا بنراجعه بنفسنا وبنفتحلك الوصول بعد ما
-                            نتأكد.</span>
+                    <span class="pay-option-title">
+                        ${EGYPT_FLAG_SVG}
+                        <span data-ar="فودافون كاش — للمصريين بس"
+                            data-en="Vodafone Cash — Egypt only">فودافون كاش — للمصريين بس</span>
                     </span>
+                    <span class="pay-option-note" data-ar="${MANUAL_TIMING_AR}"
+                        data-en="${MANUAL_TIMING_EN}">${MANUAL_TIMING_AR}</span>
                 </span>
             </button>
         </div>`;

@@ -515,6 +515,106 @@ def _map_filter_to_db(status_filter):
     return mapping.get(status_filter, None)
 
 
+# ── Which rail the money actually came in on ──────────────────
+#
+# `payments.method` only knows KASHIER vs MANUAL, and "Manual" is no longer an
+# answer anybody can act on: it is two different wallets with two different
+# people to chase. The rail lives on the manual request, and the payment row
+# points back at it through provider_order_id — _record_manual_payment() writes
+# it as "manual-<request id>" — so the split is a lookup away without a column
+# or a migration.
+#
+# A request filed before the `method` column existed has NULL there, and every
+# one of those was Instapay (it was the only rail at the time). That is the
+# same fallback manual_payments.DEFAULT_METHOD applies.
+RAIL_KASHIER = "kashier"
+RAIL_INSTAPAY = "instapay"
+RAIL_VODAFONE = "vodafone_cash"
+MANUAL_RAILS = (RAIL_INSTAPAY, RAIL_VODAFONE)
+
+
+def _normalize_rail(raw) -> str:
+    value = (raw or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if value in ("vodafone", "vodafone_cash", "vfcash", "vf_cash"):
+        return RAIL_VODAFONE
+    return RAIL_INSTAPAY
+
+
+def _request_id_from_ref(reference) -> Optional[int]:
+    """'manual-42' → 42. Anything else → None."""
+    if not reference or not str(reference).startswith("manual-"):
+        return None
+    try:
+        return int(str(reference)[len("manual-"):])
+    except ValueError:
+        return None
+
+
+def _rails_for(db: Session, payments) -> dict:
+    """payment id → rail, resolved in ONE query for the whole page.
+
+    Doing it per row would be a query per payment on a 20-row table.
+    """
+    from app.models import ManualPaymentRequest
+
+    wanted = {}
+    for payment in payments:
+        if payment.method == PaymentMethod.MANUAL:
+            req_id = _request_id_from_ref(payment.provider_order_id)
+            if req_id is not None:
+                wanted[payment.id] = req_id
+
+    method_by_req = {}
+    if wanted:
+        rows = db.query(ManualPaymentRequest.id, ManualPaymentRequest.method).filter(
+            ManualPaymentRequest.id.in_(set(wanted.values()))
+        ).all()
+        method_by_req = {row[0]: row[1] for row in rows}
+
+    rails = {}
+    for payment in payments:
+        if payment.method != PaymentMethod.MANUAL:
+            rails[payment.id] = RAIL_KASHIER
+        else:
+            req_id = wanted.get(payment.id)
+            rails[payment.id] = _normalize_rail(method_by_req.get(req_id))
+    return rails
+
+
+def _filter_by_rail(db: Session, query, rail: str):
+    """Narrow a Payment query to one rail.
+
+    "kashier" and "manual" are the two raw enum values and filter directly;
+    "instapay" / "vodafone_cash" have to go through the requests table, since
+    the payment row itself cannot tell them apart.
+    """
+    from app.models import ManualPaymentRequest
+
+    if rail in ("kashier", "manual"):
+        return query.filter(Payment.method == rail)
+    if rail not in MANUAL_RAILS:
+        return query
+
+    if rail == RAIL_INSTAPAY:
+        # NULL counts as Instapay — see the note above.
+        req_filter = (ManualPaymentRequest.method.is_(None)) | (
+            ManualPaymentRequest.method.notin_([RAIL_VODAFONE, "vodafone"]))
+    else:
+        req_filter = ManualPaymentRequest.method.in_([RAIL_VODAFONE, "vodafone"])
+
+    refs = [
+        f"manual-{row[0]}"
+        for row in db.query(ManualPaymentRequest.id).filter(req_filter).all()
+    ]
+    if not refs:
+        # No request on this rail yet — match nothing rather than everything.
+        return query.filter(Payment.id.is_(None))
+    return query.filter(
+        Payment.method == PaymentMethod.MANUAL,
+        Payment.provider_order_id.in_(refs),
+    )
+
+
 @router.get("/payments")
 def list_payments(
     page: int = Query(1, ge=1),
@@ -544,9 +644,9 @@ def list_payments(
         if db_status:
             query = query.filter(Payment.status == db_status)
 
-    # Method filter
+    # Method filter — kashier / manual / instapay / vodafone_cash
     if method and method != "all":
-        query = query.filter(Payment.method == method)
+        query = _filter_by_rail(db, query, method)
 
     # Count total
     total = query.count()
@@ -554,6 +654,8 @@ def list_payments(
 
     # Paginate
     payments = query.order_by(Payment.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+
+    rails = _rails_for(db, [row[0] for row in payments])
 
     result = []
     for payment, user in payments:
@@ -565,7 +667,11 @@ def list_payments(
             "date": payment.created_at.isoformat() if payment.created_at else None,
             "amount": float(payment.amount) if payment.amount else 0,
             "currency": payment.currency or "EGP",
-            "method": payment.method.value if payment.method else "",
+            # The rail, not the raw enum: "manual" told an admin nothing about
+            # which wallet to open. The enum is still sent alongside it for
+            # anything that keys off kashier-vs-manual.
+            "method": rails.get(payment.id, RAIL_KASHIER),
+            "gateway": payment.method.value if payment.method else "",
             "status": _map_status_to_display(payment.status),
             "reference": payment.provider_order_id or str(payment.id),
         })
@@ -635,9 +741,10 @@ def export_payments_csv(
             query = query.filter(Payment.status == db_status)
 
     if method and method != "all":
-        query = query.filter(Payment.method == method)
+        query = _filter_by_rail(db, query, method)
 
     payments = query.order_by(Payment.created_at.desc()).all()
+    rails = _rails_for(db, [row[0] for row in payments])
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -651,7 +758,7 @@ def export_payments_csv(
             payment.created_at.isoformat() if payment.created_at else "",
             float(payment.amount) if payment.amount else 0,
             payment.currency or "EGP",
-            payment.method.value if payment.method else "",
+            rails.get(payment.id, RAIL_KASHIER),
             _map_status_to_display(payment.status),
             payment.provider_order_id or str(payment.id),
         ])
@@ -882,6 +989,48 @@ def subscription_breakdown(
             monthly += 1
 
     return {"monthly": monthly, "quarterly": quarterly, "yearly": yearly, "none": none}
+
+
+@router.get("/analytics/payment-method-breakdown")
+def payment_method_breakdown(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """How the money actually arrived: Kashier vs Instapay vs Vodafone Cash.
+
+    Only payments that WENT THROUGH are counted — status CONFIRMED. A pending
+    Kashier row is a checkout somebody opened and abandoned (there are far more
+    of those than of real payments), and a rejected manual request never became
+    a payment at all; counting either would make the card rail look several
+    times bigger than it is.
+
+    Two figures per rail, because "how many paid by X" has two honest answers:
+    `payments` counts transactions and `members` counts distinct people, and
+    they differ by exactly the renewals.
+    """
+    require_admin(current_user)  # 🔒 admins + owners
+
+    counts = {RAIL_KASHIER: 0, RAIL_INSTAPAY: 0, RAIL_VODAFONE: 0}
+    members = {RAIL_KASHIER: set(), RAIL_INSTAPAY: set(), RAIL_VODAFONE: set()}
+    revenue = {RAIL_KASHIER: 0.0, RAIL_INSTAPAY: 0.0, RAIL_VODAFONE: 0.0}
+
+    confirmed = db.query(Payment).filter(Payment.status == PaymentStatus.CONFIRMED).all()
+    rails = _rails_for(db, confirmed)
+
+    for payment in confirmed:
+        rail = rails.get(payment.id, RAIL_KASHIER)
+        counts[rail] += 1
+        if payment.user_id:
+            members[rail].add(payment.user_id)
+        revenue[rail] += float(payment.amount or 0)
+
+    return {
+        "kashier": counts[RAIL_KASHIER],
+        "instapay": counts[RAIL_INSTAPAY],
+        "vodafone_cash": counts[RAIL_VODAFONE],
+        "members": {rail: len(ids) for rail, ids in members.items()},
+        "revenue": {rail: round(amount, 2) for rail, amount in revenue.items()},
+    }
 
 
 # ══════════════════════════════════════════════════════════════

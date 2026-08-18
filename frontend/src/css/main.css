@@ -2997,9 +2997,41 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     min-width: 0;
 }
 
+/* The title is a row now, not a bare line of text: each option carries a mark
+   saying where the rail works — the Egyptian flag on the two manual rails, a
+   globe on the card — and the reader gets that from the mark before they reach
+   the "للمصريين بس" in the words. */
 .pay-option-title {
+    display: flex;
+    /* Top-aligned, not centred: "انستاباي يدوي — للمصريين بس" wraps to two
+       lines on a phone, and a centred mark would float into the gap between
+       them instead of sitting with the first line. */
+    align-items: flex-start;
+    gap: 8px;
     font-size: 0.98rem;
     font-weight: 800;
+}
+
+/* Both marks reserve the same 21px column so the three titles start on one
+   vertical line, flag or glyph. */
+.pay-title-mark {
+    flex-shrink: 0;
+    /* Drops the mark onto the first line's optical centre. */
+    margin-top: 4px;
+    width: 21px;
+    font-size: 15px;
+    line-height: 1;
+    text-align: center;
+    /* The globe is a glyph, not a flag, and at full white it shouted louder
+       than the title next to it. The flag paints its own fills and ignores
+       this. */
+    color: var(--muted-light);
+}
+
+.pay-title-flag {
+    display: block;
+    height: 14px;
+    border-radius: 2.5px;
 }
 
 .pay-option-note {
@@ -3007,22 +3039,6 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     font-weight: 600;
     line-height: 1.7;
     color: var(--muted-light);
-}
-
-.pay-option-warn {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    line-height: 1.7;
-    color: #ffd9a1;
-}
-
-.pay-option-warn i {
-    flex-shrink: 0;
-    margin-top: 4px;
-    color: #f59e0b;
 }
 
 @media (max-width: 520px) {

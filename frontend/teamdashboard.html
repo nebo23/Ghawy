@@ -1338,7 +1338,11 @@
                 <select id="pay-method-filter">
                   <option value="all">All Methods</option>
                   <option value="kashier">Kashier</option>
-                  <option value="manual">Manual</option>
+                  <!-- "Manual" was both wallets under one word. The two are
+                       separate accounts to reconcile, so they filter separately;
+                       `manual` still works on the API for anything older. -->
+                  <option value="instapay">InstaPay</option>
+                  <option value="vodafone_cash">Vodafone Cash</option>
                 </select>
                 <button class="btn-export" onclick="exportPaymentsCSV()">
                   <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
@@ -1424,17 +1428,29 @@
                   <div class="chart-canvas-wrap"><canvas id="chart-members"></canvas></div>
                 </div>
               </div>
-              <div class="charts-grid-2col">
+              <div class="charts-grid">
                 <div class="chart-card">
                   <h3>Revenue (EGP)</h3>
                   <div class="chart-subtitle" id="revenue-total-label">Total: —</div>
                   <div class="chart-canvas-wrap"><canvas id="chart-revenue"></canvas></div>
                 </div>
+              </div>
+              <!-- The two doughnuts share a row: same shape, same question
+                   (what is the split), one asked of the plan and one of the
+                   rail the money came in on. Revenue moved to its own full
+                   width row above so this pair could sit together. -->
+              <div class="charts-grid-2col">
                 <div class="chart-card">
                   <h3>Subscription Types</h3>
                   <div class="chart-subtitle">Current distribution</div>
                   <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas
                       id="chart-subs"></canvas></div>
+                </div>
+                <div class="chart-card">
+                  <h3>Payment Methods</h3>
+                  <div class="chart-subtitle" id="methods-total-label">Completed payments by rail</div>
+                  <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas
+                      id="chart-methods"></canvas></div>
                 </div>
               </div>
             </div>
@@ -2733,7 +2749,7 @@
   <script src="src/js/utils.js?v=1786000001"></script>
     <script src="src/js/dashboard-new.js?v=1785700000"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
-  <script src="src/js/team.js?v=20260818a"></script>
+  <script src="src/js/team.js?v=20260818c"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 
