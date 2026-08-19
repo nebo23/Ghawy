@@ -8,7 +8,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from passlib.context import CryptContext
 from starlette.responses import StreamingResponse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import csv
 import io
 import logging
@@ -944,6 +945,136 @@ def revenue_over_time(
     return [{"date": date, "amount": round(amt, 2)} for date, amt in sorted(amounts.items())]
 
 
+# ── Month-by-month sales ──────────────────────────────────────
+#
+# Cairo months, not UTC ones: created_at is naive UTC, and a payment taken at
+# 11pm on the 31st belongs to the month the owner thinks it belongs to.
+CAIRO_TZ = ZoneInfo("Africa/Cairo")
+
+
+def _cairo_month(dt: datetime) -> str:
+    """Naive-UTC timestamp → the 'YYYY-MM' Cairo month it falls in."""
+    return dt.replace(tzinfo=timezone.utc).astimezone(CAIRO_TZ).strftime("%Y-%m")
+
+
+def _plan_bucket(plan_key: Optional[str]) -> str:
+    """monthly_egp / quarterly_usd / … → monthly | quarterly | yearly."""
+    plan = (plan_key or "").lower()
+    if "year" in plan:
+        return "yearly"
+    if "quarter" in plan:
+        return "quarterly"
+    return "monthly"
+
+
+@router.get("/analytics/revenue-by-month")
+def revenue_by_month(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """One row per calendar month since the first sale — all time, on purpose.
+
+    The daily chart answers "how is this week going". This answers "what did
+    June make, and July, and August" — the question you actually ask when you
+    want to know whether the business is growing, and the one the range buttons
+    would ruin by hiding the months you are comparing against.
+
+    Every month between the first payment and today is present, empty ones
+    included: a gap in the middle is information too.
+
+    Each month is broken down three ways, because the total alone hides why it
+    moved — by rail (which wallet the money arrived in), by plan (a month of
+    yearly plans is worth several months of monthly ones), and new members vs
+    renewals (growth vs retention).
+    """
+    require_admin(current_user)  # 🔒 admins + owners
+
+    payments = db.query(Payment).filter(
+        Payment.status == PaymentStatus.CONFIRMED
+    ).order_by(Payment.created_at.asc()).all()
+
+    rails = _rails_for(db, payments)
+
+    buckets = {}
+
+    def bucket(month: str):
+        if month not in buckets:
+            buckets[month] = {
+                "revenue": 0.0,
+                "payments": 0,
+                "members": set(),
+                "new_members": 0,
+                "renewals": 0,
+                "rails": {RAIL_KASHIER: 0.0, RAIL_INSTAPAY: 0.0, RAIL_VODAFONE: 0.0},
+                "plans": {"monthly": 0.0, "quarterly": 0.0, "yearly": 0.0},
+            }
+        return buckets[month]
+
+    seen_payers = set()  # first confirmed payment = a new member, the rest are renewals
+
+    for payment in payments:
+        if not payment.created_at:
+            continue
+        row = bucket(_cairo_month(payment.created_at))
+        amount = float(payment.amount or 0)
+
+        row["revenue"] += amount
+        row["payments"] += 1
+        row["rails"][rails.get(payment.id, RAIL_KASHIER)] += amount
+        row["plans"][_plan_bucket(payment.plan_key)] += amount
+
+        if payment.user_id:
+            row["members"].add(payment.user_id)
+            if payment.user_id in seen_payers:
+                row["renewals"] += 1
+            else:
+                seen_payers.add(payment.user_id)
+                row["new_members"] += 1
+        else:
+            row["new_members"] += 1
+
+    # Fill the calendar from the first sale to the current Cairo month, so a
+    # month with no sales shows as a zero instead of vanishing from the list.
+    today = datetime.utcnow().replace(tzinfo=timezone.utc).astimezone(CAIRO_TZ).date()
+    if buckets:
+        first_year, first_month = (int(part) for part in min(buckets).split("-"))
+        year, month = first_year, first_month
+        while (year, month) <= (today.year, today.month):
+            bucket(f"{year:04d}-{month:02d}")
+            year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+
+    months = []
+    previous_revenue = None
+    for key in sorted(buckets):
+        row = buckets[key]
+        revenue = round(row["revenue"], 2)
+
+        change_pct = None
+        if previous_revenue:
+            change_pct = round((revenue - previous_revenue) / previous_revenue * 100, 1)
+
+        year, month = (int(part) for part in key.split("-"))
+        months.append({
+            "month": key,
+            "label": datetime(year, month, 1).strftime("%B %Y"),
+            "revenue": revenue,
+            "payments": row["payments"],
+            "members": len(row["members"]),
+            "new_members": row["new_members"],
+            "renewals": row["renewals"],
+            "rails": {rail: round(amount, 2) for rail, amount in row["rails"].items()},
+            "plans": {plan: round(amount, 2) for plan, amount in row["plans"].items()},
+            "change_pct": change_pct,
+        })
+        previous_revenue = revenue
+
+    return {
+        "months": months,
+        "total": round(sum(m["revenue"] for m in months), 2),
+        "best_month": max(months, key=lambda m: m["revenue"])["month"] if months else None,
+    }
+
+
 @router.get("/analytics/subscription-breakdown")
 def subscription_breakdown(
     current_user: User = Depends(get_current_user),
@@ -973,22 +1104,17 @@ def subscription_breakdown(
         if req.plan:
             plan_by_email[req.email] = req.plan
 
-    monthly = quarterly = yearly = none = 0
+    plans = {"monthly": 0, "quarterly": 0, "yearly": 0}
+    none = 0
     for u in db.query(User).all():
         # A member counts as subscribed only while their access is still active.
         active = bool(u.is_active) and (u.end_at is None or u.end_at > now)
         if not active:
             none += 1
             continue
-        plan = (plan_by_user.get(u.id) or plan_by_email.get(u.email) or "").lower()
-        if "year" in plan:
-            yearly += 1
-        elif "quarter" in plan:
-            quarterly += 1
-        else:
-            monthly += 1
+        plans[_plan_bucket(plan_by_user.get(u.id) or plan_by_email.get(u.email))] += 1
 
-    return {"monthly": monthly, "quarterly": quarterly, "yearly": yearly, "none": none}
+    return {**plans, "none": none}
 
 
 @router.get("/analytics/payment-method-breakdown")

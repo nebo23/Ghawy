@@ -157,6 +157,8 @@ async function loadProfile() {
             if (bioInput) bioInput.value = u.bio || '';
             const emailInput = document.getElementById('settingsEmail');
             if (emailInput) emailInput.value = u.email || '';
+            const idEl = document.getElementById('settingsUserId');
+            if (idEl) idEl.textContent = u.id ?? '—';
             const previewBox = document.getElementById('avatarPreviewBox');
             if (previewBox && u.avatar_url) previewBox.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
             const socialInput = document.getElementById('settingsSocial');
@@ -172,6 +174,38 @@ async function loadProfile() {
         }
 
     } catch (e) { console.error('Profile load error:', e); }
+}
+
+// ═══ COPY MEMBER ID ═══
+// The number is only useful once it is in a message to support, so the button
+// does the selecting and copying that people otherwise do by hand.
+const copyIdBtn = document.getElementById('copyUserIdBtn');
+if (copyIdBtn) {
+    copyIdBtn.addEventListener('click', async () => {
+        const value = document.getElementById('settingsUserId')?.textContent?.trim();
+        if (!value || value === '—') return;
+        try {
+            await navigator.clipboard.writeText(value);
+        } catch (e) {
+            // http:// origins and older browsers have no clipboard API.
+            const helper = document.createElement('textarea');
+            helper.value = value;
+            helper.style.position = 'fixed';
+            helper.style.opacity = '0';
+            document.body.appendChild(helper);
+            helper.select();
+            try { document.execCommand('copy'); } catch (_) { }
+            helper.remove();
+        }
+        const label = copyIdBtn.querySelector('.id-copy-label');
+        const original = label ? label.textContent : '';
+        if (label) label.textContent = 'Copied';
+        copyIdBtn.classList.add('copied');
+        setTimeout(() => {
+            if (label) label.textContent = original;
+            copyIdBtn.classList.remove('copied');
+        }, 1600);
+    });
 }
 
 // ═══ SAVE PROFILE ═══

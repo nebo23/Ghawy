@@ -199,6 +199,14 @@ async function loadTeamPage() {
   // Contact details are redacted server-side for non-owner admins.
   if (currentUserIsAdmin) await loadUsers();
 
+  // A restored or autofilled search box shows a name while the table below it
+  // is unfiltered — the filters live in JS state that starts empty. Clearing
+  // the boxes on load is what keeps the two telling the same story.
+  ['search-input', 'sp-search', 'pay-search', 'project-search'].forEach(id => {
+    const box = document.getElementById(id);
+    if (box) box.value = '';
+  });
+
   // Set up listeners for Users tab
   document.getElementById('search-input')?.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') { currentPage = 1; loadUsersTab(); }
@@ -555,11 +563,24 @@ function updateExpiringCount() {
 
 function applyAllFilters() {
   const search = (filterState.search || '').toLowerCase();
+
+  // Typing an ID has to land on that one member. Left as a plain substring
+  // match it never would: every phone number holding those digits comes back
+  // too, and "65" buries member 65 under a page of 010…65… numbers. So an
+  // exact ID hit takes over the search, and everything else falls back to the
+  // substring behaviour. Members read their ID off their settings page, where
+  // it now sits with a copy button; "#65" works as well as "65".
+  const idQuery = search.replace(/^#/, '');
+  const exactId = /^[0-9]{1,7}$/.test(idQuery)
+    ? allUsers.find(u => String(u.id) === idQuery)
+    : null;
+
   const matched = allUsers.filter(u => {
-    const matchSearch = !search ||
-      (u.full_name && u.full_name.toLowerCase().includes(search)) ||
-      (u.email && u.email.toLowerCase().includes(search)) ||
-      (u.phone && u.phone.toLowerCase().includes(search));
+    const matchSearch = !search || (exactId
+      ? u.id === exactId.id
+      : (u.full_name && u.full_name.toLowerCase().includes(search)) ||
+        (u.email && u.email.toLowerCase().includes(search)) ||
+        (u.phone && u.phone.toLowerCase().includes(search)));
     const matchStatus = filterState.status === 'all' ||
       (filterState.status === 'active' && u.is_active) ||
       (filterState.status === 'inactive' && !u.is_active);
@@ -1429,6 +1450,7 @@ function exportStudentsProgressCSV() {
 let analyticsRange = '30d';
 let chartMembers = null;
 let chartRevenue = null;
+let chartRevenueMonth = null;
 let chartSubs = null;
 let chartMethods = null;
 
@@ -1460,6 +1482,7 @@ async function refreshAnalytics() {
     loadKPIs(),
     loadMembersChart(),
     loadRevenueChart(),
+    loadMonthlyRevenue(),
     loadSubsChart(),
     loadMethodsChart()
   ]);
@@ -1554,6 +1577,145 @@ async function loadRevenueChart() {
     });
     document.getElementById('chart-revenue').parentElement.style.height = '260px';
   } catch (e) { }
+}
+
+
+// Revenue by month — one fetch, two readings of it. The chart is for the shape
+// (is the line going up, and which rail is carrying it), the table is for the
+// exact figure, because nobody can read "162,000" off a bar.
+//
+// All time, deliberately: it ignores the range buttons above, since a month
+// chart clipped to 30 days has nothing left to compare against.
+async function loadMonthlyRevenue() {
+  try {
+    const res = await fetch(`${API}/admin/analytics/revenue-by-month`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    const months = data.months || [];
+
+    renderMonthlyChart(months);
+    renderMonthlyTable(months, data);
+  } catch (e) { }
+}
+
+const MONEY = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+// "August 2026" → "Aug 26", so twelve months still fit on one axis.
+function shortMonth(month) {
+  const [year, index] = month.split('-');
+  const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${names[Number(index) - 1]} ${year.slice(2)}`;
+}
+
+function renderMonthlyChart(months) {
+  const canvas = document.getElementById('chart-revenue-month');
+  if (!canvas) return;
+
+  const rails = ['kashier', 'instapay', 'vodafone_cash'];
+  const colors = { kashier: '#3f8ff9', instapay: '#7c3aed', vodafone_cash: '#ef4444' };
+  const total = months.reduce((sum, m) => sum + (m.revenue || 0), 0);
+
+  const label = document.getElementById('revenue-month-label');
+  if (label) {
+    label.textContent = months.length
+      ? `${months.length} month${months.length === 1 ? '' : 's'} · EGP ${MONEY(total)} all time`
+      : 'No confirmed payments yet';
+  }
+
+  if (chartRevenueMonth) chartRevenueMonth.destroy();
+  chartRevenueMonth = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: months.map(m => shortMonth(m.month)),
+      datasets: rails.map(rail => ({
+        label: railLabel(rail),
+        data: months.map(m => (m.rails || {})[rail] || 0),
+        backgroundColor: colors[rail],
+        borderRadius: 4,
+        maxBarThickness: 64,
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10 } },
+        tooltip: {
+          callbacks: {
+            label: item => ` ${item.dataset.label}: EGP ${MONEY(item.parsed.y)}`,
+            // The stack hides the one number the month is actually judged on.
+            footer(items) {
+              const month = months[items[0].dataIndex];
+              return `Total: EGP ${MONEY(month.revenue)} · ${month.payments} payment${month.payments === 1 ? '' : 's'}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { callback: v => MONEY(v) } }
+      }
+    }
+  });
+  canvas.parentElement.style.height = '300px';
+}
+
+function renderMonthlyTable(months, data) {
+  const tbody = document.getElementById('monthly-sales-tbody');
+  const tfoot = document.getElementById('monthly-sales-tfoot');
+  if (!tbody) return;
+
+  if (!months.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#888;padding:24px">No confirmed payments yet</td></tr>`;
+    if (tfoot) tfoot.innerHTML = '';
+    return;
+  }
+
+  const currentMonth = months[months.length - 1].month;
+  const num = (value, extra = '') =>
+    `<td class="${value ? extra : 'm-zero'}">${value ? MONEY(value) : '—'}</td>`;
+
+  tbody.innerHTML = months.map(m => {
+    // The running month is compared against months that had all thirty days to
+    // earn their number, so it is flagged rather than quietly called a drop.
+    const isCurrent = m.month === currentMonth;
+    let change = '<td class="m-zero">—</td>';
+    if (m.change_pct !== null && m.change_pct !== undefined) {
+      const cls = m.change_pct >= 0 ? 'm-up' : 'm-down';
+      change = `<td class="${cls}">${m.change_pct >= 0 ? '▲' : '▼'} ${Math.abs(m.change_pct).toFixed(1)}%</td>`;
+    }
+    const plans = m.plans || {};
+
+    return `
+    <tr>
+      <td class="m-name">${escapeHtml(m.label)}${isCurrent ? '<span class="m-partial">so far</span>' : ''}</td>
+      <td class="m-revenue">${m.revenue ? 'EGP ' + MONEY(m.revenue) : '<span class="m-zero">—</span>'}</td>
+      ${change}
+      <td title="${m.members} member${m.members === 1 ? '' : 's'} paid this month">${m.payments || '<span class="m-zero">—</span>'}</td>
+      ${num(m.new_members)}
+      ${num(m.renewals)}
+      ${num(plans.monthly)}
+      ${num(plans.quarterly)}
+      ${num(plans.yearly)}
+    </tr>`;
+  }).join('');
+
+  if (tfoot) {
+    const sum = key => months.reduce((total, m) => total + (m[key] || 0), 0);
+    const sumPlan = plan => months.reduce((total, m) => total + ((m.plans || {})[plan] || 0), 0);
+    tfoot.innerHTML = `
+      <tr>
+        <td>All time</td>
+        <td class="m-revenue">EGP ${MONEY(data.total)}</td>
+        <td></td>
+        <td>${sum('payments')}</td>
+        <td>${MONEY(sum('new_members'))}</td>
+        <td>${MONEY(sum('renewals'))}</td>
+        <td>${MONEY(sumPlan('monthly'))}</td>
+        <td>${MONEY(sumPlan('quarterly'))}</td>
+        <td>${MONEY(sumPlan('yearly'))}</td>
+      </tr>`;
+  }
 }
 
 async function loadSubsChart() {

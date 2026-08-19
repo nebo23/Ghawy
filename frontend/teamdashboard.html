@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260809c" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260819a" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1109,8 +1109,9 @@
               <div class="team-toolbar">
                 <div class="search-wrap">
                   <span class="search-icon">🔍</span>
-                  <input type="text" id="search-input" placeholder="Search name, email or phone..."
-                    oninput="handleSearch(this.value)" />
+                  <input type="text" id="search-input" placeholder="Search name, email, phone or ID..."
+                    oninput="handleSearch(this.value)" autocomplete="off" spellcheck="false"
+                    data-lpignore="true" data-1p-ignore />
                 </div>
                 <select id="status-filter" onchange="handleFilter(this.value)">
                   <option value="all">All Statuses</option>
@@ -1230,7 +1231,8 @@
               <div class="team-toolbar sp-toolbar">
                 <div class="search-wrap">
                   <span class="search-icon">🔍</span>
-                  <input type="text" id="sp-search" placeholder="Search student name..." />
+                  <input type="text" id="sp-search" placeholder="Search student name..." autocomplete="off"
+                    spellcheck="false" data-lpignore="true" data-1p-ignore />
                 </div>
                 <select id="sp-course-filter" title="Filter by course">
                   <option value="all">All Courses</option>
@@ -1326,7 +1328,8 @@
               <div class="payments-toolbar">
                 <div class="search-wrap">
                   <span class="search-icon">🔍</span>
-                  <input type="text" id="pay-search" placeholder="Search by name or reference..." />
+                  <input type="text" id="pay-search" placeholder="Search by name or reference..." autocomplete="off"
+                    spellcheck="false" data-lpignore="true" data-1p-ignore />
                 </div>
                 <select id="pay-status-filter">
                   <option value="all">All Status</option>
@@ -1435,6 +1438,19 @@
                   <div class="chart-canvas-wrap"><canvas id="chart-revenue"></canvas></div>
                 </div>
               </div>
+              <!-- Revenue by month sits under revenue by day because it answers the
+                   other half of the question: the daily line says how this week
+                   is going, this says what June made, and July, and August. All
+                   time on purpose — the range buttons above would hide the very
+                   months you are comparing against. Stacked by rail, so a jump
+                   also shows which wallet carried it. -->
+              <div class="charts-grid">
+                <div class="chart-card">
+                  <h3>Revenue by Month (EGP)</h3>
+                  <div class="chart-subtitle" id="revenue-month-label">Every month since launch — all time</div>
+                  <div class="chart-canvas-wrap"><canvas id="chart-revenue-month"></canvas></div>
+                </div>
+              </div>
               <!-- The two doughnuts share a row: same shape, same question
                    (what is the split), one asked of the plan and one of the
                    rail the money came in on. Revenue moved to its own full
@@ -1451,6 +1467,40 @@
                   <div class="chart-subtitle" id="methods-total-label">Completed payments by rail</div>
                   <div class="chart-canvas-wrap" style="max-width:320px;margin:0 auto;"><canvas
                       id="chart-methods"></canvas></div>
+                </div>
+              </div>
+
+              <!-- The doughnuts say how the split looks today; the numbers under
+                   them say how each month actually went. Same figures as the
+                   chart above, written out — a chart cannot be read to the
+                   pound, and "how much did July make" wants an exact answer. -->
+              <div class="charts-grid" style="margin-top:24px;">
+                <div class="chart-card">
+                  <h3>Monthly Sales</h3>
+                  <div class="chart-subtitle" id="monthly-sales-label">Confirmed payments, month by month</div>
+                  <div class="team-table-wrap">
+                    <table class="team-table monthly-table">
+                      <thead>
+                        <tr>
+                          <th>Month</th>
+                          <th>Revenue</th>
+                          <th>vs prev</th>
+                          <th>Payments</th>
+                          <th>New</th>
+                          <th>Renewals</th>
+                          <th>Monthly (EGP)</th>
+                          <th>Quarterly (EGP)</th>
+                          <th>Yearly (EGP)</th>
+                        </tr>
+                      </thead>
+                      <tbody id="monthly-sales-tbody">
+                        <tr>
+                          <td colspan="9" style="text-align:center;color:#888;padding:24px">Loading…</td>
+                        </tr>
+                      </tbody>
+                      <tfoot id="monthly-sales-tfoot"></tfoot>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1634,7 +1684,8 @@
                   <p style="margin:4px 0 0;color:#888;font-size:13px;">Review submitted course projects and send feedback.</p>
                 </div>
                 <div class="projects-admin-filters">
-                  <input type="text" id="project-search" placeholder="Search member, email, course..." />
+                  <input type="text" id="project-search" placeholder="Search member, email, course..." autocomplete="off"
+                    spellcheck="false" data-lpignore="true" data-1p-ignore />
                   <select id="project-status-filter">
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -2749,7 +2800,7 @@
   <script src="src/js/utils.js?v=1786000001"></script>
     <script src="src/js/dashboard-new.js?v=1785700000"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
-  <script src="src/js/team.js?v=20260818c"></script>
+  <script src="src/js/team.js?v=20260819b"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

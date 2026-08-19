@@ -717,6 +717,59 @@
   width: 100%;
 }
 
+/* ── Monthly sales table (Analytics) ─────
+   Money reads as money: figures right-aligned so the columns line up to the
+   pound, and the current month flagged rather than silently compared against
+   full months it is not finished competing with. */
+.monthly-table th:not(:first-child),
+.monthly-table td:not(:first-child) {
+  text-align: right;
+}
+
+.monthly-table td {
+  white-space: nowrap;
+}
+
+.monthly-table .m-name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.monthly-table .m-revenue {
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.monthly-table .m-zero {
+  color: #555;
+}
+
+.monthly-table .m-up {
+  color: #22c55e;
+}
+
+.monthly-table .m-down {
+  color: #ef4444;
+}
+
+.monthly-table .m-partial {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, .12);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-inline-start: 6px;
+  text-transform: uppercase;
+}
+
+.monthly-table tfoot td {
+  border-top: 1px solid #2a2a2a;
+  border-bottom: none;
+  font-weight: 700;
+  color: #fff;
+}
+
 /* ── Skeleton Loading ──────────────────── */
 .skeleton-row td {
   position: relative;
