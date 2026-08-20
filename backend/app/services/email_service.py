@@ -364,11 +364,16 @@ def _mask_wallet_account(account: str) -> str:
 def _invoice_payment_method(gw: dict) -> str:
     """سطر وسيلة الدفع بالظبط زي ما العميل دفع بيها."""
     method = (gw.get("method") or "").lower()
-    if method == "card":
-        brand = gw.get("card_brand") or "بطاقة"
-        masked = gw.get("masked_card") or ""
+    # Apple Pay / Google Pay كارت مرمّز، فبيوصلوا ومعاهم brand و masked card زي
+    # أي كارت. لو البوابة قالت مين المحفظة، الاسم بتاعها هو اللي العميل فاكره —
+    # "Apple Pay — Visa •••• 4021" بيقوله حاجة، و"بطاقة بنكية" لوحدها لأ.
+    provider = gw.get("wallet_provider") or ""
+    brand = gw.get("card_brand") or ""
+    masked = gw.get("masked_card") or ""
+    if provider or method == "card" or brand or masked:
         last4 = "".join(ch for ch in masked if ch.isdigit())[-4:] if masked else ""
-        return f"بطاقة بنكية — {brand}" + (f" •••• {last4}" if last4 else "")
+        head = " — ".join(part for part in (provider or "بطاقة بنكية", brand) if part)
+        return head + (f" •••• {last4}" if last4 else "")
     if method == "wallet":
         raw_scheme = gw.get("wallet_scheme") or ""
         scheme = _WALLET_SCHEME_AR.get(raw_scheme.lower().replace(" ", ""), raw_scheme)

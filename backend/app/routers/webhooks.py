@@ -13,6 +13,44 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
 
+# Apple Pay / Google Pay بيوصلوا لأي بوابة كـ **كارت مرمّز** (tokenized card)،
+# مش كوسيلة دفع مستقلة — الشبكة تحتيهم بتفضل Visa/Mastercard وبيتبعت معاهم
+# masked card و brand عادي. كاشير موثّقش الحقل اللي بيميّزهم (الـ allowedMethods
+# الموثّقة عنده هي card / wallet / bank_installments بس)، ومحصلش على الحساب ده
+# ولا عملية Apple Pay واحدة لحد دلوقتي نتفرّج على شكلها.
+#
+# عشان كده مش بنراهن على اسم حقل واحد: بندوّر على "apple"/"google" في الأماكن
+# اللي البوابات بتحط فيها الإشارة دي عادةً. لو مفيش ولا واحدة فيهم، الفاتورة
+# بتطلع "بطاقة بنكية" بالظبط زي دلوقتي — يعني الحتة دي ممكن تزوّد الدقة،
+# ومستحيل تكسر اللي شغّال.
+_WALLET_PROVIDER_LABELS = (
+    ("apple", "Apple Pay"),
+    ("google", "Google Pay"),
+    ("samsung", "Samsung Pay"),
+)
+
+
+def _digital_wallet_provider(data: dict, source: dict, card_info: dict) -> str:
+    """اسم محفظة الموبايل لو العملية اتدفعت من خلالها، وإلا نص فاضي."""
+    source_card = source.get("cardInfo") or {}
+    haystack = " ".join(str(value) for value in (
+        data.get("method", ""),
+        data.get("paymentMethod", ""),
+        source.get("type", ""),
+        source.get("provider", ""),
+        card_info.get("walletProvider", ""),
+        card_info.get("walletIndicator", ""),
+        source_card.get("walletProvider", ""),
+        source_card.get("walletIndicator", ""),
+        source_card.get("tokenProvider", ""),
+    )).lower()
+    for needle, label in _WALLET_PROVIDER_LABELS:
+        if needle in haystack:
+            return label
+    return ""
+
+
+
 def _gateway_details_from_webhook(data: dict) -> dict:
     """بيانات العملية من payload الـ webhook، للفاتورة اللي بتروح للعميل.
 
@@ -34,6 +72,7 @@ def _gateway_details_from_webhook(data: dict) -> dict:
 
     return {
         "method": (data.get("method") or "").lower(),
+        "wallet_provider": _digital_wallet_provider(data, source, card_info),
         "transaction_id": data.get("transactionId", ""),
         "kashier_order_id": data.get("kashierOrderId", ""),
         "order_reference": data.get("orderReference", ""),
