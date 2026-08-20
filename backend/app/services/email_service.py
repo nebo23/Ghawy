@@ -147,39 +147,6 @@ def send_verification_email(to_email: str, code: str) -> None:
     )
 
 
-def send_legacy_otp_email(to_email: str, code: str) -> None:
-    """Send OTP for legacy members promo verification."""
-    body_text = (
-        f"مرحباً بك في غاوي،\n\n"
-        f"كود التحقق الخاص بك هو: {code}\n\n"
-        f"هذا الكود صالح لمدة 10 دقائق.\n"
-        f"إذا لم تطلب هذا الكود، يرجى تجاهل هذه الرسالة."
-    )
-    inner = _otp_inner_html(
-        code,
-        intro="استخدم الكود التالي للحصول على الشهر المجاني:",
-        expiry_note="الكود صالح لمدة 10 دقائق. لو مطلبتش الكود ده، تجاهل الرسالة.",
-    )
-    _send_email(
-        to_email=to_email,
-        subject="كود التحقق — Ghawy Legacy",
-        body_text=body_text,
-        body_html=render_ghawy_email(inner),
-    )
-
-
-# ═══════════════════════════════════════════════════════
-#  MANUAL PAYMENT EMAILS
-# ═══════════════════════════════════════════════════════
-
-# Which wallet the reviewer has to open to find the transfer. Optional and
-# defaulted so any older caller that does not pass one still sends a valid mail.
-MANUAL_METHOD_LABELS = {
-    "instapay": ("انستاباي", "InstaPay"),
-    "vodafone_cash": ("فودافون كاش", "Vodafone Cash"),
-}
-
-
 def send_admin_payment_notification(
     full_name: str,
     email: str,
@@ -288,6 +255,402 @@ def send_payment_rejection_email(
             heading=heading, body_paragraphs=body, cta_text=cta_text, cta_url=cta_url,
             heading_color="#DC2626", cta_bg="#DC2626", cta_color="#ffffff",
         ),
+    )
+
+
+# ═══════════════════════════════════════════════════════
+#  فاتورة الدفع (كاشير) — INVOICE
+# ═══════════════════════════════════════════════════════
+#
+# بتتبعت مرة واحدة بس لكل عملية دفع ناجحة، من جوه
+# confirm_kashier_payment — وهي النقطة الوحيدة اللي بيعدّي منها
+# الـ webhook والـ redirect الاتنين، وبتشتغل على PENDING بس. يعني
+# العضو عمره ما هياخد فاتورتين لنفس العملية مهما وصل الإشارتين.
+#
+# اللي مش بيدخل الفاتورة عن قصد:
+#   • cardDataToken / ccvToken — دول توكنز بيتخصم بيهم من الكارت.
+#     محصلش ولا هيحصل إنهم يتبعتوا في إيميل.
+#   • settlementInfo (عمولة كاشير والمبلغ الصافي اللي بيوصلنا) —
+#     ده رقم بيزنس بتاعنا إحنا، مالوش لازمة في فاتورة العميل.
+
+_INVOICE_PLAN_LABELS = {
+    "monthly_egp":   "اشتراك منصة غاوي — الباقة الشهرية",
+    "quarterly_egp": "اشتراك منصة غاوي — باقة 3 شهور",
+    "yearly_egp":    "اشتراك منصة غاوي — الباقة السنوية",
+}
+
+_INVOICE_DURATION_LABELS = {
+    "1_month":  "شهر واحد (30 يوم)",
+    "3_months": "3 شهور (90 يوم)",
+    "1_year":   "سنة كاملة (365 يوم)",
+}
+
+_CURRENCY_AR = {
+    "EGP": "جنيه مصري",
+    "USD": "دولار أمريكي",
+    "SAR": "ريال سعودي",
+    "AED": "درهم إماراتي",
+}
+
+# الصيغة المعرّفة — لجملة زي "كل المبالغ محصّلة بالجنيه المصري"،
+# اللي "بالـ" + النكرة بتطلع فيها غلط.
+_CURRENCY_AR_DEFINITE = {
+    "EGP": "الجنيه المصري",
+    "USD": "الدولار الأمريكي",
+    "SAR": "الريال السعودي",
+    "AED": "الدرهم الإماراتي",
+}
+
+# أسماء المحافظ الإلكترونية زي ما كاشير بيبعتها في payScheme
+_WALLET_SCHEME_AR = {
+    "vodafonecash": "فودافون كاش",
+    "etisalatcash": "اتصالات كاش",
+    "orangecash": "أورنج كاش",
+    "wecash": "وي باي",
+    "bmwallet": "محفظة بنكية",
+}
+
+
+def _esc_html(value) -> str:
+    """أي قيمة جاية من بوابة الدفع أو من بيانات العضو بتتهرّب قبل ما تدخل الـ HTML."""
+    s = "" if value is None else str(value)
+    return (s.replace("&", "&amp;").replace("<", "&lt;")
+             .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _fmt_cairo_datetime(dt) -> str:
+    """تاريخ ووقت بتوقيت القاهرة بصيغة عربية — الباك إند بيخزن UTC naive."""
+    if not dt:
+        return "—"
+    from datetime import timezone as _timezone
+    from zoneinfo import ZoneInfo
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_timezone.utc)
+    local = dt.astimezone(ZoneInfo("Africa/Cairo"))
+    hour12 = local.hour % 12 or 12
+    meridiem = "ص" if local.hour < 12 else "م"
+    return f"{local:%d/%m/%Y} — {hour12}:{local:%M} {meridiem}"
+
+
+def _fmt_cairo_date(dt) -> str:
+    """تاريخ من غير وقت (لتاريخ نهاية الاشتراك)."""
+    if not dt:
+        return "—"
+    from datetime import timezone as _timezone
+    from zoneinfo import ZoneInfo
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_timezone.utc)
+    return f"{dt.astimezone(ZoneInfo('Africa/Cairo')):%d/%m/%Y}"
+
+
+def _fmt_money(amount, currency: str = "EGP") -> str:
+    """مبلغ بمنزلتين عشريتين + اسم العملة بالعربي — زي ما الفاتورة المفروض تبان."""
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        return "—"
+    unit = _CURRENCY_AR.get((currency or "EGP").upper(), currency or "")
+    return f"{value:,.2f} {unit}".strip()
+
+
+def _mask_wallet_account(account: str) -> str:
+    """رقم محفظة العميل — أول 3 وآخر 4 بس، الباقي نجوم."""
+    digits = "".join(ch for ch in (account or "") if ch.isdigit())
+    if len(digits) < 8:
+        return account or ""
+    return f"{digits[:3]}••••{digits[-4:]}"
+
+
+def _invoice_payment_method(gw: dict) -> str:
+    """سطر وسيلة الدفع بالظبط زي ما العميل دفع بيها."""
+    method = (gw.get("method") or "").lower()
+    if method == "card":
+        brand = gw.get("card_brand") or "بطاقة"
+        masked = gw.get("masked_card") or ""
+        last4 = "".join(ch for ch in masked if ch.isdigit())[-4:] if masked else ""
+        return f"بطاقة بنكية — {brand}" + (f" •••• {last4}" if last4 else "")
+    if method == "wallet":
+        raw_scheme = gw.get("wallet_scheme") or ""
+        scheme = _WALLET_SCHEME_AR.get(raw_scheme.lower().replace(" ", ""), raw_scheme)
+        account = _mask_wallet_account(gw.get("payer_account") or "")
+        line = f"محفظة إلكترونية — {scheme}" if scheme else "محفظة إلكترونية"
+        return line + (f" ({account})" if account else "")
+    return "كاشير — دفع إلكتروني"
+
+
+def _invoice_seller_rows() -> list:
+    """بيانات مُصدر الفاتورة. الرقم الضريبي والسجل التجاري بيتقروا من الـ env
+    وبيظهروا لو متكوّنين بس — مفيش رقم بيتخترع هنا."""
+    rows = [
+        ("الجهة المُصدِرة", os.getenv("COMPANY_LEGAL_NAME", "منصة غاوي — Ghawy")),
+        ("الموقع الإلكتروني", "ghawy.ai"),
+        ("البريد الإلكتروني", "support@ghawy.ai"),
+        ("واتساب الدعم", _WHATSAPP_DISPLAY),
+    ]
+    address = os.getenv("COMPANY_ADDRESS", "")
+    tax_id = os.getenv("COMPANY_TAX_ID", "")
+    commercial_reg = os.getenv("COMPANY_COMMERCIAL_REGISTER", "")
+    if address:
+        rows.append(("العنوان", address))
+    if tax_id:
+        rows.append(("الرقم الضريبي", tax_id))
+    if commercial_reg:
+        rows.append(("السجل التجاري", commercial_reg))
+    return rows
+
+
+def _inv_section(title: str, rows: list) -> str:
+    """عنوان قسم + جدول تسميات/قيم. القيم LTR عشان الأرقام واللاتيني يبانوا صح في RTL."""
+    body = ""
+    for index, (label, value) in enumerate(rows):
+        border = "" if index == len(rows) - 1 else "border-bottom:1px solid #EFEFEF;"
+        body += (
+            f'<tr><td style="color:#6b7280;padding:9px 0;{border}text-align:right;'
+            f'font-size:13px;white-space:nowrap;">{_esc_html(label)}</td>'
+            f'<td style="color:#1a1a1a;padding:9px 0 9px 0;{border}text-align:left;'
+            f'direction:ltr;unicode-bidi:plaintext;font-size:13px;font-weight:600;">'
+            f'{_esc_html(value)}</td></tr>'
+        )
+    return (
+        f'<p style="color:#1A1A1A;font-size:14px;font-weight:700;margin:26px 0 8px;'
+        f'text-align:right;">{_esc_html(title)}</p>'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:collapse;">{body}</table>'
+    )
+
+
+def _invoice_html(inv: dict) -> str:
+    """جسم الفاتورة — بيتلفّ في القالب الموحّد render_ghawy_email زي أي إيميل تاني."""
+    currency = inv.get("currency") or "EGP"
+    gw = inv.get("gateway") or {}
+    name = _first_name(inv.get("user_name") or "")
+    discount = inv.get("discount_amount") or 0
+
+    # ── الترويسة: رقم الفاتورة + ختم "مدفوعة" ──
+    header = f"""
+          <p style="color:#1A1A1A;font-size:18px;font-weight:700;margin:0 0 4px;text-align:right;">فاتورة دفع</p>
+          <p style="color:#4b4b52;font-size:15px;margin:0 0 18px;text-align:right;line-height:1.8;">
+            أهلاً يا {_esc_html(name)} — استلمنا دفعتك بنجاح واشتراكك اتفعّل. دي فاتورتك بكل تفاصيل العملية.
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#f4f8ff;border:1px solid #d5e3fb;border-radius:10px;margin:0 0 6px;">
+            <tr>
+              <td style="padding:16px 18px;text-align:right;">
+                <div style="color:#6b7280;font-size:12px;margin-bottom:3px;">رقم الفاتورة</div>
+                <div style="color:{LINK_BLUE};font-size:17px;font-weight:800;direction:ltr;
+                            unicode-bidi:plaintext;text-align:right;">{_esc_html(inv.get('invoice_number'))}</div>
+              </td>
+              <td style="padding:16px 18px;text-align:left;">
+                <span style="display:inline-block;background:#D6FF3F;color:#0a0a0a;font-size:13px;
+                             font-weight:800;padding:7px 14px;border-radius:999px;">مدفوعة ✅</span>
+              </td>
+            </tr>
+          </table>"""
+
+    # ── البند: الباقة نفسها ──
+    plan_label = _INVOICE_PLAN_LABELS.get(inv.get("plan_key"), "اشتراك منصة غاوي")
+    duration_label = _INVOICE_DURATION_LABELS.get(inv.get("duration_type"), "")
+    item = f"""
+          <p style="color:#1A1A1A;font-size:14px;font-weight:700;margin:26px 0 8px;text-align:right;">تفاصيل الاشتراك</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                 style="border-collapse:collapse;border:1px solid #EFEFEF;border-radius:10px;">
+            <tr style="background:#FAFAFA;">
+              <th style="color:#6b7280;font-size:12px;font-weight:600;padding:10px 14px;text-align:right;">البيان</th>
+              <th style="color:#6b7280;font-size:12px;font-weight:600;padding:10px 14px;text-align:center;">الكمية</th>
+              <th style="color:#6b7280;font-size:12px;font-weight:600;padding:10px 14px;text-align:left;">القيمة</th>
+            </tr>
+            <tr>
+              <td style="padding:14px;text-align:right;color:#1a1a1a;font-size:13px;font-weight:600;border-top:1px solid #EFEFEF;">
+                {_esc_html(plan_label)}
+                <div style="color:#6b7280;font-size:12px;font-weight:400;margin-top:4px;">{_esc_html(duration_label)}</div>
+              </td>
+              <td style="padding:14px;text-align:center;color:#1a1a1a;font-size:13px;border-top:1px solid #EFEFEF;">1</td>
+              <td style="padding:14px;text-align:left;color:#1a1a1a;font-size:13px;font-weight:600;direction:ltr;border-top:1px solid #EFEFEF;">
+                {_esc_html(_fmt_money(inv.get('original_amount'), currency))}
+              </td>
+            </tr>
+          </table>"""
+
+    # ── الحساب: السعر ثم الخصم ثم المدفوع ──
+    totals_rows = (
+        f'<tr><td style="color:#6b7280;padding:8px 0;text-align:right;font-size:13px;">سعر الباقة</td>'
+        f'<td style="color:#1a1a1a;padding:8px 0;text-align:left;direction:ltr;font-size:13px;">'
+        f'{_esc_html(_fmt_money(inv.get("original_amount"), currency))}</td></tr>'
+    )
+    if discount:
+        # ساعات بيبقى فيه خصم مؤكد من غير اسم كوبون مؤكد (شوف _pricing_details) —
+        # ساعتها بنكتب "الخصم" ساكت بدل "الخصم (كوبون None)".
+        coupon_note = ""
+        if inv.get("coupon_code"):
+            coupon_note = f' (كوبون {inv["coupon_code"]}'
+            percent = inv.get("coupon_percent")
+            if percent:
+                # 20.0 لازم تطلع "20%" مش "20.0%"، و 12.5 تفضل زي ما هي.
+                percent_str = f"{percent:g}" if isinstance(percent, (int, float)) else str(percent)
+                coupon_note += f' — {percent_str}%'
+            coupon_note += ')'
+        totals_rows += (
+            f'<tr><td style="color:#6b7280;padding:8px 0;text-align:right;font-size:13px;">'
+            f'الخصم{_esc_html(coupon_note)}</td>'
+            f'<td style="color:#16a34a;padding:8px 0;text-align:left;direction:ltr;font-size:13px;font-weight:600;">'
+            f'- {_esc_html(_fmt_money(discount, currency))}</td></tr>'
+        )
+    totals = f"""
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:14px 0 0;">
+            {totals_rows}
+            <tr>
+              <td style="color:#1a1a1a;padding:14px 0 0;text-align:right;font-size:15px;font-weight:800;border-top:2px solid #1a1a1a;">
+                الإجمالي المدفوع
+              </td>
+              <td style="color:#1a1a1a;padding:14px 0 0;text-align:left;direction:ltr;font-size:16px;font-weight:800;border-top:2px solid #1a1a1a;">
+                {_esc_html(_fmt_money(inv.get('amount'), currency))}
+              </td>
+            </tr>
+          </table>"""
+
+    # ── الأقسام: العميل / العملية / المُصدر ──
+    customer = _inv_section("بيانات العميل", [
+        ("الاسم", inv.get("user_name") or "—"),
+        ("رقم العضوية", f"#{inv.get('user_id')}"),
+        ("البريد الإلكتروني", inv.get("user_email") or "—"),
+        ("رقم الموبايل", inv.get("user_phone") or "—"),
+        ("الدولة", country_to_arabic(inv.get("user_country") or "") or "—"),
+        ("المحافظة", _governorate_to_arabic(inv.get("user_governorate") or "") or "—"),
+    ])
+
+    transaction_rows = [
+        ("وسيلة الدفع", _invoice_payment_method(gw)),
+    ]
+    if gw.get("card_holder"):
+        transaction_rows.append(("اسم حامل البطاقة", gw["card_holder"]))
+    if gw.get("payer_name"):
+        transaction_rows.append(("اسم صاحب المحفظة", gw["payer_name"]))
+    if gw.get("paid_through"):
+        transaction_rows.append(("مزوّد المحفظة", gw["paid_through"]))
+    transaction_rows += [
+        ("بوابة الدفع", "Kashier"),
+        ("رقم العملية", gw.get("transaction_id") or "—"),
+        ("رقم الطلب", inv.get("order_id") or "—"),
+    ]
+    if gw.get("kashier_order_id"):
+        transaction_rows.append(("مرجع كاشير", gw["kashier_order_id"]))
+    if gw.get("order_reference"):
+        transaction_rows.append(("رقم مرجعي إضافي", gw["order_reference"]))
+    if gw.get("response_message"):
+        code = f" ({gw['response_code']})" if gw.get("response_code") else ""
+        transaction_rows.append(("نتيجة العملية", f"{gw['response_message']}{code}"))
+    transaction_rows.append(("تاريخ ووقت الدفع", _fmt_cairo_datetime(inv.get("paid_at"))))
+    if gw.get("channel"):
+        transaction_rows.append(("قناة الدفع", gw["channel"]))
+    if gw.get("customer_ip"):
+        transaction_rows.append(("عنوان IP وقت الدفع", gw["customer_ip"]))
+    transaction_rows.append(("حالة الدفع", "ناجحة — تم التحصيل"))
+    transaction = _inv_section("بيانات عملية الدفع", transaction_rows)
+
+    activation = _inv_section("تفعيل الاشتراك", [
+        ("تاريخ التفعيل", _fmt_cairo_datetime(inv.get("paid_at"))),
+        ("المدة المضافة", f"{inv.get('days')} يوم"),
+        ("الاشتراك ساري حتى", _fmt_cairo_date(inv.get("subscription_end"))),
+    ])
+
+    seller = _inv_section("بيانات مُصدر الفاتورة", _invoice_seller_rows())
+
+    notes = f"""
+          <div style="background:#FAFAFA;border-radius:10px;padding:16px 18px;margin:26px 0 0;
+                      color:#6b7280;font-size:12.5px;line-height:1.9;text-align:right;">
+            • الفاتورة دي صادرة إلكترونياً ومعتمدة من غير توقيع أو ختم.<br>
+            • كل المبالغ محصّلة بـ{_esc_html(_CURRENCY_AR_DEFINITE.get(currency.upper(), currency))} وشاملة أي رسوم.<br>
+            • مفيش تجديد تلقائي — الاشتراك بينتهي لوحده بانتهاء مدته من غير أي خصم تاني.<br>
+            • المبالغ المدفوعة غير قابلة للاسترداد وفقاً لـ<a href="{_LINK_TERMS}" style="color:{LINK_BLUE};text-decoration:none;">الشروط والأحكام</a>.<br>
+            • لأي استفسار بخصوص الفاتورة دي، ردّ على الإيميل ده أو كلّمنا على support@ghawy.ai واذكر رقم الفاتورة.
+          </div>"""
+
+    frontend_url = os.getenv("FRONTEND_URL", "https://ghawy.ai").rstrip("/")
+    cta = f"""
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 6px;"><tr>
+            <td align="center" bgcolor="#D6FF3F" style="border-radius:10px;">
+              <a href="{frontend_url}/dashboard.html" style="display:block;padding:16px 24px;color:#0a0a0a;
+                 font-size:16px;font-weight:700;text-decoration:none;text-align:center;font-family:{FONT_STACK};">
+                ادخل المنصة وابدأ دلوقتي →
+              </a>
+            </td></tr></table>
+          <p style="color:#1A1A1A;font-size:15px;font-weight:700;margin:20px 0 0;text-align:right;">فريق غاوي</p>"""
+
+    inner = header + item + totals + customer + activation + transaction + seller + notes + cta
+    return render_ghawy_email(inner)
+
+
+def _invoice_text(inv: dict) -> str:
+    """نسخة نصية من نفس الفاتورة — للـ deliverability وللقارئات النصية."""
+    currency = inv.get("currency") or "EGP"
+    gw = inv.get("gateway") or {}
+    lines = [
+        f"فاتورة دفع — {inv.get('invoice_number')}",
+        "الحالة: مدفوعة",
+        "",
+        f"البيان: {_INVOICE_PLAN_LABELS.get(inv.get('plan_key'), 'اشتراك منصة غاوي')}",
+        f"المدة: {_INVOICE_DURATION_LABELS.get(inv.get('duration_type'), '')}",
+        f"سعر الباقة: {_fmt_money(inv.get('original_amount'), currency)}",
+    ]
+    if inv.get("discount_amount"):
+        label = f"الخصم (كوبون {inv['coupon_code']})" if inv.get("coupon_code") else "الخصم"
+        lines.append(f"{label}: - {_fmt_money(inv.get('discount_amount'), currency)}")
+    lines += [
+        f"الإجمالي المدفوع: {_fmt_money(inv.get('amount'), currency)}",
+        "",
+        "بيانات العميل:",
+        f"  الاسم: {inv.get('user_name') or '—'}",
+        f"  رقم العضوية: #{inv.get('user_id')}",
+        f"  البريد الإلكتروني: {inv.get('user_email') or '—'}",
+        f"  رقم الموبايل: {inv.get('user_phone') or '—'}",
+        "",
+        "تفعيل الاشتراك:",
+        f"  تاريخ التفعيل: {_fmt_cairo_datetime(inv.get('paid_at'))}",
+        f"  المدة المضافة: {inv.get('days')} يوم",
+        f"  ساري حتى: {_fmt_cairo_date(inv.get('subscription_end'))}",
+        "",
+        "بيانات العملية:",
+        f"  وسيلة الدفع: {_invoice_payment_method(gw)}",
+        f"  بوابة الدفع: Kashier",
+        f"  رقم العملية: {gw.get('transaction_id') or '—'}",
+        f"  رقم الطلب: {inv.get('order_id') or '—'}",
+        f"  تاريخ ووقت الدفع: {_fmt_cairo_datetime(inv.get('paid_at'))}",
+        "",
+        "مُصدر الفاتورة:",
+    ]
+    lines += [f"  {label}: {value}" for label, value in _invoice_seller_rows()]
+    lines += [
+        "",
+        "فاتورة صادرة إلكترونياً ولا تحتاج توقيع. مفيش تجديد تلقائي.",
+        "المبالغ غير قابلة للاسترداد وفقاً للشروط والأحكام: " + _LINK_TERMS,
+        "",
+        "— فريق غاوي",
+        "support@ghawy.ai",
+        "© Copyright Ghawy 2026",
+    ]
+    return "\n".join(lines)
+
+
+def send_payment_invoice_email(invoice: dict) -> None:
+    """يبعت فاتورة الدفع للعضو بعد ما كاشير يأكّد العملية.
+
+    `invoice` قاموس عادي (مش ORM objects) عشان الفنكشن دي بتشتغل في
+    BackgroundTask بعد ما الـ DB session بتكون قفلت خلاص. مفاتيحه:
+
+      invoice_number, order_id, plan_key, duration_type, days,
+      amount, original_amount, discount_amount, currency,
+      coupon_code, coupon_percent, paid_at, subscription_end,
+      user_id, user_name, user_email, user_phone, user_country,
+      user_governorate, gateway{...}
+    """
+    to_email = (invoice.get("user_email") or "").strip()
+    if not to_email:
+        return
+    _send_email(
+        to_email=to_email,
+        subject=f"فاتورة اشتراكك في غاوي — {invoice.get('invoice_number')}",
+        body_text=_invoice_text(invoice),
+        body_html=_invoice_html(invoice),
     )
 
 

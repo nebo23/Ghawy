@@ -77,8 +77,153 @@ def _build_n8n_payload(user, payment: Payment, duration_type: str, transaction_i
     }
 
 
+def _invoice_number(payment: Payment) -> str:
+    """رقم فاتورة ثابت ومتفرّد لكل عملية: GHW-<سنة الدفع>-<id الدفعة>.
+
+    مبني على الـ primary key بتاع الـ payment، يعني متكرّرش أبداً ولا محتاج
+    عدّاد تاني يتزنق مع نفسه. ولو نفس الفاتورة اتبعتت تاني لأي سبب، هتطلع
+    بنفس الرقم بالظبط — وده المقصود.
+    """
+    year = (payment.confirmed_at or datetime.utcnow()).year
+    return f"GHW-{year}-{payment.id:06d}"
+
+
+def _pricing_details(db: Session, payment: Payment) -> dict:
+    """سعر الباقة الأصلي والخصم اللي العميل خده فعلاً على الأوردر ده.
+
+    مصدرين، بالترتيب:
+
+      1. صف الـ CouponRedemption المربوط بالدفعة دي — ده المصدر الدقيق: فيه
+         السعر قبل وبعد الخصم زي ما اتحسبوا وقت الشراء نفسه، واسم الكوبون.
+
+      2. لو مفيش صف مربوط: سعر الباقة من PLAN_PRICES مقابل المدفوع فعلاً.
+         الحالة دي بتحصل بجد — لو العضو فتح أوردر بكوبون وساب صفحة الدفع
+         وفتح أوردر تاني، reserve_redemption بتحدّث نفس الصف بدل ما تعمل
+         جديد، فالـ payment_id بتاعه بيفضل مأشّر على الأوردر القديم المهجور.
+         ساعتها الحساب نفسه مؤكد (السعر المعلن ناقص المدفوع)، اللي مش مؤكد هو
+         اسم الكوبون — فبندوّر عليه بأقرب صف للعضو بنفس السعر النهائي، ولو
+         ملقيناش بنكتب الخصم من غير اسم بدل ما نخمّن اسم غلط.
+
+    من غير الجزء ده كانت فاتورة كل حد دفع بخصم هتقول "سعر الباقة 540" —
+    صح حسابياً بس بتخفي إن هو أصلاً خد خصم.
+    """
+    amount = float(payment.amount or 0)
+    try:
+        from app.models import CouponRedemption
+
+        redemption = db.query(CouponRedemption).filter(
+            CouponRedemption.payment_id == payment.id
+        ).first()
+        if redemption and redemption.coupon:
+            original = float(redemption.original_amount or 0)
+            final = float(redemption.final_amount or 0)
+            return {
+                "original_amount": original or amount,
+                "discount_amount": max(original - final, 0),
+                "coupon_code": redemption.coupon.label,
+                "coupon_percent": float(redemption.coupon.discount_percent or 0),
+            }
+
+        from app.routers.payment import PLAN_PRICES  # lazy: payment.py بيستورد الملف ده
+
+        plan = PLAN_PRICES.get(payment.plan_key or "")
+        if not plan:
+            return {}
+        list_price = float(plan["amount"])
+        if amount >= list_price:
+            return {}
+
+        # الخصم أكيد؛ اسم الكوبون هو اللي بندوّر عليه.
+        orphan = db.query(CouponRedemption).filter(
+            CouponRedemption.user_id == payment.user_id,
+            CouponRedemption.plan_key == payment.plan_key,
+            CouponRedemption.final_amount == payment.amount,
+        ).order_by(CouponRedemption.id.desc()).first()
+        details = {
+            "original_amount": list_price,
+            "discount_amount": list_price - amount,
+        }
+        if orphan and orphan.coupon:
+            details["coupon_code"] = orphan.coupon.label
+            details["coupon_percent"] = float(orphan.coupon.discount_percent or 0)
+        return details
+    except Exception as exc:
+        logger.warning("⚠️ Could not read pricing details for payment %s: %s", payment.id, exc)
+        return {}
+
+
+def _build_invoice(db: Session, user, payment: Payment, days: int, duration_type: str,
+                   gateway_details: dict = None) -> dict:
+    """كل بيانات الفاتورة في dict عادي (مش ORM objects).
+
+    الفاتورة بتتبعت في BackgroundTask بعد ما الـ request تخلص والـ session تقفل،
+    فأي attribute بيتقرا من user/payment لازم يتقرا هنا وهو لسه في إيده.
+    """
+    amount = float(payment.amount or 0)
+    pricing = _pricing_details(db, payment)
+    return {
+        "invoice_number": _invoice_number(payment),
+        "order_id": payment.provider_order_id,
+        "plan_key": payment.plan_key,
+        "duration_type": duration_type,
+        "days": days,
+        "amount": amount,
+        # من غير كوبون، سعر الباقة هو المدفوع نفسه.
+        "original_amount": pricing.get("original_amount", amount),
+        "discount_amount": pricing.get("discount_amount", 0),
+        "coupon_code": pricing.get("coupon_code"),
+        "coupon_percent": pricing.get("coupon_percent"),
+        "currency": payment.currency or "EGP",
+        "paid_at": payment.confirmed_at or datetime.utcnow(),
+        "subscription_end": getattr(user, "end_at", None) if user else None,
+        "user_id": user.id if user else payment.user_id,
+        "user_name": getattr(user, "full_name", "") if user else "",
+        "user_email": getattr(user, "email", "") if user else "",
+        "user_phone": getattr(user, "phone", "") if user else "",
+        "user_country": getattr(user, "country", "") if user else "",
+        "user_governorate": getattr(user, "governorate", "") if user else "",
+        "gateway": gateway_details or {},
+    }
+
+
+def send_payment_invoice(invoice: dict):
+    """يبعت الفاتورة. best-effort زي إشعار n8n — الدفع اتأكّد والاشتراك اتفعّل
+    خلاص قبل ما نوصل هنا، فمفيش سبب إن فشل SMTP يرجّع 500 لكاشير ويخلّيه
+    يبعت الـ webhook تاني."""
+    try:
+        from app.services.email_service import send_payment_invoice_email
+        send_payment_invoice_email(invoice)
+        logger.info("🧾 Invoice %s emailed to %s", invoice.get("invoice_number"), invoice.get("user_email"))
+    except Exception as exc:
+        logger.error("❌ Failed to send invoice %s to %s: %s",
+                     invoice.get("invoice_number"), invoice.get("user_email"), exc)
+
+
+def _queue_invoice(db: Session, user, payment: Payment, days: int, duration_type: str,
+                   gateway_details: dict, background_tasks=None) -> None:
+    """يجهّز الفاتورة ويحطها في طابور الإرسال — ومبيرميش حاجة أبداً.
+
+    مش الإرسال بس اللي ممكن يقع: بناء الفاتورة نفسه بيقرا من الداتابيز
+    (سعر الكوبون، وattributes اتعمَلها expire بعد الـ commit اللي فات). أي
+    مشكلة هناك كانت هتطلع 500 لكاشير على عملية دفع **اتأكّدت واتفعّلت خلاص** —
+    وده أسوأ نتيجة ممكنة: العضو دفع وأخد اشتراكه، وكاشير فاكر إن العملية فشلت.
+    الفاتورة ورقة إثبات، مش شرط لإتمام الدفع.
+    """
+    try:
+        invoice = _build_invoice(db, user, payment, days, duration_type, gateway_details)
+    except Exception as exc:
+        logger.error("❌ Could not build invoice for order %s: %s", payment.provider_order_id, exc)
+        return
+
+    if background_tasks is not None:
+        background_tasks.add_task(send_payment_invoice, invoice)
+    else:
+        send_payment_invoice(invoice)
+
+
 def confirm_kashier_payment(db: Session, payment: Payment, source: str,
-                            background_tasks=None, transaction_id: str = ""):
+                            background_tasks=None, transaction_id: str = "",
+                            gateway_details: dict = None):
     """
     Idempotently confirm a Kashier payment and activate the user's subscription.
 
@@ -118,8 +263,24 @@ def confirm_kashier_payment(db: Session, payment: Payment, source: str,
     logger.info("✅ Payment CONFIRMED via %s | order=%s | user=%s",
                 source, payment.provider_order_id, payment.user_id)
 
+    # الفاتورة بتتبني هنا وهي جوه الـ session، وبتتبعت بعد ما الـ response يمشي.
+    # مكانها هنا مقصود: ده المكان الوحيد اللي بيمرّ منه الـ webhook والـ redirect
+    # الاتنين، وبيشتغل على PENDING بس — يعني فاتورة واحدة لكل عملية مهما وصلت
+    # الإشارتين، ومن غير ما حد يفتكر ينده عليها في المسارين.
+    gateway = dict(gateway_details or {})
+    # transaction_id بييجي كـ argument منفصل من زمان (قبل gateway_details)، فبنسيبه
+    # يكسب لو مبعوت — بس من غير ما string فاضية تمسح واحدة جاية من الـ payload.
+    if transaction_id or not gateway.get("transaction_id"):
+        gateway["transaction_id"] = transaction_id or gateway.get("transaction_id", "")
+
     if background_tasks is not None:
         payload = _build_n8n_payload(user, payment, duration_type, transaction_id)
         background_tasks.add_task(send_payment_n8n_webhook, payload)
+
+    # لازم تكون بعد الـ commit وجوه الـ session — بتقرا سعر الكوبون وتاريخ
+    # نهاية الاشتراك الجديد. ومكانها هنا معناه فاتورة واحدة لكل عملية: ده
+    # المكان الوحيد اللي بيعدّي منه الـ webhook والـ redirect الاتنين، وبيشتغل
+    # على PENDING بس.
+    _queue_invoice(db, user, payment, days, duration_type, gateway, background_tasks)
 
     return user, True

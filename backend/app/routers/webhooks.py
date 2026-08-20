@@ -12,6 +12,45 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
+
+def _gateway_details_from_webhook(data: dict) -> dict:
+    """بيانات العملية من payload الـ webhook، للفاتورة اللي بتروح للعميل.
+
+    الـ webhook هو أغنى المصدرين: بيجيب الكارت/المحفظة كاملة، ورد البنك،
+    والقناة، وIP العميل. الـ redirect بيجيب جزء منهم بس.
+
+    مش بناخد من هنا خالص:
+      • sourceOfFunds.cardInfo.cardDataToken و ccvToken — دول توكنز بيتخصم بيهم
+        من الكارت. مالهمش أي مكان في إيميل.
+      • settlementInfo — عمولة كاشير والمبلغ الصافي اللي بيوصلنا. رقم بيزنس
+        بتاعنا، مش بيانات العميل.
+    """
+    source = data.get("sourceOfFunds") or {}
+    card_info = (data.get("card") or {}).get("cardInfo") or source.get("cardInfo") or {}
+    wallet_info = source.get("walletInfo") or {}
+    response_message = data.get("transactionResponseMessage") or {}
+    if isinstance(response_message, dict):
+        response_message = response_message.get("ar") or response_message.get("en") or ""
+
+    return {
+        "method": (data.get("method") or "").lower(),
+        "transaction_id": data.get("transactionId", ""),
+        "kashier_order_id": data.get("kashierOrderId", ""),
+        "order_reference": data.get("orderReference", ""),
+        "card_brand": card_info.get("cardBrand", ""),
+        "masked_card": card_info.get("maskedCard", ""),
+        "card_holder": card_info.get("cardHolderName", ""),
+        "wallet_scheme": wallet_info.get("payScheme", ""),
+        "payer_name": wallet_info.get("payerName", ""),
+        "payer_account": wallet_info.get("payerAccount", ""),
+        "paid_through": wallet_info.get("paidThrough", ""),
+        "response_code": data.get("transactionResponseCode", ""),
+        "response_message": response_message,
+        "channel": data.get("channel", ""),
+        "customer_ip": ((data.get("metaData") or {}).get("termsAndConditions") or {}).get("ip", ""),
+    }
+
+
 @router.post("/kashier")
 async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     import json as _json
@@ -104,6 +143,7 @@ async def kashier_webhook(request: Request, background_tasks: BackgroundTasks, d
             db, payment, source="webhook",
             background_tasks=background_tasks,
             transaction_id=data.get("transactionId", ""),
+            gateway_details=_gateway_details_from_webhook(data),
         )
 
     return {"status": "ok"}

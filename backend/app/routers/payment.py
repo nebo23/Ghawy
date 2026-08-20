@@ -15,6 +15,31 @@ from app.services import coupon_service
 
 router = APIRouter(prefix="/payment", tags=["Payment"])
 
+
+def _gateway_details_from_redirect(params: dict) -> dict:
+    """بيانات العملية من الـ redirect، للفاتورة.
+
+    الـ redirect أفقر من الـ webhook: مفيهوش `method` ولا رد البنك ولا بيانات
+    المحفظة. بنستنتج الوسيلة من وجود بيانات الكارت من عدمه — كاشير بيبعت
+    cardBrand/maskedCard فاضيين لما الدفع يبقى بمحفظة، وهو ده الفرق الوحيد
+    الظاهر في الـ query string.
+
+    cardDataToken موجود في الـ redirect برضه ومش بناخده — توكن الكارت مبيدخلش
+    إيميل. الفاتورة اللي بتتبني من هنا بيبقى فيها بيانات أقل، وده مقبول: الأهم
+    إن العميل ياخد فاتورة حتى لو الـ webhook اتأخر أو ضاع.
+    """
+    card_brand = params.get("cardBrand") or ""
+    masked_card = params.get("maskedCard") or ""
+    return {
+        "method": "card" if (card_brand or masked_card) else "wallet",
+        "transaction_id": params.get("transactionId", ""),
+        "kashier_order_id": params.get("orderId", ""),
+        "order_reference": params.get("orderReference", ""),
+        "card_brand": card_brand,
+        "masked_card": masked_card,
+    }
+
+
 # ─── Server-side authoritative pricing ─────────────────────
 # Frontend prices in payment.js are display-only. These are the SOURCE OF TRUTH.
 # Any mismatch between this dict and frontend pricing means the frontend is stale.
@@ -174,6 +199,7 @@ def kashier_success(request: Request, background_tasks: BackgroundTasks, db: Ses
                     db, payment, source="redirect",
                     background_tasks=background_tasks,
                     transaction_id=params.get("transactionId", ""),
+                    gateway_details=_gateway_details_from_redirect(params),
                 )
             elif payment.status == PaymentStatus.PENDING:
                 logger.warning(
