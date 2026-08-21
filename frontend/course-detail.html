@@ -4114,9 +4114,7 @@
             ];
             const initials = student.full_name
                 .split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-            const avatarUrl = student.avatar_url
-                ? (student.avatar_url.startsWith('http') ? student.avatar_url : API + student.avatar_url)
-                : null;
+            const avatarUrl = safeAvatarUrl(student.avatar_url) || null;
             const theme = student.rank <= 3 ? rankThemes[student.rank - 1] : { text: '#aaa', bg: 'rgba(255,255,255,0.1)' };
             const percentage = student.total_lessons > 0
                 ? Math.round((student.completed_lessons / student.total_lessons) * 100) : 0;

@@ -12,6 +12,7 @@ from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRo
 from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, ChatMemberOut
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
+from app.services.attachments import resolve_attachment, InvalidAttachment
 from app.services.chat_reactions import get_reaction_summaries
 from app.services.mentions_service import process_admin_mentions
 from pydantic import BaseModel
@@ -117,6 +118,10 @@ class SimpleMsgCreate(BaseModel):
     file_url: Optional[str] = None
     file_name: Optional[str] = None
     file_size: Optional[int] = None
+
+
+# Mirrors MAX_MESSAGE_CHARS in routers/ws.py — the two paths write the same table.
+MAX_MESSAGE_CHARS = 4000
 
 
 # ─── GET /chat/messages — simple flat endpoint ───────────────
@@ -239,14 +244,25 @@ async def post_message_simple(
     elif data.message_type == "file":
         msg_type = MessageType.FILE
 
+    # Same rule as the socket path: the attachment is resolved against the
+    # uploads tree, never taken from the request. See services/attachments.py.
+    try:
+        att_url, att_name, att_size = resolve_attachment(db, data.file_url, data.file_name)
+    except InvalidAttachment as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    content = (data.content or "")[:MAX_MESSAGE_CHARS]
+    if not content and not att_url:
+        raise HTTPException(status_code=422, detail="Message is empty")
+
     msg = Message(
         channel_id=ch.id,
         sender_id=current_user.id,
-        content=data.content,
+        content=content,
         message_type=msg_type,
-        file_url=data.file_url,
-        file_name=data.file_name,
-        file_size=data.file_size,
+        file_url=att_url,
+        file_name=att_name,
+        file_size=att_size,
     )
     db.add(msg)
     db.commit()

@@ -95,13 +95,61 @@ window.getRoleLabel = function (user) {
 
 window.getAvatarSrc = function (user) {
   if (!user) return './imgs/default-avatar.png';
-  if (user.avatar_url) {
-    if (user.avatar_url.startsWith('http')) return user.avatar_url;
-    if (user.avatar_url.startsWith('/')) return window.location.origin + user.avatar_url;
-    return (window.API || '/api') + user.avatar_url;
-  }
-  if (user.selected_avatar) return user.selected_avatar;
+  // Both fields are member-chosen and both end up in a src attribute — run them
+  // through the same allow-list every other avatar render uses.
+  const url = window.safeAvatarUrl(user.avatar_url);
+  if (url) return url;
+  const preset = String(user.selected_avatar || '');
+  if (/^[A-Za-z0-9._-]+\.(png|jpg|jpeg|webp|svg)$/.test(preset)) return preset;
   return './imgs/default-avatar.png';
+};
+
+// ─── Safe URLs from member-controlled fields ─────────────────
+// avatar_url and social_media_url are chosen by the member and land in
+// src="...", in href="...", and inside single-quoted onclick="f('...')"
+// handlers on nearly every page. Auth tokens live in localStorage, so one
+// unescaped interpolation is a full account takeover — and through the admin
+// member list, an owner-account takeover.
+//
+// These validate rather than escape. A value that survives contains no quote,
+// angle bracket, backtick, backslash or whitespace, so it is safe in an HTML
+// attribute AND in a JS string literal — escaping only ever covers one of the
+// two, and the onclick handlers need both. The server refuses these shapes on
+// write as well; this is the half that also covers rows written before it did.
+
+const AVATAR_SAFE_CHARS = /^[^"'<>`\\\s]+$/;
+
+window.safeAvatarUrl = function (raw) {
+  const value = String(raw == null ? '' : raw).trim();
+  if (!value || !AVATAR_SAFE_CHARS.test(value)) return '';
+  // A path this server issued — needs the API prefix to resolve.
+  if (/^\/(uploads|static|files)\/avatars\/[A-Za-z0-9._-]+$/.test(value)) {
+    return (typeof API !== 'undefined' ? API : '/api') + value;
+  }
+  // A preset avatar shipped with the frontend.
+  if (/^\/imgs\/avatars\/[A-Za-z0-9._-]+$/.test(value)) return value;
+  // An absolute URL on our own site.
+  if (/^https:\/\/(www\.)?ghawy\.ai\/[A-Za-z0-9._~\/-]+$/.test(value)) return value;
+  return '';
+};
+
+window.safeAttachmentUrl = function (raw) {
+  const value = String(raw == null ? '' : raw).trim();
+  if (!value) return '';
+  // The exact shape the server stores (see services/attachments.py), with the
+  // optional #d=<seconds> the voice recorder appends. Validating rather than
+  // escaping is what makes this safe inside onclick="openLightbox('...')",
+  // which is an HTML attribute and a JS string literal at the same time.
+  if (!/^\/(uploads|files)\/(chat|posts)\/[A-Za-z0-9._-]{1,120}(#d=\d+(\.\d+)?)?$/.test(value)) return '';
+  return (typeof API !== 'undefined' ? API : '/api') + value;
+};
+
+// http(s) only. escapeHtml does NOT stop javascript:, and these values are
+// assigned straight to .href.
+window.safeExternalUrl = function (raw) {
+  const value = String(raw == null ? '' : raw).trim();
+  if (!value || !AVATAR_SAFE_CHARS.test(value)) return '';
+  return /^https?:\/\//i.test(value) ? value : '';
 };
 
 function getToken() {

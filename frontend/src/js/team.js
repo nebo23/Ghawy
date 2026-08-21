@@ -301,7 +301,7 @@ function renderTable() {
     <tr>
       <td>
         <div class="member-cell">
-          <img src="${user.avatar_url || '/static/avatars/default.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
+          <img src="${safeAvatarUrl(user.avatar_url) || './imgs/ghawi-logo.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
           <div>
             <div class="member-name">${escapeHtml(user.full_name)}</div>
             <div class="member-badge">${escapeHtml(getRoleLabel(user))}</div>
@@ -363,7 +363,7 @@ function renderTable() {
           <button class="btn-action" style="color:#3f8ff9" onclick="openExtendModal(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Extend Subscription"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i></button>
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
           ${currentUserIsOwner && user.social_media_url ? `
-          <a href="${escapeHtml(user.social_media_url)}" target="_blank" rel="noopener noreferrer"
+          <a href="${window.safeExternalUrl(user.social_media_url)}" target="_blank" rel="noopener noreferrer"
             class="btn-action" style="color:#a855f7;text-decoration:none;display:inline-flex;align-items:center;"
             title="Social Link">
             <i data-lucide="link" style="width:14px;height:14px;"></i>
@@ -1299,7 +1299,7 @@ function renderSpTable() {
     <tr class="sp-row ${expanded ? 'sp-row-open' : ''}" onclick="toggleSpDetail(${s.id})" style="cursor:pointer">
       <td>
         <div class="member-cell">
-          <img src="${s.avatar_url || '/static/avatars/default.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
+          <img src="${safeAvatarUrl(s.avatar_url) || './imgs/ghawi-logo.png'}" class="member-avatar" onerror="this.src='./imgs/ghawi-logo.png'"/>
           <div>
             <div class="member-name">${escapeHtml(s.full_name)} ${role}</div>
             <div class="member-id" style="font-size:11px;color:#888;font-weight:600;">🆔 ID: ${s.id} ${s.is_active ? '' : '· <span style="color:#ef4444">inactive</span>'}</div>
@@ -2127,8 +2127,8 @@ function renderMprCards(requests, container) {
     card.innerHTML = `
       <div class="mpr-card-header">
         <div class="mpr-user-info">
-          <div class="mpr-name">${req.full_name}</div>
-          <div class="mpr-email">${req.email}</div>
+          <div class="mpr-name">${escapeHtml(req.full_name)}</div>
+          <div class="mpr-email">${escapeHtml(req.email)}</div>
           ${phoneHtml}
         </div>
         <div class="mpr-status-badge ${statusClass}">${req.status.toUpperCase()}</div>

@@ -16,7 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email
 from app.services.disposable_emails import is_disposable_email, is_fake_email_pattern
-from app.services.name_utils import compose_full_name
+from app.services.name_utils import compose_full_name, clean_display_name
 from app.services.turnstile import verify_turnstile
 from jose import JWTError
 from typing import Optional
@@ -126,7 +126,10 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
     if is_disposable_email(data.email) or is_fake_email_pattern(data.email):
         raise HTTPException(status_code=422, detail=FAKE_EMAIL_MESSAGE)
 
-    if len(data.first_name.strip()) < 2 or len(data.last_name.strip()) < 2:
+    # Checked against the cleaned value, not the raw one — otherwise a name made
+    # entirely of markup passes the length rule and is then stored as empty.
+    if len(clean_display_name(data.first_name, limit=40)) < 2 \
+            or len(clean_display_name(data.last_name, limit=40)) < 2:
         raise HTTPException(
             status_code=422,
             detail="من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).",
@@ -141,8 +144,8 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
         if existing_user.is_verified:
             raise HTTPException(status_code=400, detail="This Email Is Already Exists")
 
-        existing_user.first_name = data.first_name.strip()
-        existing_user.last_name = data.last_name.strip()
+        existing_user.first_name = clean_display_name(data.first_name, limit=40)
+        existing_user.last_name = clean_display_name(data.last_name, limit=40)
         existing_user.full_name = compose_full_name(data.first_name, data.last_name)
         existing_user.hashed_password = hash_password(data.password)
         existing_user.phone = None
@@ -154,8 +157,8 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
     else:
         user = User(
             full_name=compose_full_name(data.first_name, data.last_name),
-            first_name=data.first_name.strip(),
-            last_name=data.last_name.strip(),
+            first_name=clean_display_name(data.first_name, limit=40),
+            last_name=clean_display_name(data.last_name, limit=40),
             email=data.email,
             hashed_password=hash_password(data.password),
             phone=None,

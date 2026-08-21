@@ -135,7 +135,8 @@ async function loadProfile() {
         if (profileBadgeEl) profileBadgeEl.innerHTML = `<i class="fa-solid fa-shield"></i> ${getRoleLabel(u)}`;
 
         const avatarLg = document.getElementById('profileAvatarLg');
-        if (avatarLg && u.avatar_url) avatarLg.innerHTML = `<img src="${u.avatar_url}" alt=""/>`;
+        const lgAvatar = safeAvatarUrl(u.avatar_url);
+        if (avatarLg && lgAvatar) avatarLg.innerHTML = `<img src="${lgAvatar}" alt=""/>`;
 
         // Online dot
         const dot = document.getElementById('profileOnlineDot');
@@ -160,7 +161,8 @@ async function loadProfile() {
             const idEl = document.getElementById('settingsUserId');
             if (idEl) idEl.textContent = u.id ?? '—';
             const previewBox = document.getElementById('avatarPreviewBox');
-            if (previewBox && u.avatar_url) previewBox.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
+            const prevAvatar = safeAvatarUrl(u.avatar_url);
+            if (previewBox && prevAvatar) previewBox.innerHTML = `<img src="${prevAvatar}" style="width:100%;height:100%;object-fit:cover" />`;
             const socialInput = document.getElementById('settingsSocial');
             if (socialInput) socialInput.value = u.social_media_url || '';
             const toggleShowSocial = document.getElementById('toggleShowSocial');
@@ -281,7 +283,7 @@ if (avatarUpload) {
                 // Update preview
                 const previewBox = document.getElementById('avatarPreviewBox');
                 if (previewBox) {
-                    previewBox.innerHTML = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
+                    previewBox.innerHTML = `<img src="${safeAvatarUrl(data.avatar_url)}" style="width:100%;height:100%;object-fit:cover" />`;
                 }
 
                 // Refresh topbar and sidebar avatars

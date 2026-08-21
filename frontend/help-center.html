@@ -551,9 +551,9 @@
             // Real avatar inside the existing .member-avatar circle; falls back
             // to the default user icon already used in this section.
             function avatarMarkup(name, avatarUrl) {
-                if (avatarUrl) {
-                    const full = avatarUrl.startsWith('http') ? avatarUrl : apiBase + avatarUrl;
-                    return `<img src="${esc(full)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<i class=\\'fa-solid fa-user\\'></i>'" />`;
+                const full = window.safeAvatarUrl ? window.safeAvatarUrl(avatarUrl) : '';
+                if (full) {
+                    return `<img src="${full}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<i class=\\'fa-solid fa-user\\'></i>'" />`;
                 }
                 return '<i class="fa-solid fa-user"></i>';
             }

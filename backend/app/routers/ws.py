@@ -3,6 +3,7 @@ WebSocket Router — Real-time chat messaging
 """
 import json
 import logging
+from app.services.attachments import resolve_attachment, InvalidAttachment
 import asyncio
 from contextlib import contextmanager
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -262,6 +263,11 @@ def _may_post_to_channel(db: Session, channel_id, user_id: int) -> bool:
     return True
 
 
+# A chat message is a paragraph, not a payload. Anything longer is either a
+# paste accident or someone filling the table.
+MAX_MESSAGE_CHARS = 4000
+
+
 def _has_channel_access(channel_id, user_id: int) -> bool:
     """_may_post_to_channel with its own session, for the socket's inline actions."""
     try:
@@ -305,6 +311,19 @@ async def handle_send_message(user_id: int, data: dict):
         if not _may_post_to_channel(db, channel_id, user_id):
             logger.warning("WS user %s tried to post into channel %s without access",
                            user_id, channel_id)
+            return
+
+        # file_url / file_name / file_size used to be stored exactly as the
+        # sender wrote them, with nothing tying them to a real upload. Resolve
+        # them against the uploads tree instead; see services/attachments.py.
+        try:
+            file_url, file_name, file_size = resolve_attachment(db, file_url, file_name)
+        except InvalidAttachment as exc:
+            logger.warning("WS user %s sent an invalid attachment: %s", user_id, exc)
+            return
+
+        content = (content or "")[:MAX_MESSAGE_CHARS]
+        if not content and not file_url:
             return
 
         # Save to database

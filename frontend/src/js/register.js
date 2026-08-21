@@ -213,7 +213,7 @@ async function initInviteFlow() {
     welcomeEl.innerHTML = `
       <div style="text-align:center; margin-bottom:24px;">
         <div style="font-size:32px; margin-bottom:8px;">🎉</div>
-        <h2 style="color:#fff; margin:0 0 4px;">${t('welcomeName')} ${data.full_name}!</h2>
+        <h2 style="color:#fff; margin:0 0 4px;">${t('welcomeName')} ${window.escapeHtml(data.full_name)}!</h2>
         <p style="color:#888; margin:0;">${t('inviteWelcomeSub')}</p>
       </div>
     `;

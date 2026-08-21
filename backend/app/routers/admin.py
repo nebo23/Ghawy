@@ -20,7 +20,7 @@ from app.models import (
     Course, Lesson, UserProgress, UserCourseProgress, Certificate, Exam, ExamAttempt,
 )
 from app.routers.users import get_current_user
-from app.services.name_utils import split_full_name
+from app.services.name_utils import split_full_name, clean_display_name
 from app.services.subscription_service import extend_subscription
 
 logger = logging.getLogger(__name__)
@@ -181,9 +181,10 @@ def add_user(
         if existing_phone:
             raise HTTPException(status_code=400, detail="Phone number already exists")
 
-    admin_first, admin_last = split_full_name(data.full_name)
+    admin_full_name = clean_display_name(data.full_name)
+    admin_first, admin_last = split_full_name(admin_full_name)
     new_user = User(
-        full_name=data.full_name,
+        full_name=admin_full_name,
         first_name=admin_first,
         last_name=admin_last,
         email=data.email,

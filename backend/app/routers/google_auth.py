@@ -5,7 +5,7 @@ from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
-from ..services.name_utils import split_full_name
+from ..services.name_utils import split_full_name, clean_display_name
 from ..services.disposable_emails import is_disposable_email, is_fake_email_pattern
 import os, secrets
 from jose import jwt
@@ -92,6 +92,9 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         if not governorate:
             governorate = "Unknown"
 
+        # Google's display name is user-chosen text like any other; it lands in
+        # the same innerHTML sites as a self-registered name.
+        name = clean_display_name(name)
         google_first, google_last = split_full_name(name)
         user = User(
             full_name=name,

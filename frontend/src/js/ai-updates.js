@@ -806,7 +806,7 @@ function createCommentElement(comment, isReply = false) {
         <div style="flex:1;">
             <div class="ai-comment-content">
                 <div class="ai-comment-header">
-                    <span class="ai-comment-author">${comment.author?.full_name || 'User'}</span>
+                    <span class="ai-comment-author">${escapeHtml(comment.author?.full_name || 'User')}</span>
                     <span class="ai-comment-time">${comment.time_ago}</span>
                 </div>
                 <div class="ai-comment-body" dir="${window.bidiDir ? window.bidiDir(comment.body) : 'auto'}">${linkifyHtml(comment.body)}</div>
@@ -1589,9 +1589,10 @@ function renderProfilePanel(p) {
     // Avatar
     const avatarEl = document.getElementById('ppAvatar');
     if (p.avatar_url) {
-        avatarEl.src = p.avatar_url.startsWith('http') ? p.avatar_url : API + p.avatar_url;
+        avatarEl.src = safeAvatarUrl(p.avatar_url);
     } else if (p.selected_avatar) {
-        avatarEl.src = `src/imgs/avatars/${p.selected_avatar}`;
+        avatarEl.src = /^[A-Za-z0-9._-]+$/.test(String(p.selected_avatar || ''))
+                    ? `src/imgs/avatars/${p.selected_avatar}` : './imgs/default-avatar.png';
     } else {
         avatarEl.src = generateInitialsAvatar(p.full_name);
     }
@@ -1634,7 +1635,8 @@ function renderProfilePanel(p) {
     const socialLink = document.getElementById('ppSocialLink');
     const socialText = document.getElementById('ppSocialText');
     if (p.social_media_url) {
-        socialLink.href = p.social_media_url;
+        // escapeHtml does not stop javascript:, and this is assigned to .href.
+        socialLink.href = window.safeExternalUrl(p.social_media_url);
         try {
             const url = new URL(p.social_media_url);
             socialText.textContent = url.hostname + url.pathname;

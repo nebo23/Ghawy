@@ -3547,7 +3547,7 @@
                 const dm = window._cachedDmList.find(d => d.channel_name === channelName);
                 if (dm) {
                     const u = dm.user;
-                    const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
+                    const av = safeAvatarUrl(u.avatar_url) || generateInitialsAvatar(u.full_name);
                     const dotHtml = u.is_online ? '<span class="dm-hdr-dot"></span>' : '';
                     dmHeaderAvatar.innerHTML = `<img src="${av}" alt=""/>${dotHtml}`;
                     dmHeaderAvatar.style.display = '';
@@ -3607,7 +3607,9 @@
             const fname = escHtml(fileName || 'file');
             const fsize = formatFileSize(fileSize);
             const icon = fileIconClass(fileName);
-            return `<a class="msg-file-card" href="${API}${fileUrl}" target="_blank" rel="noopener" download="${fname}"
+            const href = window.safeAttachmentUrl(fileUrl);
+            if (!href) return '';
+            return `<a class="msg-file-card" href="${href}" target="_blank" rel="noopener" download="${fname}"
                 style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;color:inherit;max-width:280px;">
                 <i class="fa-solid ${icon}" style="font-size:1.5rem;color:var(--gold,#c1ff11);flex-shrink:0;"></i>
                 <span style="display:flex;flex-direction:column;overflow:hidden;">
@@ -3635,12 +3637,13 @@
             // file_url — lets us show it immediately without downloading the audio.
             const dm = /#d=(\d+)/.exec(fileUrl || '');
             const preDur = dm ? parseInt(dm[1], 10) : 0;
-            const src = (fileUrl || '').replace(/#d=\d+/, '');
+            // Validated, not just prefixed — this lands in an audio src attribute.
+            const src = window.safeAttachmentUrl(String(fileUrl || '').replace(/#d=[\d.]+/, ''));
             return `<div class="voice-player">
                 <button type="button" class="voice-play" aria-label="Play voice message" onclick="toggleVoice(this)"><i class="fa-solid fa-play"></i></button>
                 <div class="voice-track" onclick="voiceSeek(event)"><div class="voice-bars">${voiceBarsHtml(msgId)}</div></div>
                 <span class="voice-dur">${fmtVoiceTime(preDur)}</span>
-                <audio preload="none" src="${API}${src}" data-dur="${preDur}" onloadedmetadata="voiceMeta(this)" ondurationchange="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
+                <audio preload="none" src="${src}" data-dur="${preDur}" onloadedmetadata="voiceMeta(this)" ondurationchange="voiceMeta(this)" ontimeupdate="voiceProgress(this)" onplay="voiceState(this,true)" onpause="voiceState(this,false)" onended="voiceEnded(this)"></audio>
             </div>`;
         }
 
@@ -3821,7 +3824,7 @@
         function renderMsg(m) {
             const safeName = m.author_name || m.sender_name || '?';
             const initials = safeName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-            const avatarUrl = m.author_avatar_url || m.sender_avatar || m.avatar_url;
+            const avatarUrl = safeAvatarUrl(m.author_avatar_url || m.sender_avatar || m.avatar_url);
             const avatarHtml = avatarUrl ? `<img src="${avatarUrl}" alt=""/>` : initials;
             // Force Admin badge when user is admin
             const resolvedBadge = (m.sender_is_admin || m.author_badge?.toLowerCase() === 'admin') ? 'Admin' : (m.author_badge || 'Member');
@@ -3857,8 +3860,13 @@
             // Remember reply prefix + editable body so an edit can preserve the reply.
             msgEditCache[m.id] = { prefix: replyMatch ? replyMatch[0] : '', text: actualContent };
             const txtDiv = `<div class="msg-txt" id="msg-txt-${m.id}" dir="${txtDir}">${safeContent}</div>`;
-            if (msgType === 'image' && m.file_url) {
-                contentInnerHtml = `<img class="msg-image" loading="lazy" decoding="async" src="${API}${m.file_url}" alt="image" onclick="openLightbox('${API}${m.file_url}')" />`;
+            // file_url is stored from what the sender's client sent. The server
+            // resolves it against the uploads tree now, but this string lands in
+            // src="..." AND inside a single-quoted onclick in one line, so it is
+            // validated here too rather than trusted.
+            const attachmentSrc = window.safeAttachmentUrl(m.file_url);
+            if (msgType === 'image' && attachmentSrc) {
+                contentInnerHtml = `<img class="msg-image" loading="lazy" decoding="async" src="${attachmentSrc}" alt="image" onclick="openLightbox('${attachmentSrc}')" />`;
                 if (actualContent) contentInnerHtml += txtDiv;
             } else if (msgType === 'voice' && m.file_url) {
                 contentInnerHtml = renderVoicePlayer(m.file_url, m.id);
@@ -3893,7 +3901,7 @@
                 <div class="msg-actions">
                     ${renderMessageReactionPopover(m.id)}
                     <button class="msg-action-btn" title="React" onclick="toggleReactionBar(${m.id})"><i class="fa-regular fa-face-smile"></i></button>
-                    <button class="msg-action-btn" title="Reply" onclick="replyToMsg(${m.id}, '${escHtml(m.author_name).replace(/'/g, "\\'")}', '${m.author_avatar_url || ''}', '${rawText}')"><i class="fa-solid fa-reply"></i></button>
+                    <button class="msg-action-btn" title="Reply" onclick="replyToMsg(${m.id}, '${escHtml(m.author_name).replace(/'/g, "\\'")}', '${safeAvatarUrl(m.author_avatar_url)}', '${rawText}')"><i class="fa-solid fa-reply"></i></button>
                     ${editBtn}
                     ${deleteBtn}
                 </div>
@@ -4479,9 +4487,10 @@
             // Avatar
             const avatarEl = document.getElementById('ppAvatar');
             if (p.avatar_url) {
-                avatarEl.src = p.avatar_url.startsWith('http') ? p.avatar_url : API + p.avatar_url;
+                avatarEl.src = safeAvatarUrl(p.avatar_url);
             } else if (p.selected_avatar) {
-                avatarEl.src = `src/imgs/avatars/${p.selected_avatar}`;
+                avatarEl.src = /^[A-Za-z0-9._-]+$/.test(String(p.selected_avatar || ''))
+                    ? `src/imgs/avatars/${p.selected_avatar}` : './imgs/default-avatar.png';
             } else {
                 avatarEl.src = generateInitialsAvatar(p.full_name);
             }
@@ -4524,7 +4533,7 @@
             const socialLink = document.getElementById('ppSocialLink');
             const socialText = document.getElementById('ppSocialText');
             if (p.social_media_url) {
-                socialLink.href = p.social_media_url;
+                socialLink.href = window.safeExternalUrl(p.social_media_url);
                 try {
                     const url = new URL(p.social_media_url);
                     socialText.textContent = url.hostname + url.pathname;
@@ -4728,7 +4737,7 @@
                 return;
             }
             container.innerHTML = list.map(m => {
-                const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
+                const av = safeAvatarUrl(m.avatar_url) || generateInitialsAvatar(m.full_name);
                 // Randomly assign online status for demo if no real time available (or just check m.is_online if available)
                 const isOnline = m.is_online === true;
                 const dotClass = isOnline ? 'online' : 'offline';
@@ -4846,7 +4855,7 @@
                     adminsList = members.filter(m => m.is_admin || getBadgeClass(m.badge || 'Member') === 'admin');
 
                     adminsHtml = adminsList.map(m => {
-                        const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
+                        const av = safeAvatarUrl(m.avatar_url) || generateInitialsAvatar(m.full_name);
                         let role = m.badge || 'Admin';
                         let roleColor = role.toLowerCase().includes('founder') ? 'color:var(--gold);' : '';
 
@@ -4966,7 +4975,7 @@
 
             container.innerHTML = dms.map(dm => {
                 const u = dm.user;
-                const av = u.avatar_url ? (u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url) : generateInitialsAvatar(u.full_name);
+                const av = safeAvatarUrl(u.avatar_url) || generateInitialsAvatar(u.full_name);
                 const onlineDot = u.is_online ? '<span class="inbox-online-dot"></span>' : '';
                 const preview = dm.last_message ? (dm.last_message.length > 40 ? dm.last_message.substring(0, 40) + '...' : dm.last_message) : 'Start chatting...';
                 const timeText = formatDmTime(dm.last_message_at);
@@ -5037,7 +5046,7 @@
                 return;
             }
             container.innerHTML = list.map(m => {
-                const av = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : generateInitialsAvatar(m.full_name);
+                const av = safeAvatarUrl(m.avatar_url) || generateInitialsAvatar(m.full_name);
                 const onlineDot = m.is_online ? '<div class="new-dm-member-online"></div>' : '';
                 const resolvedBadgeNew = m.is_admin ? 'Admin' : (m.badge || 'Member');
                 const badgeCls = getBadgeClass(resolvedBadgeNew);
@@ -5757,7 +5766,7 @@
                             avatarsEl.innerHTML = '<span style="font-size:0.78rem;color:#5a5648;">No one online</span>';
                         } else {
                             avatarsEl.innerHTML = online.map(m => {
-                                const src = m.avatar_url ? (m.avatar_url.startsWith('http') ? m.avatar_url : API + m.avatar_url) : '';
+                                const src = safeAvatarUrl(m.avatar_url) || '';
                                 return src ? `<img src="${src}" alt="${escHtml(m.full_name)}" title="${escHtml(m.full_name)}">` :
                                     `<div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;border:2px solid #0a0a0a;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--gold,#c1ff11);margin-left:-8px;" title="${escHtml(m.full_name)}">${getInitials(m.full_name)}</div>`;
                             }).join('');

@@ -30,7 +30,8 @@ async function showWelcomeModal() {
         if (res.ok) {
             const u = await res.json();
             name = u.full_name || '';
-            if (u.avatar_url) avatarHtml = `<img src="${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;"/>`;
+            const uAvatar = safeAvatarUrl(u.avatar_url);
+            if (uAvatar) avatarHtml = `<img src="${uAvatar}" alt="" style="width:100%;height:100%;object-fit:cover;"/>`;
         }
     } catch (e) { }
 

@@ -76,8 +76,11 @@ function avatarColor(id) {
 function buildAvatarHtml(name, avatarUrl, userId, size = 28) {
     const bg = avatarColor(userId);
     const init = initials(name);
-    if (avatarUrl) {
-        const full = avatarUrl.startsWith('http') ? avatarUrl : API + avatarUrl;
+    // Validated, not escaped: safeAvatarUrl returns a value with no quote or
+    // angle bracket in it, which this needs — the string lands in src="..." and
+    // in a nested single-quoted onerror handler at the same time.
+    const full = safeAvatarUrl(avatarUrl);
+    if (full) {
         return `<img src="${full}" alt="" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<div style=\'width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.35)}px;font-weight:800;\'>${init}</div>'" />`;
     }
     return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg}22;color:${bg};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.35)}px;font-weight:800;">${init}</div>`;
@@ -349,7 +352,7 @@ async function loadGuests() {
             const colorClass = colors[i % colors.length];
             const init = (g.avatar_initials || initials(g.name));
             const avatarContent = g.avatar_url
-                ? `<img src="${g.avatar_url.startsWith('http') ? g.avatar_url : API + g.avatar_url}" alt="${esc(g.name)}" onerror="this.outerHTML='<span>${esc(init)}</span>'" />`
+                ? `<img src="${safeAvatarUrl(g.avatar_url)}" alt="${esc(g.name)}" onerror="this.outerHTML='<span>${esc(init)}</span>'" />`
                 : `<span>${esc(init)}</span>`;
 
             return `<div class="goh-item" onclick="window.location.href='guest-of-honors.html'" title="${esc(g.name)}">
