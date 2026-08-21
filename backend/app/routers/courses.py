@@ -14,6 +14,7 @@ import logging
 import uuid
 import os
 import json
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,54 @@ def _can_watch(user: Optional[User], lesson: Lesson) -> bool:
     if lesson.is_free_preview:
         return True
     return bool(user is not None and user.is_active)
+
+
+def _uploads_path_for(stored_url: str) -> Optional[Path]:
+    """The on-disk file behind a stored upload URL, or None if it is not one.
+
+    Accepts both prefixes, since /uploads/ rows predate authorized delivery. The
+    result is resolved and must still be inside UPLOADS_DIR — a stored value is
+    not automatically a safe path just because we wrote it once.
+    """
+    url = (stored_url or "").split("#", 1)[0].split("?", 1)[0]
+    for prefix in ("/files/", "/uploads/"):
+        if url.startswith(prefix):
+            relative = url[len(prefix):]
+            break
+    else:
+        return None
+    if not relative or ".." in relative:
+        return None
+    candidate = (UPLOADS_DIR / relative).resolve()
+    if not candidate.is_relative_to(UPLOADS_DIR.resolve()):
+        return None
+    return candidate
+
+
+def _record_playback(db: Session, user_id: int, lesson_id: int) -> None:
+    """Note that this member opened this lesson's video. Never fatal."""
+    from app.models import LessonPlaybackGrant
+    try:
+        grant = db.query(LessonPlaybackGrant).filter_by(
+            user_id=user_id, lesson_id=lesson_id
+        ).first()
+        if grant:
+            grant.last_played_at = datetime.utcnow()
+        else:
+            db.add(LessonPlaybackGrant(user_id=user_id, lesson_id=lesson_id))
+        db.commit()
+    except Exception:
+        # Playback must never fail because bookkeeping did.
+        db.rollback()
+        logger.warning("could not record playback for user=%s lesson=%s",
+                       user_id, lesson_id, exc_info=True)
+
+
+def _has_playback(db: Session, user_id: int, lesson_id: int) -> bool:
+    from app.models import LessonPlaybackGrant
+    return db.query(LessonPlaybackGrant.id).filter_by(
+        user_id=user_id, lesson_id=lesson_id
+    ).first() is not None
 
 
 def _public_lesson(lesson: Lesson) -> dict:
@@ -162,9 +211,34 @@ async def update_lesson_duration(
 async def mark_lesson_complete(
     course_id: int,
     lesson_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
+    """Mark a lesson complete. Requires a paid membership and, for a VdoCipher
+    lesson, evidence that the member actually opened the video.
+
+    This took get_current_user and recorded completion on request alone, so a
+    free registered account could loop POSTs to 100% and mint a certificate for
+    a course it had never opened.
+    """
+    lesson = db.query(Lesson).filter(
+        Lesson.id == lesson_id,
+        Lesson.course_id == course_id,
+    ).first()
+    if not lesson:
+        raise HTTPException(404, "Lesson not found")
+
+    if lesson.vdo_video_id and not _has_playback(db, current_user.id, lesson.id):
+        # Bunny-hosted and text lessons are exempt because the server sees no
+        # playback event for them at all — one more reason to finish moving
+        # those to VdoCipher.
+        raise HTTPException(
+            status_code=409,
+            detail="افتح الدرس واتفرج عليه الأول قبل ما تعلّمه كمكتمل",
+        )
+
+    logger.info("lesson complete | user_id=%s course_id=%s lesson_id=%s",
+                current_user.id, course_id, lesson_id)
     from app.services.progress_service import mark_lesson_complete
     return mark_lesson_complete(course_id, lesson_id, current_user.id, db)
 
@@ -172,7 +246,7 @@ async def mark_lesson_complete(
 async def unmark_lesson_complete(
     course_id: int,
     lesson_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
     db.query(UserProgress).filter_by(
@@ -578,20 +652,27 @@ def admin_delete_lesson_pdf(
     except Exception:
         existing = []
 
-    # Remove the entry
+    # Only a URL this lesson actually lists may be deleted. pdf_url is a raw
+    # query parameter, and the old code did UPLOADS_DIR.parent / it.lstrip("/")
+    # and unlinked the result — so "../../anything" escaped the uploads tree and
+    # deleted arbitrary files. Matching against the stored list first means the
+    # parameter selects an entry rather than describing a path.
+    match = next((p for p in existing if p.get("url") == pdf_url), None)
+    if match is None:
+        raise HTTPException(status_code=404, detail="PDF not attached to this lesson")
+
     existing = [p for p in existing if p.get("url") != pdf_url]
     lesson.pdf_url = json.dumps(existing) if existing else None
     db.commit()
 
-    # Delete file from disk
+    # Delete file from disk — resolved, and refused if it lands outside uploads.
     try:
-        # pdf_url is like /uploads/lesson-pdfs/lesson_1_abc.pdf
-        relative = pdf_url.lstrip("/")
-        file_path = UPLOADS_DIR.parent / relative
-        if file_path.exists():
+        stored_url = match.get("url") or ""
+        file_path = _uploads_path_for(stored_url)
+        if file_path and file_path.exists():
             file_path.unlink()
     except Exception:
-        pass
+        logger.warning("could not remove PDF file for lesson %s", lesson_id, exc_info=True)
 
     return {"message": "PDF deleted", "all_pdfs": existing}
 
@@ -729,6 +810,11 @@ async def get_vdo_otp(
 
     if not lesson.vdo_video_id:
         raise HTTPException(404, "No VdoCipher video associated with this lesson")
+
+    # The one playback event the server actually witnesses. Recorded before the
+    # OTP goes out, so completion can later ask "did this member ever open this
+    # video?" instead of taking a POST's word for it.
+    _record_playback(db, current_user.id, lesson.id)
 
     from app.services.vdocipher import generate_otp
     from fastapi.concurrency import run_in_threadpool

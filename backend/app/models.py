@@ -602,6 +602,30 @@ class UserProgress(Base):
     lesson = relationship("Lesson", back_populates="progress")
 
 
+class LessonPlaybackGrant(Base):
+    """Server-side proof that a member actually opened a lesson's video.
+
+    Completion used to be recorded on request alone, so a registered account
+    could POST its way to 100% and mint a certificate for a course it had never
+    opened. There is no watch-time signal to check — the watched_percent columns
+    from migration e478012af2b4 exist but nothing has ever written to them — so
+    this records the one playback event the server genuinely sees: issuing a
+    VdoCipher OTP, which the player must have before it can play anything.
+
+    It proves the video was opened, not that it was watched to the end. That is
+    a real limit, and closing it needs a playback heartbeat from the player.
+    What it does stop is minting a certificate without ever loading the videos.
+    """
+    __tablename__ = "lesson_playback_grants"
+    __table_args__ = (UniqueConstraint("user_id", "lesson_id", name="uq_playback_grant_user_lesson"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False, index=True)
+    first_played_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    last_played_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow, onupdate=func.now())
+
+
 class Certificate(Base):
     __tablename__ = "certificates"
     

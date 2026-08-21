@@ -21,8 +21,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
+      # internal only. The port publish is already bound to 127.0.0.1, but there
+      # was no reason for the database to be reachable from the external network
+      # as well — only the backend talks to it, and the backend is on internal.
       - internal
-      - external
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s

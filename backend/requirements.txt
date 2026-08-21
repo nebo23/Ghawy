@@ -9,24 +9,26 @@ psycopg2-binary==2.9.10
 alembic==1.14.0
 
 # Auth & Security
-python-jose[cryptography]==3.3.0
+# 3.3.0 carried algorithm-confusion and JWT-bomb advisories (PYSEC-2024-232/233,
+# PYSEC-2025-185) — and this library verifies every session token here.
+python-jose[cryptography]==3.4.0
 bcrypt==4.2.1
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.20
+python-multipart==0.0.31   # multipart DoS advisories
 
 # Config
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 
 # Timezone data (guarantees zoneinfo works for Africa/Cairo on slim images)
 tzdata==2024.2
 
 # HTTP
 httpx==0.28.0
-requests==2.32.3
-aiohttp==3.11.10
+requests==2.33.0
 
-# Email
-aiosmtplib==3.0.1
+# Email is sent through smtplib in worker threads (see services/email_service),
+# not aiosmtplib — and aiohttp was never imported either. Both were carrying
+# advisories (34 of them for aiohttp) for code that does not exist.
 
 # Scheduling
 apscheduler==3.10.4
@@ -35,7 +37,10 @@ apscheduler==3.10.4
 boto3==1.35.86
 
 # Image compression / resizing (fast image loading)
-pillow==11.0.0
+# Parses member-uploaded images, so its image-parsing advisories are directly
+# reachable. Only Image.open / Image.LANCZOS / ImageOps.exif_transpose are used
+# here, all unchanged in 12.x.
+pillow==12.3.0
 
 # Invoice PDF (HTML/CSS -> PDF). Renders Arabic text through Pango, which does
 # the letter joining and the bidi ordering that a draw-text-directly PDF lib
@@ -52,4 +57,5 @@ starlette==0.41.3
 websockets==14.1
 email-validator==2.1.1
 aiofiles==24.1.0
-authlib==1.3.2
+# Handles Google OAuth here; 1.3.2 had a JWS algorithm-confusion advisory.
+authlib==1.6.12

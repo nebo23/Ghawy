@@ -34,6 +34,8 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 # of localStorage and act as whoever opens it, and the chat is right there to
 # pass the link around. Deciding the extension here keeps the stored name
 # within these three regardless of what was sent.
+MAX_AVATAR_BYTES = 5 * 1024 * 1024  # matches /profile/upload-avatar
+
 AVATAR_TYPE_EXTENSIONS = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -295,8 +297,28 @@ def upload_avatar(
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(upload_dir, filename)
 
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Copy with a bound rather than shutil.copyfileobj, which would happily
+    # write whatever was sent — nginx's client_max_body_size 50M was the only
+    # limit, so this route was a disk-fill with no rate limit in front of it.
+    # The sibling /profile/upload-avatar has always capped at 5 MB; match it.
+    written = 0
+    try:
+        with open(filepath, "wb") as buffer:
+            while True:
+                chunk = file.file.read(64 * 1024)
+                if not chunk:
+                    break
+                written += len(chunk)
+                if written > MAX_AVATAR_BYTES:
+                    raise HTTPException(status_code=413, detail="Avatar must be 5 MB or smaller")
+                buffer.write(chunk)
+    except HTTPException:
+        # Don't leave the partial file behind on the way out.
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+        raise
     optimize_avatar(filepath)
 
     avatar_url = f"/uploads/avatars/{filename}"

@@ -47,6 +47,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     
     email = user_info['email']
     name = user_info.get('name', '')
+
+    # Google will happily return an address the account has not proven it owns.
+    # Accounts here are keyed on email — an unverified one could be used to
+    # claim an existing member's account on a provider that allows it — so the
+    # claim has to say so.
+    if not user_info.get('email_verified'):
+        return RedirectResponse("https://ghawy.ai/login?error=email_unverified")
     
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -174,99 +181,16 @@ def exchange_handoff(response: Response, request: Request, db: Session = Depends
         },
     }
 
-# ══════════════════════════════════════════════════════════
-#  INVITE TOKEN ENDPOINTS (Manual Payment Flow)
-# ══════════════════════════════════════════════════════════
-
-from pydantic import BaseModel, EmailStr
-from ..models import ManualPaymentRequest, Payment
-from fastapi import HTTPException
-from ..routers.users import create_token, hash_password
-
-class InviteRegisterReq(BaseModel):
-    token: str
-    password: str
-
-@router.get("/auth/invite/{token}")
-def check_invite_token(token: str, db: Session = Depends(get_db)):
-    """Validate invite token before showing register page."""
-    req = db.query(ManualPaymentRequest).filter(
-        ManualPaymentRequest.invite_token == token
-    ).first()
-    
-    if not req:
-        raise HTTPException(status_code=404, detail="Invalid token")
-    if req.status != "approved":
-        raise HTTPException(status_code=400, detail="Request not approved")
-    
-    now = datetime.utcnow()
-    if not req.invite_expires_at or now > req.invite_expires_at:
-        raise HTTPException(status_code=410, detail="Token expired. Please contact support.")
-        
-    return {
-        "valid": True,
-        "email": req.email,
-        "full_name": req.full_name
-    }
-
-@router.post("/auth/register-with-invite")
-def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db)):
-    """Register a new user using a valid invite token."""
-    req = db.query(ManualPaymentRequest).filter(
-        ManualPaymentRequest.invite_token == data.token
-    ).first()
-    
-    if not req or req.status != "approved":
-        raise HTTPException(status_code=400, detail="Invalid or unapproved token")
-        
-    now = datetime.utcnow()
-    if not req.invite_expires_at or now > req.invite_expires_at:
-        raise HTTPException(status_code=410, detail="Token expired")
-        
-    # Check if user already exists
-    existing = db.query(User).filter(User.email == req.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-        
-    # Create User
-    invite_first, invite_last = split_full_name(req.full_name)
-    new_user = User(
-        full_name=req.full_name,
-        first_name=invite_first,
-        last_name=invite_last,
-        email=req.email,
-        hashed_password=hash_password(data.password),
-        phone=req.phone,
-        is_active=True,
-        is_verified=True
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    # Create Payment record for the manual payment
-    payment = Payment(
-        user_id=new_user.id,
-        method="manual",
-        status="confirmed",
-        amount=req.amount or 0,
-        currency="EGP",
-        provider_order_id=f"MANUAL-{req.id}"
-    )
-    db.add(payment)
-    
-    # Invalidate token
-    req.invite_token = None
-    db.commit()
-    
-    # Return JWT
-    return {
-        "access_token": create_session_token(new_user.id, getattr(new_user, "token_version", 0) or 0),
-        "user": {
-            "id": new_user.id,
-            "email": new_user.email,
-            "full_name": new_user.full_name,
-            "has_completed_onboarding": new_user.onboarding_completed,
-            "avatar_url": new_user.avatar_url
-        }
-    }
+# The invite-token flow lived here and has been removed.
+#
+# GET /auth/invite/{token} and POST /auth/register-with-invite read
+# ManualPaymentRequest.invite_token, but nothing in the codebase has ever
+# ASSIGNED that column — approving a manual payment does not mint a token — so
+# neither endpoint could be reached by any real invite. What they were was an
+# unauthenticated pair that, given a token, created a verified and active user
+# with a caller-chosen password and wrote a CONFIRMED payment row.
+#
+# The columns (invite_token, invite_sent_at, invite_expires_at) are left in
+# place. If the flow is ever finished, mint the token with
+# secrets.token_urlsafe(32) at approval time, store its hash rather than the
+# token, and honour invite_expires_at on both ends.

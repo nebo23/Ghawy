@@ -3,6 +3,7 @@ WebSocket Router — Real-time chat messaging
 """
 import json
 import logging
+import time
 from app.services.attachments import resolve_attachment, InvalidAttachment
 import asyncio
 from contextlib import contextmanager
@@ -267,6 +268,26 @@ def _may_post_to_channel(db: Session, channel_id, user_id: int) -> bool:
 # paste accident or someone filling the table.
 MAX_MESSAGE_CHARS = 4000
 
+# Per-user send rate limit. There was none in the app layer at all: nginx's
+# limit_req does not see socket frames, so one connection could write to the
+# messages table as fast as it could serialize JSON. In-memory is the right
+# scope here — the limit is per connection-holder and a worker restart handing
+# someone a fresh allowance is not worth a round trip to the database.
+SEND_RATE_LIMIT = 20          # messages …
+SEND_RATE_WINDOW = 10.0       # … per this many seconds
+_send_times: dict[int, list[float]] = {}
+
+
+def _within_send_rate(user_id: int) -> bool:
+    now = time.monotonic()
+    times = [t for t in _send_times.get(user_id, []) if now - t < SEND_RATE_WINDOW]
+    if len(times) >= SEND_RATE_LIMIT:
+        _send_times[user_id] = times
+        return False
+    times.append(now)
+    _send_times[user_id] = times
+    return True
+
 
 def _has_channel_access(channel_id, user_id: int) -> bool:
     """_may_post_to_channel with its own session, for the socket's inline actions."""
@@ -311,6 +332,10 @@ async def handle_send_message(user_id: int, data: dict):
         if not _may_post_to_channel(db, channel_id, user_id):
             logger.warning("WS user %s tried to post into channel %s without access",
                            user_id, channel_id)
+            return
+
+        if not _within_send_rate(user_id):
+            logger.warning("WS user %s exceeded the send rate limit", user_id)
             return
 
         # file_url / file_name / file_size used to be stored exactly as the
