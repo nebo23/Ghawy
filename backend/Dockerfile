@@ -20,6 +20,12 @@ FROM python:3.11-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
+    # WeasyPrint (invoice PDF): Pango does the Arabic shaping + bidi, and
+    # harfbuzz-subset embeds only the glyphs the invoice uses. No font package
+    # here on purpose — the PDF ships its own Cairo font in invoice_assets/.
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for security

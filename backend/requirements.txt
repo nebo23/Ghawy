@@ -37,6 +37,11 @@ boto3==1.35.86
 # Image compression / resizing (fast image loading)
 pillow==11.0.0
 
+# Invoice PDF (HTML/CSS -> PDF). Renders Arabic text through Pango, which does
+# the letter joining and the bidi ordering that a draw-text-directly PDF lib
+# cannot. Needs libpango + libharfbuzz-subset at runtime — see the Dockerfile.
+weasyprint==69.0
+
 # WhatsApp (Meta Cloud API - via httpx)
 
 # Session middleware

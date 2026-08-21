@@ -1,8 +1,10 @@
+import logging
 import os
 import re
 import smtplib
 import unicodedata
-from email.message import EmailMessage
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -12,6 +14,8 @@ from dotenv import load_dotenv
 
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
+
+logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════
@@ -86,30 +90,59 @@ def _get_smtp_config():
     return smtp_host, smtp_port, smtp_user, smtp_password, smtp_from
 
 
-def _send_email(to_email: str, subject: str, body_text: str, body_html: str = None) -> None:
+def _attach_file(message, attachment: dict) -> None:
+    """مرفق واحد جوه الرسالة (زي PDF الفاتورة).
+
+    Content-Disposition: attachment مقصود — inline بيخلّي بعض العملاء يحاول
+    يعرض الملف جوه المتن بدل ما يديه للعميل كملف يحمّله."""
+    content = attachment.get("content")
+    if not content:
+        return
+    mimetype = attachment.get("mimetype") or "application/octet-stream"
+    maintype, _, subtype = mimetype.partition("/")
+    part = MIMEBase(maintype or "application", subtype or "octet-stream")
+    part.set_payload(content)
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", "attachment",
+                    filename=attachment.get("filename") or "attachment")
+    message.attach(part)
+
+
+def _send_email(to_email: str, subject: str, body_text: str, body_html: str = None,
+                attachments: list = None) -> None:
     """المُرسِل الموحّد لكل الإيميلات المعاملاتية. الاسم الظاهر دايماً FROM_NAME ("Ghawy Team").
-    لو الـ HTML بيستخدم القالب الموحّد (فيه صور البراند cid:) بنربط الصور inline تلقائياً."""
+    لو الـ HTML بيستخدم القالب الموحّد (فيه صور البراند cid:) بنربط الصور inline تلقائياً.
+
+    attachments (اختياري) = ليستة dicts فيها filename و content (bytes) و mimetype.
+    ساعتها الرسالة كلها بتتلفّ في multipart/mixed: المتن بصوره الـ inline جوه جزء
+    واحد، والمرفقات جنبه — وده اللي بيخلّي صور البراند تفضل ظاهرة في المتن من غير
+    ما تتحسب هي كمان مرفقات عند العميل."""
     smtp_host, smtp_port, smtp_user, smtp_password, smtp_from = _get_smtp_config()
     from_header = f"{FROM_NAME} <{smtp_from}>" if FROM_NAME else smtp_from
 
     if body_html:
         # multipart/related عشان صور البراند inline (cid:) تتعرض جوه الإيميل
-        message = MIMEMultipart("related")
-        message["Subject"] = subject
-        message["From"] = from_header
-        message["To"] = to_email
+        body_part = MIMEMultipart("related")
         alt = MIMEMultipart("alternative")
         alt.attach(MIMEText(body_text, "plain", "utf-8"))
         alt.attach(MIMEText(body_html, "html", "utf-8"))
-        message.attach(alt)
+        body_part.attach(alt)
         if "cid:" in body_html:
-            _attach_brand_images(message)
+            _attach_brand_images(body_part)
     else:
-        message = EmailMessage()
-        message["Subject"] = subject
-        message["From"] = from_header
-        message["To"] = to_email
-        message.set_content(body_text)
+        body_part = MIMEText(body_text, "plain", "utf-8")
+
+    if attachments:
+        message = MIMEMultipart("mixed")
+        message.attach(body_part)
+        for attachment in attachments:
+            _attach_file(message, attachment)
+    else:
+        message = body_part
+
+    message["Subject"] = subject
+    message["From"] = from_header
+    message["To"] = to_email
 
     with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
         server.starttls()
@@ -404,6 +437,62 @@ def _invoice_seller_rows() -> list:
     return rows
 
 
+def _invoice_customer_rows(inv: dict) -> list:
+    """بيانات العميل. الفنكشن دي (وأخواتها تحت) هي المصدر الوحيد للسطور دي —
+    إيميل الفاتورة والـ PDF المرفق الاتنين بيقروا منها، فمستحيل يختلفوا."""
+    return [
+        ("الاسم", inv.get("user_name") or "—"),
+        ("رقم العضوية", f"#{inv.get('user_id')}"),
+        ("البريد الإلكتروني", inv.get("user_email") or "—"),
+        ("رقم الموبايل", inv.get("user_phone") or "—"),
+        ("الدولة", country_to_arabic(inv.get("user_country") or "") or "—"),
+        ("المحافظة", _governorate_to_arabic(inv.get("user_governorate") or "") or "—"),
+    ]
+
+
+def _invoice_activation_rows(inv: dict) -> list:
+    """اللي العضو خده فعلاً مقابل فلوسه: تاريخ التفعيل والمدة ونهاية الاشتراك."""
+    return [
+        ("تاريخ التفعيل", _fmt_cairo_datetime(inv.get("paid_at"))),
+        ("المدة المضافة", f"{inv.get('days')} يوم"),
+        ("الاشتراك ساري حتى", _fmt_cairo_date(inv.get("subscription_end"))),
+    ]
+
+
+def _invoice_transaction_rows(inv: dict) -> list:
+    """بيانات العملية زي ما البوابة رجّعتها. السطور الاختيارية بتظهر لو البوابة
+    بعتتها بس — مفيش سطر بيتخترع ولا سطر فاضي بيتكتب."""
+    gw = inv.get("gateway") or {}
+    transaction_rows = [
+        ("وسيلة الدفع", _invoice_payment_method(gw)),
+    ]
+    if gw.get("card_holder"):
+        transaction_rows.append(("اسم حامل البطاقة", gw["card_holder"]))
+    if gw.get("payer_name"):
+        transaction_rows.append(("اسم صاحب المحفظة", gw["payer_name"]))
+    if gw.get("paid_through"):
+        transaction_rows.append(("مزوّد المحفظة", gw["paid_through"]))
+    transaction_rows += [
+        ("بوابة الدفع", "Kashier"),
+        ("رقم العملية", gw.get("transaction_id") or "—"),
+        ("رقم الطلب", inv.get("order_id") or "—"),
+    ]
+    if gw.get("kashier_order_id"):
+        transaction_rows.append(("مرجع كاشير", gw["kashier_order_id"]))
+    if gw.get("order_reference"):
+        transaction_rows.append(("رقم مرجعي إضافي", gw["order_reference"]))
+    if gw.get("response_message"):
+        code = f" ({gw['response_code']})" if gw.get("response_code") else ""
+        transaction_rows.append(("نتيجة العملية", f"{gw['response_message']}{code}"))
+    transaction_rows.append(("تاريخ ووقت الدفع", _fmt_cairo_datetime(inv.get("paid_at"))))
+    if gw.get("channel"):
+        transaction_rows.append(("قناة الدفع", gw["channel"]))
+    if gw.get("customer_ip"):
+        transaction_rows.append(("عنوان IP وقت الدفع", gw["customer_ip"]))
+    transaction_rows.append(("حالة الدفع", "ناجحة — تم التحصيل"))
+    return transaction_rows
+
+
 def _inv_section(title: str, rows: list) -> str:
     """عنوان قسم + جدول تسميات/قيم. القيم LTR عشان الأرقام واللاتيني يبانوا صح في RTL."""
     body = ""
@@ -424,12 +513,26 @@ def _inv_section(title: str, rows: list) -> str:
     )
 
 
-def _invoice_html(inv: dict) -> str:
-    """جسم الفاتورة — بيتلفّ في القالب الموحّد render_ghawy_email زي أي إيميل تاني."""
+def _invoice_html(inv: dict, pdf_attached: bool = False) -> str:
+    """جسم الفاتورة — بيتلفّ في القالب الموحّد render_ghawy_email زي أي إيميل تاني.
+
+    pdf_attached = الشريط اللي بيقول للعميل إن في نسخة PDF مرفقة. بييجي بـ False
+    لو توليد الـ PDF وقع — عشان الإيميل ميقولش على مرفق مش موجود."""
     currency = inv.get("currency") or "EGP"
-    gw = inv.get("gateway") or {}
     name = _first_name(inv.get("user_name") or "")
     discount = inv.get("discount_amount") or 0
+
+    pdf_note = ""
+    if pdf_attached:
+        pdf_note = """
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#F7FBE8;border:1px solid #E2F0A8;border-radius:10px;margin:10px 0 0;">
+            <tr>
+              <td style="padding:13px 18px;text-align:right;color:#3F4A12;font-size:13.5px;line-height:1.8;">
+                📎 نسخة PDF من الفاتورة مرفقة مع الإيميل ده — حمّلها أو اطبعها في أي وقت.
+              </td>
+            </tr>
+          </table>"""
 
     # ── الترويسة: رقم الفاتورة + ختم "مدفوعة" ──
     header = f"""
@@ -450,7 +553,7 @@ def _invoice_html(inv: dict) -> str:
                              font-weight:800;padding:7px 14px;border-radius:999px;">مدفوعة ✅</span>
               </td>
             </tr>
-          </table>"""
+          </table>{pdf_note}"""
 
     # ── البند: الباقة نفسها ──
     plan_label = _INVOICE_PLAN_LABELS.get(inv.get("plan_key"), "اشتراك منصة غاوي")
@@ -514,49 +617,9 @@ def _invoice_html(inv: dict) -> str:
           </table>"""
 
     # ── الأقسام: العميل / العملية / المُصدر ──
-    customer = _inv_section("بيانات العميل", [
-        ("الاسم", inv.get("user_name") or "—"),
-        ("رقم العضوية", f"#{inv.get('user_id')}"),
-        ("البريد الإلكتروني", inv.get("user_email") or "—"),
-        ("رقم الموبايل", inv.get("user_phone") or "—"),
-        ("الدولة", country_to_arabic(inv.get("user_country") or "") or "—"),
-        ("المحافظة", _governorate_to_arabic(inv.get("user_governorate") or "") or "—"),
-    ])
-
-    transaction_rows = [
-        ("وسيلة الدفع", _invoice_payment_method(gw)),
-    ]
-    if gw.get("card_holder"):
-        transaction_rows.append(("اسم حامل البطاقة", gw["card_holder"]))
-    if gw.get("payer_name"):
-        transaction_rows.append(("اسم صاحب المحفظة", gw["payer_name"]))
-    if gw.get("paid_through"):
-        transaction_rows.append(("مزوّد المحفظة", gw["paid_through"]))
-    transaction_rows += [
-        ("بوابة الدفع", "Kashier"),
-        ("رقم العملية", gw.get("transaction_id") or "—"),
-        ("رقم الطلب", inv.get("order_id") or "—"),
-    ]
-    if gw.get("kashier_order_id"):
-        transaction_rows.append(("مرجع كاشير", gw["kashier_order_id"]))
-    if gw.get("order_reference"):
-        transaction_rows.append(("رقم مرجعي إضافي", gw["order_reference"]))
-    if gw.get("response_message"):
-        code = f" ({gw['response_code']})" if gw.get("response_code") else ""
-        transaction_rows.append(("نتيجة العملية", f"{gw['response_message']}{code}"))
-    transaction_rows.append(("تاريخ ووقت الدفع", _fmt_cairo_datetime(inv.get("paid_at"))))
-    if gw.get("channel"):
-        transaction_rows.append(("قناة الدفع", gw["channel"]))
-    if gw.get("customer_ip"):
-        transaction_rows.append(("عنوان IP وقت الدفع", gw["customer_ip"]))
-    transaction_rows.append(("حالة الدفع", "ناجحة — تم التحصيل"))
-    transaction = _inv_section("بيانات عملية الدفع", transaction_rows)
-
-    activation = _inv_section("تفعيل الاشتراك", [
-        ("تاريخ التفعيل", _fmt_cairo_datetime(inv.get("paid_at"))),
-        ("المدة المضافة", f"{inv.get('days')} يوم"),
-        ("الاشتراك ساري حتى", _fmt_cairo_date(inv.get("subscription_end"))),
-    ])
+    customer = _inv_section("بيانات العميل", _invoice_customer_rows(inv))
+    activation = _inv_section("تفعيل الاشتراك", _invoice_activation_rows(inv))
+    transaction = _inv_section("بيانات عملية الدفع", _invoice_transaction_rows(inv))
 
     seller = _inv_section("بيانات مُصدر الفاتورة", _invoice_seller_rows())
 
@@ -585,7 +648,7 @@ def _invoice_html(inv: dict) -> str:
     return render_ghawy_email(inner)
 
 
-def _invoice_text(inv: dict) -> str:
+def _invoice_text(inv: dict, pdf_attached: bool = False) -> str:
     """نسخة نصية من نفس الفاتورة — للـ deliverability وللقارئات النصية."""
     currency = inv.get("currency") or "EGP"
     gw = inv.get("gateway") or {}
@@ -600,8 +663,10 @@ def _invoice_text(inv: dict) -> str:
     if inv.get("discount_amount"):
         label = f"الخصم (كوبون {inv['coupon_code']})" if inv.get("coupon_code") else "الخصم"
         lines.append(f"{label}: - {_fmt_money(inv.get('discount_amount'), currency)}")
+    lines.append(f"الإجمالي المدفوع: {_fmt_money(inv.get('amount'), currency)}")
+    if pdf_attached:
+        lines.append("نسخة PDF من الفاتورة مرفقة مع الإيميل ده — للتحميل والطباعة.")
     lines += [
-        f"الإجمالي المدفوع: {_fmt_money(inv.get('amount'), currency)}",
         "",
         "بيانات العميل:",
         f"  الاسم: {inv.get('user_name') or '—'}",
@@ -651,11 +716,29 @@ def send_payment_invoice_email(invoice: dict) -> None:
     to_email = (invoice.get("user_email") or "").strip()
     if not to_email:
         return
+
+    # نسخة PDF مرفقة عشان العميل يقدر يحمّلها أو يطبعها أو يبعتها لحد تاني.
+    # المرفق مش شرط لإرسال الفاتورة: لو التوليد وقع لأي سبب (WeasyPrint مش
+    # موجود في الـ image بعد deploy ناقص مثلاً) الفاتورة بتوصل كاملة في متن
+    # الإيميل زي ما هي، والشريط اللي بيقول "PDF مرفق" مبيظهرش أصلاً.
+    attachments = []
+    try:
+        from app.services.invoice_pdf import build_invoice_pdf, invoice_pdf_filename
+        attachments.append({
+            "filename": invoice_pdf_filename(invoice),
+            "content": build_invoice_pdf(invoice),
+            "mimetype": "application/pdf",
+        })
+    except Exception as exc:
+        logger.error("❌ Could not build invoice PDF for %s: %s",
+                     invoice.get("invoice_number"), exc)
+
     _send_email(
         to_email=to_email,
         subject=f"فاتورة اشتراكك في غاوي — {invoice.get('invoice_number')}",
-        body_text=_invoice_text(invoice),
-        body_html=_invoice_html(invoice),
+        body_text=_invoice_text(invoice, pdf_attached=bool(attachments)),
+        body_html=_invoice_html(invoice, pdf_attached=bool(attachments)),
+        attachments=attachments,
     )
 
 
