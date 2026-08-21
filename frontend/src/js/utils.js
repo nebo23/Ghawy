@@ -160,17 +160,13 @@ function saveToken(token) {
   localStorage.setItem('token', token);
 }
 
-// Auto-capture token from URL (Google OAuth redirect)
-(function () {
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlToken = urlParams.get('token');
-  if (urlToken) {
-    saveToken(urlToken);
-    // Clean URL without reload
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-  }
-})();
+// The Google OAuth redirect used to arrive as ?token=<30-day JWT> and this
+// block picked it up. It ran after the analytics snippets in <head> had already
+// read location.href, so the token reached GTM, GA4, the Meta Pixel and Clarity
+// before it was ever stripped — along with nginx's access log and browser
+// history. The hand-off is a 120-second HttpOnly cookie now, spent by
+// /auth-complete over a same-origin POST, so there is nothing in the URL to
+// capture and accepting one would only reopen the hole.
 
 function logout() {
   // Drop the file-access cookie server-side too — clearing localStorage alone

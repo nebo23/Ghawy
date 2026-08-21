@@ -233,13 +233,16 @@ def admin_get_attendees(
     if export == "csv":
         import csv
         import io
+        from app.routers.admin import _csv_safe
         from fastapi.responses import StreamingResponse
 
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["Name", "Email", "Registered At"])
         for a in result:
-            writer.writerow([a["full_name"], a["email"], a["registered_at"]])
+            # Same formula-injection guard as the payments export: these names
+            # are member-supplied and this file opens in someone's spreadsheet.
+            writer.writerow([_csv_safe(a["full_name"]), _csv_safe(a["email"]), a["registered_at"]])
         output.seek(0)
         return StreamingResponse(
             iter([output.getvalue()]),

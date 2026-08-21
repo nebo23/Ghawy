@@ -50,9 +50,22 @@ def verify_password(plain: str, hashed: str) -> bool:
     except ValueError:
         return False
 
-def create_token(user_id: int) -> str:
+def create_token(user_id: int, token_version: int = 0) -> str:
+    """Issue a session token, stamped with the user's current token_version.
+
+    The stamp is what makes a 30-day JWT revocable: get_current_user compares it
+    against the column, so bumping the column ends every session that user has.
+    """
     expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(
+        {"sub": str(user_id), "ver": token_version, "exp": expire},
+        SECRET_KEY, algorithm=ALGORITHM,
+    )
+
+
+def issue_token_for(user: User) -> str:
+    """create_token for a loaded user — the shape every login path wants."""
+    return create_token(user.id, getattr(user, "token_version", 0) or 0)
 
 
 # ─── File-access cookie ───────────────────────────────────────
@@ -86,6 +99,53 @@ def set_file_cookie(response, user_id: int) -> None:
         samesite="lax",
         path="/",
     )
+
+# ─── OAuth hand-off cookie ────────────────────────────────────
+# Google sign-in used to finish by redirecting to
+# /dashboard.html?token=<30-day JWT>. Those pages load GTM, GA4, the Meta Pixel
+# and Microsoft Clarity in <head>, and every one of them reads location.href on
+# load — so a member's session token was being shipped to three third parties,
+# written into nginx's access log ($request), and left in browser history and
+# Referer headers. Stripping it after load, as utils.js did, is far too late:
+# the analytics snippets have already run.
+#
+# Nothing sensitive travels in the URL now. The callback puts the session in a
+# short-lived HttpOnly cookie and sends the browser to /auth-complete, which
+# swaps it for the real token over a same-origin POST. typ="oauth" keeps it from
+# being usable as a session credential on its own, and 120 seconds is the whole
+# window between the redirect and the page that spends it.
+OAUTH_HANDOFF_COOKIE = "ghawy_oauth"
+OAUTH_HANDOFF_EXPIRE_SECONDS = 120
+
+def create_handoff_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=OAUTH_HANDOFF_EXPIRE_SECONDS)
+    return jwt.encode(
+        {"sub": str(user_id), "typ": "oauth", "exp": expire},
+        SECRET_KEY, algorithm=ALGORITHM,
+    )
+
+def set_handoff_cookie(response, user_id: int) -> None:
+    response.set_cookie(
+        key=OAUTH_HANDOFF_COOKIE,
+        value=create_handoff_token(user_id),
+        max_age=OAUTH_HANDOFF_EXPIRE_SECONDS,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+    )
+
+def read_handoff_token(token: Optional[str]) -> Optional[int]:
+    """The user id inside a hand-off cookie, or None if it is not a valid one."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("typ") != "oauth":
+            return None
+        return int(payload.get("sub"))
+    except (JWTError, ValueError, TypeError):
+        return None
 
 def generate_verification_code() -> str:
     return f"{random.randint(0, 999999):06d}"
@@ -174,7 +234,9 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
     db.commit()
     db.refresh(user)
 
-    logger.info(" Verification code for %s: %s", user.email, verification_code)
+    # The code itself is never logged: anyone with log access could otherwise
+    # complete someone else's signup. Log that one was issued, not what it was.
+    logger.info("Verification code issued for user_id=%s", user.id)
 
     send_verification_email_bg(user.email, verification_code)
 
@@ -200,7 +262,7 @@ def login(data: UserLogin, response: Response, db: Session = Depends(get_db)):
     # cannot send the bearer token — mint the read-only file cookie here.
     set_file_cookie(response, user.id)
     return {
-        "access_token": create_token(user.id),
+        "access_token": issue_token_for(user),
         "user": {
             "id": user.id,
             "email": user.email,
@@ -234,7 +296,7 @@ def token_login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
     # cannot send the bearer token — mint the read-only file cookie here.
     set_file_cookie(response, user.id)
     return {
-        "access_token": create_token(user.id),
+        "access_token": issue_token_for(user),
         "user": {
             "id": user.id,
             "email": user.email,
@@ -263,7 +325,7 @@ def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Verification code expired")
 
     submitted_code = data.verification_code.strip()
-    logger.debug("Verify attempt: email=%s, submitted=%r, stored=%r", data.email, submitted_code, user.verification_code)
+    logger.debug("Verify attempt for user_id=%s", user.id)
 
     if user.verification_code != submitted_code:
         attempts = _verify_attempts.get(user.email, 0) + 1
@@ -284,7 +346,7 @@ def verify_email(data: VerifyEmailRequest, db: Session = Depends(get_db)):
     db.commit()
     return {
         "message": "Email verified successfully",
-        "access_token": create_token(user.id),
+        "access_token": issue_token_for(user),
         "user": {
             "id": user.id,
             "email": user.email,
@@ -322,7 +384,7 @@ def resend_verification_code(data: ResendVerificationRequest, db: Session = Depe
     db.commit()
     _verify_attempts.pop(user.email, None)  # كود جديد = عدّاد محاولات جديد
 
-    logger.info(" Resent verification code for %s: %s", user.email, verification_code)
+    logger.info("Verification code resent for user_id=%s", user.id)
 
     send_verification_email_bg(user.email, verification_code)
 
@@ -344,9 +406,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if user_id_str is None:
             raise credentials_exception
 
-        # A file-access token is read-only by construction — it must never be
-        # accepted as a session credential.
-        if payload.get("typ") == "file":
+        # Session tokens carry no "typ". The narrow ones do — "file" for the
+        # read-only upload cookie, "oauth" for the sign-in hand-off — and
+        # neither may stand in for a session, so anything typed is refused here
+        # rather than any one type being blacklisted.
+        if payload.get("typ") is not None:
             raise credentials_exception
 
         user_id = int(user_id_str) # تحويل آمن جوه الـ try
@@ -357,7 +421,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not user:
         # User deleted from DB — token is no longer valid → treat as 401
         raise credentials_exception
-        
+
+    # Tokens issued before this column existed carry no "ver" and read as 0,
+    # which matches the default — so the switch is backwards compatible until
+    # somebody's version is actually bumped, and from then on their old tokens
+    # are dead. Bumped on logout-all, on password change, and as the kill switch
+    # for tokens that leaked through the old ?token= redirect.
+    if int(payload.get("ver") or 0) != (getattr(user, "token_version", 0) or 0):
+        raise credentials_exception
+
     return user
 
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
@@ -379,7 +451,7 @@ def get_current_user_optional(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id_str: str = payload.get("sub")
-        if user_id_str is None or payload.get("typ") == "file":
+        if user_id_str is None or payload.get("typ") is not None:
             return None
         user_id = int(user_id_str)
     except (JWTError, ValueError, KeyError):
@@ -393,6 +465,25 @@ def get_current_active_member(current_user: User = Depends(get_current_user)) ->
             detail="حسابك غير مفعل — يرجى تجديد الاشتراك"
         )
     return current_user
+
+@router.post("/logout-all")
+def logout_all(
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """End every session this account has, on every device.
+
+    Logging out used to be localStorage.removeItem, which does nothing to a
+    token someone else already copied. Bumping token_version invalidates all of
+    them server-side, including the caller's — the client is expected to send
+    the member back to the login page.
+    """
+    current_user.token_version = (current_user.token_version or 0) + 1
+    db.commit()
+    response.delete_cookie(FILE_TOKEN_COOKIE, path="/")
+    return {"ok": True, "message": "Signed out of all devices"}
+
 
 def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:

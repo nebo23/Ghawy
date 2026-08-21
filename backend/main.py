@@ -17,8 +17,10 @@ from pathlib import Path
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-# Use WARNING in production to avoid leaking sensitive data in logs
-_log_level = logging.INFO
+# WARNING in production, as the comment here has always said — the code said
+# INFO, so every INFO line really was being emitted, including (until now) the
+# email verification codes themselves.
+_log_level = logging.WARNING if ENVIRONMENT == "production" else logging.INFO
 logging.basicConfig(level=_log_level, format="%(levelname)s: %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 

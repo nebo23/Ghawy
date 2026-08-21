@@ -65,12 +65,6 @@
 
     <script>
         (function () {
-            var urlParams = new URLSearchParams(window.location.search);
-            var urlToken = urlParams.get("token");
-            if (urlToken) {
-                localStorage.setItem("token", urlToken);
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
             // Removed auth guard logic to allow public access
         })();
     </script>

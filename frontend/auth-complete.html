@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جاري تسجيل الدخول… — Ghawy</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <!--
+      The last hop of Google sign-in, and deliberately the plainest page on the
+      site: no analytics, no pixel, no auth guard, no shared JS.
+
+      The callback used to redirect straight to /dashboard.html?token=<JWT>.
+      That page loads GTM, GA4, the Meta Pixel and Clarity in <head>, and all of
+      them read location.href on load — so a member's 30-day session token went
+      to three third parties, into nginx's access log, and into browser history,
+      before any of our own code ran. Stripping it afterwards was far too late.
+
+      Now the session arrives in a 120-second HttpOnly cookie, is swapped here
+      for the real token over a same-origin POST, and the browser moves on. The
+      URL never carries anything worth stealing, and nothing on this page is in
+      a position to read it if it did.
+    -->
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            margin: 0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: #0b0b0d; color: #e9e9ea;
+            font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+            text-align: center;
+        }
+        .box { padding: 24px; }
+        .spinner {
+            width: 38px; height: 38px; margin: 0 auto 18px;
+            border: 3px solid rgba(255,255,255,.15);
+            border-top-color: #c1ff11; border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        p { margin: 0; font-size: .95rem; color: #b9b9bb; }
+        a { color: #c1ff11; }
+        @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="spinner" role="status" aria-label="جاري تسجيل الدخول"></div>
+        <p id="msg">جاري تسجيل الدخول…</p>
+    </div>
+
+    <script>
+        (function () {
+            var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+                ? 'http://127.0.0.1:8000' : '/api';
+
+            // Only same-origin paths, so ?next= can never be turned into an
+            // open redirect. "//evil.com" is a protocol-relative URL, not a path.
+            function safeNext(raw) {
+                var value = String(raw || '');
+                return /^\/[A-Za-z0-9._~\/-]*$/.test(value) && value.slice(0, 2) !== '//'
+                    ? value : '/dashboard.html';
+            }
+
+            var next = safeNext(new URLSearchParams(location.search).get('next'));
+
+            function fail() {
+                document.getElementById('msg').innerHTML =
+                    'انتهت صلاحية رابط تسجيل الدخول. <a href="/login">سجّل الدخول تاني</a>';
+            }
+
+            fetch(API + '/auth/exchange', { method: 'POST', credentials: 'same-origin' })
+                .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+                .then(function (data) {
+                    if (!data || !data.access_token) return Promise.reject('no token');
+                    localStorage.setItem('token', data.access_token);
+                    if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+                    // The file-access cookie came back on this same response.
+                    localStorage.setItem('ghawy_files_cookie_at', String(Date.now()));
+                    location.replace(next);
+                })
+                .catch(fail);
+        })();
+    </script>
+</body>
+</html>

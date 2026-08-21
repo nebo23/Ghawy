@@ -101,6 +101,10 @@ class User(Base):
     onboarding_completed = Column(Boolean, server_default=text('false'), default=False)
     selected_avatar = Column(String, nullable=True)
     last_seen = Column(DateTime, nullable=True)
+    # Stamped into every session token and checked on every request. Bumping it
+    # invalidates that user's outstanding JWTs at once — the only way to end a
+    # 30-day session early, since the tokens themselves carry no server state.
+    token_version = Column(Integer, server_default=text('0'), default=0, nullable=False)
     is_legacy_redeemed = Column(Boolean, server_default=text('false'), default=False)
     subscription_source = Column(String(64), nullable=True)
     custom_title = Column(String(120), nullable=True)

@@ -1863,14 +1863,6 @@
         // pounds, for every visitor — the home page and /pricing read the same
         // list and there is no second currency to switch to.
 
-        // --- Handle OAuth Token from URL ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
-        if (urlToken) {
-            saveToken(urlToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if (typeof updateAuthUI === 'function') updateAuthUI();
-        }
     </script>
 
 

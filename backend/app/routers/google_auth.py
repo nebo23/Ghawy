@@ -1,5 +1,5 @@
 # google_auth.py
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Response, HTTPException
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
@@ -11,6 +11,12 @@ import os, secrets
 from jose import jwt
 from datetime import datetime, timedelta
 import urllib.request
+from urllib.parse import quote
+from pydantic import BaseModel
+from ..routers.users import (
+    OAUTH_HANDOFF_COOKIE, set_handoff_cookie, read_handoff_token,
+    set_file_cookie, create_token as create_session_token,
+)
 import json
 from pathlib import Path
 from dotenv import load_dotenv
@@ -112,24 +118,61 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
     
-    expire = datetime.utcnow() + timedelta(minutes=60 * 24 * 30)  # 30 days
-    access_token = jwt.encode(
-        {"sub": str(user.id), "exp": expire},
-        os.getenv('SECRET_KEY'),
-        algorithm="HS256"
-    )
-    
     frontend_url = "https://ghawy.ai"
     if not user.is_active:
-        # Signed in but not subscribed → the plans page. /pricing replaced
-        # /payment; utils.js picks the token out of the query there exactly as
-        # it did on the old page, so the visitor arrives logged in.
-        return RedirectResponse(f"{frontend_url}/pricing?token={access_token}")
-        
-    if not user.onboarding_completed:
-        return RedirectResponse(f"{frontend_url}/onboarding.html?token={access_token}")
-        
-    return RedirectResponse(f"{frontend_url}/dashboard.html?token={access_token}")
+        # Signed in but not subscribed → the plans page.
+        destination = "/pricing"
+    elif not user.onboarding_completed:
+        destination = "/onboarding.html"
+    else:
+        destination = "/dashboard.html"
+
+    # No token in the URL. These three pages load GTM, GA4, the Meta Pixel and
+    # Clarity in <head>, all of which read location.href on load, so a token in
+    # the query string was a member's 30-day session handed to three third
+    # parties (plus nginx's access log, browser history and Referer). The
+    # session travels in a 120-second HttpOnly cookie instead, and
+    # /auth-complete — a bare page with no analytics on it — swaps that for the
+    # real token over a same-origin POST before forwarding here.
+    response = RedirectResponse(
+        f"{frontend_url}/auth-complete?next={quote(destination, safe='/')}"
+    )
+    set_handoff_cookie(response, user.id)
+    return response
+
+
+class ExchangeOut(BaseModel):
+    access_token: str
+
+
+@router.post("/auth/exchange")
+def exchange_handoff(response: Response, request: Request, db: Session = Depends(get_db)):
+    """Swap the sign-in hand-off cookie for the session token.
+
+    Single-use: the cookie is cleared on the way out, so even if the 120-second
+    window is still open the code cannot be spent twice.
+    """
+    user_id = read_handoff_token(request.cookies.get(OAUTH_HANDOFF_COOKIE))
+    response.delete_cookie(OAUTH_HANDOFF_COOKIE, path="/")
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Sign-in link expired — please sign in again")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Sign-in link expired — please sign in again")
+
+    set_file_cookie(response, user.id)
+    return {
+        "access_token": create_session_token(user.id, getattr(user, "token_version", 0) or 0),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active,
+            "onboarding_completed": user.onboarding_completed,
+            "avatar_url": user.avatar_url,
+        },
+    }
 
 # ══════════════════════════════════════════════════════════
 #  INVITE TOKEN ENDPOINTS (Manual Payment Flow)
@@ -218,7 +261,7 @@ def register_with_invite(data: InviteRegisterReq, db: Session = Depends(get_db))
     
     # Return JWT
     return {
-        "access_token": create_token(new_user.id),
+        "access_token": create_session_token(new_user.id, getattr(new_user, "token_version", 0) or 0),
         "user": {
             "id": new_user.id,
             "email": new_user.email,

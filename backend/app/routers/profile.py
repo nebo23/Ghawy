@@ -7,7 +7,7 @@ from app.database import get_db
 from app.services.name_utils import split_full_name, clean_display_name
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
-from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password
+from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password, issue_token_for
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import UploadFile, File
@@ -531,8 +531,17 @@ def change_password(
         raise HTTPException(status_code=400, detail="Current password is wrong")
 
     current_user.hashed_password = hash_password(data.new_password)
+    # Changing a password must end the sessions that were opened with the old
+    # one — otherwise "someone knows my password" has no remedy, because the
+    # 30-day token they already hold keeps working regardless.
+    current_user.token_version = (current_user.token_version or 0) + 1
     db.commit()
-    return {"message": "Password changed successfully"}
+    # …including this one, so hand back a fresh token rather than logging the
+    # member out of the tab they just used.
+    return {
+        "message": "Password changed successfully",
+        "access_token": issue_token_for(current_user),
+    }
 
 
 # ─── Phone Verification (Vonage) ────────────────────────────
