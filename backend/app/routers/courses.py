@@ -324,7 +324,7 @@ async def upload_course_pdf(
         f.write(content)
     
     # Update course record
-    new_url = f"/uploads/course-pdfs/{safe_name}"
+    new_url = f"/files/course-pdfs/{safe_name}"
     
     import json
     current_resources = []
@@ -402,7 +402,7 @@ async def upload_course_certificate(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    course.certificate_url = f"/uploads/course-certificates/{safe_name}"
+    course.certificate_url = f"/files/course-certificates/{safe_name}"
     db.commit()
     db.refresh(course)
 
@@ -539,7 +539,7 @@ async def admin_upload_pdf(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    new_url = f"/uploads/lesson-pdfs/{safe_name}"
+    new_url = f"/files/lesson-pdfs/{safe_name}"
     original_name = file.filename
 
     # Parse existing pdf_url as list

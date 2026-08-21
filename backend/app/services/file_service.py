@@ -10,6 +10,11 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BACKEND_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 
+# Upload categories nginx serves publicly off disk. Anything not listed here is
+# delivered by app.routers.files behind an entitlement check, so its stored URL
+# must point at /files/ rather than /uploads/.
+PUBLIC_UPLOAD_SUBFOLDERS = {"avatars", "course-thumbnails", "posts"}
+
 # Max file sizes
 MAX_IMAGE_SIZE = 10 * 1024 * 1024   # 10 MB
 MAX_FILE_SIZE = 25 * 1024 * 1024    # 25 MB
@@ -179,8 +184,11 @@ async def save_upload(file: UploadFile, subfolder: str = "general") -> dict:
     async with aiofiles.open(file_path, "wb") as f:
         await f.write(content)
 
-    # Return relative URL path (served by StaticFiles mount at /uploads)
-    relative_url = f"/uploads/{subfolder}/{unique_name}"
+    # Public categories are served straight off disk by nginx under /uploads/.
+    # Everything else (chat and DM attachments, feedback screenshots) is member
+    # content and goes through /files/, which checks who is asking.
+    prefix = "/uploads" if subfolder in PUBLIC_UPLOAD_SUBFOLDERS else "/files"
+    relative_url = f"{prefix}/{subfolder}/{unique_name}"
 
     return {
         "file_url": relative_url,

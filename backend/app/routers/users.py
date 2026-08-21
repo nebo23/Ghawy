@@ -1,5 +1,5 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt
@@ -53,6 +53,39 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# ─── File-access cookie ───────────────────────────────────────
+# Protected uploads (lesson PDFs, receipts, chat attachments…) are fetched by
+# the browser itself through <img>, <a href> and <audio src> — none of which can
+# carry an Authorization header. So the file endpoint accepts a cookie instead.
+#
+# It is deliberately NOT the session JWT. This token carries typ="file" and
+# get_current_user refuses it, so a cookie that rides along on every request to
+# the origin can only ever read a file the member could already open — never
+# call an API, never change anything. SameSite=Lax keeps it off cross-site
+# subresource loads, so it cannot be used to hotlink content either.
+FILE_TOKEN_COOKIE = "ghawy_files"
+FILE_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days; re-minted on every login
+
+def create_file_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=FILE_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(
+        {"sub": str(user_id), "typ": "file", "exp": expire},
+        SECRET_KEY, algorithm=ALGORITHM,
+    )
+
+def set_file_cookie(response, user_id: int) -> None:
+    """Attach the file-access cookie to a response (login, OAuth, /files/session)."""
+    response.set_cookie(
+        key=FILE_TOKEN_COOKIE,
+        value=create_file_token(user_id),
+        max_age=FILE_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+    )
 
 def generate_verification_code() -> str:
     return f"{random.randint(0, 999999):06d}"
@@ -146,7 +179,7 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
 
 # ─── Login ───────────────────────────────────────────────────
 @router.post("/login", response_model=Token)
-def login(data: UserLogin, db: Session = Depends(get_db)):
+def login(data: UserLogin, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
 
     # ✅ Google users لازم يسجلوا بـ Google مش بـ password
@@ -160,6 +193,9 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Email Or Password Is Wrong")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please Verify Your Email First")
+    # The browser fetches protected uploads through <img>/<a>/<audio>, which
+    # cannot send the bearer token — mint the read-only file cookie here.
+    set_file_cookie(response, user.id)
     return {
         "access_token": create_token(user.id),
         "user": {
@@ -174,7 +210,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
 # ─── Token (Swagger) ─────────────────────────────────────────
 @router.post("/token", response_model=Token)
-def token_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def token_login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
 
     if not user:
@@ -191,6 +227,9 @@ def token_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email first")
+    # The browser fetches protected uploads through <img>/<a>/<audio>, which
+    # cannot send the bearer token — mint the read-only file cookie here.
+    set_file_cookie(response, user.id)
     return {
         "access_token": create_token(user.id),
         "user": {
@@ -301,7 +340,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         
         if user_id_str is None:
             raise credentials_exception
-            
+
+        # A file-access token is read-only by construction — it must never be
+        # accepted as a session credential.
+        if payload.get("typ") == "file":
+            raise credentials_exception
+
         user_id = int(user_id_str) # تحويل آمن جوه الـ try
     except (JWTError, ValueError, KeyError):
         raise credentials_exception
@@ -332,7 +376,7 @@ def get_current_user_optional(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id_str: str = payload.get("sub")
-        if user_id_str is None:
+        if user_id_str is None or payload.get("typ") == "file":
             return None
         user_id = int(user_id_str)
     except (JWTError, ValueError, KeyError):

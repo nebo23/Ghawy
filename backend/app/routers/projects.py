@@ -43,8 +43,13 @@ def _status_to_db(status: ProjectSubmissionStatus) -> str:
 def _uploaded_project_path(file_url: str | None) -> Path | None:
     if not file_url:
         return None
-    prefix = "/uploads/projects/"
-    if not file_url.startswith(prefix):
+    # Submissions moved from /uploads/projects/ to /files/projects/ when the
+    # tree went behind an entitlement check; rows written before that migration
+    # still carry the old prefix, so both resolve to the same directory.
+    for prefix in ("/files/projects/", "/uploads/projects/"):
+        if file_url.startswith(prefix):
+            break
+    else:
         return None
     candidate = (PROJECT_UPLOADS_DIR / file_url.removeprefix(prefix)).resolve()
     uploads_root = PROJECT_UPLOADS_DIR.resolve()
@@ -138,7 +143,7 @@ async def submit_project(
         user_id=current_user.id,
         course_id=course_id,
         file_name=original_name,
-        file_url=f"/uploads/projects/{unique_name}",
+        file_url=f"/files/projects/{unique_name}",
         json_payload=payload,
         status=_status_to_db(ProjectSubmissionStatus.PENDING),
     )

@@ -125,9 +125,42 @@ function saveToken(token) {
 })();
 
 function logout() {
+  // Drop the file-access cookie server-side too — clearing localStorage alone
+  // would leave a signed-out browser still able to open the member's PDFs,
+  // receipts and chat attachments. keepalive so it survives the navigation.
+  try {
+    fetch(API + '/files/session', { method: 'DELETE', credentials: 'same-origin', keepalive: true });
+  } catch (e) { /* signing out must never be blocked by this */ }
   localStorage.removeItem('token');
+  localStorage.removeItem('ghawy_files_cookie_at');
   localStorage.removeItem('user'); window.location.href = '/login';
 }
+
+// ─── File-access cookie ───────────────────────────────────────
+// Protected uploads (lesson PDFs, receipts, project files, chat attachments)
+// are served by /api/files/, which authorizes every request. The browser
+// fetches those through <img>, <a href> and <audio src>, none of which can send
+// the Authorization header — so the backend also accepts a read-only HttpOnly
+// cookie, minted at login.
+//
+// This tops it up for sessions that predate the cookie, or whose cookie expired
+// before their 30-day token did. It cannot read the cookie (HttpOnly by
+// design), so it re-mints on a timer instead: once every 12 hours per browser,
+// which is nothing next to the cookie's 7-day life.
+(function ensureFileCookie() {
+  const MARKER = 'ghawy_files_cookie_at';
+  const REFRESH_AFTER_MS = 12 * 60 * 60 * 1000;
+  if (!localStorage.getItem('token')) return;
+  const last = Number(localStorage.getItem(MARKER) || 0);
+  if (last && Date.now() - last < REFRESH_AFTER_MS) return;
+  fetch(API + '/files/session', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+  }).then(res => {
+    if (res.ok) localStorage.setItem(MARKER, String(Date.now()));
+  }).catch(() => { /* files will 401 and the next page load retries */ });
+})();
 
 // ─── Auth Guard ─────────────────────────────────────────────
 async function enforceAuthGuard() {

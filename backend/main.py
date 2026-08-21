@@ -4,7 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, help_center, exams, birthday, email_campaigns, stats, coupons
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, help_center, exams, birthday, email_campaigns, stats, coupons, files
+from app.routers.files import PUBLIC_CATEGORIES as PUBLIC_UPLOAD_CATEGORIES
 import os
 import logging
 from sqlalchemy import inspect, text
@@ -285,7 +286,16 @@ seed_defaults()
 # Create uploads directory
 uploads_dir = BACKEND_DIR / "uploads"
 uploads_dir.mkdir(exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+
+# Only the categories that are genuinely public get a StaticFiles mount. The
+# blanket app.mount("/uploads", …) that used to be here served the whole tree —
+# lesson PDFs, payment receipts, project submissions, chat and DM attachments —
+# to anyone who knew a filename. Everything else is served by app.routers.files,
+# which checks who is asking and whether that file is theirs to open.
+for _category in PUBLIC_UPLOAD_CATEGORIES:
+    _dir = uploads_dir / _category
+    _dir.mkdir(parents=True, exist_ok=True)
+    app.mount(f"/uploads/{_category}", StaticFiles(directory=str(_dir)), name=f"uploads-{_category}")
 
 # Create and mount static directory (for onboarding avatars)
 static_dir = BACKEND_DIR / "static" / "avatars"
@@ -296,6 +306,7 @@ app.mount("/static", StaticFiles(directory=str(BACKEND_DIR / "static")), name="s
 app.include_router(users.router)
 app.include_router(payment.router)
 app.include_router(coupons.router)
+app.include_router(files.router)
 app.include_router(webhooks.router)
 app.include_router(chat.router)
 app.include_router(ws.router)

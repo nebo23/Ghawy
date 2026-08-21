@@ -41,6 +41,10 @@ services:
       - ./backend/.env.production
     environment:
       ENVIRONMENT: production
+      # Protected uploads are authorized by the backend and then handed to nginx
+      # to serve off disk (see location ^~ /_protected_uploads/). Unset this and
+      # the backend streams them itself, which is the local-dev path.
+      X_ACCEL_UPLOADS_PREFIX: /_protected_uploads/
     volumes:
       # Persist uploads outside the container
       - uploads_data:/app/uploads

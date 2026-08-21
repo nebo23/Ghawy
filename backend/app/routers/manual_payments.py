@@ -321,7 +321,7 @@ async def submit_payment_request(
     async with aiofiles.open(file_path, "wb") as f:
         await f.write(content)
 
-    receipt_url = f"/uploads/receipts/{unique_name}"
+    receipt_url = f"/files/receipts/{unique_name}"
 
     # Normalize the plan to a known value (defaults to monthly).
     normalized_plan = (plan or "").strip().lower()
