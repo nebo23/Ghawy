@@ -114,11 +114,15 @@ def _serialize_member_exam_summary(db: Session, exam: Exam, user_id: int) -> dic
 # ═══════════════════════════════════════════════════════════════
 #  MEMBER ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
+# All three take get_current_active_member. Listing and fetching used to take
+# get_current_user, so a free registered account could pull every published
+# exam's questions — submit_exam was the only one that asked whether the caller
+# was actually paying.
 
 @router.get("/courses/{course_id}/exams")
 def list_course_exams(
     course_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     """List published exams for a course with this member's progress on each."""
@@ -134,7 +138,7 @@ def list_course_exams(
 @router.get("/exams/{exam_id}")
 def get_exam(
     exam_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
     """Fetch a published exam's questions (WITHOUT correct answers) so a member can take it."""

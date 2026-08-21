@@ -28,9 +28,15 @@ def generate_otp(video_id: str, user_id: int = None, user_name: str = None) -> d
         "Accept": "application/json",
     }
 
+    # How long the OTP stays usable, in seconds. The request used to carry no
+    # ttl at all, so a captured OTP was good for VdoCipher's default window —
+    # long enough to hand around. Five minutes is ample to start playback, and
+    # playback itself continues after the OTP is spent.
+    ttl = int(os.environ.get("VDOCIPHER_OTP_TTL", "300"))
+
     # Build watermark annotation
     # VdoCipher expects `annotate` as a JSON-encoded STRING of an array of annotation objects
-    payload: dict = {}
+    payload: dict = {"ttl": ttl}
     if user_id or user_name:
         parts = []
         if user_name:

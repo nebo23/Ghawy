@@ -361,8 +361,11 @@ def get_public_profile(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Username from email
-    username = user.email.split("@")[0] if user.email else "user"
+    # A display handle, derived from the name the member chose to show. It used
+    # to be user.email.split("@")[0], which handed the local-part of every
+    # member's address to any other member who opened their profile card —
+    # enough to guess the address itself for the common provider patterns.
+    username = _public_handle(user)
 
     # Joined date
     months_en = {1:"January",2:"February",3:"March",4:"April",5:"May",6:"June",
@@ -444,6 +447,16 @@ def get_member_profile(
     out = UserMemberOut.model_validate(user)
     out.email = None
     return out
+
+
+def _public_handle(user: User) -> str:
+    """A non-identifying handle for a profile card: a slug of the display name.
+
+    Falls back to the user id, never to anything derived from the address.
+    """
+    import re as _re
+    slug = _re.sub(r"[^a-z0-9]+", "", (user.full_name or "").lower())[:24]
+    return slug or f"user{user.id}"
 
 
 # ─── Change Password ────────────────────────────────────────

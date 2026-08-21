@@ -131,6 +131,13 @@ def get_messages_simple(
     if not ch:
         return []
 
+    # DM channels are named dm_{low}_{high}, so without this check any member
+    # could read anyone's private conversation by guessing an id pair. This is
+    # the same gate every other read path uses; it refuses a DM to a
+    # non-participant and 404s rather than confirming the conversation exists.
+    # auto_join stays off: reading a channel must not make you a member of it.
+    ensure_channel_access(db, ch.id, current_user)
+
     msgs = (
         db.query(Message)
         .filter(Message.channel_id == ch.id, Message.is_deleted == False)
@@ -207,39 +214,21 @@ async def post_message_simple(
 ):
     ch = db.query(Channel).filter(Channel.name == data.channel).first()
     if not ch:
-        if data.channel.startswith("dm_"):
-            parts = data.channel.split("_")
-            if len(parts) == 3:
-                try:
-                    u1 = int(parts[1])
-                    u2 = int(parts[2])
-                    ch = Channel(name=data.channel, channel_type=ChannelType.DM)
-                    db.add(ch)
-                    db.commit()
-                    db.refresh(ch)
-                    db.add(ChatMember(channel_id=ch.id, user_id=u1, role=MemberRole.MEMBER))
-                    if u1 != u2:
-                        db.add(ChatMember(channel_id=ch.id, user_id=u2, role=MemberRole.MEMBER))
-                    db.commit()
-                    manager.subscribe(u1, [ch.id])
-                    if u1 != u2:
-                        manager.subscribe(u2, [ch.id])
-                except ValueError:
-                    pass
-        
-        if not ch:
-            # Auto-create group channel
-            ch = Channel(name=data.channel, channel_type=ChannelType.GROUP)
-            db.add(ch)
-            db.commit()
-            db.refresh(ch)
-            
-            # Since it's a new group, auto-subscribe all currently connected users
-            # so they don't need to refresh.
-            for uid in manager.active_connections.keys():
-                manager.subscribe(uid, [ch.id])
-                # We optionally could also add them to ChatMember here, 
-                # but ws.py does it on reconnect. To be safe, just subscribe them in-memory.
+        # This used to parse "dm_{u1}_{u2}" out of the posted channel name and
+        # create the channel plus both memberships for two arbitrary user ids,
+        # then post into it — a message injected into a private conversation
+        # between two people the sender had never met. It also auto-created any
+        # group channel that was named.
+        #
+        # Creating a DM is POST /chat/dm, which binds the caller as one of the
+        # two participants; creating a channel is an admin action. Posting
+        # creates nothing.
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    # Group channels stay open — auto_join keeps the historical behaviour of a
+    # first post joining you. A DM does not: membership is a precondition there,
+    # never something the request grants itself.
+    ensure_channel_access(db, ch.id, current_user, auto_join=True)
 
     # Determine message type
     msg_type = MessageType.TEXT

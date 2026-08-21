@@ -178,7 +178,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif action == "typing":
                 channel_id = data.get("channel_id")
-                if channel_id:
+                # send_message checks the channel; these two did not, so a
+                # stranger could type into someone else's DM — the participants
+                # would see "X is typing…" in a conversation X is not part of.
+                # All three socket actions go through the one check now.
+                if channel_id and _has_channel_access(channel_id, user_id):
                     await manager.broadcast_to_channel(channel_id, {
                         "event": "typing",
                         "data": {
@@ -190,7 +194,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif action == "mark_read":
                 channel_id = data.get("channel_id")
-                if channel_id:
+                if channel_id and _has_channel_access(channel_id, user_id):
                     from datetime import datetime
                     with db_session() as db:
                         membership = db.query(ChatMember).filter(
@@ -256,6 +260,17 @@ def _may_post_to_channel(db: Session, channel_id, user_id: int) -> bool:
         db.commit()
         manager.subscribe(user_id, [channel_id])
     return True
+
+
+def _has_channel_access(channel_id, user_id: int) -> bool:
+    """_may_post_to_channel with its own session, for the socket's inline actions."""
+    try:
+        with db_session() as db:
+            return _may_post_to_channel(db, channel_id, user_id)
+    except Exception:
+        logger.warning("WS channel access check failed for user %s channel %s",
+                       user_id, channel_id, exc_info=True)
+        return False
 
 
 async def handle_send_message(user_id: int, data: dict):
