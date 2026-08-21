@@ -2997,6 +2997,30 @@
             return res;
         }
 
+        // Fold the entitled fields (video ids, PDF URLs) from the authenticated
+        // lessons endpoint onto the public course object, matching by lesson id.
+        // Anything the server withheld stays withheld — this never invents a URL.
+        async function mergeEntitledLessonFields(course) {
+            if (!course || !Array.isArray(course.lessons) || !course.lessons.length) return;
+            if (!localStorage.getItem('token')) return;
+            try {
+                const res = await apiFetch(`/courses/${courseId}/lessons`);
+                if (!res.ok) return;
+                const rows = await res.json();
+                if (!Array.isArray(rows)) return;
+                const byId = new Map(rows.map(r => [r.id, r]));
+                course.lessons.forEach(l => {
+                    const row = byId.get(l.id);
+                    if (!row) return;
+                    if (row.vdo_video_id) l.vdo_video_id = row.vdo_video_id;
+                    if (row.bunny_video_url) l.bunny_video_url = row.bunny_video_url;
+                    if (row.pdf_url) l.pdf_url = row.pdf_url;
+                });
+            } catch (e) {
+                console.warn('[course] entitled lesson fields unavailable:', e.message);
+            }
+        }
+
         function normalizeResourceHref(url) {
             const href = String(url || '').trim();
             if (!href) return '#';
@@ -4197,6 +4221,15 @@
                 const res = await apiFetch(`/courses/${courseId}`);
                 if (!res.ok) throw new Error('Course not found');
                 const course = await res.json();
+
+                // GET /courses/{id} is the PUBLIC catalogue view: it carries the
+                // curriculum but no playable media for anyone who isn't entitled.
+                // The video ids and PDF URLs come from the authenticated
+                // /courses/{id}/lessons, which applies the subscription check
+                // server-side. A failure here is not fatal — free previews still
+                // arrive on the public response, so the page degrades to exactly
+                // what an anonymous visitor may see.
+                await mergeEntitledLessonFields(course);
 
                 window.courseData = course;
 

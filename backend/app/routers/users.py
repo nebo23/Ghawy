@@ -19,6 +19,7 @@ from app.services.disposable_emails import is_disposable_email, is_fake_email_pa
 from app.services.name_utils import compose_full_name
 from app.services.turnstile import verify_turnstile
 from jose import JWTError
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -311,6 +312,32 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
         
     return user
+
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
+
+def get_current_user_optional(
+    token: Optional[str] = Depends(optional_oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """The caller's user when they sent a usable token, otherwise None.
+
+    For endpoints that serve anonymous visitors AND members from the same URL
+    (the public course catalogue). A missing, malformed or expired token is not
+    an error here — it just means "anonymous", so the caller must decide what an
+    anonymous visitor is allowed to see. Never use this where a decision needs a
+    real identity; use get_current_user for that.
+    """
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = int(user_id_str)
+    except (JWTError, ValueError, KeyError):
+        return None
+    return db.query(User).filter(User.id == user_id).first()
 
 def get_current_active_member(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:

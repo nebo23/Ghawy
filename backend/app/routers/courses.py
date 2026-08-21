@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+from typing import List, Optional
 from app.database import get_db
 from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
-from app.routers.users import get_current_user, get_current_active_member, get_current_admin_user, get_current_owner_user
+from app.routers.users import get_current_user, get_current_user_optional, get_current_active_member, get_current_admin_user, get_current_owner_user
 from app.schemas import (
     CourseOut, CourseDetailOut, CourseCreate, CourseUpdate, CourseReorder,
+    PublicCourseOut, PublicCourseDetailOut,
     LessonCreate, AdminLessonCreate, LessonUpdate, LessonOut,
     UserCourseProgressOut, CourseProgressUpdate,
 )
@@ -25,29 +26,111 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 #  PUBLIC / USER ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
 
-@router.get("", response_model=List[CourseOut])
+def _can_watch(user: Optional[User], lesson: Lesson) -> bool:
+    """The single rule for "may this caller have this lesson's video and PDF".
+
+    Free previews are open to everyone including anonymous visitors; everything
+    else needs an active subscription. Every endpoint that hands out
+    vdo_video_id / bunny_video_url / pdf_url asks this function — a second,
+    separately-worded copy of the rule is how the catalogue endpoint ended up
+    giving the whole library away.
+    """
+    if lesson.is_free_preview:
+        return True
+    return bool(user is not None and user.is_active)
+
+
+def _public_lesson(lesson: Lesson) -> dict:
+    """A lesson as the anonymous catalogue sees it: everything but the goods."""
+    return {
+        "id": lesson.id,
+        "course_id": lesson.course_id,
+        "title": lesson.title,
+        "description": lesson.description,
+        "section_title": lesson.section_title,
+        "section_order": lesson.section_order or 0,
+        "order": lesson.order,
+        "duration_minutes": lesson.duration_minutes,
+        "video_status": lesson.video_status,
+        "is_free_preview": bool(lesson.is_free_preview),
+        "is_project": bool(lesson.is_project),
+        "has_video": bool(lesson.bunny_video_url or lesson.vdo_video_id),
+        "has_pdf": lesson.pdf_url is not None,
+    }
+
+
+def _public_course(course: Course) -> dict:
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "thumbnail_url": course.thumbnail_url,
+        "certificate_url": course.certificate_url,
+        "total_lessons": course.total_lessons,
+        "course_time": course.course_time,
+        "is_published": course.is_published,
+        "sort_order": course.sort_order or 0,
+        "created_at": course.created_at,
+    }
+
+
+@router.get("", response_model=List[PublicCourseOut])
 def get_courses(
     db: Session = Depends(get_db),
     limit: int = Query(1000),
     offset: int = Query(0)
 ):
+    """The published course list. Public — the marketing site renders it.
+
+    PublicCourseOut is the response model precisely so course-level pdf_url
+    cannot ride along: this endpoint needs no token, so anything it returns is
+    world-readable.
+    """
     return db.query(Course)\
-        .options(joinedload(Course.lessons))\
         .filter(Course.is_published == True)\
         .order_by(Course.sort_order.asc(), Course.id.asc())\
         .limit(limit)\
         .offset(offset)\
         .all()
 
-@router.get("/{course_id}", response_model=CourseDetailOut)
-def get_course_detail(course_id: int, db: Session = Depends(get_db)):
-    course = db.query(Course).filter(Course.id == course_id, Course.is_published == True).first()
+@router.get("/{course_id}", response_model=None)
+def get_course_detail(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """One course with its curriculum. Public, so it carries no playable media.
+
+    Video ids and PDF URLs appear only for a caller who may actually watch the
+    lesson (_can_watch). The player and the Resources tab read them from
+    GET /courses/{id}/lessons instead, which requires a token.
+    """
+    course = db.query(Course)\
+        .options(joinedload(Course.lessons))\
+        .filter(Course.id == course_id, Course.is_published == True)\
+        .first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    
-    # Use Pydantic to serialize the course first, then filter lessons
-    out = CourseDetailOut.model_validate(course)
-    out.lessons = [l for l in out.lessons if l.video_status == "ready"]
+
+    out = _public_course(course)
+    if current_user is not None and current_user.is_active and course.pdf_url:
+        out["pdf_url"] = course.pdf_url
+
+    lessons = []
+    for lesson in course.lessons:  # relationship is already order_by=Lesson.order
+        if lesson.video_status != "ready":
+            continue
+        row = _public_lesson(lesson)
+        if _can_watch(current_user, lesson):
+            # Only name a field we are actually handing over, so a response can
+            # never advertise "vdo_video_id" for a lesson it withheld.
+            for key, value in (("bunny_video_url", lesson.bunny_video_url),
+                               ("vdo_video_id", lesson.vdo_video_id),
+                               ("pdf_url", lesson.pdf_url)):
+                if value:
+                    row[key] = value
+        lessons.append(row)
+    out["lessons"] = lessons
     return out
 
 def issue_certificate(user_id: int, course_id: int, db: Session):
@@ -607,7 +690,7 @@ async def get_lessons(course_id: int, current_user: User = Depends(get_current_u
     ]
     result = []
     for lesson in lessons:
-        can_watch = current_user.is_active or lesson.is_free_preview
+        can_watch = _can_watch(current_user, lesson)
         result.append({
             "id": lesson.id,
             "title": lesson.title,

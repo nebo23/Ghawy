@@ -355,6 +355,53 @@ class CourseDetailOut(CourseOut):
     class Config:
         from_attributes = True
 
+# ── Public (anonymous) catalogue views ────────────────────────
+# The marketing site and the course card grid are reachable without a token, so
+# they get these shapes instead of LessonOut/CourseOut. What is missing here is
+# the point: vdo_video_id, bunny_video_url, pdf_url, video_url and content are
+# the paid product, and a schema that cannot carry them cannot leak them by a
+# later field being added in the wrong place. `has_video`/`has_pdf` give the
+# catalogue the "there is a video here" signal it actually renders.
+
+class PublicLessonOut(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: Optional[str] = None
+    section_title: Optional[str] = None
+    section_order: int = 0
+    order: int
+    duration_minutes: int
+    video_status: str = "pending"
+    is_free_preview: bool = False
+    is_project: bool = False
+    has_video: bool = False
+    has_pdf: bool = False
+
+    class Config:
+        from_attributes = True
+
+class PublicCourseOut(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    certificate_url: Optional[str] = None
+    total_lessons: int
+    course_time: Optional[str] = None
+    is_published: bool
+    sort_order: int = 0
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class PublicCourseDetailOut(PublicCourseOut):
+    lessons: List[PublicLessonOut] = []
+
+    class Config:
+        from_attributes = True
+
 class UserCourseProgressOut(BaseModel):
     completed_lessons: int
     percent: float
