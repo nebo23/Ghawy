@@ -1,6 +1,6 @@
 """add token_version to users (JWT revocation)
 
-Revision ID: b1c2d3e4f5a6
+Revision ID: f5a6b7c8d9e0
 Revises: a7b8c9d0e1f2
 Create Date: 2026-08-21
 
@@ -23,7 +23,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "b1c2d3e4f5a6"
+revision: str = "f5a6b7c8d9e0"
 down_revision: Union[str, Sequence[str], None] = "a7b8c9d0e1f2"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
