@@ -561,9 +561,13 @@ async def add_comment(
 
     comment_data = build_comment_dict(comment, current_user.id, include_replies=False)
 
+    # One source for both notification links below. The reply branch used to
+    # build its link from a bare `channel_name`, which no longer existed after
+    # the rename — every reply to a comment raised NameError and 500'd.
+    channel_name_for_link = post.category_slug or 'general'
+
     # Notify post author on new comment (if not a reply and not self)
     if not data.parent_id and post.user_id != current_user.id:
-        channel_name_for_link = post.category_slug or 'general'
         notif = Notification(
             user_id=post.user_id,
             title="New Comment",
@@ -596,7 +600,7 @@ async def add_comment(
                 title="New Reply",
                 body=f"{current_user.full_name} replied to your comment.",
                 type="reply",
-                link=f"chat.html?channel={channel_name or 'general'}&post={post_id}"
+                link=f"chat.html?channel={channel_name_for_link}&post={post_id}"
             )
             db.add(notif)
             db.commit()

@@ -180,6 +180,22 @@ def send_verification_email(to_email: str, code: str) -> None:
     )
 
 
+# ═══════════════════════════════════════════════════════
+#  MANUAL PAYMENT EMAILS
+# ═══════════════════════════════════════════════════════
+
+# Which wallet the reviewer has to open to find the transfer. Optional and
+# defaulted so any older caller that does not pass one still sends a valid mail.
+#
+# Restoring this: 8db7286 removed the dict while reshuffling this section but
+# left both references to it, so every manual payment submission raised
+# NameError and the admin notification silently never went out.
+MANUAL_METHOD_LABELS = {
+    "instapay": ("انستاباي", "InstaPay"),
+    "vodafone_cash": ("فودافون كاش", "Vodafone Cash"),
+}
+
+
 def send_admin_payment_notification(
     full_name: str,
     email: str,
