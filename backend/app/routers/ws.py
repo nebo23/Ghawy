@@ -130,12 +130,19 @@ async def websocket_endpoint(websocket: WebSocket):
             }
         })
 
-        # Broadcast online status
-        for ch_id in channel_ids:
-            await manager.broadcast_to_channel(ch_id, {
-                "event": "user_online",
-                "data": {"user_id": user_id, "user_name": user_name}
-            }, exclude_user=user_id)
+        # Presence is a global fact, not a per-channel one. This used to loop
+        # over every channel the user belongs to, and because everyone is
+        # auto-joined to every group channel that delivered the SAME event to
+        # each recipient once per shared channel — roughly four copies each.
+        # Every copy makes the receiving tab refetch the online count and the
+        # whole DM list, so a single reconnect fanned out into a burst of
+        # duplicate work on every open tab (13.7k /chat/dm/list calls in 30
+        # minutes from 20 members, enough to sit on the rate limiter). One send
+        # per connected user carries exactly the same information.
+        await manager.broadcast_to_all({
+            "event": "user_online",
+            "data": {"user_id": user_id, "user_name": user_name}
+        }, exclude_user=user_id)
 
         # Listen for messages — with periodic re-validation
         CHECK_INTERVAL = 55  # seconds — must be < nginx proxy_read_timeout (60s)
@@ -224,14 +231,14 @@ async def websocket_endpoint(websocket: WebSocket):
             manager.disconnect(websocket, user_id)
             # Broadcast offline status
             try:
-                with db_session() as db:
-                    memberships = db.query(ChatMember).filter(ChatMember.user_id == user_id).all()
-                    offline_channel_ids = [m.channel_id for m in memberships]
-                for ch_id in offline_channel_ids:
-                    await manager.broadcast_to_channel(ch_id, {
-                        "event": "user_offline",
-                        "data": {"user_id": user_id, "user_name": user_name}
-                    })
+                # Same de-duplication as the user_online broadcast above. This
+                # also drops the membership lookup that used to run on every
+                # single disconnect — presence needs no channel list, so the
+                # teardown path no longer touches the DB at all.
+                await manager.broadcast_to_all({
+                    "event": "user_offline",
+                    "data": {"user_id": user_id, "user_name": user_name}
+                })
             except Exception as cleanup_err:
                 logger.debug(f"WS cleanup error for user {user_id}: {cleanup_err}")
 

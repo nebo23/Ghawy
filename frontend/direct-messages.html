@@ -3008,6 +3008,23 @@
         let editingPostId = null;
 
 
+        // Presence events arrive in bursts: phones wake up and several members
+        // reconnect at once. Firing fetchOnlineCount() + loadDmList()
+        // immediately for each one meant every open tab hammered the API and
+        // spent its time getting 429'd, so the DM list stopped updating for
+        // real people. Coalesce the burst into one refresh once it settles —
+        // and the 30s poll below is still the guaranteed floor, so nothing
+        // goes stale if events keep streaming in.
+        let presenceRefreshTimer = null;
+        function schedulePresenceRefresh() {
+            clearTimeout(presenceRefreshTimer);
+            presenceRefreshTimer = setTimeout(() => {
+                if (document.hidden) return;
+                fetchOnlineCount();
+                loadDmList();
+            }, 4000);
+        }
+
         // ── WebSocket Connection ──
         function connectWS() {
             if (!token) return;
@@ -3045,8 +3062,7 @@
                     } else if (msg.event === 'connected') {
                         document.getElementById('onlineCount').textContent = msg.data.online_count + ' online';
                     } else if (msg.event === 'user_online' || msg.event === 'user_offline') {
-                        fetchOnlineCount();
-                        loadDmList();
+                        schedulePresenceRefresh();
                     } else if (msg.event === 'new_post' && postMode) {
                         // Prepend new post to feed if we're viewing that channel
                         if (msg.data && msg.data.channel === currentChannel && msg.data.author && msg.data.author.id !== currentUserId) {
