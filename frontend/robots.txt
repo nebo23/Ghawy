@@ -29,6 +29,8 @@ Disallow: /build-with-me
 # Account + payment flows — nothing to rank, and some carry query state
 Disallow: /onboarding
 Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /atlas
 Disallow: /renewal
 Disallow: /pay
 Disallow: /login

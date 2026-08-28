@@ -720,11 +720,19 @@ function renderChatMessages(messages) {
 
     container.innerHTML = messages.map(m => {
         const avHtml = buildAvatarHtml(m.author_name, m.avatar_url, m.sender_id || 0, 28);
-        let text = formatChatText(m.content || '');
-        if (!text.startsWith('📷') && !text.startsWith('🎤') && !text.startsWith('↩️')) {
-            text = window.formatAdminMentions ? window.formatAdminMentions(esc(text)) : esc(text);
+        // A marker becomes a fixed label (escaped, nothing member-written in it).
+        // Anything else is a real message body and goes through the shared
+        // escape → linkify → mentions pipeline, so URLs are clickable here the
+        // same way they are in the full chat view.
+        const labelled = chatLabel(m.content || '');
+        const isMarker = labelled.startsWith('📷') || labelled.startsWith('🎤') || labelled.startsWith('↩️');
+        let text;
+        if (isMarker) {
+            text = esc(labelled);
+        } else if (window.formatChatText) {
+            text = window.formatChatText(labelled);
         } else {
-            text = esc(text);
+            text = window.formatAdminMentions ? window.formatAdminMentions(esc(labelled)) : esc(labelled);
         }
         
         let badgeHtml = '';
@@ -754,7 +762,17 @@ function renderChatMessages(messages) {
     container.scrollTop = container.scrollHeight;
 }
 
-function formatChatText(text) {
+// Turn a stored marker into the label the dashboard widget shows, and hand back
+// anything else unchanged for the caller to render properly.
+//
+// This used to be called formatChatText. As a top-level declaration in a classic
+// script it became window.formatChatText — and dashboard-new.js loads AFTER
+// utils.js on chat.html, direct-messages.html and dashboard.html, so it replaced
+// the real one on all three. Every `window.formatChatText(...)` on those pages
+// was reaching this function instead, which escapes nothing: message bodies were
+// going into innerHTML raw. Renaming it is the fix; the name it shadowed is not
+// one this file should be defining.
+function chatLabel(text) {
     if (!text) return '';
     if (text.startsWith('[IMAGE|')) return '📷 Image';
     if (text.startsWith('[AUDIO|')) return '🎤 Voice message';

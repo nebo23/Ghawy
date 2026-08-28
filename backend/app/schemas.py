@@ -123,6 +123,26 @@ class VerifyEmailRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
+
+# ─── Password reset ──────────────────────────────────────────
+# Three steps, not two: the member types the code and the new password on
+# different screens, so the code is traded for a short-lived token first. That
+# keeps the code out of the page while they pick a password, and makes the last
+# request unreplayable once it has run.
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyResetCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    reset_token: str
+    password: str
+
 # ─── Payment Schemas ─────────────────────────────────────────
 
 

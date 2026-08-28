@@ -5388,6 +5388,7 @@ function ecGetAudience() {
   const g = id => (document.getElementById(id)?.value || '').trim();
   const exp = g('ec-f-expiring');
   return {
+    source: ecSource(),
     status: g('ec-f-status') || 'all',
     plan: g('ec-f-plan') || 'all',
     country: g('ec-f-country'),
@@ -5407,6 +5408,14 @@ function ecApplyAudience(a) {
   const pl = document.getElementById('ec-f-plan'); if (pl) pl.value = a.plan || 'all';
   set('ec-f-expiring', a.expiring_days != null ? a.expiring_days : '');
   const staff = document.getElementById('ec-f-staff'); if (staff) staff.checked = !!a.include_staff;
+  // الحملات القديمة اتحفظت من غير source — الافتراضي أعضاء المنصة زي ما كانت.
+  const src = document.getElementById('ec-f-source');
+  if (src) { src.value = a.source === 'atlas' ? 'atlas' : 'platform'; }
+  const atlas = ecSource() === 'atlas';
+  ['ec-f-country', 'ec-f-gov', 'ec-f-status', 'ec-f-plan', 'ec-f-expiring']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = atlas ? 'none' : ''; });
+  const staffWrap = staff?.closest('label');
+  if (staffWrap) staffWrap.style.display = atlas ? 'none' : '';
 }
 
 // ── حفظ الحملة (POST جديد / PUT موجود) — مايبعتش أي إيميل ──────
@@ -5540,25 +5549,52 @@ function ecOnModeChange() {
   if (typeof lucide !== 'undefined') setTimeout(() => window.lucide && window.lucide.createIcons(), 10);
 }
 
+// مصدر الجمهور الحالي: 'platform' (جدول users) أو 'atlas' (جدول legacy_emails).
+function ecSource() {
+  return (document.getElementById('ec-f-source')?.value || 'platform');
+}
+
+// فلاتر الأعضاء (بلد/محافظة/حالة/باقة/انتهاء/فريق) معناها مربوط بجدول users — مالهاش
+// أي معنى على روستر اطلس، فبتتخفي بدل ما تفضل باينة وهي مش بتعمل حاجة.
+function ecOnSourceChange() {
+  const atlas = ecSource() === 'atlas';
+  ['ec-f-country', 'ec-f-gov', 'ec-f-status', 'ec-f-plan', 'ec-f-expiring']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = atlas ? 'none' : ''; });
+  const staffWrap = document.getElementById('ec-f-staff')?.closest('label');
+  if (staffWrap) staffWrap.style.display = atlas ? 'none' : '';
+  ecSelected.clear();
+  ecAllRecipients = [];
+  ecPage = 1;
+  ecRenderRecipients();
+  ecUpdateCounts();
+  loadRecipients();
+}
+
 async function loadRecipients() {
   const tbody = document.getElementById('ec-recipients-tbody');
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:30px;">جاري التحميل...</td></tr>`;
   const params = new URLSearchParams();
   const g = id => (document.getElementById(id)?.value || '').trim();
+  const atlas = ecSource() === 'atlas';
   if (g('ec-f-search')) params.set('search', g('ec-f-search'));
-  if (g('ec-f-country')) params.set('country', g('ec-f-country'));
-  if (g('ec-f-gov')) params.set('governorate', g('ec-f-gov'));
-  const st = g('ec-f-status'); if (st && st !== 'all') params.set('status', st);
-  const pl = g('ec-f-plan'); if (pl && pl !== 'all') params.set('plan', pl);
-  if (g('ec-f-expiring')) params.set('expiring_days', g('ec-f-expiring'));
-  if (document.getElementById('ec-f-staff')?.checked) params.set('include_staff', 'true');
-  // قوائم البلاد/المحافظات ثابتة — نجيبها مرة واحدة بس (الفلاتر بتتنده كل ما اليوزر يكتب)
-  params.set('include_facets', ecFacetsLoaded ? 'false' : 'true');
+  if (!atlas) {
+    if (g('ec-f-country')) params.set('country', g('ec-f-country'));
+    if (g('ec-f-gov')) params.set('governorate', g('ec-f-gov'));
+    const st = g('ec-f-status'); if (st && st !== 'all') params.set('status', st);
+    const pl = g('ec-f-plan'); if (pl && pl !== 'all') params.set('plan', pl);
+    if (g('ec-f-expiring')) params.set('expiring_days', g('ec-f-expiring'));
+    if (document.getElementById('ec-f-staff')?.checked) params.set('include_staff', 'true');
+    // قوائم البلاد/المحافظات ثابتة — نجيبها مرة واحدة بس (الفلاتر بتتنده كل ما اليوزر يكتب)
+    params.set('include_facets', ecFacetsLoaded ? 'false' : 'true');
+  }
   params.set('name_fallback', ecNameFallback());
+
+  // نفس شكل الرد بالظبط في الحالتين (recipients + quality)، فكل اللي تحت مايتغيرش.
+  const path = atlas ? 'atlas-recipients' : 'recipients';
 
   const my = ++ecRecipReq;
   try {
-    const res = await fetch(`${API}/admin/email-campaigns/recipients?${params}`, { headers });
+    const res = await fetch(`${API}/admin/email-campaigns/${path}?${params}`, { headers });
     if (my !== ecRecipReq) return;   // فلتر أحدث سبقه — نتجاهل النتيجة القديمة
     if (res.status === 403) { showToast('👑 Owners only', 'error'); tbody.innerHTML = ''; return; }
     if (!res.ok) { showToast('❌ فشل تحميل الأعضاء', 'error'); return; }

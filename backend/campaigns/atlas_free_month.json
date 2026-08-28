@@ -1,0 +1,37 @@
+{
+  "campaign_id": "atlas_free_month",
+  "title": "اطلس — شابتر 6 + الشهر المجاني",
+  "description": "مسودة يدوية لأعضاء AI Automation Atlas: شابتر 6 نزل على Whop، جروب الواتساب اتقفل والنقاش اتنقل لشات اطلس، وليهم شهر مجاني على غاوي. ⚠️ لسه محتاجة لينك Whop الحقيقي مكان PUT-THE-WHOP-LINK-HERE في الزرارين (اللينك مش بيمر على _apply_vars فمينفعش يبقى placeholder وقت الإرسال). الجمهور بيتحمّل من مصدر \"أعضاء اطلس\" في تاب الإيميلات، مش من أعضاء المنصة.",
+  "send_mode": "manual",
+  "active": false,
+  "trigger": null,
+  "audience": {
+    "source": "atlas",
+    "status": "all",
+    "plan": "all",
+    "country": "",
+    "governorate": "",
+    "expiring_days": null,
+    "include_staff": false,
+    "search": ""
+  },
+  "content": {
+    "subject_template": "شابتر 6 متاح رسميا علي اطلس!",
+    "body_html": "<p>{greeting}</p><p>اهلا بيك يا {first_name_ar}, كونك مشترك في برنامج اطلسي, حابين نقولك رسميا ان شابتر 6 Client Acquisition بقي متاح الان علي Whop وتقدر تتفرج عليه في اي وقت!</p><p>ومش بس كدا حضرنالك هدية خاصة بيك</p><p>انت ليك شهر مجاني تماما في غاوي, بالكورسات الجديده اللي هتنزل, وتقدر تستخدم اللينك في اي وقت انت عايزه</p><p><strong>وحاجة كمان مهمة:</strong> جروب الواتساب اتقفل نهائيا. اطلس اتنقلت لشات خاص لأعضاء اطلس بس على Whop — هتلاقي كل النقاش والدعم هناك من دلوقتي.</p><p>نتمني لك تجربة سعيده, ونأمل ان نكون دائما عند حسن ظنكم</p>",
+    "buttons": [
+      {
+        "text": "اتفرج على شابتر 6",
+        "link": "PUT-THE-WHOP-LINK-HERE"
+      },
+      {
+        "text": "فعّل شهرك المجاني",
+        "link": "https://ghawy.ai/atlas"
+      }
+    ],
+    "closing_line": "نتمني لك تجربة سعيده 🤍",
+    "signoff_html": "فريق غاوي",
+    "name_ar_fallback": "صديقنا"
+  },
+  "created_at": "2026-08-28T00:00:00Z",
+  "updated_at": "2026-08-28T00:00:00Z"
+}

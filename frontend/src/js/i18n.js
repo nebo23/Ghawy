@@ -65,6 +65,33 @@ const i18nDict = {
     dontHaveAccount:  { ar: 'مش عندك حساب؟',              en: "Don't have an account?" },
     registerNow:      { ar: 'سجّل دلوقتي',                 en: 'Register Now' },
     okLoggedIn:       { ar: 'تم تسجيل الدخول ✅ جاري التحويل...', en: 'Logged in successfully! ✅ Redirecting...' },
+    forgotPassword:   { ar: 'نسيت كلمة المرور؟',            en: 'Forgot your password?' },
+
+    // ── verify-email.html — the OTP card's own keys. The markup has referenced
+    //    these three since it was written; they were simply never added, so the
+    //    page has been Arabic-only in English mode.
+    login:            { ar: 'دخول',                        en: 'Sign In' },
+    verifyEmail:      { ar: 'تأكيد <span class="cyan">البريد</span>',
+                        en: 'Verify Your <span class="cyan">Email</span>' },
+    enterOtp:         { ar: 'أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى:',
+                        en: 'Enter the 6-digit code we sent to:' },
+    verify:           { ar: 'تحقق',                        en: 'Verify' },
+    resendCode:       { ar: 'إعادة إرسال الكود',           en: 'Resend code' },
+    backToRegister:   { ar: 'رجوع إلى إنشاء حساب',         en: 'Back to sign up' },
+
+    // ── reset-password.html ──
+    resetPageTitle:   { ar: 'إعادة تعيين كلمة المرور — Ghawy', en: 'Reset Your Password — Ghawy' },
+    resetTitle:       { ar: 'إعادة تعيين <span class="cyan">كلمة المرور</span>',
+                        en: 'Reset Your <span class="cyan">Password</span>' },
+    resetEmailSub:    { ar: 'اكتب إيميلك وهنبعتلك كود مكوّن من 6 أرقام.',
+                        en: "Enter your email and we'll send you a 6-digit code." },
+    sendCode:         { ar: 'إرسال الكود',                 en: 'Send code' },
+    resetChooseSub:   { ar: 'اختار كلمة مرور جديدة (6 حروف على الأقل).',
+                        en: 'Choose a new password (at least 6 characters).' },
+    newPassword:      { ar: 'كلمة المرور الجديدة',          en: 'New password' },
+    confirmPassword:  { ar: 'تأكيد كلمة المرور',           en: 'Confirm password' },
+    saveNewPassword:  { ar: 'حفظ كلمة المرور',             en: 'Save password' },
+    rememberedPassword: { ar: 'فاكر كلمة المرور؟',          en: 'Remembered it?' },
 
     // ── register.html ──
     registerPageTitle: { ar: 'إنشاء حساب — Ghawy',         en: 'Create Your Account — Ghawy' },
