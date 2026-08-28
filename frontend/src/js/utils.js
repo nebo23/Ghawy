@@ -41,14 +41,33 @@ function chatUrlAnchor(escapedUrl) {
   return `<a href="${href}" target="_blank" rel="noopener noreferrer" dir="ltr" class="msg-link">${url}</a>${trail}`;
 }
 
+// Escape → linkify, for any member-written body that lands in innerHTML.
+//
+// The escape has to happen FIRST and on the whole string: linkifying escaped
+// text can only ever produce anchors around text that is already inert, whereas
+// linkifying raw text and escaping afterwards would escape the anchors we just
+// built. `onTextRun` is an optional hook applied to the non-URL runs only, so a
+// caller can add its own inline formatting without it ever touching a URL — and
+// a caller that wants nothing but links (post bodies, comments) simply omits it.
+window.linkifyText = function(raw, onTextRun) {
+  const escaped = window.escapeHtml(raw || '');
+  const parts = escaped.split(window.CHAT_URL_RE);   // capture group keeps URLs at odd indices
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return chatUrlAnchor(part);
+    return onTextRun ? onTextRun(part) : part;
+  }).join('');
+};
+
 // Full render pipeline for a chat/DM text body:
 //   escape (XSS-safe) → linkify URLs → highlight @admin mentions on the text runs.
 // URLs and mentions are handled on separate segments so neither corrupts the other.
 window.formatChatText = function(rawContent) {
-  const escaped = window.escapeHtml(rawContent || '');
-  const parts = escaped.split(window.CHAT_URL_RE);   // capture group keeps URLs at odd indices
-  const fmtMentions = window.formatAdminMentions || ((s) => s);
-  return parts.map((part, i) => i % 2 === 1 ? chatUrlAnchor(part) : fmtMentions(part)).join('');
+  return window.linkifyText(rawContent, (part) => {
+    // Resolved per call, not captured: community-i18n.js/chat pages define
+    // formatAdminMentions after utils.js has already run.
+    const fmtMentions = window.formatAdminMentions;
+    return fmtMentions ? fmtMentions(part) : part;
+  });
 };
 
 function showAlert(msg, type) {

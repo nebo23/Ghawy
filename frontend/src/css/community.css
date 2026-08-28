@@ -473,6 +473,17 @@
   word-wrap: break-word;
 }
 
+/* URLs in post and comment bodies, rendered by window.linkifyText. Matches
+   .msg-txt a.msg-link in the chat view — a link should not look like one thing
+   in a message and another in a post. word-break keeps a long URL from pushing
+   the card wider than the column. */
+.comm-post-content a.msg-link,
+.comm-inline-comment-text a.msg-link {
+  color: #4ea1ff;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
 .comm-post-image {
   margin-bottom: 12px;
   border-radius: 10px;

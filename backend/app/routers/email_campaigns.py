@@ -27,7 +27,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Payment, PaymentStatus, EmailCampaignSend
+from app.models import User, Payment, PaymentStatus, EmailCampaignSend, LegacyEmail
 from app.routers.users import get_current_user
 from app.routers.admin import require_owner
 from app.services.email_service import _governorate_to_arabic, arabize_first_name, country_to_arabic
@@ -283,6 +283,79 @@ def get_recipients(
         resp["governorates"] = sorted({g for g in govs if g})
 
     return resp
+
+
+# ══════════════════════════════════════════════════════════════
+#  GET /atlas-recipients — جمهور اطلس من legacy_emails
+#  /recipients بيسأل جدول users بس، وأغلب روستر اطلس أصلاً ماعندهوش حساب على
+#  المنصة — فمفيش فلتر أعضاء يقدر يوصلهم. الجمهور هنا بييجي من legacy_emails
+#  بنفس شكل _serialize_recipient بالظبط، عشان باقي الخط (التحديد/المعاينة/ملخّص
+#  الجودة/الإرسال) يشتغل من غير ما يتغيّر فيه حاجة.
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/atlas-recipients")
+def get_atlas_recipients(
+    search: Optional[str] = Query(None, description="اسم أو إيميل"),
+    name_fallback: Optional[str] = Query(None, description="كلمة الـ fallback للاسم (لحساب ملخّص الجودة)"),
+    limit: int = Query(MAX_RECIPIENTS, ge=1, le=MAX_RECIPIENTS),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    require_owner(current_user)
+
+    q = db.query(LegacyEmail)
+    if search:
+        term = f"%{search.strip()}%"
+        q = q.filter(or_(LegacyEmail.full_name.ilike(term), LegacyEmail.email.ilike(term)))
+
+    rows = q.order_by(LegacyEmail.email.asc()).limit(limit).all()
+
+    # الأعضاء اللي عندهم حساب فعلاً — بنعرض حالتهم في الجدول عشان الأونر يشوف مين
+    # فيهم مشترك أصلاً. الإرسال نفسه مابيفرقش: الحملة رايحة للروستر كله.
+    emails = [r.email for r in rows]
+    accounts: Dict[str, User] = {}
+    if emails:
+        for u in db.query(User).filter(func.lower(User.email).in_(emails)).all():
+            accounts[(u.email or "").lower()] = u
+
+    recipients: List[Dict[str, Any]] = []
+    for r in rows:
+        u = accounts.get(r.email)
+        if u is not None:
+            row = _serialize_recipient(u, None)
+            # الاسم من كشف Whop أدق من الاسم اللي اتكتب وقت التسجيل لو ده فاضي
+            row["name"] = u.full_name or r.full_name or ""
+            row["email"] = r.email
+        else:
+            row = {
+                "id": None,
+                "name": r.full_name or "",
+                "email": r.email,
+                "phone": "",
+                "country": "",
+                "governorate": "",
+                "governorate_ar": "",
+                "name_ar": arabize_first_name(r.full_name or "") or "",
+                "country_ar": "",
+                "age": "",
+                "plan": "",
+                "plan_group": "",
+                "is_active": False,
+                "end_at": None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+        row["has_account"] = u is not None
+        recipients.append(row)
+
+    return {
+        "recipients": recipients,
+        "returned": len(recipients),
+        "truncated": len(rows) >= limit,
+        "quality": _audience_quality(
+            ecs.normalize_recipients(recipients),
+            _quality_content(name_fallback, None),
+        ),
+    }
 
 
 # ══════════════════════════════════════════════════════════════

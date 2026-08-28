@@ -180,6 +180,50 @@ def send_verification_email(to_email: str, code: str) -> None:
     )
 
 
+def send_atlas_otp_email(to_email: str, code: str) -> None:
+    """كود التحقق لعرض الشهر المجاني لأعضاء اطلس (app/routers/atlas.py)."""
+    body_text = (
+        f"كود التحقق الخاص بك هو: {code}\n\n"
+        "استخدمه عشان تفعّل الشهر المجاني بتاعك في غاوي.\n"
+        "الكود صالح لمدة 10 دقائق.\n"
+        "لو مطلبتش الكود ده، تجاهل الرسالة."
+    )
+    inner = _otp_inner_html(
+        code,
+        intro="استخدم الكود التالي عشان تفعّل الشهر المجاني بتاعك:",
+        expiry_note="الكود صالح لمدة 10 دقائق. لو مطلبتش الكود ده، تجاهل الرسالة.",
+    )
+    _send_email(
+        to_email=to_email,
+        subject="كود التحقق — الشهر المجاني لأعضاء اطلس",
+        body_text=body_text,
+        body_html=render_ghawy_email(inner),
+    )
+
+
+def send_password_reset_email(to_email: str, code: str) -> None:
+    """كود إعادة تعيين كلمة المرور (app/routers/users.py — /auth/forgot-password)."""
+    body_text = (
+        f"كود إعادة تعيين كلمة المرور بتاعتك هو: {code}\n\n"
+        "الكود صالح لمدة 15 دقيقة.\n"
+        "لو مطلبتش تغيير كلمة المرور، تجاهل الرسالة — حسابك زي ما هو."
+    )
+    inner = _otp_inner_html(
+        code,
+        intro="استخدم الكود التالي عشان تعمل كلمة مرور جديدة:",
+        expiry_note=(
+            "الكود صالح لمدة 15 دقيقة. لو مطلبتش تغيير كلمة المرور، تجاهل الرسالة "
+            "— حسابك زي ما هو."
+        ),
+    )
+    _send_email(
+        to_email=to_email,
+        subject="إعادة تعيين كلمة المرور — غاوي",
+        body_text=body_text,
+        body_html=render_ghawy_email(inner),
+    )
+
+
 # ═══════════════════════════════════════════════════════
 #  MANUAL PAYMENT EMAILS
 # ═══════════════════════════════════════════════════════

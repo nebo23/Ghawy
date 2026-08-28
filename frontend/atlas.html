@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WNSQXRZL');</script>
+    <!-- End Google Tag Manager -->
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1459686299331087');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1459686299331087&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3x9zwb3jh");
+    </script>
+    <!-- End Microsoft Clarity -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2QN1XSY83C"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-2QN1XSY83C');
+    </script>
+    <!-- End Google tag -->
+  <!-- CACHE BUSTER -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>الشهر المجاني لأعضاء اطلس — Ghawy</title>
+  <meta name="description"
+    content="أعضاء AI Automation Atlas ليهم شهر مجاني على منصة غاوي. أدخل إيميل Whop بتاعك عشان تفعّله.">
+  <link rel="icon" type="image/png" href="./imgs/community-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/style.css">
+
+  <style>
+    :root {
+      --primary: #3f8ff9;
+      --primary-dim: rgba(63, 143, 249, 0.12);
+      --primary-border: rgba(63, 143, 249, 0.3);
+      --bg: #090912;
+      --bg-card: #0f1117;
+      --border: #1e2130;
+      --text: #f0f4ff;
+      --text-muted: #8892a4;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cairo', sans-serif;
+      color: var(--text);
+      padding: 16px 12px;
+      position: relative;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* Background ambient glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -180px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(63, 143, 249, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Card ── */
+    .legacy-card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(63, 143, 249, 0.05);
+    }
+
+    /* ── Whop hint ── */
+    .whop-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin-top: 7px;
+      background: rgba(63, 143, 249, 0.07);
+      border: 1px solid rgba(63, 143, 249, 0.18);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      color: #7ab8ff;
+      line-height: 1.5;
+    }
+    .whop-hint svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      body {
+        justify-content: flex-start;
+        padding-top: 24px;
+        padding-bottom: 24px;
+      }
+      .legacy-card {
+        padding: 24px 16px;
+        border-radius: 14px;
+      }
+      .card-heading { font-size: 1.25rem; }
+      .logo-wrap img { height: 58px; }
+      .otp-grid input {
+        width: 40px;
+        height: 50px;
+        font-size: 1.2rem;
+      }
+      .btn-primary { font-size: 0.95rem; padding: 12px; }
+    }
+    @media (max-width: 360px) {
+      .legacy-card { padding: 20px 12px; }
+      .otp-grid { gap: 6px; }
+      .otp-grid input { width: 36px; height: 46px; font-size: 1.1rem; }
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .logo-wrap img {
+      height: 72px;
+      object-fit: contain;
+    }
+
+    /* ── Headings ── */
+    .card-heading {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .card-subtext {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    /* ── Form fields ── */
+    .field-group {
+      margin-bottom: 18px;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .field-group input[type="email"],
+    .field-group input[type="text"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .field-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(63, 143, 249, 0.12);
+    }
+
+    /* ── Primary button ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2a75e0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(63, 143, 249, 0.35);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary .spinner-inner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-primary.loading .spinner-inner {
+      display: block;
+    }
+
+    .btn-primary.loading .btn-label {
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── OTP grid ── */
+    .otp-info {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .otp-info span {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .otp-grid {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
+      direction: ltr;
+    }
+
+    .otp-grid input {
+      width: 48px;
+      height: 56px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: 'Cairo', monospace;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      caret-color: var(--primary);
+    }
+
+    .otp-grid input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(63, 143, 249, 0.15);
+      transform: scale(1.06);
+    }
+
+    .otp-grid input.filled {
+      border-color: rgba(63, 143, 249, 0.5);
+      background: var(--primary-dim);
+    }
+
+    /* ── Resend ── */
+    .resend-row {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .resend-row button {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.875rem;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .resend-row button:disabled {
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Badge ── */
+    .promo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(63, 143, 249, 0.15), rgba(100, 200, 255, 0.08));
+      border: 1px solid var(--primary-border);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 0 auto 20px;
+    }
+
+    .badge-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    /* ── Toast override ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      z-index: 9999;
+      animation: fadeup 0.3s ease;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    .toast.success {
+      background: #1a3d2b;
+      border: 1px solid #2d6b46;
+      color: #4cde80;
+    }
+
+    .toast.error {
+      background: #3d1a1a;
+      border: 1px solid #6b2d2d;
+      color: #ff7070;
+    }
+
+    .toast.info {
+      background: #1a2a3d;
+      border: 1px solid #2d4a6b;
+      color: #7ab8ff;
+    }
+
+    @keyframes fadeup {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* ── Steps ── */
+    #stepOtp {
+      display: none;
+    }
+
+    /* ── Success state ── */
+    .success-state {
+      text-align: center;
+      padding: 12px 0;
+      display: none;
+    }
+
+    .success-state .check-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .success-state h3 {
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .success-state p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Credentials block ──
+       Only shown when the roster address has no Ghawy account to sign into.
+       Most of Atlas already has one, and asking them to "pick a password" is
+       how round 1 ended up overwriting real ones. */
+    #credsBlock {
+      display: none;
+      border-top: 1px solid var(--border);
+      margin-top: 22px;
+      padding-top: 20px;
+    }
+
+    #credsBlock .creds-note {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .field-group input[type="password"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+  </style>
+</head>
+
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WNSQXRZL"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+  <div class="legacy-card">
+
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <img src="./imgs/g-icon-logo.png" alt="Ghawy" onerror="this.style.display='none'">
+    </div>
+
+    <!-- ══════════ STEP 1: EMAIL ══════════
+         Email only. The name and password come later, and only if there turns
+         out to be no account — see #credsBlock. -->
+    <div id="stepEmail">
+      <div class="badge-wrap">
+        <div class="promo-badge">🎁 عرض خاص لأعضاء اطلس</div>
+      </div>
+      <h1 class="card-heading">أهلاً بيك 👋</h1>
+      <p class="card-subtext">
+        انت عضو في AI Automation Atlas؟ ليك شهر مجاني على منصة غاوي.
+        دخّل إيميلك وهنبعتلك كود تحقق.
+      </p>
+
+      <div class="field-group">
+        <label for="emailInput">البريد الإلكتروني</label>
+        <input type="email" id="emailInput" placeholder="example@gmail.com" dir="ltr" autocomplete="email" />
+        <div class="whop-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          استخدم نفس الإيميل اللي مشترك بيه في اطلس على Whop
+        </div>
+      </div>
+
+      <button class="btn-primary" id="sendOtpBtn" onclick="sendOtp()">
+        <span class="btn-label">إرسال كود التحقق</span>
+        <div class="spinner-inner"></div>
+      </button>
+    </div>
+
+    <!-- ══════════ STEP 2: OTP (+ credentials, only if needed) ══════════ -->
+    <div id="stepOtp">
+      <h2 class="card-heading" style="margin-bottom:10px;">أدخل كود التحقق</h2>
+      <p class="otp-info">
+        تم إرسال كود مكوّن من 6 أرقام إلى<br>
+        <span id="emailDisplay"></span>
+      </p>
+
+      <div class="otp-grid" id="otpGrid">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp0" aria-label="رقم 1">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp1" aria-label="رقم 2">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp2" aria-label="رقم 3">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp3" aria-label="رقم 4">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp4" aria-label="رقم 5">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-cell" id="otp5" aria-label="رقم 6">
+      </div>
+
+      <!-- Shown only when send-otp came back needs_credentials: true -->
+      <div id="credsBlock">
+        <p class="creds-note">لسه مالكش حساب على غاوي — اختار اسمك وكلمة مرور وهنجهّزه لك.</p>
+
+        <div class="field-group">
+          <label for="nameInput">الاسم بالكامل</label>
+          <input type="text" id="nameInput" placeholder="محمد أحمد" autocomplete="name" />
+        </div>
+
+        <div class="field-group">
+          <label for="passwordInput">كلمة المرور</label>
+          <!-- dir="ltr" on the WRAPPER as well as the input: passwords are Latin,
+               so both have to agree or the field's padding is reserved on the
+               opposite side from where the content starts. Same reason as the
+               eye button on login.html. -->
+          <div dir="ltr">
+            <input type="password" id="passwordInput" placeholder="••••••••" dir="ltr" autocomplete="new-password" />
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="verifyOtpBtn" onclick="verifyOtp()">
+        <span class="btn-label">تأكيد الكود</span>
+        <div class="spinner-inner"></div>
+      </button>
+
+      <div class="resend-row">
+        <span id="resendText">لم يصلك الكود؟ إعادة الإرسال بعد </span>
+        <span id="countdown">60</span>
+        <span id="resendSuffix"> ثانية</span>
+        <button id="resendBtn" onclick="resendOtp()" disabled style="display:none;">إعادة الإرسال</button>
+      </div>
+    </div>
+
+    <!-- ══════════ SUCCESS ══════════ -->
+    <div class="success-state" id="successState">
+      <span class="check-icon">🎉</span>
+      <h3>تم تفعيل شهرك المجاني!</h3>
+      <p id="successNote">جاري تحويلك…</p>
+    </div>
+
+  </div><!-- /.legacy-card -->
+
+  <script src="src/js/utils.js?v=20260828a"></script>
+
+  <script>
+    // ── Config ─────────────────────────────────────────────────────────────
+    const ATLAS_API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://127.0.0.1:8000/api/atlas'
+      : '/api/atlas';
+
+    let currentEmail = '';
+    // Set from send-otp. Decides whether step 2 asks for a name and password —
+    // and whether typing the last digit may submit on its own.
+    let needsCredentials = false;
+    let countdownTimer = null;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function setBtnLoading(id, loading) {
+      const btn = document.getElementById(id);
+      btn.disabled = loading;
+      btn.classList.toggle('loading', loading);
+    }
+
+    function otpValue() {
+      return Array.from(document.querySelectorAll('.otp-cell')).map(c => c.value).join('');
+    }
+
+    // ── Step 1: Send OTP ───────────────────────────────────────────────────
+    async function sendOtp() {
+      const email = document.getElementById('emailInput').value.trim();
+
+      if (!email || !email.includes('@')) {
+        showToast('يرجى إدخال بريد إلكتروني صحيح', 'error');
+        return;
+      }
+
+      setBtnLoading('sendOtpBtn', true);
+      try {
+        const res = await fetch(`${ATLAS_API}/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showToast(data.detail || 'حدث خطأ، يرجى المحاولة مجدداً', 'error');
+          return;
+        }
+
+        currentEmail = email;
+        needsCredentials = !!data.needs_credentials;
+        document.getElementById('emailDisplay').textContent = email;
+        document.getElementById('credsBlock').style.display = needsCredentials ? 'block' : 'none';
+
+        document.getElementById('stepEmail').style.display = 'none';
+        document.getElementById('stepOtp').style.display = 'block';
+        document.getElementById('otp0').focus();
+        startCountdown();
+
+        showToast(data.message || 'تم إرسال الكود', 'success');
+
+      } catch (e) {
+        showToast('لا يوجد اتصال بالسيرفر', 'error');
+      } finally {
+        setBtnLoading('sendOtpBtn', false);
+      }
+    }
+
+    // ── Step 2: Verify OTP ─────────────────────────────────────────────────
+    async function verifyOtp() {
+      const cells = document.querySelectorAll('.otp-cell');
+      const otp = otpValue();
+
+      if (otp.length < 6) {
+        showToast('يرجى إدخال الكود كاملاً (6 أرقام)', 'error');
+        return;
+      }
+
+      // Only read when there is no account — the server ignores both otherwise.
+      const payload = { email: currentEmail, otp: otp };
+      if (needsCredentials) {
+        const name = document.getElementById('nameInput').value.trim();
+        const password = document.getElementById('passwordInput').value;
+        if (name.length < 2) {
+          showToast('يرجى إدخال الاسم بالكامل', 'error');
+          return;
+        }
+        if (!password || password.length < 6) {
+          showToast('يجب ألا تقل كلمة المرور عن 6 أحرف', 'error');
+          return;
+        }
+        payload.full_name = name;
+        payload.password = password;
+      }
+
+      setBtnLoading('verifyOtpBtn', true);
+      try {
+        const res = await fetch(`${ATLAS_API}/verify-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showToast(data.detail || 'الكود غير صحيح أو انتهت صلاحيته', 'error');
+          cells.forEach(c => { c.value = ''; c.classList.remove('filled'); });
+          document.getElementById('otp0').focus();
+          return;
+        }
+
+        saveToken(data.access_token || data.token);
+        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+
+        if (countdownTimer) clearInterval(countdownTimer);
+
+        const redirect = data.redirect || '/onboarding.html';
+        document.getElementById('successNote').textContent =
+          redirect.indexOf('onboarding') !== -1
+            ? 'جاري تحويلك لإكمال ملفك الشخصي…'
+            : 'جاري تحويلك للمنصة…';
+
+        document.getElementById('stepOtp').style.display = 'none';
+        document.getElementById('successState').style.display = 'block';
+
+        setTimeout(() => { window.location.href = redirect; }, 1500);
+
+      } catch (e) {
+        showToast('لا يوجد اتصال بالسيرفر', 'error');
+      } finally {
+        setBtnLoading('verifyOtpBtn', false);
+      }
+    }
+
+    // ── Resend OTP ─────────────────────────────────────────────────────────
+    async function resendOtp() {
+      document.getElementById('resendBtn').style.display = 'none';
+      document.getElementById('resendText').style.display = '';
+      document.getElementById('countdown').style.display = '';
+      document.getElementById('resendSuffix').style.display = '';
+
+      try {
+        const res = await fetch(`${ATLAS_API}/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentEmail })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showToast('تم إعادة إرسال الكود', 'success');
+          startCountdown();
+          document.querySelectorAll('.otp-cell').forEach(c => {
+            c.value = '';
+            c.classList.remove('filled');
+          });
+          document.getElementById('otp0').focus();
+        } else {
+          showToast(data.detail || 'فشل إعادة الإرسال', 'error');
+          // The server enforces its own 60s cooldown; if it refused, put the
+          // button back rather than leaving the member with no way to retry.
+          startCountdown();
+        }
+      } catch {
+        showToast('لا يوجد اتصال بالسيرفر', 'error');
+        startCountdown();
+      }
+    }
+
+    // ── Countdown ──────────────────────────────────────────────────────────
+    // Mirrors the server's 60-second resend cooldown. The server is the one that
+    // enforces it — this only keeps the member from pressing a button that
+    // cannot work yet.
+    function startCountdown() {
+      if (countdownTimer) clearInterval(countdownTimer);
+      let seconds = 60;
+      const countdownEl = document.getElementById('countdown');
+      const resendBtn = document.getElementById('resendBtn');
+      const resendText = document.getElementById('resendText');
+      const resendSuffix = document.getElementById('resendSuffix');
+
+      countdownEl.textContent = seconds;
+      resendBtn.style.display = 'none';
+      resendText.style.display = '';
+      countdownEl.style.display = '';
+      resendSuffix.style.display = '';
+
+      countdownTimer = setInterval(() => {
+        seconds--;
+        countdownEl.textContent = seconds;
+        if (seconds <= 0) {
+          clearInterval(countdownTimer);
+          resendText.style.display = 'none';
+          countdownEl.style.display = 'none';
+          resendSuffix.style.display = 'none';
+          resendBtn.style.display = 'inline';
+          resendBtn.disabled = false;
+        }
+      }, 1000);
+    }
+
+    // ── OTP cell navigation ────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      const cells = document.querySelectorAll('.otp-cell');
+
+      // Submitting as soon as the sixth digit lands is right when the code is
+      // the only thing being collected — and wrong when a name and password are
+      // sitting empty underneath it, which is why this is conditional.
+      function maybeAutoSubmit() {
+        if (!needsCredentials && otpValue().length === 6) verifyOtp();
+      }
+
+      cells.forEach((cell, index) => {
+        cell.addEventListener('input', (e) => {
+          cell.value = cell.value.replace(/\D/g, '').slice(-1);
+          cell.classList.toggle('filled', cell.value !== '');
+
+          if (cell.value && index < cells.length - 1) {
+            cells[index + 1].focus();
+          }
+          if (index === cells.length - 1 && cell.value) {
+            if (needsCredentials) {
+              const nameEl = document.getElementById('nameInput');
+              if (nameEl && !nameEl.value.trim()) nameEl.focus();
+            }
+            maybeAutoSubmit();
+          }
+        });
+
+        cell.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !cell.value && index > 0) {
+            cells[index - 1].focus();
+            cells[index - 1].value = '';
+            cells[index - 1].classList.remove('filled');
+          }
+          if (e.key === 'ArrowLeft' && index < cells.length - 1) cells[index + 1].focus();
+          if (e.key === 'ArrowRight' && index > 0) cells[index - 1].focus();
+        });
+
+        cell.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+          pasted.split('').forEach((char, i) => {
+            if (cells[i]) {
+              cells[i].value = char;
+              cells[i].classList.add('filled');
+            }
+          });
+          if (pasted.length > 0) cells[Math.min(pasted.length, cells.length - 1)].focus();
+          if (pasted.length === 6) maybeAutoSubmit();
+        });
+      });
+
+      document.getElementById('emailInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendOtp();
+      });
+      document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') verifyOtp();
+      });
+    });
+  </script>
+
+</body>
+
+</html>

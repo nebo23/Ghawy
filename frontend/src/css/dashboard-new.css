@@ -1582,6 +1582,13 @@ body.sidebar-anim .dash-main {
     word-break: break-word;
 }
 
+/* Links in the dashboard chat widget — same treatment as the full chat view. */
+.chat-msg-text a.msg-link {
+    color: #4ea1ff;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
 .chat-input-row {
     display: flex;
     align-items: center;

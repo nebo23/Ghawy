@@ -6,7 +6,10 @@ from jose import jwt
 import bcrypt
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.models import User
-from app.schemas import UserRegister, UserLogin, UserOut, Token, VerifyEmailRequest, ResendVerificationRequest
+from sqlalchemy import func
+from app.schemas import (UserRegister, UserLogin, UserOut, Token, VerifyEmailRequest,
+                         ResendVerificationRequest, ForgotPasswordRequest,
+                         VerifyResetCodeRequest, ResetPasswordRequest)
 from app.database import get_db
 import os
 import random
@@ -14,7 +17,7 @@ import logging
 import threading
 from pathlib import Path
 from dotenv import load_dotenv
-from app.services.email_service import send_verification_email
+from app.services.email_service import send_verification_email, send_password_reset_email
 from app.services.disposable_emails import is_disposable_email, is_fake_email_pattern
 from app.services.name_utils import compose_full_name, clean_display_name
 from app.services.turnstile import verify_turnstile
@@ -34,6 +37,8 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 days
 VERIFICATION_EXPIRE_MINUTES = 15
+PASSWORD_RESET_EXPIRE_MINUTES = 15
+RESET_TOKEN_EXPIRE_MINUTES = 15
 
 def hash_password(password: str) -> str:
     pwd_bytes = password.encode('utf-8')
@@ -389,6 +394,176 @@ def resend_verification_code(data: ResendVerificationRequest, db: Session = Depe
     send_verification_email_bg(user.email, verification_code)
 
     return {"message": "Verification code resent successfully"}
+
+# ─── Password reset ───────────────────────────────────────────
+# Three requests, because the code and the new password are typed on different
+# screens: forgot-password mails a code, verify-reset-code trades a correct code
+# for a short-lived token, reset-password spends the token. Trading the code for
+# a token keeps the code out of the page while the member picks a password, and
+# means the last request cannot be replayed once it has run.
+
+def create_reset_token(user: User) -> str:
+    """A single-purpose token for step 3.
+
+    typ="pwreset" keeps get_current_user from ever accepting it as a session
+    (it refuses anything typed), and the token_version stamp ties it to the
+    account state it was minted against — so a completed reset, a logout-all, or
+    a second reset started in another tab all kill it.
+    """
+    expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(
+        {"sub": str(user.id), "typ": "pwreset",
+         "ver": getattr(user, "token_version", 0) or 0, "exp": expire},
+        SECRET_KEY, algorithm=ALGORITHM,
+    )
+
+
+def send_password_reset_email_bg(email: str, code: str) -> None:
+    def _run():
+        try:
+            send_password_reset_email(email, code)
+        except Exception as exc:
+            logger.warning("Reset-code SMTP send failed: %s", exc)
+    threading.Thread(target=_run, daemon=True).start()
+
+
+# Wrong-code counter for the reset flow, keyed by email — the code burns after 5
+# tries, same rule as _verify_attempts. Kept separate so a wrong signup code
+# does not eat a reset attempt.
+#
+# Note on the log lines below: they say "Reset code issued", not "Password reset
+# code issued". test_security_acceptance greps every logger call in this file for
+# the words verification_code / submitted_code / otp / password and fails on a
+# hit. The check is deliberately blunt — it cannot tell prose from an
+# interpolated variable — and it is not worth loosening a leak guard to win an
+# argument about wording, so the wording gives way instead.
+_reset_attempts: dict[str, int] = {}
+
+# The same answer whether or not the address is registered. /auth/register and
+# /auth/resend-verification-code do leak existence (400/404), but those are
+# reached from a form the member is already filling in about their own account;
+# a public, unauthenticated reset form is a different exposure — it is a free
+# "does this person have a Ghawy account" oracle for anyone with a list of
+# addresses. The cooldown case returns this too: a 429 there would leak
+# existence exactly as loudly as a 200 would.
+RESET_SENT_MESSAGE = "لو الإيميل ده مسجّل عندنا، هيوصلك كود لإعادة تعيين كلمة المرور خلال دقيقة."
+RESET_BAD_CODE = "الكود غير صحيح أو انتهت صلاحيته"
+RESET_TOO_MANY = "تم تجاوز عدد المحاولات. اطلب كود جديد."
+
+
+def _user_by_email_ci(db: Session, email: str) -> Optional[User]:
+    """Signup stores the address as typed, so match case-insensitively — mail
+    still goes to the stored address, never to what the caller typed."""
+    return db.query(User).filter(func.lower(User.email) == (email or "").lower().strip()).first()
+
+
+@router.post("/forgot-password")
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = _user_by_email_ci(db, data.email)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # The one thing worth saying out loud: a Google account has no password to
+    # reset (hashed_password is the google_oauth_ sentinel). Staying silent here
+    # leaves the member waiting for a code that could not have helped them.
+    if user and user.hashed_password and user.hashed_password.startswith("google_oauth_"):
+        raise HTTPException(
+            status_code=400,
+            detail="الحساب ده مسجل بـ Google، استخدم زر Sign in with Google",
+        )
+
+    if user:
+        resend_ok = True
+        if user.password_reset_expiry:
+            generated_at = user.password_reset_expiry - timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
+            resend_ok = (now - generated_at).total_seconds() >= 60
+        if resend_ok:
+            code = generate_verification_code()
+            user.password_reset_code = code
+            user.password_reset_expiry = now + timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
+            db.commit()
+            _reset_attempts.pop(user.email, None)   # كود جديد = عدّاد محاولات جديد
+            # Never the code itself — anyone with log access could otherwise take
+            # the account.
+            logger.info("Reset code issued for user_id=%s", user.id)
+            send_password_reset_email_bg(user.email, code)
+
+    return {"message": RESET_SENT_MESSAGE}
+
+
+@router.post("/verify-reset-code")
+def verify_reset_code(data: VerifyResetCodeRequest, db: Session = Depends(get_db)):
+    user = _user_by_email_ci(db, data.email)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    if (not user or not user.password_reset_code or not user.password_reset_expiry
+            or now > user.password_reset_expiry):
+        raise HTTPException(status_code=400, detail=RESET_BAD_CODE)
+
+    if user.password_reset_code != (data.code or "").strip():
+        attempts = _reset_attempts.get(user.email, 0) + 1
+        _reset_attempts[user.email] = attempts
+        if attempts >= 5:
+            user.password_reset_code = None
+            user.password_reset_expiry = None
+            db.commit()
+            _reset_attempts.pop(user.email, None)
+            raise HTTPException(status_code=400, detail=RESET_TOO_MANY)
+        raise HTTPException(status_code=400, detail=RESET_BAD_CODE)
+
+    _reset_attempts.pop(user.email, None)
+    # The code is deliberately NOT cleared here. Step 3 re-checks it, so a token
+    # minted now cannot outlive the code it came from.
+    return {"reset_token": create_reset_token(user)}
+
+
+@router.post("/reset-password")
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    invalid = HTTPException(status_code=400, detail="الرابط ده انتهت صلاحيته. اطلب كود جديد.")
+
+    try:
+        payload = jwt.decode(data.reset_token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("typ") != "pwreset":
+            raise invalid
+        user_id = int(payload.get("sub"))
+    except (JWTError, ValueError, TypeError):
+        raise invalid
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise invalid
+
+    # Stamped at mint time: a reset that has already run (or a logout-all, or a
+    # second reset started elsewhere) has bumped the column and this token dies
+    # with it. One token, one password change.
+    if int(payload.get("ver") or 0) != (getattr(user, "token_version", 0) or 0):
+        raise invalid
+
+    # Re-checked at the last step: the token lives 15 minutes and so does the
+    # code, but they start at different moments — without this a token issued
+    # near the end of a code's life would outlive it.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if not user.password_reset_code or not user.password_reset_expiry or now > user.password_reset_expiry:
+        raise invalid
+
+    if len(data.password or "") < 6:
+        raise HTTPException(status_code=422, detail="كلمة المرور لازم تكون 6 حروف على الأقل.")
+
+    user.hashed_password = hash_password(data.password)
+    user.password_reset_code = None
+    user.password_reset_expiry = None
+    # A code that only ever reached that inbox was read out of it.
+    user.is_verified = True
+    # Not optional. A reset is how somebody takes an account back, so every
+    # session opened with the old password has to die with it — including the
+    # 30-day tokens on whatever device the other party was using. It also
+    # retires the reset token above.
+    user.token_version = (user.token_version or 0) + 1
+    db.commit()
+    _reset_attempts.pop(user.email, None)
+
+    logger.info("Reset completed for user_id=%s", user.id)
+    return {"ok": True, "message": "تم تغيير كلمة المرور. سجّل دخولك بكلمة المرور الجديدة."}
+
 
 # ─── Get Current User ─────────────────────────────────────────
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")

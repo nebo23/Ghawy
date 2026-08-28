@@ -61,8 +61,8 @@
     <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=16" />
-    <link rel="stylesheet" href="src/css/community.css?v=6" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=17" />
+    <link rel="stylesheet" href="src/css/community.css?v=7" />
     <style>
         .chat-layout {
             display: flex;
@@ -1617,7 +1617,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=20260822a"></script>
+    <script src="src/js/utils.js?v=20260828a"></script>
 
     <style>
         /* Custom Modal */
@@ -5195,7 +5195,7 @@
                             <span style="font-size:0.72rem;color:#5a5648;">${p.time_ago || ''}</span>
                         </div>
                         <h4 dir="${window.bidiDir ? window.bidiDir(p.title || '') : 'auto'}" style="font-size:1rem;font-weight:700;color:var(--text-primary,#f1f0ea);margin:6px 0 4px;">${escHtml(p.title || '')}</h4>
-                        <div class="${bodyClass}" dir="${window.bidiDir ? window.bidiDir(p.body || '') : 'auto'}" style="font-size:0.88rem;color:var(--text-secondary,#b8b8b8);line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${escHtml(p.body || '')}</div>
+                        <div class="${bodyClass}" dir="${window.bidiDir ? window.bidiDir(p.body || '') : 'auto'}" style="font-size:0.88rem;color:var(--text-secondary,#b8b8b8);line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${window.linkifyText ? window.linkifyText(p.body || '') : escHtml(p.body || '')}</div>
                         ${seeMoreBtn}
                         ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${tagsHtml}</div>` : ''}
                         ${imageHtml}
@@ -5442,7 +5442,7 @@
                         <span class="comm-inline-comment-author" onclick="openUserProfile(${a.id})" style="cursor:pointer;">${escHtml(a.full_name || 'User')}</span>
                         <span class="comm-inline-comment-time">${c.time_ago || ''}</span>
                     </div>
-                    <div class="comm-inline-comment-text" dir="${window.bidiDir ? window.bidiDir(c.body || '') : 'auto'}">${escHtml(c.body || '')}</div>
+                    <div class="comm-inline-comment-text" dir="${window.bidiDir ? window.bidiDir(c.body || '') : 'auto'}">${window.linkifyText ? window.linkifyText(c.body || '') : escHtml(c.body || '')}</div>
                     ${actionsHtml}
                     <div id="reply-input-${c.id}" style="display:none;"></div>
                 </div>
@@ -5888,7 +5888,7 @@
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=20260822a"></script>
+    <script src="src/js/dashboard-new.js?v=20260828a"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

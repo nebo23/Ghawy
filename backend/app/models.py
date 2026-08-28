@@ -87,6 +87,11 @@ class User(Base):
     is_verified = Column(Boolean, server_default=text('false'), default=False)
     verification_code = Column(String(6), nullable=True)
     verification_expiry = Column(DateTime, nullable=True)
+    # كود إعادة تعيين كلمة المرور — عمود منفصل عن verification_code عن قصد: حساب
+    # لسه متأكدش ينفع يكون عنده كود تسجيل وكود reset حيّين في نفس الوقت، ولو
+    # شاركوا عمود واحد كل واحد فيهم كان هيلغي التاني.
+    password_reset_code = Column(String(6), nullable=True)
+    password_reset_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
     is_owner = Column(Boolean, server_default=text('false'), default=False)
     avatar_url = Column(String, nullable=True)
@@ -106,6 +111,10 @@ class User(Base):
     # 30-day session early, since the tokens themselves carry no server state.
     token_version = Column(Integer, server_default=text('0'), default=0, nullable=False)
     is_legacy_redeemed = Column(Boolean, server_default=text('false'), default=False)
+    # أي جولة من عرض اطلس العضو استهلكها. is_legacy_redeemed فضل زي ما هو كسجل
+    # تاريخي (مبيتصفّرش أبداً)؛ الرقم ده هو اللي بيفتح الجولة الجديدة: بنقارنه بـ
+    # ATLAS_PROMO_ROUND، فلما نرفع الثابت الجولة بتفتح لكل الروستر من غير ما نلمس صف واحد.
+    legacy_promo_round = Column(Integer, server_default=text('0'), default=0, nullable=False)
     subscription_source = Column(String(64), nullable=True)
     custom_title = Column(String(120), nullable=True)
     winback_email_sent_at = Column(DateTime, nullable=True)  # إيميل "ليه وقفت؟" — يتبعت مرة واحدة بس
@@ -155,6 +164,8 @@ class LegacyEmail(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
+    # اسم العضو من كشف Whop — إيميل من غير اسم مينفعش يتنادى بيه في حملة الإعلان.
+    full_name = Column(String(255), nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
 # ═══════════════════════════════════════════
