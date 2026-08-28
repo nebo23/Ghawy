@@ -4278,6 +4278,31 @@
         });
 
         // ── Voice Recording (WhatsApp-style preview) ──
+        // MediaRecorder support is not uniform: Chrome/Firefox encode WebM/Opus,
+        // while Safari — and therefore every browser on iOS — only does MP4/AAC
+        // and throws NotSupportedError on 'audio/webm'. That throw used to land in
+        // the same catch as a denied microphone, so iPhone members were told their
+        // mic was blocked when the real problem was the container.
+        //
+        // The bitrate is pinned on purpose. Left to itself, mobile Chrome encodes
+        // voice at ~220 kbps, which pushed a 3-minute note past the server's 5 MB
+        // voice cap; 32 kbps is generous for speech and puts the cap ~20 minutes out.
+        const VOICE_FORMATS = [
+            { mime: 'audio/webm;codecs=opus', type: 'audio/webm', ext: 'webm' },
+            { mime: 'audio/webm', type: 'audio/webm', ext: 'webm' },
+            { mime: 'audio/mp4;codecs=mp4a.40.2', type: 'audio/mp4', ext: 'm4a' },
+            { mime: 'audio/mp4', type: 'audio/mp4', ext: 'm4a' },
+            { mime: 'audio/ogg;codecs=opus', type: 'audio/ogg', ext: 'ogg' },
+        ];
+        const VOICE_BITRATE = 32000;
+        let pendingVoiceFormat = null;
+
+        function pickVoiceFormat() {
+            if (typeof MediaRecorder === 'undefined') return null;
+            if (typeof MediaRecorder.isTypeSupported !== 'function') return VOICE_FORMATS[0];
+            return VOICE_FORMATS.find(f => MediaRecorder.isTypeSupported(f.mime)) || null;
+        }
+
         let pendingVoiceBlob = null;
         let pendingVoiceDuration = 0;
         let recStartTs = 0;
@@ -4313,7 +4338,11 @@
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             try {
-                const file = new File([pendingVoiceBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+                // The extension and type follow whatever the recorder actually
+                // produced. The type is sent bare, without ";codecs=", because the
+                // server matches it against its allow-list exactly.
+                const fmt = pendingVoiceFormat || VOICE_FORMATS[0];
+                const file = new File([pendingVoiceBlob], `voice_${Date.now()}.${fmt.ext}`, { type: fmt.type });
                 const formData = new FormData();
                 formData.append('file', file);
                 const uploadRes = await fetch(API + '/chat/upload', {
@@ -4321,8 +4350,16 @@
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-                const uploadData = await uploadRes.json();
-                await apiFetch('/chat/messages', {
+                // A rejected upload (the 5 MB voice cap, mostly) answers with a
+                // `detail` and no file_url. Reading file_url off it anyway produced
+                // the string "undefined#d=93", which the message endpoint then
+                // refused with a 422 — and since apiFetch does not throw on 4xx,
+                // nothing was ever shown: the note simply vanished on send.
+                const uploadData = await uploadRes.json().catch(() => ({}));
+                if (!uploadRes.ok || !uploadData.file_url) {
+                    throw new Error(uploadData.detail || 'Could not upload the recording');
+                }
+                const sendRes = await apiFetch('/chat/messages', {
                     method: 'POST',
                     body: JSON.stringify({
                         channel: currentChannel, content: null,
@@ -4333,6 +4370,10 @@
                         file_size: uploadData.file_size
                     })
                 });
+                if (!sendRes.ok) {
+                    const err = await sendRes.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Could not post the voice message');
+                }
                 // Reset preview
                 pendingVoiceBlob = null;
                 const player = document.getElementById('voicePreviewPlayer');
@@ -4342,7 +4383,9 @@
                 setTimeout(loadMessages, 300);
             } catch (e) {
                 console.error(e);
-                notifyToast('Failed to send voice message', 'error');
+                // The preview bar is left open on purpose: losing four minutes of
+                // recorded audio to a failed upload is worse than the failure.
+                notifyToast((e && e.message) || 'Failed to send voice message', 'error');
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
             }
@@ -4358,15 +4401,36 @@
                 clearInterval(recordingTimerInterval);
                 return;
             }
+            const fmt = pickVoiceFormat();
+            if (!fmt) {
+                notifyToast('Voice notes are not supported in this browser', 'error');
+                return;
+            }
+            let stream;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (e) {
+                notifyToast('Microphone access denied', 'error');
+                return;
+            }
+            try {
+                mediaRecorder = new MediaRecorder(stream, { mimeType: fmt.mime, audioBitsPerSecond: VOICE_BITRATE });
+            } catch (e) {
+                // Format refused after the fact — release the mic rather than
+                // leaving the browser's recording indicator lit.
+                stream.getTracks().forEach(t => t.stop());
+                console.error(e);
+                notifyToast('Voice notes are not supported in this browser', 'error');
+                return;
+            }
+            try {
+                pendingVoiceFormat = fmt;
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
                     stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const blob = new Blob(audioChunks, { type: fmt.type });
                     pendingVoiceBlob = blob;
                     pendingVoiceDuration = Math.max(1, Math.round((Date.now() - recStartTs) / 1000));
                     refineVoiceDuration(blob);
@@ -4394,7 +4458,12 @@
                 }, 1000);
 
             } catch (e) {
-                notifyToast('Microphone access denied', 'error');
+                // Only start()/timer setup can land here now; a denied microphone
+                // and an unsupported container are both reported above, with the
+                // message that actually matches what went wrong.
+                stream.getTracks().forEach(t => t.stop());
+                console.error(e);
+                notifyToast('Could not start recording', 'error');
             }
         }
 

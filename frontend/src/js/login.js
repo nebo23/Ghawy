@@ -120,3 +120,25 @@ async function login() {
 }
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+// The Google callback bounces failures back here with ?error=. Without this the
+// member was returned to a blank login form with no idea what had happened.
+// Deferred to DOMContentLoaded because showAlert writes into #alert, which is
+// further down the page than this script.
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const reason = params.get('error');
+  if (!reason) return;
+
+  const messages = {
+    google_failed:    () => tr('errGoogleFailed', "We couldn't finish signing you in with Google. Please try again."),
+    email_unverified: () => tr('errGoogleUnverified', 'That Google address is not verified yet. Verify it with Google, then try again.'),
+  };
+  if (messages[reason]) showAlert(messages[reason](), 'error');
+
+  // Drop only `error`, so a refresh doesn't replay the message. ?redirect= has
+  // to survive — login() reads it to decide where to send the member next.
+  params.delete('error');
+  const query = params.toString();
+  history.replaceState(null, '', window.location.pathname + (query ? '?' + query : ''));
+});

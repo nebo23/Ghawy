@@ -18,8 +18,11 @@ from ..routers.users import (
     set_file_cookie, create_token as create_session_token,
 )
 import json
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
@@ -42,9 +45,25 @@ async def google_login(request: Request):
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
-    token = await oauth.google.authorize_access_token(request)
-    user_info = token.get('userinfo')
-    
+    # A callback that cannot be completed is an ordinary event, not a crash.
+    # authlib keeps one state per browser session and pops it once it is spent,
+    # so a callback that arrives twice — the member hits Back, Google's account
+    # chooser retries against a second signed-in account, a link gets
+    # prefetched — finds nothing and raises. Unhandled, that was a bare 500
+    # page in the middle of signing in. A quarter of all callbacks landed there.
+    # Send them back to /login instead: if the first callback did succeed, the
+    # token is already in localStorage and login.js forwards them on.
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get('userinfo')
+    except Exception as exc:
+        logger.info("Google callback could not be completed: %s: %s", type(exc).__name__, exc)
+        return RedirectResponse("https://ghawy.ai/login?error=google_failed")
+
+    if not user_info or not user_info.get('email'):
+        logger.info("Google callback returned no email claim")
+        return RedirectResponse("https://ghawy.ai/login?error=google_failed")
+
     email = user_info['email']
     name = user_info.get('name', '')
 
@@ -61,7 +80,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         # guarantee of a real member (test@gmail.com signs in just fine).
         # Only brand-new signups are checked; existing users are never re-tested.
         if is_disposable_email(email) or is_fake_email_pattern(email):
-            return RedirectResponse("https://ghawy.ai/register.html?error=fake_email")
+            return RedirectResponse("https://ghawy.ai/register?error=fake_email")
 
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
@@ -126,13 +145,20 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.refresh(user)
     
     frontend_url = "https://ghawy.ai"
+    # Extensionless, and it has to stay that way. nginx 301s every `.html` path
+    # to its bare form, and the rule used to match the query string too — so
+    # ?next=/dashboard.html fed itself back into the redirect and looped until
+    # the browser gave up. The nginx regex is fixed, but browsers cache a 301
+    # forever: anyone who already hit the loop has ?next=/dashboard.html pinned
+    # in their disk cache and would keep looping without ever asking us again.
+    # These URLs were never 301'd, so they route around that cache as well.
     if not user.is_active:
         # Signed in but not subscribed → the plans page.
         destination = "/pricing"
     elif not user.onboarding_completed:
-        destination = "/onboarding.html"
+        destination = "/onboarding"
     else:
-        destination = "/dashboard.html"
+        destination = "/dashboard"
 
     # No token in the URL. These three pages load GTM, GA4, the Meta Pixel and
     # Clarity in <head>, all of which read location.href on load, so a token in

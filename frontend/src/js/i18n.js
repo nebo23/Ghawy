@@ -109,6 +109,8 @@ const i18nDict = {
     errFillAllFields: { ar: 'من فضلك املا كل الخانات.',    en: 'Please fill all fields' },
     errWrongCredentials: { ar: 'إيميل أو باسورد غلط',      en: 'Wrong email or password' },
     errNoConnection:  { ar: 'مفيش اتصال بالسيرفر.',        en: 'No connection to the server.' },
+    errGoogleFailed:  { ar: 'مكملناش تسجيل الدخول بجوجل. جرّب تاني.', en: "We couldn't finish signing you in with Google. Please try again." },
+    errGoogleUnverified: { ar: 'إيميل جوجل ده لسه متأكدش. أكّده من جوجل الأول وبعدين جرّب تاني.', en: 'That Google address is not verified yet. Verify it with Google, then try again.' },
     okAccountCreated: { ar: 'تم إنشاء الحساب بنجاح! جاري التحويل...', en: 'Account created successfully! Redirecting...' },
     okSetupComplete:  { ar: 'تم! جاري التحويل...',         en: 'Setup complete! Redirecting...' },
     inviteInvalid:    { ar: 'لينك الدعوة مش صالح أو انتهت صلاحيته.', en: 'Invalid or expired invite link' },

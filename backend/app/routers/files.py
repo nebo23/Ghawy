@@ -29,13 +29,13 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Response, Cookie
 from fastapi.responses import FileResponse
 from jose import jwt, JWTError
-from sqlalchemy import func
+from sqlalchemy import Text, cast, func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import (
     User, Course, Lesson, Message, ProjectSubmission, ManualPaymentRequest,
-    CommunityFeedback,
+    CommunityFeedback, AiUpdatePost,
 )
 from app.routers.users import (
     SECRET_KEY, ALGORITHM, FILE_TOKEN_COOKIE, set_file_cookie,
@@ -63,6 +63,20 @@ INLINE_TYPES = {
     "image/jpeg", "image/png", "image/gif", "image/webp",
     "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav",
     "video/mp4", "video/webm",
+}
+
+# Python's mimetypes does not know .m4a or .ogg at all, and calls .wav
+# "audio/x-wav" — none of which are in INLINE_TYPES. So a voice note in any of
+# those formats was answered as application/octet-stream with
+# Content-Disposition: attachment, which is not something an <audio> element
+# will play. Safari (i.e. every browser on iOS) records voice notes as m4a, so
+# this map is the difference between an iPhone voice note playing and not.
+EXTENSION_TYPES = {
+    ".m4a": "audio/mp4",
+    ".ogg": "audio/ogg",
+    ".oga": "audio/ogg",
+    ".opus": "audio/ogg",
+    ".wav": "audio/wav",
 }
 
 # When set, the response carries X-Accel-Redirect and nginx serves the file off
@@ -153,6 +167,22 @@ def _referenced(db: Session, column, filename: str) -> bool:
     return db.query(column).filter(column.contains("/" + filename)).first() is not None
 
 
+def _referenced_by_ai_update(db: Session, filename: str) -> bool:
+    """Is this filename attached to an AI Updates post?
+
+    Two columns to check: image_url holds the first attachment for legacy
+    readers, media holds the full list. media is real JSON, so it is compared as
+    text — `contains` on a JSON column means containment, not substring.
+    """
+    needle = "/" + filename
+    return db.query(AiUpdatePost.id).filter(
+        or_(
+            AiUpdatePost.image_url.contains(needle),
+            cast(AiUpdatePost.media, Text).contains(needle),
+        )
+    ).first() is not None
+
+
 # ─── Per-category entitlement ─────────────────────────────────
 
 def _require_active(user: User) -> None:
@@ -215,6 +245,15 @@ def _authorize(db: Session, user: User, category: str, filename: str) -> None:
         return
 
     if category == "chat":
+        # AI Updates posts upload through /chat/upload, so their images share
+        # this category while belonging to the feed, not to any channel. The
+        # feed is readable by any active member, so that is the gate here — the
+        # channel check below would reject them outright, since no Message row
+        # ever points at these files.
+        if _referenced_by_ai_update(db, filename):
+            _require_active(user)
+            return
+
         message = db.query(Message).filter(
             Message.file_url.contains("/" + filename)
         ).first()
@@ -268,7 +307,11 @@ def get_file(
     path = _resolve(category, filename)
     _authorize(db, user, category, filename)
 
-    media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    media_type = (
+        EXTENSION_TYPES.get(path.suffix.lower())
+        or mimetypes.guess_type(path.name)[0]
+        or "application/octet-stream"
+    )
     disposition = "inline" if media_type in INLINE_TYPES else "attachment"
     headers = {
         # Never let a shared cache hold a file that was authorized per-user.

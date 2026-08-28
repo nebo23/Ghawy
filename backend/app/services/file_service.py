@@ -146,8 +146,14 @@ async def save_upload(file: UploadFile, subfolder: str = "general") -> dict:
     folder = UPLOADS_DIR / subfolder
     folder.mkdir(exist_ok=True)
 
-    # Determine message type from content type
-    content_type = file.content_type or ""
+    # Determine message type from content type.
+    #
+    # Normalized rather than taken raw: MediaRecorder reports its mimeType with
+    # the codec attached ("audio/webm;codecs=opus", "audio/mp4;codecs=mp4a.40.2"),
+    # and an exact-match lookup against that misses ALLOWED_VOICE_TYPES entirely —
+    # the voice note would fall through to the generic "file" bucket and be stored
+    # under whatever extension its name claimed.
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
     if content_type in ALLOWED_IMAGE_TYPES:
         message_type = "image"
         max_size = MAX_IMAGE_SIZE

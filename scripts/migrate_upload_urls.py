@@ -11,9 +11,9 @@ are still public and still live under /uploads/.
 
 Idempotent: a URL already on /files/ is left alone, so re-running is a no-op.
 
-Run inside the backend container:
-    docker compose -f docker-compose.prod.yml exec backend \\
-        python /app/../scripts/migrate_upload_urls.py [--dry-run]
+Run inside the backend container (the image has no scripts/ dir, so copy it in):
+    docker cp scripts/migrate_upload_urls.py ghawy_backend:/tmp/
+    docker exec ghawy_backend python /tmp/migrate_upload_urls.py --dry-run
 or, from the repo root with DATABASE_URL set:
     python scripts/migrate_upload_urls.py --dry-run
 """
@@ -22,12 +22,20 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+from sqlalchemy import Text, cast
+
+# The repo layout puts the app under backend/; the container puts it at /app and
+# the script gets copied to /tmp, so the repo-relative guess misses entirely.
+# Offer both and let the import pick whichever exists.
+for candidate in (Path(__file__).resolve().parents[1] / "backend", Path("/app")):
+    if (candidate / "app").is_dir():
+        sys.path.insert(0, str(candidate))
+        break
 
 from app.database import SessionLocal  # noqa: E402
 from app.models import (  # noqa: E402
     Course, Lesson, Message, ProjectSubmission, ManualPaymentRequest,
-    CommunityFeedback,
+    CommunityFeedback, AiUpdatePost,
 )
 
 PROTECTED = (
@@ -46,12 +54,40 @@ TARGETS = [
     (ProjectSubmission, "file_url"),
     (Message, "file_url"),
     (CommunityFeedback, "image_url"),
+    # AI Updates posts upload through /chat/upload, so their images land in the
+    # (protected) chat category and moved with it. Missing from the first pass,
+    # which is why every image in the feed 404'd.
+    (AiUpdatePost, "image_url"),
+]
+
+# Same rewrite, but these columns are real JSON (a list of {"type", "url"})
+# rather than a URL string, so the value has to be walked instead of replaced —
+# and the SQL narrowing has to compare as text, because `contains` on a JSON
+# column is containment (@>), not substring.
+JSON_TARGETS = [
+    (AiUpdatePost, "media"),
 ]
 
 
 def rewrite(value: str) -> str:
     for category in PROTECTED:
         value = value.replace(f"/uploads/{category}/", f"/files/{category}/")
+    return value
+
+
+def rewrite_json(value):
+    """Rewrite every "url" string inside a decoded JSON value, in place-ish.
+
+    Returns a new value; the caller compares it against the original to decide
+    whether the row changed. Anything that is not a str/list/dict comes back
+    untouched.
+    """
+    if isinstance(value, str):
+        return rewrite(value)
+    if isinstance(value, list):
+        return [rewrite_json(v) for v in value]
+    if isinstance(value, dict):
+        return {k: rewrite_json(v) for k, v in value.items()}
     return value
 
 
@@ -77,6 +113,27 @@ def main() -> int:
                 updated = rewrite(current)
                 if updated != current:
                     if not args.dry_run:
+                        setattr(row, attr, updated)
+                    changed += 1
+            total += changed
+            print(f"{model.__tablename__}.{attr}: {changed} row(s)"
+                  + (" would change" if args.dry_run else " updated"))
+
+        for model, attr in JSON_TARGETS:
+            column = getattr(model, attr)
+            rows = db.query(model).filter(
+                cast(column, Text).contains("/uploads/")
+            ).all()
+            changed = 0
+            for row in rows:
+                current = getattr(row, attr)
+                if not current:
+                    continue
+                updated = rewrite_json(current)
+                if updated != current:
+                    if not args.dry_run:
+                        # A JSON column mutated in place is not seen as dirty —
+                        # assigning a fresh object is what flags it for UPDATE.
                         setattr(row, attr, updated)
                     changed += 1
             total += changed

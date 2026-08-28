@@ -3021,10 +3021,20 @@
             }
         }
 
+        // Protected uploads moved from /uploads/<cat>/ (served off disk by
+        // nginx) to /files/<cat>/ (served by the backend behind an entitlement
+        // check). nginx now hard-404s the old prefix, so a row still holding it
+        // is a dead link — which is exactly what happened to every lesson PDF
+        // until the stored URLs were migrated. The rows are fixed, but a
+        // restored backup or an older writer would break them again silently,
+        // so translate the legacy prefix here too.
+        const LEGACY_PROTECTED_UPLOADS = /^\/uploads\/(lesson-pdfs|course-pdfs|course-certificates|receipts|projects|chat|feedbacks)\//;
+
         function normalizeResourceHref(url) {
             const href = String(url || '').trim();
             if (!href) return '#';
-            return href.startsWith('/') ? API + href : href;
+            if (!href.startsWith('/')) return href;
+            return API + href.replace(LEGACY_PROTECTED_UPLOADS, '/files/$1/');
         }
 
         function normalizePdfResources(rawValue, fallbackName) {
