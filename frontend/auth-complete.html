@@ -58,7 +58,7 @@
             function safeNext(raw) {
                 var value = String(raw || '');
                 return /^\/[A-Za-z0-9._~\/-]*$/.test(value) && value.slice(0, 2) !== '//'
-                    ? value : '/dashboard.html';
+                    ? value : '/dashboard';
             }
 
             var next = safeNext(new URLSearchParams(location.search).get('next'));
