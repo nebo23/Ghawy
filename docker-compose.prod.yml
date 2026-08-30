@@ -86,6 +86,14 @@ services:
       - ./frontend:/usr/share/nginx/html:ro
       - uploads_data:/app/uploads:ro
       - static_data:/app/static:ro
+      # ACME http-01 challenge webroot. nginx has always had a
+      # `location /.well-known/acme-challenge/ { root /var/www/certbot; }` but
+      # the directory was never mounted, so the location 404'd and certbot was
+      # left on the standalone plugin — which needs port 80, the port this
+      # container holds. Every renewal since failed with "Could not bind TCP
+      # port 80", and the certificate was 14 days from expiry before anyone
+      # looked. With this mount certbot renews over webroot, no downtime.
+      - /var/www/certbot:/var/www/certbot:ro
       # SSL certificates (real files, not symlinks)
       - /opt/ghawy/ssl/fullchain.pem:/etc/letsencrypt/live/ghawy.ai/fullchain.pem:ro
       - /opt/ghawy/ssl/privkey.pem:/etc/letsencrypt/live/ghawy.ai/privkey.pem:ro

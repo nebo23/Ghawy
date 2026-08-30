@@ -3904,14 +3904,18 @@
         function injectCurriculumExams() {
             document.querySelectorAll('.exam-inline-row').forEach(el => el.remove());
             if (!examsCache.length) return;
-            const lessonsWrap = document.querySelector('#curriculumSections .section-lessons');
-            if (!lessonsWrap) return;
+            // The curriculum is one block per section, so an anchor lesson can
+            // live in any of them — search the whole container, not one block.
+            const container = document.getElementById('curriculumSections');
+            if (!container) return;
+            const wraps = container.querySelectorAll('.section-lessons');
+            if (!wraps.length) return;
 
             // Group exams by their anchor lesson, keep backend order (sort_order)
             const byLesson = {};
             const unanchored = [];
             examsCache.forEach(ex => {
-                if (ex.after_lesson_id && lessonsWrap.querySelector(`.lesson-row[data-lesson-id="${ex.after_lesson_id}"]`)) {
+                if (ex.after_lesson_id && container.querySelector(`.lesson-row[data-lesson-id="${ex.after_lesson_id}"]`)) {
                     (byLesson[ex.after_lesson_id] = byLesson[ex.after_lesson_id] || []).push(ex);
                 } else {
                     unanchored.push(ex);
@@ -3919,11 +3923,12 @@
             });
 
             Object.keys(byLesson).forEach(lessonId => {
-                const row = lessonsWrap.querySelector(`.lesson-row[data-lesson-id="${lessonId}"]`);
+                const row = container.querySelector(`.lesson-row[data-lesson-id="${lessonId}"]`);
                 row.insertAdjacentHTML('afterend', byLesson[lessonId].map(curriculumExamRowHtml).join(''));
             });
             if (unanchored.length) {
-                lessonsWrap.insertAdjacentHTML('beforeend', unanchored.map(curriculumExamRowHtml).join(''));
+                // An exam with no anchor belongs after everything else.
+                wraps[wraps.length - 1].insertAdjacentHTML('beforeend', unanchored.map(curriculumExamRowHtml).join(''));
             }
         }
 
@@ -4373,6 +4378,54 @@
         }
 
         // ═══ CURRICULUM RENDERER ═══
+        // One lesson row. `number` is the lesson's position in the whole course,
+        // so the numbering keeps running across section boundaries.
+        function curriculumLessonHtml(l, number) {
+            const mins = l.duration_minutes || 0;
+            let durStr = '';
+            if (mins > 0) {
+                const totalSecs = Math.round(mins * 60);
+                const m = Math.floor(totalSecs / 60);
+                const s = totalSecs % 60;
+                durStr = `${m}:${s.toString().padStart(2, '0')}`;
+            }
+            const projectBtn = l.is_project
+                ? `<button class="lesson-project-btn" onclick="event.stopPropagation(); goToProjectsTab();" title="This lesson has a project"><i class="fa-solid fa-diagram-project"></i> Project</button>`
+                : '';
+            return `<div class="lesson-row" data-lesson-id="${l.id}" data-course-id="${courseId}" data-duration="${mins}">
+                    <div class="lesson-icon" onclick="playLesson(${l.id})"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
+                    <span class="lesson-title" onclick="playLesson(${l.id})">${number}. ${escapeHtml(l.title)}</span>
+                    ${projectBtn}
+                    <span class="lesson-dur">${durStr}</span>
+                    <span class="complete-btn"><i class="fa-solid fa-check"></i></span>
+                </div>`;
+        }
+
+        // Bucket lessons by the section title the admin gave them. Lessons
+        // added before sections existed are stored with section_title '' (empty,
+        // not NULL), so an untitled bucket is normal rather than an edge case —
+        // it renders as a bare block with no header, i.e. exactly how a course
+        // that never used sections looked before.
+        function groupLessonsIntoSections(lessons) {
+            const groups = new Map();
+            lessons.forEach((l, i) => {
+                const title = (l.section_title || '').trim();
+                if (!groups.has(title)) {
+                    groups.set(title, {
+                        title,
+                        lessons: [],
+                        firstIndex: i,
+                        order: Number(l.section_order) || 0,
+                    });
+                }
+                groups.get(title).lessons.push(l);
+            });
+            // section_order decides where a section sits when the admin set it;
+            // otherwise sections keep the order their first lesson appears in.
+            return [...groups.values()]
+                .sort((a, b) => a.order - b.order || a.firstIndex - b.firstIndex);
+        }
+
         function renderCurriculum(lessons) {
             const container = document.getElementById('curriculumSections');
             if (!lessons || lessons.length === 0) {
@@ -4380,31 +4433,42 @@
                 return;
             }
 
-            // Render lessons directly — no sections
-            const lessonsHtml = lessons.map((l, idx) => {
-                const mins = l.duration_minutes || 0;
-                let durStr = '';
-                if (mins > 0) {
-                    const totalSecs = Math.round(mins * 60);
-                    const m = Math.floor(totalSecs / 60);
-                    const s = totalSecs % 60;
-                    durStr = `${m}:${s.toString().padStart(2, '0')}`;
+            const sections = groupLessonsIntoSections(lessons);
+            let lessonNumber = 0;   // continuous across the whole course
+            let sectionNumber = 0;  // counts named sections only
+
+            container.innerHTML = sections.map(sec => {
+                const rows = sec.lessons
+                    .map(l => curriculumLessonHtml(l, ++lessonNumber))
+                    .join('');
+
+                if (!sec.title) {
+                    return `<div class="section-block" style="border-radius:12px;overflow:hidden;">
+                <div class="section-lessons open">${rows}</div>
+            </div>`;
                 }
-                const projectBtn = l.is_project
-                    ? `<button class="lesson-project-btn" onclick="event.stopPropagation(); goToProjectsTab();" title="This lesson has a project"><i class="fa-solid fa-diagram-project"></i> Project</button>`
-                    : '';
-                return `<div class="lesson-row" data-lesson-id="${l.id}" data-course-id="${courseId}" data-duration="${mins}">
-                    <div class="lesson-icon" onclick="playLesson(${l.id})"><i class="fa-solid ${l.is_free_preview ? 'fa-unlock' : 'fa-play'}"></i></div>
-                    <span class="lesson-title" onclick="playLesson(${l.id})">${idx + 1}. ${escapeHtml(l.title)}</span>
-                    ${projectBtn}
-                    <span class="lesson-dur">${durStr}</span>
-                    <span class="complete-btn"><i class="fa-solid fa-check"></i></span>
-                </div>`;
+
+                sectionNumber++;
+                // sec-count starts at 0; loadCourseProgress() fills in the real
+                // completed/total for every block once progress comes back.
+                return `<div class="section-block">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <div class="sec-left">
+                        <i class="fa-solid fa-chevron-right sec-toggle" style="transform:rotate(90deg)"></i>
+                        <span class="sec-title" dir="auto">${sectionNumber}. ${escapeHtml(sec.title)}</span>
+                    </div>
+                    <div class="sec-right">
+                        <span class="sec-count">0 / ${sec.lessons.length}</span>
+                        <span class="sec-expand"><i class="fa-solid fa-minus"></i></span>
+                    </div>
+                </div>
+                <div class="section-lessons open">${rows}</div>
+            </div>`;
             }).join('');
 
-            container.innerHTML = `<div class="section-block" style="border-radius:12px;overflow:hidden;">
-                <div class="section-lessons open">${lessonsHtml}</div>
-            </div>`;
+            // Everything renders expanded, so the button's next job is to collapse.
+            const expandBtn = document.getElementById('expandAllBtn');
+            if (expandBtn) expandBtn.textContent = 'Collapse All';
         }
 
         // Switch to the Projects tab (used by project-lesson buttons)
@@ -4422,11 +4486,14 @@
 
         function toggleSection(header) {
             const lessons = header.nextElementSibling;
+            if (!lessons) return;
             const toggle = header.querySelector('.sec-toggle');
             const expandIcon = header.querySelector('.sec-expand i');
             lessons.classList.toggle('open');
             const isOpen = lessons.classList.contains('open');
-            toggle.style.transform = isOpen ? '' : 'rotate(180deg)';
+            // Same rotation the Expand All button applies, so the two controls
+            // can never leave the chevron pointing the wrong way.
+            if (toggle) toggle.style.transform = isOpen ? 'rotate(90deg)' : '';
             if (expandIcon) expandIcon.className = isOpen ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
         }
 
