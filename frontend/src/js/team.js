@@ -114,10 +114,15 @@ function initTabs() {
   // 🔒 Hide owner-only tabs from non-owner admins
   // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
   function applyTabVisibility() {
-    // 'users' (Members), 'payments', 'pending-requests' and 'analytics' are visible
-    // to admins too — contact details/delete are restricted per-row below and enforced
-    // server-side. The remaining content-management tabs stay owner-only.
-    const ownerOnlyTabs = ['live-sessions', 'guest-of-honors', 'courses', 'emails'];
+    // Non-owner admins get the people-facing tabs only: 'users' (Members, with
+    // contact details redacted server-side), 'students-progress', 'projects',
+    // 'reports' and 'feedbacks'. Everything money-, content- or analytics-shaped
+    // is owner-only, and every tab listed here is enforced server-side too —
+    // hiding the button is the convenience, not the lock.
+    const ownerOnlyTabs = [
+      'payments', 'pending-requests', 'coupons', 'analytics',
+      'live-sessions', 'guest-of-honors', 'courses', 'emails'
+    ];
     ownerOnlyTabs.forEach(tabId => {
       const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
       if (btn) {
@@ -236,8 +241,12 @@ async function loadTeamPage() {
     loadProjectsTab();
   });
 
-  loadManualPaymentStats(); // fetch badge count
-  loadBirthdayClaims();     // birthday gift claims count into the same badge
+  // Pending Requests is owner-only, so only owners fetch its badge counts —
+  // for an admin these would just be two guaranteed 403s on every page load.
+  if (currentUserIsOwner) {
+    loadManualPaymentStats(); // fetch badge count
+    loadBirthdayClaims();     // birthday gift claims count into the same badge
+  }
 }
 
 async function loadUsers() {

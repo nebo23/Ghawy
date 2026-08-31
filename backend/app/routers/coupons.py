@@ -128,13 +128,9 @@ def preview(
     return result
 
 
-def _require_admin(current_user: User):
-    if not (getattr(current_user, "is_admin", False) or getattr(current_user, "is_owner", False)):
-        raise HTTPException(status_code=403, detail="Admins only")
-
-
 def _require_owner(current_user: User):
-    """Reading the panel is an admin job; changing what a coupon costs is not.
+    """The whole Coupons tab is owner-only — reading a code's remaining count
+    is as much a revenue question as changing what it costs.
 
     Same shape of refusal as admin.py and guests.py so the dashboard's existing
     403 handling covers this too. Hiding the buttons in the frontend is
@@ -238,7 +234,7 @@ def admin_list(
     presenting them as used would have the panel report a coupon as finished
     that quietly refills half an hour later.
     """
-    _require_admin(current_user)
+    _require_owner(current_user)
 
     now = datetime.utcnow()
     coupons = db.query(Coupon).order_by(Coupon.id).all()

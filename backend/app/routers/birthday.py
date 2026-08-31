@@ -80,9 +80,11 @@ def _redirect(status_flag: str) -> RedirectResponse:
     )
 
 
-def _require_admin(current_user: User):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin only")
+def _require_owner(current_user: User):
+    """Birthday claims live in the owner-only Pending Requests tab, and
+    approving one extends a paid subscription — owners only."""
+    if not getattr(current_user, "is_owner", False):
+        raise HTTPException(status_code=403, detail="Owners only")
 
 
 # ─── 1) زرار الإيميل: تسجيل طلب pending ─────────────────────────────
@@ -141,7 +143,7 @@ def list_birthday_claims(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _require_admin(current_user)
+    _require_owner(current_user)
 
     q = db.query(BirthdayGiftClaim)
     if status and status != "all":
@@ -226,7 +228,7 @@ def approve_birthday_claim(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _require_admin(current_user)
+    _require_owner(current_user)
 
     claim = db.query(BirthdayGiftClaim).filter(BirthdayGiftClaim.id == claim_id).first()
     if not claim:
@@ -273,7 +275,7 @@ def reject_birthday_claim(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _require_admin(current_user)
+    _require_owner(current_user)
 
     claim = db.query(BirthdayGiftClaim).filter(BirthdayGiftClaim.id == claim_id).first()
     if not claim:

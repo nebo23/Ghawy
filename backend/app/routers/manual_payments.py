@@ -478,7 +478,9 @@ def check_request_status(
     the address off the token, is what /pay uses.
     """
     email = email.strip().lower()
-    is_staff = current_user.is_admin or getattr(current_user, "is_owner", False)
+    # Owners, not admins: the Pending Requests panel these belong to is
+    # owner-only, so asking after someone else's request is too.
+    is_staff = getattr(current_user, "is_owner", False)
     if email != (current_user.email or "").strip().lower() and not is_staff:
         raise HTTPException(status_code=403, detail="You can only check your own payment request")
 
@@ -505,7 +507,7 @@ def get_manual_payment_stats(
     db: Session = Depends(get_db),
 ):
     """Stats summary for dashboard badge."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     pending_count = db.query(sql_func.count(ManualPaymentRequest.id)).filter(
         ManualPaymentRequest.status == "pending"
@@ -537,7 +539,7 @@ def list_payment_requests(
     db: Session = Depends(get_db),
 ):
     """List all payment requests (admin only)."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     query = db.query(ManualPaymentRequest)
 
@@ -582,7 +584,7 @@ def get_payment_request(
     db: Session = Depends(get_db),
 ):
     """Get single request detail (admin only)."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -598,7 +600,7 @@ def approve_request(
     db: Session = Depends(get_db),
 ):
     """Approve a payment request and activate user account."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -687,7 +689,7 @@ def reject_request(
     db: Session = Depends(get_db),
 ):
     """Reject a payment request with a reason."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:
@@ -730,7 +732,7 @@ def resend_invite(
     db: Session = Depends(get_db),
 ):
     """Resend activation notification."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Pending Requests)
 
     req = db.query(ManualPaymentRequest).filter(ManualPaymentRequest.id == request_id).first()
     if not req:

@@ -42,6 +42,12 @@ async function loadProfile() {
     const res = await apiFetch('/profile/me');
     if (!res.ok) return;
     const u = await res.json();
+
+    // Course management is the owner-only Courses tab. The inline guard in the
+    // page head can only read the login cache, which has no is_owner — this is
+    // the check that actually holds. Every write below is owner-gated too.
+    if (!u.is_owner) { window.location.replace('/dashboard.html'); return; }
+
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setTxt('sidebarName', u.full_name);
     setTxt('topbarName', u.full_name);

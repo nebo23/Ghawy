@@ -67,7 +67,11 @@
             if (!t) { window.location.replace("/login.html"); return; }
             try {
                 var u = JSON.parse(localStorage.getItem("user") || "{}");
-                if (!u.is_admin) { window.location.replace("/dashboard.html"); return; }
+                // Bounce plain members instantly. The cached user comes from
+                // the login response, which carries no is_admin/is_owner, so
+                // only an explicit `false` is trusted here — the authoritative
+                // owner check runs in loadProfile() against /profile/me.
+                if (u.is_admin === false) { window.location.replace("/dashboard.html"); return; }
             } catch (e) { window.location.replace("/login.html"); }
         })();
     </script>
@@ -369,7 +373,7 @@
 
         <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open') })</script>
         <script src="src/js/utils.js?v=20260828a"></script>
-        <script src="src/js/admin-courses.js"></script>
+        <script src="src/js/admin-courses.js?v=20260831a"></script>
         <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
         <script src="src/js/dashboard-new.js?v=20260828a"></script>
 </body>

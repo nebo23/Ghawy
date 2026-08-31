@@ -628,7 +628,7 @@ def list_payments(
     db: Session = Depends(get_db),
 ):
     """List payments with pagination, search and filters."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -687,7 +687,7 @@ def payment_stats(
     db: Session = Depends(get_db),
 ):
     """Aggregate payment statistics."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -743,7 +743,7 @@ def export_payments_csv(
     db: Session = Depends(get_db),
 ):
     """Export filtered payments as CSV."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -798,7 +798,7 @@ def retry_payment(
     db: Session = Depends(get_db),
 ):
     """Retry a failed payment."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -819,7 +819,7 @@ def refund_payment(
     db: Session = Depends(get_db),
 ):
     """Mark a paid payment as refunded."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -858,7 +858,7 @@ def analytics_kpis(
     db: Session = Depends(get_db),
 ):
     """KPI metrics for the analytics dashboard."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     now = datetime.utcnow()
     start = _parse_range(range)
@@ -907,7 +907,7 @@ def members_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily new member signups for the given range."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -937,7 +937,7 @@ def revenue_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily revenue from confirmed payments for the given range."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -1005,7 +1005,7 @@ def revenue_by_month(
     yearly plans is worth several months of monthly ones), and new members vs
     renewals (growth vs retention).
     """
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     payments = db.query(Payment).filter(
         Payment.status == PaymentStatus.CONFIRMED
@@ -1099,7 +1099,7 @@ def subscription_breakdown(
     db: Session = Depends(get_db),
 ):
     """Distribution of current subscription types across members (monthly / yearly / none)."""
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     from app.models import ManualPaymentRequest
 
@@ -1152,7 +1152,7 @@ def payment_method_breakdown(
     `payments` counts transactions and `members` counts distinct people, and
     they differ by exactly the renewals.
     """
-    require_admin(current_user)  # 🔒 admins + owners
+    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
 
     counts = {RAIL_KASHIER: 0, RAIL_INSTAPAY: 0, RAIL_VODAFONE: 0}
     members = {RAIL_KASHIER: set(), RAIL_INSTAPAY: set(), RAIL_VODAFONE: set()}
