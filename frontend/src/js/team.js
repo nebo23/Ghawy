@@ -696,11 +696,18 @@ function roleLabelFor(row) {
 
 function roleCellHtml(user) {
   const key = user.team_role;
+  // ترتيب الحالات مقصود. "Member" معناها مفيش أي وصول للوحة؛ الأدمن اللي
+  // لسه محدش ركّبله دور مش كده — هو داخل اللوحة وشايف تابات بالفعل، فلو
+  // كتبناها عليه الجدول بيكدب. عشان كده حالة تالتة "No role": نفس اللي
+  // العميل طلبه (بادج Admin كرُتبة اتشالت) من غير ما نقول إن حد مالوش
+  // وصول وهو عنده، ومن غير ما نسيب الـ owner يفكّر إن الصف ده متظبط.
   const badge = user.is_owner
     ? `<span class="role-badge owner" title="Owner"><i data-lucide="crown" style="width:13px;height:13px;"></i> Owner</span>`
     : key
       ? `<span class="rc-role-badge ${escapeHtml(ROLE_COLORS[key] || '')}">${escapeHtml(roleLabelFor(user))}</span>`
-      : `<span class="role-badge member">Member</span>`;
+      : user.is_admin
+        ? `<span class="role-badge no-role" title="Has dashboard access but no named role yet">No role</span>`
+        : `<span class="role-badge member">Member</span>`;
 
   // الأونر مالوش زرار: دوره جاي من الملكية، والسيرفر بيرفض تركيب دور عليه.
   const btn = (currentUserIsOwner && !user.is_owner)
