@@ -1292,18 +1292,14 @@ def payment_method_breakdown(
 def _effective_lesson_totals(db: Session, courses):
     """Effective lesson count per course — mirrors the student-facing rule in
     courses.get_course_progress: count only 'ready' lessons, fall back to all
-    lessons when the course has none ready."""
-    all_counts = dict(
-        db.query(Lesson.course_id, sql_func.count(Lesson.id))
-        .group_by(Lesson.course_id).all()
-    )
-    ready_counts = dict(
-        db.query(Lesson.course_id, sql_func.count(Lesson.id))
-        .filter(Lesson.video_status == "ready")
-        .group_by(Lesson.course_id).all()
-    )
-    totals = {c.id: (ready_counts.get(c.id) or all_counts.get(c.id, 0)) for c in courses}
-    return totals, ready_counts
+    lessons when the course has none ready.
+
+    The rule itself now lives in progress_service.effective_lesson_totals, so
+    this dashboard and the members' own progress endpoints can never drift into
+    quoting a student two different percentages for the same course.
+    """
+    from app.services.progress_service import effective_lesson_totals
+    return effective_lesson_totals(db, [c.id for c in courses])
 
 
 @router.get("/students-progress")

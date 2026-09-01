@@ -216,3 +216,28 @@ def get_top_students_for_course(course_id: int, current_user_id: int, db: Sessio
         "top_students": result,
         "total_lessons": total_lessons
     }
+
+
+def effective_lesson_totals(db: Session, course_ids):
+    """كام درس بيتحسب في كل كورس — القاعدة الوحيدة اللي كل حاجة بتقيس بيها.
+
+    القاعدة: الدروس الـ 'ready' بس، ولو الكورس مفيهوش ولا درس ready نحسب كل
+    دروسه. دي بالظبط قاعدة courses.get_course_progress، وكانت متكتوبة تاني مرة
+    في admin.students_progress — نسختين لنفس الرقم يعني نسبة الطالب في صفحته
+    ممكن تختلف عن نسبته في لوحة الفريق. بقت هنا عشان تفضل جملة واحدة.
+
+    بيرجّع (totals, ready_counts): `totals` هو المقام لكل كورس، و`ready_counts`
+    بتقول أي كورس اتحسب بالـ ready عشان اللي بيحسب المكتمل يستخدم نفس الفرع.
+    استعلامين GROUP BY وخلاص — مفيش استعلام لكل كورس.
+    """
+    all_counts = dict(
+        db.query(Lesson.course_id, func.count(Lesson.id))
+        .group_by(Lesson.course_id).all()
+    )
+    ready_counts = dict(
+        db.query(Lesson.course_id, func.count(Lesson.id))
+        .filter(Lesson.video_status == "ready")
+        .group_by(Lesson.course_id).all()
+    )
+    totals = {cid: (ready_counts.get(cid) or all_counts.get(cid, 0)) for cid in course_ids}
+    return totals, ready_counts

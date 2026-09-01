@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql import func as sql_func
+from starlette.concurrency import run_in_threadpool
 from typing import List, Optional
-from app.database import get_db
-from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
+from app.database import get_db, SessionLocal
+from app.models import (
+    User, Course, Lesson, UserProgress, Certificate, CourseReview,
+    LessonPlaybackGrant,
+)
 from app.routers.users import get_current_user, get_current_user_optional, get_current_active_member, get_current_admin_user, require_perm
 from app.schemas import (
     CourseOut, CourseDetailOut, CourseCreate, CourseUpdate, CourseReorder,
@@ -11,6 +16,8 @@ from app.schemas import (
     UserCourseProgressOut, CourseProgressUpdate,
 )
 import logging
+import threading
+import time
 import uuid
 import os
 import json
@@ -144,6 +151,256 @@ def get_courses(
         .limit(limit)\
         .offset(offset)\
         .all()
+
+# ─── Member: progress across every course, in ONE request ────
+#
+# Both endpoints below are registered BEFORE "/{course_id}" on purpose: a path
+# that starts with a literal segment has to be declared before the wildcard
+# that could swallow it, or "/courses/stats" becomes course_id="stats".
+
+@router.get("/progress/summary")
+def get_progress_summary(
+    current_user: User = Depends(get_current_active_member),
+    db: Session = Depends(get_db),
+):
+    """The caller's progress in every course, in one round trip.
+
+    The members' courses page used to call GET /courses/{id}/progress once per
+    course inside a loop — N+1 requests before it could so much as sort the
+    cards by progress, and every one of them a session checkout. This is the
+    same numbers from seven grouped queries — a fixed cost that does not grow
+    with the number of courses.
+
+    The percentage is computed by exactly the rule get_course_progress uses
+    (progress_service.effective_lesson_totals): count only 'ready' lessons, and
+    fall back to every lesson for a course that has none ready. Anything else
+    and a member would read one number on the card and a different one after
+    opening the course.
+
+    Every course is returned, not only the published ones: a course can be
+    unpublished while a member still holds progress in it, and the caller can
+    only ever see their own rows here.
+    """
+    from app.services.progress_service import effective_lesson_totals
+
+    course_ids = [cid for (cid,) in db.query(Course.id).all()]
+    totals, ready_counts = effective_lesson_totals(db, course_ids)
+
+    # Completed lessons per course for THIS member — the ready-only tally and
+    # the all-lessons tally, one grouped query each. Which one a course uses is
+    # the same branch effective_lesson_totals took for its denominator.
+    ready_done = dict(
+        db.query(UserProgress.course_id, sql_func.count(UserProgress.id))
+        .join(Lesson, Lesson.id == UserProgress.lesson_id)
+        .filter(UserProgress.user_id == current_user.id, Lesson.video_status == "ready")
+        .group_by(UserProgress.course_id).all()
+    )
+    all_done = dict(
+        db.query(UserProgress.course_id, sql_func.count(UserProgress.id))
+        .filter(UserProgress.user_id == current_user.id)
+        .group_by(UserProgress.course_id).all()
+    )
+    # "Last opened this course". NOT from user_course_progress.last_accessed,
+    # which is the column that sounds exactly right and is empty: nothing in
+    # this codebase has ever inserted a user_course_progress row (grep it), so
+    # reading it would hand every member a null. The two tables that do record
+    # the member touching a course are lesson_playback_grants (they opened a
+    # video) and user_progress (they finished a lesson); the later of the two
+    # is the answer.
+    played = dict(
+        db.query(Lesson.course_id, sql_func.max(LessonPlaybackGrant.last_played_at))
+        .select_from(LessonPlaybackGrant)
+        .join(Lesson, Lesson.id == LessonPlaybackGrant.lesson_id)
+        .filter(LessonPlaybackGrant.user_id == current_user.id)
+        .group_by(Lesson.course_id).all()
+    )
+    finished = dict(
+        db.query(UserProgress.course_id, sql_func.max(UserProgress.completed_at))
+        .filter(UserProgress.user_id == current_user.id)
+        .group_by(UserProgress.course_id).all()
+    )
+
+    out = []
+    for cid in course_ids:
+        total = totals.get(cid, 0)
+        done = ready_done.get(cid, 0) if ready_counts.get(cid) else all_done.get(cid, 0)
+        percentage = round((done / total) * 100) if total > 0 else 0
+        out.append({
+            "course_id": cid,
+            "completed_lessons": done,
+            "total_lessons": total,
+            "percentage": percentage,
+            "is_completed": percentage == 100,
+            "last_accessed": max(
+                [t for t in (played.get(cid), finished.get(cid)) if t is not None],
+                default=None,
+            ),
+        })
+    return out
+
+
+# ─── Member: aggregate course statistics ─────────────────────
+#
+# Cached in-process for a minute. These numbers drive the "Most watched" and
+# "Most engaged" sorts on the courses page — nobody is watching them tick, and
+# an uncached endpoint that runs five GROUP BYs on every page load is the shape
+# of request that took the site down on 2026-07-21. Same design as
+# stats.public_stats: async handler, single-flight refresh in a worker thread
+# with its own short-lived session, stale value served to everyone else.
+
+COURSE_STATS_TTL_SECONDS = 60
+
+_stats_lock = threading.Lock()
+_course_stats = None        # last computed list (None until the first refresh)
+_course_stats_at = 0.0      # time.monotonic() of that computation
+_course_stats_refreshing = False
+
+
+def _compute_course_stats() -> List[dict]:
+    """Runs in a worker thread. Own session, closed immediately.
+
+    engagement_score answers "how much does the average learner actually do
+    with this course", on a 0..1 scale, from three normalised parts:
+
+        0.5 * depth       lessons_completed / learners / total_lessons
+                          — the share of the course the average learner has
+                            finished
+        0.3 * completion  completions / learners
+                          — the share of learners who reached the end
+        0.2 * rating      avg_rating / 5
+
+    Each part is a ratio in 0..1, so the weights mean what they say. The raw
+    lessons-per-learner figure is deliberately divided by the course length:
+    left unnormalised, a long course would outrank a short, loved, finished one
+    on lesson count alone. A course nobody has opened scores 0 rather than
+    dividing by zero.
+
+    The formula lives here and only here so "most engaged" means one thing —
+    the frontend sorts on the number, it does not compute it.
+    """
+    db = SessionLocal()
+    try:
+        courses = db.query(Course).filter(Course.is_published == True).all()  # noqa: E712
+        course_ids = [c.id for c in courses]
+        if not course_ids:
+            return []
+
+        from app.services.progress_service import effective_lesson_totals
+        totals, _ready = effective_lesson_totals(db, course_ids)
+
+        # `learners` = distinct members who have actually touched the course.
+        #
+        # The obvious source is user_course_progress — one row per (member,
+        # course), with a last_accessed on it. It is empty. Nothing in this
+        # codebase writes to that table; it is read in three places and
+        # populated in none, so sourcing "Most watched" from it would have
+        # ranked every course zero and the sort would have looked broken rather
+        # than absent.
+        #
+        # So: opened a lesson's video (lesson_playback_grants) OR completed a
+        # lesson (user_progress). UNION dedupes a member who did both, and the
+        # count is one grouped pass over the result.
+        watched = (
+            db.query(UserProgress.course_id.label("cid"),
+                     UserProgress.user_id.label("uid"))
+            .union(
+                db.query(Lesson.course_id.label("cid"),
+                         LessonPlaybackGrant.user_id.label("uid"))
+                .select_from(LessonPlaybackGrant)
+                .join(Lesson, Lesson.id == LessonPlaybackGrant.lesson_id)
+            )
+            .subquery()
+        )
+        learners = dict(
+            db.query(watched.c.cid, sql_func.count(sql_func.distinct(watched.c.uid)))
+            .group_by(watched.c.cid).all()
+        )
+        lessons_done = dict(
+            db.query(UserProgress.course_id, sql_func.count(UserProgress.id))
+            .group_by(UserProgress.course_id).all()
+        )
+        completions = dict(
+            db.query(Certificate.course_id, sql_func.count(Certificate.id))
+            .group_by(Certificate.course_id).all()
+        )
+        reviews = {
+            cid: (count, float(avg or 0))
+            for cid, count, avg in db.query(
+                CourseReview.course_id,
+                sql_func.count(CourseReview.id),
+                sql_func.avg(CourseReview.rating),
+            ).group_by(CourseReview.course_id).all()
+        }
+
+        rows = []
+        for cid in course_ids:
+            n_learners = learners.get(cid, 0)
+            n_lessons = lessons_done.get(cid, 0)
+            n_done = completions.get(cid, 0)
+            n_reviews, avg_rating = reviews.get(cid, (0, 0.0))
+            total_lessons = totals.get(cid, 0)
+
+            if n_learners and total_lessons:
+                depth = min(1.0, (n_lessons / n_learners) / total_lessons)
+                completion_rate = min(1.0, n_done / n_learners)
+            else:
+                depth = completion_rate = 0.0
+            score = 0.5 * depth + 0.3 * completion_rate + 0.2 * (avg_rating / 5.0)
+
+            rows.append({
+                "course_id": cid,
+                "learners": n_learners,
+                "completions": n_done,
+                "lessons_completed": n_lessons,
+                "reviews_count": n_reviews,
+                "avg_rating": round(avg_rating, 2),
+                "engagement_score": round(score, 4),
+            })
+        return rows
+    finally:
+        db.close()
+
+
+@router.get("/stats")
+async def get_course_stats(current_user: User = Depends(get_current_active_member)):
+    """Aggregate numbers per published course — counts only, never a name.
+
+    Members only, because it describes how the community uses the library. It
+    carries nothing personal: no user ids, no names, no per-member rows — just
+    how many people, how many lessons, how many certificates, and the average
+    rating, all of them sums over the whole membership.
+    """
+    global _course_stats, _course_stats_at, _course_stats_refreshing
+
+    with _stats_lock:
+        cached = _course_stats
+        fresh = cached is not None and (time.monotonic() - _course_stats_at) < COURSE_STATS_TTL_SECONDS
+        should_refresh = not fresh and not _course_stats_refreshing
+        if should_refresh:
+            _course_stats_refreshing = True
+
+    if not should_refresh:
+        # Fresh, or somebody else is already refreshing — serve what we have.
+        # `cached` is None only in the first concurrent burst after boot, and
+        # the page treats a missing row as "no stats yet" rather than zero.
+        return cached if cached is not None else []
+
+    try:
+        rows = await run_in_threadpool(_compute_course_stats)
+    except Exception:
+        logger.exception("Course stats refresh failed")
+        with _stats_lock:
+            _course_stats_refreshing = False
+        # Never fail the courses page over a sort key.
+        return cached if cached is not None else []
+
+    with _stats_lock:
+        _course_stats = rows
+        _course_stats_at = time.monotonic()
+        _course_stats_refreshing = False
+
+    return rows
+
 
 @router.get("/{course_id}", response_model=None)
 def get_course_detail(
