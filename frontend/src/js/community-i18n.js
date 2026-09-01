@@ -476,7 +476,6 @@
         'New tools': 'أدوات جديدة',
         'New models': 'نماذج جديدة',
         'Discussions': 'النقاشات',
-        'All': 'الكل',
         'News': 'أخبار',
         'Tools': 'أدوات',
         'Models': 'نماذج',
@@ -683,7 +682,19 @@
         'Must be an image file': 'لازم يكون ملف صورة',
         'Must be a PDF file': 'لازم يكون ملف PDF',
         'Failed to copy text': 'فشل نسخ النص',
-        'API Error': 'خطأ في الاتصال بالسيرفر'
+        'API Error': 'خطأ في الاتصال بالسيرفر',
+
+        /* ── Course card ──
+           The course TITLES, the track names and the instructor names are not
+           here on purpose: those exist in both languages in catalog-data.js and
+           the card renders them in the reader's language directly. Only the
+           chrome around them goes through this dictionary.
+
+           'Lessons' is NOT repeated here — it is already above, and this
+           object is a plain literal: a second entry does not add a
+           translation, it REPLACES the first one for every page in the
+           community. Reach for the existing wording before adding a key. */
+        'Duration': 'المدة'
     };
 
     /* ─── Interpolated patterns (dynamic counters, relative time, …) ── */
@@ -694,6 +705,7 @@
         [/^(\d+)\s*(?:seconds?|s) ago$/, 'منذ $1 ث'],
         [/^just now$/i, 'دلوقتي حالاً'],
         [/^(\d+) [Ll]essons?$/, '$1 درس'],
+        [/^(\d+)% complete$/i, 'مكتمل $1%'],
         [/^(\d+)% Complete$/, 'مكتمل $1%'],
         [/^Completed (\d+) of (\d+) lessons$/, 'أكملت $1 من $2 درس'],
         [/^(\d+) posts?$/, '$1 منشور'],

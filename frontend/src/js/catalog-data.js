@@ -551,8 +551,22 @@
         //
         // No `image` yet either — `courseMediaHTML` draws the track's icon on
         // its family gradient until the client sends the thumbnails.
+        // `memberCourseId` — NOT `courseId`.
+        //
+        // These two courses are published in the platform (rows 14 and 15), so
+        // the members' area lists them and needs to know who teaches them and
+        // which track they are in. The public site must NOT learn that: a
+        // course here becomes "released" the moment it has a `courseId`,
+        // because load() then merges the live runtime over it and isSoon()
+        // stops being true — the home page, /courses and the track totals would
+        // all flip to "available" without anybody asking for it.
+        //
+        // So the join key for the members' area is a field of its own, read
+        // only by course-card.js. Giving one of these a real `courseId` stays
+        // the deliberate act that releases it on the public site.
         {
             slug: 'ai-thumbnails',
+            memberCourseId: 15,
             title: { ar: 'الثامبنيلز بالذكاء الاصطناعي', en: 'AI Thumbnails' },
             keywords: ['ثامبنيل', 'ثامبنيلز', 'thumbnail', 'thumbnails', 'يوتيوب', 'youtube', 'تصميم', 'design'],
             image: null,
@@ -561,6 +575,7 @@
         },
         {
             slug: 'machine-learning',
+            memberCourseId: 14,
             title: { ar: 'Machine Learning', en: 'Machine Learning' },
             keywords: ['machine learning', 'ml', 'ماشين ليرنينج', 'تعلم الالة', 'تعلم الآلة', 'موديل', 'models', 'نماذج', 'داتا', 'data'],
             image: null,

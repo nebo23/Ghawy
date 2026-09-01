@@ -268,6 +268,17 @@ async function loadStatsCards() {
 // 5. COURSES GRID
 // ═══════════════════════════════════════════════════════
 
+// Last list handed to renderCourses. The card takes the course title, its track
+// and its instructor from the catalog in the reader's language, so a language
+// switch has to redraw them — community-i18n only rewrites text it has a
+// dictionary entry for, and these deliberately have none.
+let _dashCourses = [];
+if (window.GhawyCourseCard && window.GhawyCourseCard.onLangChange) {
+    window.GhawyCourseCard.onLangChange(() => {
+        if (_dashCourses.length) renderCourses(_dashCourses);
+    });
+}
+
 function renderCourses(courses) {
     // Only run on the dashboard page — the member courses page (dashboard-courses)
     // has its own loader (courses.js) and must not be double-rendered.
@@ -280,7 +291,9 @@ function renderCourses(courses) {
     const grid = document.getElementById('coursesGrid');
     if (!grid) return;
 
-    if (!courses || courses.length === 0) {
+    _dashCourses = courses || [];
+
+    if (!_dashCourses.length) {
         grid.innerHTML = `<div class="empty-state-new" style="grid-column:1/-1">
             <i class="fa-solid fa-book-open"></i>
             <p>No courses enrolled yet. <a href="dashboard-courses.html" style="color:var(--accent-gold)">Browse courses →</a></p>
@@ -288,45 +301,21 @@ function renderCourses(courses) {
         return;
     }
 
-    grid.innerHTML = courses.slice(0, 4).map(c => {
-        const pct = Math.round(c.percent || 0);
-        const thumb = c.thumbnail_url
-            ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url)
-            : '';
+    // The card itself is drawn by src/js/course-card.js — the same renderer the
+    // courses page uses. Before it existed the two pages each had their own copy
+    // of this markup and had already drifted apart; whichever one you restyled,
+    // the other kept the old card.
+    const card = window.GhawyCourseCard;
+    if (!card) return;   // script missing: leave the skeleton rather than half a card
 
-        let status = 'not-started';
-        let statusLabel = 'Not Started';
-        if (pct >= 100) { status = 'completed'; statusLabel = 'Completed'; }
-        else if (pct > 0) { status = 'in-progress'; statusLabel = 'In Progress'; }
-
-        const badgeHtml = pct === 0
-            ? ``
-            : `<div class="course-pct-badge">${pct}%</div>`;
-
-        return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'" role="button" tabindex="0">
-            <div class="course-thumb">
-                ${thumb ? `<img src="${thumb}" alt="${esc(c.title)}" loading="lazy"/>` : ''}
-                <div class="course-thumb-overlay"></div>
-                ${badgeHtml}
-            </div>
-            <div class="course-body">
-                <h3>${esc(c.title)}</h3>
-                <div class="course-meta-row" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
-                    <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons || 0} Lessons</span>
-                    ${c.course_time ? `<span><i class="fa-regular fa-clock" style="margin-right:6px; color:var(--gold);"></i>${c.course_time}</span>` : ''}
-                </div>
-                <div class="course-prog-wrap">
-                    <div class="course-prog-bg">
-                        <div class="course-prog-fill ${status}" style="width:${pct}%"></div>
-                    </div>
-                </div>
-                <div class="course-status-row">
-                    <span class="status-pill ${status}">${statusLabel}</span>
-                    <span style="color:var(--txt-muted);font-size:.65rem;">${pct}%</span>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
+    grid.innerHTML = _dashCourses.slice(0, 4).map(c => card.html({
+        id: c.id,
+        title: c.title,
+        thumbnail_url: c.thumbnail_url,
+        total_lessons: c.total_lessons,
+        course_time: c.course_time,
+        pct: Math.round(c.percent || 0),
+    })).join('');
 }
 
 // ═══════════════════════════════════════════════════════

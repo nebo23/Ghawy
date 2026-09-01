@@ -68,100 +68,54 @@ async function loadProfile() {
     } catch (e) { console.error(e); }
 }
 
-// ═══ COURSE ICONS ═══
-const courseIcons = {
-    'automation': '⚡', 'prompt': '✍️', 'aaa': '🏢', 'foundation': '🧠',
-    'ai': '🤖', 'agent': '🤖', 'default': '📚'
-};
-function getCourseIcon(title) {
-    const t = title.toLowerCase();
-    for (const [key, icon] of Object.entries(courseIcons)) {
-        if (t.includes(key)) return icon;
-    }
-    return courseIcons.default;
-}
-
 // ═══ LOAD COURSES ═══
 async function loadCourses() {
+    const grid = document.getElementById('coursesGrid');
+    const card = window.GhawyCourseCard;
+    if (!grid || !card) return;
+    grid.innerHTML = card.skeleton(8);
+
     try {
         const res = await apiFetch('/courses');
         const courses = await res.json();
-        const grid = document.getElementById('coursesGrid');
 
         if (!courses || courses.length === 0) {
             grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-graduation-cap"></i><p>No courses available yet</p></div>';
             return;
         }
 
-        grid.innerHTML = courses.map(c => {
-            const thumb = c.thumbnail_url
-                ? (c.thumbnail_url.startsWith('/') ? API + c.thumbnail_url : c.thumbnail_url)
-                : '';
+        // One request for every course's progress instead of one request per
+        // course inside a loop — see GET /courses/progress/summary. Progress is
+        // enrichment: if it fails the cards still render, with empty bars.
+        let progress = [];
+        try {
+            const pRes = await apiFetch('/courses/progress/summary');
+            if (pRes.ok) progress = await pRes.json();
+        } catch (e) { /* bars stay at zero */ }
+        const pct = new Map(progress.map(p => [p.course_id, Math.round(p.percentage || 0)]));
 
-            let status = 'not-started';
-            let statusLabel = 'Not Started';
+        _courses = courses.map(c => ({
+            id: c.id,
+            title: c.title,
+            thumbnail_url: c.thumbnail_url,
+            total_lessons: c.total_lessons,
+            course_time: c.course_time,
+            pct: pct.get(c.id) || 0,
+        }));
+        grid.innerHTML = _courses.map(c => card.html(c)).join('');
+    } catch (e) {
+        console.error('Course load error:', e);
+    }
+}
 
-            return `<div class="course-card" onclick="window.location.href='course-detail.html?id=${c.id}'" role="button" tabindex="0">
-                <div class="course-thumb-wrap">
-                    ${thumb ? `<img src="${thumb}" loading="lazy" decoding="async" alt="${window.escapeHtml ? window.escapeHtml(c.title) : c.title}" class="course-thumb-img" onerror="this.style.display='none';"/>` : ''}
-                    <div class="course-pct-badge" style="display:none">0%</div>
-                </div>
-                <div class="course-body">
-                    <h3>${window.escapeHtml ? window.escapeHtml(c.title) : c.title}</h3>
-                    <div class="course-meta-row" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
-                        <span><i class="fa-solid fa-book" style="margin-right:6px; color:var(--gold);"></i>${c.total_lessons || 0} Lessons</span>
-                        ${c.course_time ? `<span><i class="fa-regular fa-clock" style="margin-right:6px; color:var(--gold);"></i>${c.course_time}</span>` : ''}
-                    </div>
-                    <div class="course-prog-wrap">
-                        <div class="course-prog-bg">
-                            <div class="course-prog-fill" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="course-footer" style="display:none">
-                    <span class="course-status ${status}">${statusLabel}</span>
-                    <span class="course-action">
-                        Start Course <i class="fa-solid fa-play"></i>
-                    </span>
-                </div>
-            </div>`;
-        }).join('');
-
-        // Load progress for each course
-        for (const c of courses) {
-            try {
-                const pRes = await apiFetch(`/courses/${c.id}/progress`);
-                const prog = await pRes.json();
-                const pct = Math.round(prog.percentage || 0);
-                const card = grid.querySelector(`[onclick*="id=${c.id}"]`);
-                if (card) {
-                    const fillEl = card.querySelector('.course-prog-fill');
-                    fillEl.style.width = pct + '%';
-                    fillEl.classList.remove('in-progress', 'completed', 'not-started');
-                    fillEl.classList.add(pct >= 100 ? 'completed' : (pct > 0 ? 'in-progress' : 'not-started'));
-
-                    const badge = card.querySelector('.course-pct-badge');
-                    if (pct > 0) {
-                        badge.style.display = 'block';
-                        badge.textContent = pct + '%';
-                        
-                        const statusEl = card.querySelector('.course-status');
-                        const actionEl = card.querySelector('.course-action');
-                        
-                        if (pct >= 100) {
-                            statusEl.className = 'course-status completed';
-                            statusEl.textContent = 'Completed';
-                            actionEl.innerHTML = 'Review <i class="fa-solid fa-arrow-right"></i>';
-                        } else {
-                            statusEl.className = 'course-status in-progress';
-                            statusEl.textContent = 'In Progress';
-                            actionEl.innerHTML = 'Continue <i class="fa-solid fa-arrow-right"></i>';
-                        }
-                    }
-                }
-            } catch (e) { /* skip */ }
-        }
-    } catch (e) { console.error('Course load error:', e); }
+// The card takes the course title, its track and its instructor from the
+// catalog in the reader's language, so a language switch has to redraw them.
+let _courses = [];
+if (window.GhawyCourseCard) {
+    window.GhawyCourseCard.onLangChange(() => {
+        const grid = document.getElementById('coursesGrid');
+        if (grid && _courses.length) grid.innerHTML = _courses.map(c => window.GhawyCourseCard.html(c)).join('');
+    });
 }
 
 // ═══ HAMBURGER ═══
