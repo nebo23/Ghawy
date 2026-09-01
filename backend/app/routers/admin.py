@@ -23,7 +23,7 @@ from app.routers.users import get_current_user
 from app.services.permissions import (
     PERMISSIONS, GROUP_LABELS, DEFAULT_ADMIN_PERMISSIONS, TEAM_ROLES,
     permissions_for, has_permission, require_permission,
-    normalize_permissions, dump_permissions, role_preset,
+    normalize_permissions, dump_permissions, role_preset, role_labels,
 )
 from app.services.name_utils import split_full_name, clean_display_name
 from app.services.subscription_service import extend_subscription
@@ -159,6 +159,7 @@ def list_users(
             "social_media_url": u.social_media_url if viewer_sees_contacts else None,
             "is_owner": getattr(u, 'is_owner', False),
             "team_role": getattr(u, 'team_role', None),
+            **{"team_role_" + k: v for k, v in role_labels(getattr(u, 'team_role', None)).items()},
             "winback_sent_at": u.winback_email_sent_at.isoformat() if u.winback_email_sent_at else None,
             # Subscription/package fields for Team Dashboard filtering & sorting
             "has_paid": u.id in paid_map,
@@ -406,6 +407,7 @@ def _staff_row(u: User) -> dict:
         "is_owner": bool(getattr(u, "is_owner", False)),
         "is_admin": bool(u.is_admin),
         "team_role": getattr(u, "team_role", None),
+        **{"team_role_" + k: v for k, v in role_labels(getattr(u, "team_role", None)).items()},
         # الـ owner بياخد الكتالوج كله، والأدمن اللي لسه محدش عدّله بياخد الديفولت
         "permissions": permissions_for(u),
         "is_default": (not getattr(u, "is_owner", False)) and getattr(u, "staff_permissions", None) in (None, ""),

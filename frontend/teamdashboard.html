@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260901b" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260902a" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -2341,6 +2341,34 @@
     </div>
   </div>
 
+  <!-- Change Role Modal — owner-only; behaviour in src/js/team.js -->
+  <div class="modal-overlay-team" id="role-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>🛡️ الدور في الفريق</h3><button class="modal-close-team" onclick="closeModal('role-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;margin:0 0 4px;">بتغيّر دور: <strong id="role-user-name" style="color:#3f8ff9;"></strong></p>
+        <p style="color:#777;font-size:12.5px;line-height:1.8;margin:0 0 14px;">
+          الدور بيفتح تابات لوحة الفريق اللي جواه. بعد ما تحطه تقدر تفتح وتقفل
+          أي صلاحية للشخص ده لوحده من تاب الصلاحيات، والدور هيفضل زي ما هو.
+        </p>
+        <div class="role-options" id="role-options"></div>
+        <label class="role-reset-row">
+          <input type="checkbox" id="role-reset" />
+          <span>ارجّع الصلاحيات لديفولت الدور ده (هيمسح أي ظبط يدوي)</span>
+        </label>
+      </div>
+      <div class="modal-footer-team" style="justify-content:space-between;">
+        <button class="role-owner-btn" onclick="promoteToOwner()" title="Owners see every tab and hand out roles">👑 اعمله owner</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-cancel-team" onclick="closeModal('role-modal')">إلغاء</button>
+          <button class="btn-confirm-team" id="role-save-btn" onclick="submitRole()">احفظ الدور</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Rejection Modal -->
   <div class="modal-overlay-team" id="reject-modal" style="display:none">
     <div class="modal-box-team small">
@@ -2802,7 +2830,7 @@
   <script src="src/js/utils.js?v=20260828a"></script>
     <script src="src/js/dashboard-new.js?v=20260902a"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
-  <script src="src/js/team.js?v=20260901b"></script>
+  <script src="src/js/team.js?v=20260902a"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

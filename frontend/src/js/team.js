@@ -357,32 +357,7 @@ function renderTable() {
         </label>
         ${user.winback_sent_at ? `<div style="font-size:10px;color:#f59e0b;margin-top:3px;white-space:nowrap;" title="Winback email sent ${formatDate(user.winback_sent_at)}">💌 Emailed</div>` : ''}
       </td>
-      <td>
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
-          <span class="role-badge ${user.is_owner ? 'owner' : user.is_admin ? 'admin' : 'member'}"
-            style="cursor:default;display:inline-flex;align-items:center;gap:4px;">
-            ${user.is_owner
-              ? '<i data-lucide="crown" style="width:14px;height:14px;margin-right:4px;"></i> Owner'
-              : user.is_admin
-                ? '<i data-lucide="shield-check" style="width:14px;height:14px;margin-right:4px;"></i> Admin'
-                : '<i data-lucide="user" style="width:14px;height:14px;margin-right:4px;"></i> Member'}
-          </span>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;">
-            ${currentUserIsOwner ? `
-              <button onclick="toggleAdmin(${user.id})"
-                style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid #444;background:transparent;color:#888;cursor:pointer;white-space:nowrap;"
-                title="${user.is_admin ? 'Remove Admin' : 'Make Admin'}">
-                ${user.is_admin ? '− Admin' : '+ Admin'}
-              </button>
-              <button onclick="toggleOwner(${user.id})"
-                style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid #a855f7;background:transparent;color:#a855f7;cursor:pointer;white-space:nowrap;"
-                title="${user.is_owner ? 'Remove Owner' : 'Make Owner'}">
-                ${user.is_owner ? '− Owner' : '+ Owner'}
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      </td>
+      <td>${roleCellHtml(user)}</td>
       <td>
         <div class="action-btns">
           ${user.failed_charge_count > 0 ?
@@ -684,26 +659,208 @@ async function submitExtend() {
   }
 }
 
-// ── Toggle Admin ─────────────────────────────────────
-async function toggleAdmin(userId) {
+// ═══ TEAM ROLES ══════════════════════════════════════
+// كل واحد في الجدول "Member"، إلا اللي الـ owner ركّب عليه دور. البادچات
+// القديمة (Admin / Owner) وزراير "+ Admin" و "+ Owner" اتشالوا: "أدمن" مكانتش
+// بتقول أي حاجة عن إيه اللي الشخص ده بيعمله، و"+ Admin" كانت بتدي الديفولت
+// القديم بالصدفة. الدلوقتي زرار واحد بيفتح الأدوار المسمّاة وصلاحياتها.
+//
+// الأونر فاضل ليه علامة صغيرة (👑) من غير زرار: من غير أي علامة خالص، صاحب
+// المنصة بيبان في الجدول كأنه عضو عادي وده مربك للي بيقرا الجدول. لو العميل
+// عايزها تتشال خالص، امسح فرع `user.is_owner` اللي تحت وبس.
+const ROLE_COLORS = {
+  community_manager: 'community_manager',
+  technical_engineer: 'technical_engineer',
+  customer_success: 'customer_success',
+};
+
+// كتالوج الأدوار والصلاحيات من السيرفر (GET /admin/staff/roles). بيتجاب مرة
+// واحدة أول ما الـ owner يفتح المودال، عشان مانجيبوش حاجة لحد ما يحتاجها.
+let teamRoles = null;
+let teamRoleCatalog = [];
+let roleModalUserId = null;
+let roleModalChoice = null;
+
+// السيرفر بيبعت اسم الدور مع كل صف (team_role_label_ar / team_role_label)،
+// فالعمود بيرسم صح من أول رسمة ومن غير ما يستنى أي نداء تاني — وكمان الأدمن
+// اللي معاه صلاحية "الأعضاء" بس بيشوف الاسم، وهو أصلاً ممنوع من كتالوج
+// الأدوار (owner-only). الكتالوج بيستخدم للمودال بس.
+function roleLabelFor(row) {
+  if (row && typeof row === 'object') {
+    return row.team_role_label_ar || row.team_role_label
+        || String(row.team_role || '').replace(/_/g, ' ');
+  }
+  const role = (teamRoles || []).find(r => r.key === row);
+  return role ? (role.label_ar || role.label) : String(row || '').replace(/_/g, ' ');
+}
+
+function roleCellHtml(user) {
+  const key = user.team_role;
+  const badge = user.is_owner
+    ? `<span class="role-badge owner" title="Owner"><i data-lucide="crown" style="width:13px;height:13px;"></i> Owner</span>`
+    : key
+      ? `<span class="rc-role-badge ${escapeHtml(ROLE_COLORS[key] || '')}">${escapeHtml(roleLabelFor(user))}</span>`
+      : `<span class="role-badge member">Member</span>`;
+
+  // الأونر مالوش زرار: دوره جاي من الملكية، والسيرفر بيرفض تركيب دور عليه.
+  const btn = (currentUserIsOwner && !user.is_owner)
+    ? `<button class="role-change-btn" onclick="openRoleModal(${user.id})">Change role</button>`
+    : '';
+
+  return `<div class="role-cell">${badge}${btn}</div>`;
+}
+
+async function ensureRoleCatalog() {
+  if (teamRoles) return true;
   try {
-    const res = await fetch(`${API}/admin/users/${userId}/toggle-admin`, {
-      method: 'PATCH', headers
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const user = allUsers.find(u => u.id === userId);
-      if (user) user.is_admin = data.is_admin;
-      updateStats();
-      renderTable();
-      showToast(data.is_admin ? '🛡️ Made Admin' : '👤 Removed Admin', 'success');
-    }
+    const res = await authFetch(`${API}/admin/staff/roles`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    teamRoles = data.roles || [];
+    teamRoleCatalog = data.catalog || [];
+    return true;
   } catch (e) {
-    showToast('❌ Failed', 'error');
+    showToast('❌ مقدرناش نجيب الأدوار', 'error');
+    return false;
   }
 }
 
-// ── Toggle Owner ─────────────────────────────────────
+function permLabelFor(key) {
+  const p = teamRoleCatalog.find(x => x.key === key);
+  return p ? (p.label_ar || p.label) : key;
+}
+
+async function openRoleModal(userId) {
+  if (!currentUserIsOwner) return showToast('👑 الأدوار للـ owner بس', 'error');
+  if (!(await ensureRoleCatalog())) return;
+
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  roleModalUserId = userId;
+  roleModalChoice = user.team_role || null;
+
+  const nameEl = document.getElementById('role-user-name');
+  if (nameEl) nameEl.textContent = user.full_name || '—';
+
+  // "ارجع للـ preset" متشيّكة تلقائياً للي مالوش دور — أول تعيين لازم ياخد
+  // صلاحيات الدور، مفيش حاجة قبلها تستاهل الحفاظ عليها. اللي عنده دور
+  // بالفعل غالباً اتظبطت صلاحياته بالإيد، فبنسيبها مطفية.
+  const reset = document.getElementById('role-reset');
+  if (reset) {
+    reset.checked = !user.team_role;
+    reset.disabled = !user.team_role;   // أول تعيين: السيرفر بيفرضها برضه
+  }
+
+  renderRoleOptions();
+  document.getElementById('role-modal').style.display = 'flex';
+}
+
+function renderRoleOptions() {
+  const box = document.getElementById('role-options');
+  if (!box) return;
+
+  const memberCard = `
+    <button type="button" class="role-opt ${roleModalChoice === null ? 'selected' : ''}"
+            onclick="pickRole(null)">
+      <div class="role-opt-head">
+        <span class="role-opt-name">Member</span>
+        ${roleModalChoice === null ? '<span class="role-opt-tick">✓</span>' : ''}
+      </div>
+      <div class="role-opt-note">مفيش أي وصول للوحة الفريق.</div>
+    </button>`;
+
+  const roleCards = (teamRoles || []).map(r => `
+    <button type="button" class="role-opt ${roleModalChoice === r.key ? 'selected' : ''}"
+            onclick="pickRole('${escapeHtml(r.key)}')">
+      <div class="role-opt-head">
+        <span class="role-opt-name">${escapeHtml(r.label_ar || r.label)}</span>
+        ${roleModalChoice === r.key ? '<span class="role-opt-tick">✓</span>' : ''}
+      </div>
+      <div class="role-opt-perms">
+        ${r.permissions.map(k => `<span class="role-opt-chip">${escapeHtml(permLabelFor(k))}</span>`).join('')}
+      </div>
+    </button>`).join('');
+
+  box.innerHTML = memberCard + roleCards;
+  if (window.lucide) lucide.createIcons();
+}
+
+function pickRole(key) {
+  roleModalChoice = key;
+  const reset = document.getElementById('role-reset');
+  const user = allUsers.find(u => u.id === roleModalUserId);
+  // "امسح الصلاحيات" مالهاش معنى وإحنا برجّعه Member — السيرفر بيمسحها دايماً.
+  if (reset) reset.disabled = key === null || !(user && user.team_role);
+  renderRoleOptions();
+}
+
+async function submitRole() {
+  const user = allUsers.find(u => u.id === roleModalUserId);
+  if (!user) return;
+
+  const resetEl = document.getElementById('role-reset');
+  const body = {
+    role: roleModalChoice,
+    reset_permissions: !!(resetEl && resetEl.checked && !resetEl.disabled) || !user.team_role,
+  };
+
+  const btn = document.getElementById('role-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  try {
+    const res = await authFetch(`${API}/admin/users/${roleModalUserId}/team-role`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed');
+    }
+    const saved = await res.json();
+
+    user.team_role = saved.team_role || null;
+    user.team_role_label = saved.team_role_label || null;
+    user.team_role_label_ar = saved.team_role_label_ar || null;
+    user.is_admin = !!saved.is_admin;
+
+    closeModal('role-modal');
+    updateStats();
+    renderTable();
+    showToast(saved.team_role
+      ? `✅ بقى ${saved.team_role_label_ar || saved.team_role_label}`
+      : '👤 رجع عضو عادي', 'success');
+
+    // تاب الصلاحيات بيقرا /admin/staff، واللي اتغير دوره دخل القايمة دي أو
+    // خرج منها دلوقتي — فالنسخة المحمّلة عنده بقت قديمة.
+    if (typeof permStaff !== 'undefined') permStaff = [];
+    const permBox = document.getElementById('perm-staff-list');
+    if (permBox && document.getElementById('tab-permissions')?.style.display !== 'none') {
+      loadPermissionsTab();
+    }
+  } catch (e) {
+    showToast(`❌ ${e.message || 'مقدرناش نحفظ'}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'احفظ الدور'; }
+  }
+}
+
+window.openRoleModal = openRoleModal;
+window.pickRole = pickRole;
+window.submitRole = submitRole;
+window.promoteToOwner = function () {
+  const user = allUsers.find(u => u.id === roleModalUserId);
+  if (!user) return;
+  if (!confirm(`هتخلّي ${user.full_name} owner؟ الـ owner بيشوف كل حاجة في اللوحة ويقدر يوزّع الأدوار على الباقيين.`)) return;
+  toggleOwner(roleModalUserId);
+};
+
+// ── Promote to owner ─────────────────────────────────
+// Roles replaced the "+ Admin" button entirely — it did the same job worse,
+// handing out the legacy default permission set by accident. Ownership is a
+// different thing and still needs a way in: this is the only one, and it now
+// lives in the role modal's footer instead of on every row of the members
+// table. Demotion goes through the same call.
 async function toggleOwner(userId) {
   if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
   try {
@@ -721,6 +878,7 @@ async function toggleOwner(userId) {
       user.is_owner = data.is_owner;
       user.is_admin = data.is_admin;
     }
+    closeModal('role-modal');
     renderTable();
     if (typeof lucide !== 'undefined') window.lucide && window.lucide.createIcons();
     showToast(data.is_owner ? '👑 Made Owner' : '👤 Removed Owner', 'success');
@@ -6020,6 +6178,9 @@ async function loadPermissionsTab() {
     permCatalog = data.catalog || [];
     permGroups = data.groups || {};
     permStaff = data.staff || [];
+    // نفس الكتالوج اللي مودال الأدوار بيستخدمه — بيجي مع الرد ده كمان، فبناخده
+    // من هنا ونوفّر النداء التاني.
+    if (data.roles) { teamRoles = data.roles; teamRoleCatalog = permCatalog; }
     permDraft = {};
     renderPermissionsList();
   } catch (e) {
@@ -6098,7 +6259,7 @@ function renderPermCard(u) {
     <div class="perm-card" id="perm-card-${u.id}">
       <div class="perm-card-head">
         <div class="perm-who">
-          <div class="perm-name">${escapeHtml(u.full_name || '—')} <span class="perm-role">Admin</span></div>
+          <div class="perm-name">${escapeHtml(u.full_name || '—')} <span class="perm-role">${escapeHtml(u.team_role ? roleLabelFor(u) : 'Admin')}</span></div>
           <div class="perm-email">${escapeHtml(u.email || '')}</div>
         </div>
         <div class="perm-head-actions">

@@ -149,3 +149,16 @@ def role_preset(key: Optional[str]) -> Optional[List[str]]:
             return normalize_permissions(role["permissions"])
     return None
 
+
+def role_labels(key: Optional[str]) -> dict:
+    """اسم الدور بالإنجليزي والعربي، جاهز يتحط في أي صف بيترسم.
+
+    بيتبعت مع كل يوزر في القوايم بدل ما الفرونت يجيب الكتالوج ويترجم بنفسه:
+    كتالوج الأدوار owner-only (فيه الصلاحيات جوه كل دور)، فأدمن معاه صلاحية
+    "الأعضاء" بس كان هيقرا الجدول ويلاقي `community_manager` مكتوبة زي ما هي.
+    """
+    for role in TEAM_ROLES:
+        if role["key"] == key:
+            return {"label": role["label"], "label_ar": role["label_ar"]}
+    return {"label": None, "label_ar": None}
+

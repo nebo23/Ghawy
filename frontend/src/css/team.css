@@ -2384,3 +2384,63 @@
     flex-wrap: wrap;
   }
 }
+
+/* ═══ TEAM ROLES ══════════════════════════════════════════════
+   عمود Role في تاب الأعضاء + مودال "غيّر الدور".
+   قبل كده العمود كان فيه بادج (Member / Admin / Owner) وزرارين "+ Admin"
+   و "+ Owner" على كل صف. البادج مكانش بيقول إيه اللي الشخص ده بيعمله،
+   والزرارين كانوا بيدوا صلاحيات محدش اختارها. بقى: اسم الدور + زرار واحد.
+   السلوك في src/js/team.js. */
+.role-cell {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+}
+.role-change-btn {
+  font-size: 10px; padding: 3px 9px; border-radius: 5px;
+  border: 1px solid #3a3a3a; background: transparent; color: #999;
+  cursor: pointer; white-space: nowrap; font-family: inherit; font-weight: 600;
+  transition: border-color .18s, color .18s;
+}
+.role-change-btn:hover { border-color: #3f8ff9; color: #3f8ff9; }
+
+/* كروت الاختيار جوه المودال */
+.role-options { display: flex; flex-direction: column; gap: 10px; }
+.role-opt {
+  width: 100%; text-align: start; cursor: pointer; font-family: inherit;
+  background: #141414; border: 1px solid #262626; border-radius: 12px;
+  padding: 13px 15px; transition: border-color .18s, background .18s;
+}
+.role-opt:hover { border-color: #3a3a3a; background: #171717; }
+.role-opt.selected { border-color: #3f8ff9; background: rgba(63,143,249,.07); }
+.role-opt-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.role-opt-name { color: #fff; font-size: 14px; font-weight: 700; }
+.role-opt-tick { color: #3f8ff9; font-size: 15px; font-weight: 800; }
+.role-opt-note { color: #777; font-size: 12px; margin-top: 5px; }
+/* الصلاحيات اللي الدور بيفتحها، بأسمائها مش بمفاتيحها — الفرق بين
+   "بيشوف الأعضاء وتقدّمهم" و "users, students-progress". */
+.role-opt-perms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.role-opt-chip {
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: rgba(255,255,255,.05); border: 1px solid #2a2a2a; color: #aaa;
+}
+.role-opt.selected .role-opt-chip {
+  background: rgba(63,143,249,.1); border-color: rgba(63,143,249,.25); color: #8fbcf5;
+}
+
+.role-reset-row {
+  display: flex; align-items: center; gap: 9px; margin-top: 14px;
+  color: #999; font-size: 12.5px; cursor: pointer; line-height: 1.6;
+}
+.role-reset-row input { width: 15px; height: 15px; accent-color: #3f8ff9; cursor: pointer; flex-shrink: 0; }
+.role-reset-row input:disabled { cursor: not-allowed; opacity: .5; }
+.role-reset-row:has(input:disabled) { color: #666; cursor: not-allowed; }
+
+/* الملكية مش دور — عشان كده مكانها الفوتر، بعيد عن كروت الاختيار. دي كانت
+   زرار على كل صف في الجدول وبقت هنا. */
+.role-owner-btn {
+  background: transparent; border: 1px solid rgba(168,85,247,.35); color: #a855f7;
+  border-radius: 8px; padding: 8px 14px; font-family: inherit; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; transition: background .18s;
+}
+.role-owner-btn:hover { background: rgba(168,85,247,.1); }
