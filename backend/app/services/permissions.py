@@ -43,6 +43,35 @@ PERMISSIONS = [
 
 PERMISSION_KEYS = [p["key"] for p in PERMISSIONS]
 
+
+# ── الأدوار المسمّاة ──────────────────────────────────────────
+# دور = مجموعة صلاحيات جاهزة الـ owner بيديها لحد بضغطة واحدة، بدل ما يفتح
+# ١٥ تشيك بوكس بإيده لكل أدمن جديد. المفاتيح دي هي نفس الأدوار الموجودة في
+# النظام أصلاً (TeamRole enum في models.py، وهي اللي بيختار منها فورم
+# الريبورت اليومي وفورم الفيدباك) — مش أدوار جديدة اخترعناها هنا.
+#
+# ⚠️ الصلاحيات اللي جوه كل دور اقتراح، مش كلام العميل.
+# اتحطت من اسم الدور نفسه: مدير المجتمع بيشوف الناس وآراءهم، المهندس التقني
+# بيشوف المحتوى، ونجاح العملاء بيشوف الاشتراكات وبيانات التواصل. محدش أكّد
+# التقسيمة دي لسه، فمتبنيش عليها حاجة تانية قبل ما ترجع للعميل. تعديل دور =
+# تعديل السطر بتاعه هنا وبس؛ الدور بياخد الشكل الجديد من غير ما يتلمس فرونت
+# ولا API.
+#
+# الدور مجرد نقطة بداية: بعد ما يتحط، الـ owner يقدر يفتح ويقفل أي صلاحية
+# للشخص ده لوحده من تاب الصلاحيات، والدور بيفضل مكتوب عليه كاسم بس. اللي
+# بيتفرض فعلاً هو `staff_permissions`، مش الدور.
+TEAM_ROLES = [
+    {"key": "community_manager", "label": "Community Manager", "label_ar": "مدير المجتمع",
+     "permissions": ["users", "students-progress", "feedbacks", "reports"]},
+    {"key": "technical_engineer", "label": "Technical Engineer", "label_ar": "مهندس تقني",
+     "permissions": ["courses", "live-sessions", "projects", "reports"]},
+    {"key": "customer_success", "label": "Customer Success", "label_ar": "نجاح العملاء",
+     "permissions": ["users", "students-progress", "payments", "pending-requests",
+                     "member-contacts", "reports"]},
+]
+
+TEAM_ROLE_KEYS = [r["key"] for r in TEAM_ROLES]
+
 GROUP_LABELS = {
     "people":  {"label": "People",  "label_ar": "الناس"},
     "money":   {"label": "Money",   "label_ar": "الفلوس"},
@@ -109,4 +138,14 @@ def catalog() -> dict:
         "permissions": PERMISSIONS,
         "groups": GROUP_LABELS,
         "defaults": DEFAULT_ADMIN_PERMISSIONS,
+        "roles": TEAM_ROLES,
     }
+
+
+def role_preset(key: Optional[str]) -> Optional[List[str]]:
+    """صلاحيات الدور ده، أو None لو الدور مش معروف."""
+    for role in TEAM_ROLES:
+        if role["key"] == key:
+            return normalize_permissions(role["permissions"])
+    return None
+

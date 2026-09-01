@@ -98,6 +98,12 @@ class User(Base):
     # NULL = متعدّلتش، فبتقع على الديفولت في app/services/permissions.py؛
     # "[]" = الـ owner قفل كل حاجة بإيده. الفرق بينهم مقصود.
     staff_permissions = Column(Text, nullable=True)
+    # اسم الدور اللي الـ owner ركّبه عليه (مفتاح من TEAM_ROLES في
+    # app/services/permissions.py). ده تسمية بس — اللي بيتفرض على أي طلب هو
+    # staff_permissions فوق، والدور مجرد الـ preset اللي ملاه أول مرة. النوع
+    # String مش Enum عن قصد: إضافة دور جديد لازم تبقى سطر واحد في بايثون، مش
+    # سطر + ميجريشن على نوع في الداتابيز.
+    team_role = Column(String(40), nullable=True)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)
