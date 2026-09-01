@@ -684,17 +684,56 @@
         'Failed to copy text': 'فشل نسخ النص',
         'API Error': 'خطأ في الاتصال بالسيرفر',
 
-        /* ── Course card ──
+        /* ── Courses page: card, search bar, filters, states ──
            The course TITLES, the track names and the instructor names are not
            here on purpose: those exist in both languages in catalog-data.js and
            the card renders them in the reader's language directly. Only the
            chrome around them goes through this dictionary.
 
-           'Lessons' is NOT repeated here — it is already above, and this
-           object is a plain literal: a second entry does not add a
-           translation, it REPLACES the first one for every page in the
+           'Lessons', 'Instructor', 'All', 'Not Started', 'In Progress' and
+           'Completed' are NOT repeated here — every one of them is already
+           above, and this object is a plain literal: a second entry does not
+           add a translation, it REPLACES the first one for every page in the
            community. Reach for the existing wording before adding a key. */
-        'Duration': 'المدة'
+        'Duration': 'المدة',
+        'Search courses, instructors, tracks...': 'دوّر على كورس أو مدرّب أو مسار...',
+        'Search courses': 'دوّر على كورس',
+        'Clear search': 'امسح البحث',
+        'Filters': 'الفلاتر',
+        'Done': 'تم',
+        'Remove filter': 'شيل الفلتر',
+        'Clear all': 'امسح الكل',
+        /* Sort */
+        'All Courses': 'كل الكورسات',
+        'Newest': 'الأحدث',
+        'Oldest': 'الأقدم',
+        'Most Watched': 'الأكثر مشاهدة',
+        'Most Engaged': 'الأكثر تفاعل',
+        'Shortest': 'الأقصر',
+        'Longest': 'الأطول',
+        'A–Z': 'أ – ي',
+        'Z–A': 'ي – أ',
+        /* Track / instructor */
+        'All Tracks': 'كل المسارات',
+        'Track': 'المسار',
+        'All Instructors': 'كل المدربين',
+        /* My progress */
+        'My Progress': 'تقدّمي',
+        'All': 'الكل',
+        /* Duration */
+        'Any': 'أي مدة',
+        'Under 5h': 'أقل من ٥ ساعات',
+        '5–10h': 'من ٥ لـ ١٠ ساعات',
+        'Over 10h': 'أكتر من ١٠ ساعات',
+        /* States */
+        'No courses yet': 'لسه مفيش كورسات',
+        'New courses show up here as soon as they are published.': 'الكورسات الجديدة هتظهر هنا أول ما تتنشر.',
+        'Nothing matched': 'مفيش نتايج',
+        'Try a shorter word, or clear the filters.': 'جرّب كلمة أقصر، أو امسح الفلاتر.',
+        'Closest matches': 'أقرب النتايج',
+        "Couldn't load the courses": 'مقدرناش نجيب الكورسات',
+        'Check your connection and try again.': 'اتأكد من النت وحاول تاني.',
+        'Try again': 'حاول تاني'
     };
 
     /* ─── Interpolated patterns (dynamic counters, relative time, …) ── */
@@ -705,6 +744,7 @@
         [/^(\d+)\s*(?:seconds?|s) ago$/, 'منذ $1 ث'],
         [/^just now$/i, 'دلوقتي حالاً'],
         [/^(\d+) [Ll]essons?$/, '$1 درس'],
+        [/^(\d+) results?$/, '$1 نتيجة'],
         [/^(\d+)% complete$/i, 'مكتمل $1%'],
         [/^(\d+)% Complete$/, 'مكتمل $1%'],
         [/^Completed (\d+) of (\d+) lessons$/, 'أكملت $1 من $2 درس'],

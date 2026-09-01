@@ -1288,6 +1288,565 @@ html[dir="rtl"] .cc-ring svg {
 }
 
 /* ══════════════════════════════════════════
+   COURSES TOOLBAR — search, filters, active-filter chips
+   Behaviour: src/js/courses.js
+   Everything here is written with logical properties (inline-start/end), so
+   the whole bar mirrors itself when community-i18n.js flips <html dir> to rtl.
+══════════════════════════════════════════ */
+.courses-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+/* ── Search field ── */
+.cx-search {
+    position: relative;
+    flex: 1 1 100%;
+    min-width: 0;
+}
+
+.cx-search input {
+    width: 100%;
+    height: 46px;
+    box-sizing: border-box;
+    padding-inline: 42px 78px;
+    border-radius: 14px;
+    border: 1px solid var(--border-light-new);
+    background: rgba(255, 255, 255, .035);
+    color: var(--txt-primary);
+    font-family: inherit;
+    font-size: .92rem;
+    font-weight: 600;
+    outline: none;
+    transition: border-color .18s, background .18s, box-shadow .18s;
+}
+
+.cx-search input::placeholder {
+    color: var(--txt-muted);
+    font-weight: 500;
+}
+
+.cx-search input:focus {
+    border-color: rgba(193, 255, 17, .38);
+    background: rgba(255, 255, 255, .05);
+    box-shadow: 0 0 0 3px rgba(193, 255, 17, .09);
+}
+
+.cx-search-ico {
+    position: absolute;
+    inset-inline-start: 15px;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    color: var(--txt-muted);
+    font-size: .9rem;
+    pointer-events: none;
+}
+
+/* The "/" hint doubles as the affordance for the shortcut that focuses the
+   box; it hides itself the moment there is anything to clear. */
+.cx-slash {
+    position: absolute;
+    inset-inline-end: 14px;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light-new);
+    background: rgba(255, 255, 255, .04);
+    color: var(--txt-muted);
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.5;
+    pointer-events: none;
+}
+
+.cx-clear {
+    position: absolute;
+    inset-inline-end: 10px;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    display: none;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: var(--txt-secondary);
+    cursor: pointer;
+    font-size: .75rem;
+    transition: background .18s, color .18s;
+}
+
+.cx-clear:hover {
+    background: rgba(193, 255, 17, .16);
+    color: var(--accent-gold);
+}
+
+.cx-search.has-query .cx-clear { display: grid; }
+.cx-search.has-query .cx-slash { display: none; }
+
+/* ── Filter row ── */
+.cx-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+}
+
+/* ── Dropdown ──
+   A custom listbox rather than a native <select>, for one reason that a
+   <select> cannot do at all: the instructor options carry the instructor's
+   face. Doing it for all five keeps the bar looking like one control instead
+   of four browser widgets and one bespoke one, and it also means the option
+   labels are ordinary text nodes — so community-i18n translates them for free,
+   the same way it translates everything else on the page. */
+.cx-dd {
+    position: relative;
+}
+
+.cx-dd-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding-inline: 12px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light-new);
+    background: rgba(255, 255, 255, .035);
+    color: var(--txt-secondary);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .18s, color .18s, background .18s;
+}
+
+.cx-dd-btn:hover {
+    border-color: rgba(255, 255, 255, .2);
+    color: var(--txt-primary);
+}
+
+.cx-dd-btn:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
+
+.cx-dd-btn .cx-dd-caret {
+    font-size: .6rem;
+    color: var(--txt-muted);
+    transition: transform .18s;
+}
+
+.cx-dd.open .cx-dd-btn {
+    border-color: rgba(193, 255, 17, .38);
+    color: var(--txt-primary);
+}
+
+.cx-dd.open .cx-dd-caret { transform: rotate(180deg); }
+
+/* A filter that is actually doing something looks different from one sitting
+   on its default — otherwise the only way to know the list is filtered is to
+   read every control. */
+.cx-dd.active .cx-dd-btn {
+    border-color: rgba(193, 255, 17, .34);
+    background: rgba(193, 255, 17, .08);
+    color: var(--accent-gold);
+}
+
+.cx-dd-list {
+    position: absolute;
+    inset-block-start: calc(100% + 6px);
+    inset-inline-start: 0;
+    z-index: 60;
+    min-width: 210px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border-light-new);
+    background: #121218;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .6);
+    display: none;
+}
+
+.cx-dd.open .cx-dd-list { display: block; }
+
+.cx-opt {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--txt-secondary);
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background .14s, color .14s;
+}
+
+.cx-opt:hover,
+.cx-opt.focused {
+    background: rgba(255, 255, 255, .06);
+    color: var(--txt-primary);
+}
+
+.cx-opt[aria-selected="true"] {
+    color: var(--accent-gold);
+    background: rgba(193, 255, 17, .1);
+}
+
+.cx-opt-av {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .1);
+    font-size: .58rem;
+    font-weight: 800;
+    color: var(--txt-secondary);
+}
+
+.cx-opt-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ── Mobile: one button, one bottom sheet ── */
+.cx-mobile-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding-inline: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-light-new);
+    background: rgba(255, 255, 255, .035);
+    color: var(--txt-secondary);
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cx-mobile-badge {
+    min-width: 19px;
+    height: 19px;
+    padding-inline: 5px;
+    border-radius: 999px;
+    background: var(--accent-gold);
+    color: #000;
+    font-size: .68rem;
+    font-weight: 900;
+    display: none;
+    place-items: center;
+    line-height: 1;
+}
+
+.cx-mobile-btn.has-filters {
+    border-color: rgba(193, 255, 17, .34);
+    color: var(--accent-gold);
+}
+
+.cx-mobile-btn.has-filters .cx-mobile-badge { display: grid; }
+
+.cx-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: rgba(0, 0, 0, .6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    display: none;
+}
+
+.cx-sheet-backdrop.open { display: block; }
+
+.cx-sheet {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 1201;
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--border-light-new);
+    background: #0e0e14;
+    transform: translateY(100%);
+    transition: transform .26s cubic-bezier(.2, .8, .2, 1);
+}
+
+.cx-sheet-backdrop.open .cx-sheet { transform: translateY(0); }
+
+.cx-sheet-grip {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .18);
+    margin: 8px auto 14px;
+}
+
+.cx-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.cx-sheet-head h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--txt-primary) !important;
+}
+
+.cx-sheet-done {
+    height: 36px;
+    padding-inline: 18px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent-gold);
+    color: #000;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* ── Active-filter chips ── */
+.cx-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.cx-chips:empty { display: none; }
+
+.cx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 30px;
+    padding-inline: 12px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(193, 255, 17, .26);
+    background: rgba(193, 255, 17, .09);
+    color: var(--accent-gold);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.cx-chip-x {
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(193, 255, 17, .16);
+    color: inherit;
+    font-size: .68rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .16s;
+}
+
+.cx-chip-x:hover { background: rgba(193, 255, 17, .32); }
+
+.cx-chip-clear {
+    height: 30px;
+    padding-inline: 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-light-new);
+    background: transparent;
+    color: var(--txt-secondary);
+    font-family: inherit;
+    font-size: .76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .16s, color .16s;
+}
+
+.cx-chip-clear:hover {
+    border-color: rgba(255, 255, 255, .24);
+    color: var(--txt-primary);
+}
+
+.cx-count {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--txt-muted);
+    margin-inline-start: auto;
+}
+
+/* ── States ── */
+.cx-state {
+    grid-column: 1 / -1;
+    padding: 44px 20px;
+    text-align: center;
+    border-radius: 18px;
+    border: 1px dashed var(--border-light-new);
+    background: rgba(255, 255, 255, .02);
+}
+
+.cx-state i.cx-state-ico {
+    font-size: 1.8rem;
+    color: var(--txt-muted);
+    display: block;
+    margin-bottom: 12px;
+}
+
+.cx-state h4 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--txt-primary) !important;
+}
+
+.cx-state p {
+    margin: 0;
+    font-size: .84rem;
+    color: var(--txt-muted);
+}
+
+.cx-state-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cx-state-btn {
+    height: 36px;
+    padding-inline: 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(193, 255, 17, .3);
+    background: rgba(193, 255, 17, .1);
+    color: var(--accent-gold);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cx-state-btn:hover { background: rgba(193, 255, 17, .18); }
+
+/* Nearest misses under a search that found nothing — a dead end with a way
+   out of it beats a dead end. */
+.cx-suggest {
+    margin-top: 20px;
+    text-align: start;
+}
+
+.cx-suggest-title {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--txt-muted);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.cx-suggest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.cx-suggest-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, .03);
+    color: var(--txt-primary);
+    font-size: .84rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color .16s, background .16s;
+}
+
+.cx-suggest-item:hover {
+    border-color: rgba(193, 255, 17, .28);
+    background: rgba(193, 255, 17, .06);
+}
+
+.cx-suggest-item span {
+    margin-inline-start: auto;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--txt-muted);
+}
+
+@media (min-width: 761px) {
+    .cx-search { flex: 1 1 280px; }
+    .cx-filters { flex: 0 1 auto; }
+}
+
+@media (max-width: 760px) {
+    .cx-filters {
+        display: none;
+    }
+
+    /* Inside the sheet the same dropdowns stack full width. */
+    .cx-sheet .cx-filters {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .cx-sheet .cx-dd-btn {
+        width: 100%;
+        height: 46px;
+        justify-content: space-between;
+    }
+
+    .cx-sheet .cx-dd-list {
+        position: static;
+        display: none;
+        min-width: 0;
+        margin-top: 6px;
+        box-shadow: none;
+        background: rgba(255, 255, 255, .03);
+    }
+
+    .cx-sheet .cx-dd.open .cx-dd-list { display: block; }
+
+    .cx-mobile-btn { display: inline-flex; }
+
+    .cx-count { width: 100%; margin-inline-start: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cx-sheet { transition: none; }
+}
+
+/* ══════════════════════════════════════════
    GUEST OF HONORS ROW
 ══════════════════════════════════════════ */
 .goh-row {
