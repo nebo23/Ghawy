@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from app.database import get_db
 from app.models import User, Course, Lesson, UserCourseProgress, UserProgress, Certificate, CourseReview
-from app.routers.users import get_current_user, get_current_user_optional, get_current_active_member, get_current_admin_user, get_current_owner_user
+from app.routers.users import get_current_user, get_current_user_optional, get_current_active_member, get_current_admin_user, require_perm
 from app.schemas import (
     CourseOut, CourseDetailOut, CourseCreate, CourseUpdate, CourseReorder,
     PublicCourseOut, PublicCourseDetailOut,
@@ -18,6 +18,9 @@ from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+# صلاحية تاب الكورسات (المحتوى) — الـ owner بيعدّي دايماً
+PERM_COURSES = require_perm("courses")
+
 router = APIRouter(prefix="/courses", tags=["Courses"])
 
 UPLOADS_DIR = Path(__file__).resolve().parents[2] / "uploads"
@@ -317,14 +320,14 @@ async def get_course_progress(
 @router.get("/admin/all", response_model=List[CourseOut])
 # ─── Admin: List ALL courses ─────────────────────────────────
 @router.get("/admin/courses", response_model=List[CourseOut])
-def admin_list_courses(admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+def admin_list_courses(admin: User = Depends(PERM_COURSES), db: Session = Depends(get_db)):
     return db.query(Course).order_by(Course.sort_order.asc(), Course.id.asc()).all()
 
 # ─── Admin: Reorder courses ──────────────────────────────────
 # NOTE: declared BEFORE "/admin/courses/{course_id}" so the literal
 # path "reorder" is not captured as an int course_id.
 @router.patch("/admin/courses/reorder")
-def reorder_courses(data: CourseReorder, admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+def reorder_courses(data: CourseReorder, admin: User = Depends(PERM_COURSES), db: Session = Depends(get_db)):
     """Set each course's sort_order to its position in the provided ID list."""
     for index, course_id in enumerate(data.order):
         db.query(Course).filter(Course.id == course_id).update(
@@ -335,7 +338,7 @@ def reorder_courses(data: CourseReorder, admin: User = Depends(get_current_owner
 
 # ─── Admin: Create course ────────────────────────────────────
 @router.post("/admin/courses", response_model=CourseOut, status_code=201)
-def create_course(data: CourseCreate, admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+def create_course(data: CourseCreate, admin: User = Depends(PERM_COURSES), db: Session = Depends(get_db)):
     course = Course(
         title=data.title,
         description=data.description,
@@ -352,7 +355,7 @@ def create_course(data: CourseCreate, admin: User = Depends(get_current_owner_us
 
 # ─── Admin: Update course ────────────────────────────────────
 @router.patch("/admin/courses/{course_id}", response_model=CourseOut)
-def update_course(course_id: int, data: CourseUpdate, admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+def update_course(course_id: int, data: CourseUpdate, admin: User = Depends(PERM_COURSES), db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -364,7 +367,7 @@ def update_course(course_id: int, data: CourseUpdate, admin: User = Depends(get_
 
 # ─── Admin: Delete course ────────────────────────────────────
 @router.delete("/admin/courses/{course_id}", status_code=204)
-def delete_course(course_id: int, admin: User = Depends(get_current_owner_user), db: Session = Depends(get_db)):
+def delete_course(course_id: int, admin: User = Depends(PERM_COURSES), db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -377,7 +380,7 @@ def delete_course(course_id: int, admin: User = Depends(get_current_owner_user),
 async def upload_course_pdf(
     course_id: int,
     file: UploadFile = File(...),
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -421,7 +424,7 @@ async def upload_course_pdf(
 async def upload_course_thumbnail(
     course_id: int,
     file: UploadFile = File(...),
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -455,7 +458,7 @@ async def upload_course_thumbnail(
 async def upload_course_certificate(
     course_id: int,
     file: UploadFile = File(...),
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -486,7 +489,7 @@ async def upload_course_certificate(
 @router.delete("/admin/{course_id}/certificate")
 def delete_course_certificate(
     course_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -500,7 +503,7 @@ def delete_course_certificate(
 @router.get("/admin/{course_id}/lessons", response_model=List[LessonOut])
 def admin_get_lessons(
     course_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -514,7 +517,7 @@ def admin_get_lessons(
 def admin_create_lesson(
     course_id: int,
     data: AdminLessonCreate,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -561,7 +564,7 @@ def admin_create_lesson(
 def admin_update_lesson(
     lesson_id: int,
     data: LessonUpdate,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -593,7 +596,7 @@ def admin_update_lesson(
 async def admin_upload_pdf(
     lesson_id: int,
     file: UploadFile = File(...),
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -638,7 +641,7 @@ async def admin_upload_pdf(
 def admin_delete_lesson_pdf(
     lesson_id: int,
     pdf_url: str,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -680,7 +683,7 @@ def admin_delete_lesson_pdf(
 @router.delete("/admin/lessons/{lesson_id}", status_code=204)
 def admin_delete_lesson(
     lesson_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -699,7 +702,7 @@ def admin_delete_lesson(
 @router.get("/admin/lessons/{lesson_id}/status")
 def admin_lesson_status(
     lesson_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db)
 ):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -708,7 +711,7 @@ def admin_lesson_status(
 
     return {"status": lesson.video_status}
 
-@router.patch("/{course_id}/lessons/{lesson_id}", dependencies=[Depends(get_current_owner_user)])
+@router.patch("/{course_id}/lessons/{lesson_id}", dependencies=[Depends(PERM_COURSES)])
 async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: Session = Depends(get_db)):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
     if not lesson:
@@ -740,7 +743,7 @@ async def update_lesson(course_id: int, lesson_id: int, data: LessonUpdate, db: 
     db.refresh(lesson)
     return lesson
 
-@router.post("/{course_id}/lessons", dependencies=[Depends(get_current_owner_user)])
+@router.post("/{course_id}/lessons", dependencies=[Depends(PERM_COURSES)])
 async def create_lesson(course_id: int, data: LessonCreate, db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -888,7 +891,7 @@ async def create_course_review(
     db.commit()
     return {"message": "Review added"}
 
-@router.delete("/{course_id}/reviews/{review_id}", dependencies=[Depends(get_current_owner_user)])
+@router.delete("/{course_id}/reviews/{review_id}", dependencies=[Depends(PERM_COURSES)])
 async def delete_course_review(course_id: int, review_id: int, db: Session = Depends(get_db)):
     review = db.query(CourseReview).filter(CourseReview.id == review_id, CourseReview.course_id == course_id).first()
     if not review:

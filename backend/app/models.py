@@ -94,6 +94,10 @@ class User(Base):
     password_reset_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
     is_owner = Column(Boolean, server_default=text('false'), default=False)
+    # أي تابات لوحة الفريق الـ owner فتحها للأدمن ده — JSON list نصّية.
+    # NULL = متعدّلتش، فبتقع على الديفولت في app/services/permissions.py؛
+    # "[]" = الـ owner قفل كل حاجة بإيده. الفرق بينهم مقصود.
+    staff_permissions = Column(Text, nullable=True)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)
@@ -123,6 +127,12 @@ class User(Base):
     birthday_email_sent_year = Column(Integer, nullable=True)  # آخر سنة اتبعتله فيها إيميل عيد الميلاد (مرة/سنة)
     birthday_gift_year = Column(Integer, nullable=True)  # آخر سنة فعّل فيها هدية الـ 7 أيام (يمنع التكرار)
     inactive6_email_sent_at = Column(DateTime, nullable=True)  # آخر مرة اتبعتله تذكير "6 أيام مدخلتش"; يتصفّر لما يرجع نشط
+
+    @property
+    def permissions(self) -> list:
+        """الصلاحيات الفعّالة (الـ owner = كل حاجة، العضو العادي = ولا حاجة)."""
+        from app.services.permissions import permissions_for
+        return permissions_for(self)
 
     @property
     def is_online(self) -> bool:

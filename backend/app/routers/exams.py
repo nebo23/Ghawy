@@ -8,10 +8,13 @@ from app.models import Course, Exam, ExamAttempt, Lesson, User
 from app.routers.users import (
     get_current_active_member,
     get_current_user,
-    get_current_owner_user,
+    require_perm,
 )
 from app.schemas import ExamCreate, ExamSubmit, ExamUpdate
 
+
+# الامتحانات جزء من تاب الكورسات، فبتاخد نفس صلاحيته
+PERM_COURSES = require_perm("courses")
 
 router = APIRouter(tags=["Exams"])
 
@@ -232,7 +235,7 @@ def submit_exam(
 @router.get("/admin/courses/{course_id}/exams")
 def admin_list_exams(
     course_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db),
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -250,7 +253,7 @@ def admin_list_exams(
 @router.get("/admin/exams/{exam_id}")
 def admin_get_exam(
     exam_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db),
 ):
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
@@ -263,7 +266,7 @@ def admin_get_exam(
 def admin_create_exam(
     course_id: int,
     data: ExamCreate,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db),
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -305,7 +308,7 @@ def admin_create_exam(
 def admin_update_exam(
     exam_id: int,
     data: ExamUpdate,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db),
 ):
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
@@ -340,7 +343,7 @@ def admin_update_exam(
 @router.delete("/admin/exams/{exam_id}", status_code=204)
 def admin_delete_exam(
     exam_id: int,
-    admin: User = Depends(get_current_owner_user),
+    admin: User = Depends(PERM_COURSES),
     db: Session = Depends(get_db),
 ):
     exam = db.query(Exam).filter(Exam.id == exam_id).first()

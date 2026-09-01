@@ -20,6 +20,11 @@ from app.models import (
     Course, Lesson, UserProgress, UserCourseProgress, Certificate, Exam, ExamAttempt,
 )
 from app.routers.users import get_current_user
+from app.services.permissions import (
+    PERMISSIONS, GROUP_LABELS, DEFAULT_ADMIN_PERMISSIONS,
+    permissions_for, has_permission, require_permission,
+    normalize_permissions, dump_permissions,
+)
 from app.services.name_utils import split_full_name, clean_display_name
 from app.services.subscription_service import extend_subscription
 
@@ -79,18 +84,20 @@ def list_users(
     """Return list of all users with admin-relevant fields.
 
     Admins may view the members list, but contact details (email, phone,
-    social link) are redacted for non-owner admins — only owners see them.
+    social link) are redacted unless the owner granted the `member-contacts`
+    permission — owners always see them.
     """
-    require_admin(current_user)
-    viewer_is_owner = bool(getattr(current_user, "is_owner", False))
+    require_permission(current_user, "users")
+    viewer_sees_contacts = has_permission(current_user, "member-contacts")
 
     query = db.query(User)
 
-    # Search filter — non-owner admins cannot search by email (it's hidden),
-    # so restrict their search to full_name only to avoid email enumeration.
+    # Search filter — a viewer who can't see addresses can't search by one
+    # either (it's hidden), so their search is restricted to full_name to avoid
+    # email enumeration.
     if search:
         search_term = f"%{search}%"
-        if viewer_is_owner:
+        if viewer_sees_contacts:
             query = query.filter(
                 (User.full_name.ilike(search_term)) | (User.email.ilike(search_term))
             )
@@ -135,8 +142,8 @@ def list_users(
             "id": u.id,
             "full_name": u.full_name,
             # Contact details are owner-only — redacted for non-owner admins
-            "email": u.email if viewer_is_owner else None,
-            "phone": u.phone if viewer_is_owner else None,
+            "email": u.email if viewer_sees_contacts else None,
+            "phone": u.phone if viewer_sees_contacts else None,
             "country": u.country,
             "birth_date": u.birth_date.isoformat() if u.birth_date else None,
             "is_active": u.is_active,
@@ -149,7 +156,7 @@ def list_users(
             "avatar_url": u.avatar_url,
             "end_at": u.end_at.isoformat() if u.end_at else None,
             "governorate": u.governorate,
-            "social_media_url": u.social_media_url if viewer_is_owner else None,
+            "social_media_url": u.social_media_url if viewer_sees_contacts else None,
             "is_owner": getattr(u, 'is_owner', False),
             "winback_sent_at": u.winback_email_sent_at.isoformat() if u.winback_email_sent_at else None,
             # Subscription/package fields for Team Dashboard filtering & sorting
@@ -167,8 +174,17 @@ def add_user(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Create a new user (admin-created users are auto-verified)."""
-    require_admin(current_user)
+    """Create a new user (admin-created users are auto-verified).
+
+    `is_admin=True` في البودي بيتقبل من الـ owner بس — من غير الشرط ده
+    كان أي أدمن معاه صلاحية "الأعضاء" يقدر يعمل حساب أدمن جديد بباسورد
+    من اختياره ويدخل بيه، وهو نفس تصعيد الصلاحيات اللي اتقفل في
+    toggle-admin. القفل لازم يبقى على كل الأبواب مش باب واحد.
+    """
+    require_permission(current_user, "users")
+
+    if data.is_admin and not getattr(current_user, "is_owner", False):
+        raise HTTPException(status_code=403, detail="Only an owner can create an admin account")
 
     # Check for duplicate email
     existing = db.query(User).filter(User.email == data.email).first()
@@ -217,7 +233,7 @@ async def toggle_active(
 ):
     """Toggle a user's is_active status. When activating, sets end_at = now + 30 days if not already set."""
     from app.services.ws_manager import manager as ws_manager
-    require_admin(current_user)
+    require_permission(current_user, "users")
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -271,7 +287,7 @@ def set_subscription(
     corrections (fixing a wrong grant, shortening after a refund), where
     overwriting is the actual intent.
     """
-    require_admin(current_user)
+    require_permission(current_user, "users")
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -312,18 +328,21 @@ def toggle_admin(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Toggle a user's is_admin status. An owner's flag is off limits to admins."""
-    require_admin(current_user)
+    """Toggle a user's is_admin status — owner-only.
+
+    صناعة أدمن جديد هي فعل ملكية، مش إدارة أعضاء. قبل كده كانت صلاحية
+    تاب "الأعضاء" كفاية، ودي كانت طريق تصعيد صلاحيات كامل: أدمن الـ owner
+    قافل عنه (مثلاً) تاب التقارير كان يقدر يرفّع حساب تاني تحت إيده لأدمن،
+    والحساب الجديد بياخد الديفولت اللي فيه التقارير — يعني وصل لحاجة
+    الـ owner منعها عنه، والحساب الجديد بدوره يقدر يعمل أدمن تالت.
+    الواجهة كانت بتخفي الزرار على غير الـ owner أصلاً؛ الـ API بس هو اللي
+    كان لسه مفتوح، وده بالظبط الفرق بين تخفيّة وحماية.
+    """
+    require_owner(current_user)
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    # toggle-owner is already owner-only, but nothing stopped an admin from
-    # stripping is_admin off an owner and locking them out of the admin half of
-    # their own dashboard.
-    if getattr(user, "is_owner", False) and not getattr(current_user, "is_owner", False):
-        raise HTTPException(status_code=403, detail="Only an owner can change an owner's admin status")
 
     user.is_admin = not user.is_admin
     db.commit()
@@ -364,6 +383,88 @@ def toggle_owner(
         "is_admin": user.is_admin,
         "message": f"User {'promoted to owner' if user.is_owner else 'removed from owner'} successfully",
     }
+
+
+# ══════════════════════════════════════════════════════════════
+#  STAFF PERMISSIONS (owner-only)
+#  اللي بيخلي الـ owner يفتح/يقفل تابات لوحة الفريق لكل أدمن لوحده.
+# ══════════════════════════════════════════════════════════════
+
+class StaffPermissionsIn(BaseModel):
+    permissions: List[str] = []
+
+
+def _staff_row(u: User) -> dict:
+    """أدمن واحد زي ما تاب الصلاحيات بيرسمه."""
+    return {
+        "id": u.id,
+        "full_name": u.full_name,
+        "email": u.email,
+        "avatar_url": u.avatar_url,
+        "selected_avatar": u.selected_avatar,
+        "is_owner": bool(getattr(u, "is_owner", False)),
+        "is_admin": bool(u.is_admin),
+        # الـ owner بياخد الكتالوج كله، والأدمن اللي لسه محدش عدّله بياخد الديفولت
+        "permissions": permissions_for(u),
+        "is_default": (not getattr(u, "is_owner", False)) and getattr(u, "staff_permissions", None) in (None, ""),
+    }
+
+
+@router.get("/staff")
+def list_staff(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """كل الـ staff مع صلاحياتهم + كتالوج الصلاحيات نفسه.
+
+    للـ owner بس: دي الشاشة اللي بيوزّع منها الصلاحيات، ومحدش غيره بيوزّع.
+    """
+    require_owner(current_user)
+
+    staff = (
+        db.query(User)
+        .filter((User.is_admin == True) | (User.is_owner == True))  # noqa: E712
+        .order_by(User.is_owner.desc(), User.full_name.asc())
+        .all()
+    )
+    return {
+        "catalog": PERMISSIONS,
+        "groups": GROUP_LABELS,
+        "defaults": DEFAULT_ADMIN_PERMISSIONS,
+        "staff": [_staff_row(u) for u in staff],
+    }
+
+
+@router.put("/staff/{user_id}/permissions")
+def set_staff_permissions(
+    user_id: int,
+    data: StaffPermissionsIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """حدّد بالظبط الأدمن ده يشوف إيه.
+
+    قايمة فاضية مسموحة ومعناها "مش شايف أي تاب" — مش رجوع للديفولت؛ عشان كده
+    بنكتب "[]" في العمود بدل ما نسيبه NULL.
+    """
+    require_owner(current_user)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if getattr(user, "is_owner", False):
+        # الـ owner عنده كل حاجة بحكم دوره — مفيش صف صلاحيات يتعدّل ليه.
+        raise HTTPException(status_code=400, detail="Owners already have every permission")
+    if not user.is_admin:
+        raise HTTPException(status_code=400, detail="This user is not an admin")
+
+    cleaned = normalize_permissions(data.permissions)
+    user.staff_permissions = dump_permissions(cleaned)
+    db.commit()
+    db.refresh(user)
+
+    logger.info("Owner %s set permissions for admin %s: %s", current_user.id, user.id, cleaned)
+    return {"ok": True, **_staff_row(user)}
 
 
 @router.delete("/users/{user_id}")
@@ -422,7 +523,7 @@ def reset_password(
     themselves everything. That made every owner-only gate in the codebase
     decorative. Owner accounts are therefore resettable only by an owner.
     """
-    require_admin(current_user)
+    require_permission(current_user, "users")
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -451,7 +552,7 @@ def get_member_note(
     db: Session = Depends(get_db),
 ):
     """Return the private admin note for a member (admin only)."""
-    require_admin(current_user)
+    require_permission(current_user, "users")
 
     member = db.query(User).filter(User.id == user_id).first()
     if not member:
@@ -469,7 +570,7 @@ def save_member_note(
     db: Session = Depends(get_db),
 ):
     """Create or update the private admin note for a member (admin only)."""
-    require_admin(current_user)
+    require_permission(current_user, "users")
 
     member = db.query(User).filter(User.id == user_id).first()
     if not member:
@@ -628,7 +729,7 @@ def list_payments(
     db: Session = Depends(get_db),
 ):
     """List payments with pagination, search and filters."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "payments")  # 🔒 صلاحية التاب
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -659,13 +760,18 @@ def list_payments(
 
     rails = _rails_for(db, [row[0] for row in payments])
 
+    # نفس قاعدة تاب الأعضاء: من غير member-contacts مفيش إيميلات. تصدير
+    # المدفوعات كان أسهل طريق يخرج بيها الأدمن بقايمة تواصل العملاء كلها
+    # رغم إن الـ owner قافل عنه بيانات التواصل.
+    show_contacts = has_permission(current_user, "member-contacts")
+
     result = []
     for payment, user in payments:
         result.append({
             "id": payment.id,
             "member_name": user.full_name if user else "Unknown",
             "member_avatar": user.avatar_url if user else None,
-            "email": user.email if user else "",
+            "email": (user.email if user else "") if show_contacts else None,
             "date": payment.created_at.isoformat() if payment.created_at else None,
             "amount": float(payment.amount) if payment.amount else 0,
             "currency": payment.currency or "EGP",
@@ -687,7 +793,7 @@ def payment_stats(
     db: Session = Depends(get_db),
 ):
     """Aggregate payment statistics."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "payments")  # 🔒 صلاحية التاب
 
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -743,7 +849,7 @@ def export_payments_csv(
     db: Session = Depends(get_db),
 ):
     """Export filtered payments as CSV."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "payments")  # 🔒 صلاحية التاب
 
     query = db.query(Payment, User).outerjoin(User, Payment.user_id == User.id)
 
@@ -765,6 +871,8 @@ def export_payments_csv(
     payments = query.order_by(Payment.created_at.desc()).all()
     rails = _rails_for(db, [row[0] for row in payments])
 
+    show_contacts = has_permission(current_user, "member-contacts")
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["ID", "Member Name", "Email", "Date", "Amount", "Currency", "Method", "Status", "Reference"])
@@ -773,7 +881,7 @@ def export_payments_csv(
         writer.writerow([
             payment.id,
             _csv_safe(user.full_name if user else "Unknown"),
-            _csv_safe(user.email if user else ""),
+            _csv_safe(user.email if user else "") if show_contacts else "",
             payment.created_at.isoformat() if payment.created_at else "",
             float(payment.amount) if payment.amount else 0,
             payment.currency or "EGP",
@@ -798,7 +906,7 @@ def retry_payment(
     db: Session = Depends(get_db),
 ):
     """Retry a failed payment."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "payments")  # 🔒 صلاحية التاب
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -819,7 +927,7 @@ def refund_payment(
     db: Session = Depends(get_db),
 ):
     """Mark a paid payment as refunded."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "payments")  # 🔒 صلاحية التاب
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
@@ -858,7 +966,7 @@ def analytics_kpis(
     db: Session = Depends(get_db),
 ):
     """KPI metrics for the analytics dashboard."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     now = datetime.utcnow()
     start = _parse_range(range)
@@ -907,7 +1015,7 @@ def members_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily new member signups for the given range."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -937,7 +1045,7 @@ def revenue_over_time(
     db: Session = Depends(get_db),
 ):
     """Daily revenue from confirmed payments for the given range."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     start = _parse_range(range)
     now = datetime.utcnow()
@@ -1005,7 +1113,7 @@ def revenue_by_month(
     yearly plans is worth several months of monthly ones), and new members vs
     renewals (growth vs retention).
     """
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     payments = db.query(Payment).filter(
         Payment.status == PaymentStatus.CONFIRMED
@@ -1099,7 +1207,7 @@ def subscription_breakdown(
     db: Session = Depends(get_db),
 ):
     """Distribution of current subscription types across members (monthly / yearly / none)."""
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     from app.models import ManualPaymentRequest
 
@@ -1152,7 +1260,7 @@ def payment_method_breakdown(
     `payments` counts transactions and `members` counts distinct people, and
     they differ by exactly the renewals.
     """
-    require_owner(current_user)  # 🔒 owner-only tab (Payments / Analytics)
+    require_permission(current_user, "analytics")  # 🔒 صلاحية التاب
 
     counts = {RAIL_KASHIER: 0, RAIL_INSTAPAY: 0, RAIL_VODAFONE: 0}
     members = {RAIL_KASHIER: set(), RAIL_INSTAPAY: set(), RAIL_VODAFONE: set()}
@@ -1208,7 +1316,7 @@ def students_progress(
     Aggregate queries only (no N+1): grouped completed-lesson counts, exam
     bests and certificates are each fetched once and joined in Python.
     """
-    require_admin(current_user)
+    require_permission(current_user, "students-progress")
 
     courses = db.query(Course).order_by(Course.sort_order.asc(), Course.id.asc()).all()
     course_total, ready_counts = _effective_lesson_totals(db, courses)
@@ -1369,7 +1477,7 @@ def student_course_lessons(
     db: Session = Depends(get_db),
 ):
     """Lesson-by-lesson completion for one student in one course (admins + owners)."""
-    require_admin(current_user)
+    require_permission(current_user, "students-progress")
 
     student = db.query(User).filter(User.id == user_id).first()
     if not student:

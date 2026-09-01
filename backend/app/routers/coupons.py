@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.services.permissions import require_permission
 from app.models import Coupon, CouponRedemption, CouponRedemptionStatus, User
 from app.routers.users import get_current_user
 from app.schemas import CouponCreate, CouponUpdate
@@ -129,15 +130,13 @@ def preview(
 
 
 def _require_owner(current_user: User):
-    """The whole Coupons tab is owner-only — reading a code's remaining count
-    is as much a revenue question as changing what it costs.
+    """403 unless this staff member has the Coupons permission.
 
-    Same shape of refusal as admin.py and guests.py so the dashboard's existing
-    403 handling covers this too. Hiding the buttons in the frontend is
-    cosmetics — this is the gate.
+    Coupons move money, so it stays owner-default — but an owner can now
+    hand the tab to a specific admin from the Permissions tab.
     """
-    if not getattr(current_user, "is_owner", False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "coupons")
+
 
 
 def _coupon_card(db: Session, coupon: Coupon, now: Optional[datetime] = None) -> dict:

@@ -10,9 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Course, ProjectSubmission, ProjectSubmissionStatus, User
-from app.routers.users import get_current_active_member, get_current_admin_user
+from app.routers.users import get_current_active_member, get_current_admin_user, require_perm
+from app.services.permissions import has_permission
 from app.schemas import AdminProjectSubmissionOut, ProjectNotesUpdate, ProjectSubmissionOut
 
+
+# صلاحية تاب المشاريع
+PERM_PROJECTS = require_perm("projects")
 
 router = APIRouter(tags=["Projects"])
 
@@ -75,11 +79,18 @@ def _serialize_submission(submission: ProjectSubmission) -> dict:
     }
 
 
-def _serialize_admin_submission(submission: ProjectSubmission) -> dict:
+def _serialize_admin_submission(submission: ProjectSubmission, viewer: User | None = None) -> dict:
+    """صف المشروع زي ما الأدمن بيشوفه.
+
+    الإيميل بيتحجب من غير صلاحية `member-contacts` — زي تاب الأعضاء
+    وتصدير المدفوعات بالظبط. من غير كده كان تاب المشاريع باب تالت
+    لنفس قايمة بيانات التواصل.
+    """
     data = _serialize_submission(submission)
+    show_contacts = viewer is None or has_permission(viewer, "member-contacts")
     data.update({
         "member_name": submission.user.full_name if submission.user else "Unknown member",
-        "member_email": submission.user.email if submission.user else "",
+        "member_email": (submission.user.email if submission.user else "") if show_contacts else None,
         "course_title": submission.course.title if submission.course else "Unknown course",
         "reviewer_name": submission.reviewer.full_name if submission.reviewer else None,
     })
@@ -188,7 +199,7 @@ def admin_projects(
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     search: str | None = Query(None),
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     query = db.query(ProjectSubmission).join(User, ProjectSubmission.user_id == User.id).join(Course, ProjectSubmission.course_id == Course.id)
@@ -219,25 +230,25 @@ def admin_projects(
         ))
 
     submissions = query.order_by(ProjectSubmission.created_at.desc()).all()
-    return [_serialize_admin_submission(submission) for submission in submissions]
+    return [_serialize_admin_submission(submission, admin) for submission in submissions]
 
 
 @router.get("/admin/projects/{project_id}", response_model=AdminProjectSubmissionOut)
 def admin_project_detail(
     project_id: int,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()
     if not submission:
         raise HTTPException(status_code=404, detail="Project submission not found")
-    return _serialize_admin_submission(submission)
+    return _serialize_admin_submission(submission, admin)
 
 
 @router.get("/admin/projects/{project_id}/download")
 def download_project_file(
     project_id: int,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     """Stream a member's submitted project file to the admin as a download (admin only)."""
@@ -265,7 +276,7 @@ def download_project_file(
 def approve_project(
     project_id: int,
     notes: ProjectNotesUpdate | None = None,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()
@@ -279,14 +290,14 @@ def approve_project(
     submission.reviewed_at = datetime.utcnow()
     db.commit()
     db.refresh(submission)
-    return _serialize_admin_submission(submission)
+    return _serialize_admin_submission(submission, admin)
 
 
 @router.post("/admin/projects/{project_id}/request-changes", response_model=AdminProjectSubmissionOut)
 def request_project_changes(
     project_id: int,
     notes: ProjectNotesUpdate,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     if not notes.notes.strip():
@@ -302,14 +313,14 @@ def request_project_changes(
     submission.reviewed_at = datetime.utcnow()
     db.commit()
     db.refresh(submission)
-    return _serialize_admin_submission(submission)
+    return _serialize_admin_submission(submission, admin)
 
 
 @router.post("/admin/projects/{project_id}/notes", response_model=AdminProjectSubmissionOut)
 def update_project_notes(
     project_id: int,
     notes: ProjectNotesUpdate,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()
@@ -321,13 +332,13 @@ def update_project_notes(
     submission.reviewed_at = datetime.utcnow()
     db.commit()
     db.refresh(submission)
-    return _serialize_admin_submission(submission)
+    return _serialize_admin_submission(submission, admin)
 
 
 @router.delete("/admin/projects/{project_id}", status_code=204)
 def delete_project_submission(
     project_id: int,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_PROJECTS),
     db: Session = Depends(get_db),
 ):
     submission = db.query(ProjectSubmission).filter(ProjectSubmission.id == project_id).first()

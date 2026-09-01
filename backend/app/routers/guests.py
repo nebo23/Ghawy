@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import Guest, GuestSession, User, SuggestedGuest
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_avatar
+from app.services.permissions import require_permission
 
 router = APIRouter(prefix="/guests", tags=["Guest of Honors"])
 
@@ -155,8 +156,7 @@ def list_sessions(status: Optional[str] = None, db: Session = Depends(get_db)):
 
 @router.get("/suggest", response_model=List[SuggestedGuestOut])
 def get_suggested_guests(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     suggestions = db.query(SuggestedGuest).order_by(SuggestedGuest.created_at.desc()).all()
     res = []
     for s in suggestions:
@@ -178,8 +178,7 @@ def suggest_guest(data: SuggestGuestRequest, db: Session = Depends(get_db), curr
 
 @router.delete("/suggest/{suggestion_id}")
 def delete_suggested_guest(suggestion_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     sg = db.query(SuggestedGuest).filter(SuggestedGuest.id == suggestion_id).first()
     if not sg:
         raise HTTPException(status_code=404, detail="Suggestion not found")
@@ -199,8 +198,7 @@ async def upload_guest_avatar(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_active_member)
 ):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     try:
         url = await save_avatar(file)
         return {"avatar_url": url}
@@ -210,8 +208,7 @@ async def upload_guest_avatar(
 # Admin Routes
 @router.post("/")
 def create_guest(data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     
     guest = Guest(**data.model_dump())
     db.add(guest)
@@ -221,8 +218,7 @@ def create_guest(data: GuestCreate, db: Session = Depends(get_db), current_user:
 
 @router.put("/{guest_id}")
 def update_guest(guest_id: int, data: GuestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
         
     guest = db.query(Guest).filter(Guest.id == guest_id).first()
     if not guest:
@@ -237,8 +233,7 @@ def update_guest(guest_id: int, data: GuestCreate, db: Session = Depends(get_db)
 
 @router.delete("/{guest_id}")
 def delete_guest(guest_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     guest = db.query(Guest).filter(Guest.id == guest_id).first()
     if not guest:
         raise HTTPException(status_code=404, detail="Guest not found")
@@ -248,8 +243,7 @@ def delete_guest(guest_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.post("/sessions/")
 def create_session(data: SessionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
         
     guest = db.query(Guest).filter(Guest.id == data.guest_id).first()
     if not guest:
@@ -263,8 +257,7 @@ def create_session(data: SessionCreate, db: Session = Depends(get_db), current_u
 
 @router.put("/sessions/{session_id}")
 def update_session(session_id: int, data: SessionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     session = db.query(GuestSession).filter(GuestSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -282,8 +275,7 @@ def update_session(session_id: int, data: SessionCreate, db: Session = Depends(g
 
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_member)):
-    if not getattr(current_user, 'is_owner', False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    require_permission(current_user, "guest-of-honors")
     session = db.query(GuestSession).filter(GuestSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")

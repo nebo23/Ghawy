@@ -4785,9 +4785,10 @@
 
         function filterMembers() {
             const query = document.getElementById('membersSearchInput').value.toLowerCase();
+            // بالاسم بس: الإيميلات مابقتش بترجع في دليل الأعضاء
+            // (كانت بتسرّب بيانات تواصل كل الأعضاء لأي عضو).
             const filtered = allMembers.filter(m =>
-                m.full_name.toLowerCase().includes(query) ||
-                (m.email && m.email.toLowerCase().includes(query))
+                (m.full_name || '').toLowerCase().includes(query)
             );
             renderMembersList(filtered);
         }

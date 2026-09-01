@@ -19,7 +19,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import DailyReport, TeamRole, User
-from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user
+from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user, require_perm
+
+# صلاحية تاب التقارير
+PERM_REPORTS = require_perm("reports")
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 logger = logging.getLogger(__name__)
@@ -276,7 +279,7 @@ def admin_reports(
     user_id: Optional[int] = Query(None, description="فلتر بـ user_id معين"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_REPORTS),
     db: Session = Depends(get_db),
 ):
     """
@@ -321,10 +324,14 @@ def admin_reports(
 @router.delete("/{report_id}", status_code=204)
 def delete_report(
     report_id: int,
-    admin: User = Depends(get_current_admin_or_owner_user),
+    admin: User = Depends(PERM_REPORTS),
     db: Session = Depends(get_db),
 ):
-    """DELETE /reports/{report_id} — admins and owners only."""
+    """DELETE /reports/{report_id} — نفس صلاحية تاب التقارير.
+
+    كان بيقبل أي أدمن بينما القراءة (`GET /reports/admin`) على
+    PERM_REPORTS — يعني أدمن متقفول عنه التاب كان يقدر يمسح ريبورت.
+    """
     report = db.query(DailyReport).filter(DailyReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")

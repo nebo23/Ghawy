@@ -21,6 +21,7 @@ from app.services.email_service import send_verification_email, send_password_re
 from app.services.disposable_emails import is_disposable_email, is_fake_email_pattern
 from app.services.name_utils import compose_full_name, clean_display_name
 from app.services.turnstile import verify_turnstile
+from app.services.permissions import require_permission, has_permission
 from jose import JWTError
 from typing import Optional
 
@@ -671,27 +672,77 @@ def get_current_owner_user(current_user: User = Depends(get_current_user)) -> Us
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Owners only")
     return current_user
 
+def require_perm(key: str):
+    """Dependency: 403 unless the caller has this team-dashboard permission.
+
+    The owner passes everything; an admin passes only what the owner opened for
+    them (app/services/permissions.py). Build it once at module level —
+    `PERM_COURSES = require_perm("courses")` — and reuse the same object.
+    """
+    def _dep(current_user: User = Depends(get_current_user)) -> User:
+        require_permission(current_user, key)
+        return current_user
+    return _dep
+
+
 def get_current_admin_or_owner_user(current_user: User = Depends(get_current_user)) -> User:
     """Admins or owners."""
     if not (current_user.is_admin or getattr(current_user, 'is_owner', False)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins or owners only")
     return current_user
 
-# ─── Get All Users (مع إضافة الـ Pagination وتأمين الصلاحية) ───
-@router.get("", response_model=list[UserOut])
+# ─── Get All Users ────────────────────────────────────────────
+@router.get("")
 def get_all_users(
     skip: int = 0,
     limit: int | None = None,
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    # Return all active members by default; the community members modal needs the
-    # full list, not a 100-cap. `limit` is still honoured if a caller passes one.
-    query = db.query(User).filter(User.is_active == True).offset(skip)
+    """دليل الأعضاء اللي مودال "الأعضاء" في الكوميونيتي بيرسمه.
+
+    كان بيرجّع `UserOut` كامل — يعني **إيميل وتليفون كل عضو نشط** لأي حد
+    معاه حساب مدفوع. يعني أي واحد يشترك شهر يقدر ينزّل قايمة تواصل
+    العملاء كلها بنداء واحد؛ ودي نفس البيانات اللي `member-contacts`
+    بيمنعها عن الأدمن نفسه، فمكانش ليها أي معنى وهي مفتوحة للأعضاء.
+
+    المودال بيرسم الصورة والاسم والحالة والبادج بس (شوف
+    renderMembersList في chat.html)، فده اللي بيترجع. اللي معاه صلاحية
+    بيانات التواصل بياخد الإيميل والتليفون زي ما كان.
+    """
+    one_min_ago = datetime.utcnow() - timedelta(seconds=60)
+
+    query = db.query(User).filter(User.is_active == True).offset(skip)  # noqa: E712
     if limit is not None:
         query = query.limit(limit)
     users = query.all()
-    return users
+
+    sees_contacts = has_permission(current_user, "member-contacts")
+
+    def row(u: User) -> dict:
+        data = {
+            "id": u.id,
+            "full_name": u.full_name,
+            "avatar_url": u.avatar_url,
+            "selected_avatar": u.selected_avatar,
+            "badge": u.badge or "Member",
+            "custom_title": u.custom_title or "",
+            "bio": u.bio,
+            "is_admin": u.is_admin,
+            "is_owner": bool(getattr(u, "is_owner", False)),
+            "is_active": u.is_active,
+            "is_verified": u.is_verified,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "is_online": u.last_seen is not None and u.last_seen >= one_min_ago,
+        }
+        if sees_contacts:
+            data["email"] = u.email
+            data["phone"] = u.phone
+            data["country"] = u.country
+            data["governorate"] = u.governorate
+        return data
+
+    return [row(u) for u in users]
 
 # ─── Delete Account ──────────────────────────────────────────
 @router.delete("/account", status_code=204)

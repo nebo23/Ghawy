@@ -82,6 +82,8 @@ class UserMemberOut(BaseModel):
     show_social_media: bool = True
     created_at: datetime
     custom_title: Optional[str] = None
+    # تابات لوحة الفريق المسموح بيها — الـ owner بياخد الكل، والعضو العادي فاضية
+    permissions: List[str] = []
 
     class Config:
         from_attributes = True
@@ -506,7 +508,9 @@ class ProjectSubmissionOut(BaseModel):
 
 class AdminProjectSubmissionOut(ProjectSubmissionOut):
     member_name: str
-    member_email: str
+    # None لما المشاهد ملوش صلاحية `member-contacts` — مش string فاضي،
+    # عشان الواجهة تعرف تفرّق بين "مفيش إيميل" و"مش من حقك تشوفه".
+    member_email: Optional[str] = None
     course_title: str
     reviewer_name: Optional[str] = None
 

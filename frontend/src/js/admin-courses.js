@@ -43,10 +43,13 @@ async function loadProfile() {
     if (!res.ok) return;
     const u = await res.json();
 
-    // Course management is the owner-only Courses tab. The inline guard in the
-    // page head can only read the login cache, which has no is_owner — this is
-    // the check that actually holds. Every write below is owner-gated too.
-    if (!u.is_owner) { window.location.replace('/dashboard.html'); return; }
+    // Course management belongs to the Courses tab, so it needs that tab's
+    // permission — the owner has it by default, and an admin only if the owner
+    // granted it. The inline guard in the page head can only read the login
+    // cache, which carries no permissions; this is the check that holds. Every
+    // write below is permission-gated server-side too.
+    const perms = Array.isArray(u.permissions) ? u.permissions : [];
+    if (!u.is_owner && !perms.includes('courses')) { window.location.replace('/dashboard.html'); return; }
 
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setTxt('sidebarName', u.full_name);

@@ -2,7 +2,7 @@
 Owner-only Email Campaigns API — powers the "Emails" tab in the Team Dashboard.
 
 مبني على محرك حملات غاوي (app.services.email_campaign_service) المدموج جوه الـ backend.
-كل الـ endpoints للـ owner بس (require_owner). الجمهور بييجي من الداتابيز الحية.
+كل الـ endpoints محتاجة صلاحية تاب "emails" (الـ owner عنده كل الصلاحيات). الجمهور بييجي من الداتابيز الحية.
 
 قواعد الأمان (متطابقة مع send_dynamic.py / send_campaign.py في مشروع Salah):
   • الوضع الافتراضي دايماً test — بيبعت بس على test_emails (مش لأي عضو حقيقي).
@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Payment, PaymentStatus, EmailCampaignSend, LegacyEmail
 from app.routers.users import get_current_user
-from app.routers.admin import require_owner
+from app.services.permissions import require_permission
 from app.services.email_service import _governorate_to_arabic, arabize_first_name, country_to_arabic
 from app.services import email_campaign_service as ecs
 from app.services import campaign_store
@@ -185,7 +185,7 @@ def audience_quality(
     current_user: User = Depends(get_current_user),
 ):
     """ملخّص جودة الداتا لقائمة مستلمين صريحة (اللي محدّدين فعلاً) — تنبيه بس، مايمنعش الإرسال."""
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     rows = ecs.normalize_recipients(body.recipients)
     if len(rows) > MAX_RECIPIENTS:
         raise HTTPException(status_code=400, detail=f"عدد المستلمين أكبر من الحد المسموح ({MAX_RECIPIENTS}).")
@@ -212,7 +212,7 @@ def get_recipients(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    require_owner(current_user)
+    require_permission(current_user, "emails")
 
     q = db.query(User)
 
@@ -301,7 +301,7 @@ def get_atlas_recipients(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    require_owner(current_user)
+    require_permission(current_user, "emails")
 
     q = db.query(LegacyEmail)
     if search:
@@ -367,7 +367,7 @@ def preview_email(
     body: PreviewRequest,
     current_user: User = Depends(get_current_user),
 ):
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     try:
         content = ecs.build_content(body.content)
     except Exception as e:
@@ -416,7 +416,7 @@ async def send_campaign_endpoint(
     body: SendRequest,
     current_user: User = Depends(get_current_user),
 ):
-    require_owner(current_user)
+    require_permission(current_user, "emails")
 
     mode = (body.mode or "test").strip().lower()
     if mode not in ("test", "real"):
@@ -512,7 +512,7 @@ def campaign_status(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    require_owner(current_user)
+    require_permission(current_user, "emails")
 
     sent = (
         db.query(func.count(EmailCampaignSend.id))
@@ -570,7 +570,7 @@ def list_campaigns(
     db: Session = Depends(get_db),
 ):
     """كل الحملات للقائمة: العنوان/الوصف، النوع، الحالة، وعدّاد إجمالي المرسل لهم."""
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     camps = campaign_store.list_all()
     counts = _sent_counts(db, [c.get("campaign_id") for c in camps if c.get("campaign_id")])
     items = []
@@ -599,7 +599,7 @@ def get_campaign(
     db: Session = Depends(get_db),
 ):
     """حملة كاملة (محتوى + فلاتر جمهور + trigger + الوضع + الحالة) عشان المنشئ يتعبّى منها."""
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     camp = campaign_store.get(campaign_id)
     if camp is None:
         raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
@@ -616,7 +616,7 @@ def create_campaign(
     current_user: User = Depends(get_current_user),
 ):
     """ينشئ حملة جديدة (مسودة افتراضياً) بملف JSON جديد — من غير أي إرسال."""
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     title = (body.title or "").strip()
     content = body.content or {}
     if not title and not (content.get("subject_template") or "").strip():
@@ -656,7 +656,7 @@ def update_campaign(
     للأوتوماتيك: إعدادات الـ trigger و فلاج active **بيتحافظ عليهم كما هم** ومش بيتغيّروا
     من الحفظ العادي (الـ active بيتقلب من endpoint التفعيل الصريح بس).
     """
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     existing = campaign_store.get(campaign_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="الحملة مش موجودة.")
@@ -692,7 +692,7 @@ def toggle_campaign_active(
     current_user: User = Depends(get_current_user),
 ):
     """يفعّل/يوقف حملة أوتوماتيك (زرار صريح) — بيقلب فلاج active بس، مايبعتش إيميل."""
-    require_owner(current_user)
+    require_permission(current_user, "emails")
     existing = campaign_store.get(campaign_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="الحملة مش موجودة.")

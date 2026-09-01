@@ -8,7 +8,10 @@ import logging
 from app.database import get_db
 from app.models import User, CommunityFeedback
 from app.schemas import FeedbackCreate, FeedbackOut
-from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user
+from app.routers.users import get_current_active_member, get_current_admin_user, get_current_admin_or_owner_user, require_perm
+
+# صلاحية تاب الآراء
+PERM_FEEDBACKS = require_perm("feedbacks")
 
 router = APIRouter(prefix="/feedbacks", tags=["Feedbacks"])
 logger = logging.getLogger(__name__)
@@ -69,7 +72,7 @@ async def create_feedback(
 @router.post("/upload-image")
 async def upload_feedback_image(
     file: UploadFile = File(...),
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_FEEDBACKS),
     db: Session = Depends(get_db),
 ):
     """Upload an image to attach to a feedback card — admins and owners only."""
@@ -85,7 +88,7 @@ async def upload_feedback_image(
 @router.get("/admin", response_model=list[FeedbackOut])
 def get_all_feedbacks(
     skip: int = 0, limit: int = 100,
-    admin: User = Depends(get_current_admin_user),
+    admin: User = Depends(PERM_FEEDBACKS),
     db: Session = Depends(get_db)
 ):
     """All feedbacks — admins and owners only."""
@@ -127,10 +130,15 @@ def get_feedbacks(
 @router.delete("/{feedback_id}", status_code=204)
 def delete_feedback(
     feedback_id: int,
-    admin: User = Depends(get_current_admin_or_owner_user),
+    admin: User = Depends(PERM_FEEDBACKS),
     db: Session = Depends(get_db),
 ):
-    """DELETE /feedbacks/{feedback_id} — admins and owners only."""
+    """DELETE /feedbacks/{feedback_id} — نفس صلاحية تاب الآراء.
+
+    كان بيقبل أي أدمن، فأدمن الـ owner قافل عنه تاب الآراء كان لسه
+    يقدر يمسح رأي من الـ API مباشرةً. القراءة والمسح لازم يبقوا على
+    نفس المفتاح.
+    """
     feedback = db.query(CommunityFeedback).filter(CommunityFeedback.id == feedback_id).first()
     if not feedback:
         raise HTTPException(status_code=404, detail="Feedback not found")

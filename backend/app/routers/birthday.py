@@ -38,6 +38,7 @@ from app.models import (
 )
 from app.routers.users import get_current_user
 from app.services.subscription_service import extend_subscription
+from app.services.permissions import require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -81,10 +82,12 @@ def _redirect(status_flag: str) -> RedirectResponse:
 
 
 def _require_owner(current_user: User):
-    """Birthday claims live in the owner-only Pending Requests tab, and
-    approving one extends a paid subscription — owners only."""
-    if not getattr(current_user, "is_owner", False):
-        raise HTTPException(status_code=403, detail="Owners only")
+    """403 unless this staff member has the Pending Requests permission.
+
+    Gift claims are reviewed in that same tab, so they ride its permission.
+    """
+    require_permission(current_user, "pending-requests")
+
 
 
 # ─── 1) زرار الإيميل: تسجيل طلب pending ─────────────────────────────

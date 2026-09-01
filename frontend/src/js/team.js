@@ -17,6 +17,11 @@ const LIMIT = 20;
 let selectedUserId = null;
 let currentUserIsAdmin = false;
 let currentUserIsOwner = false;
+// الصلاحيات اللي الـ owner فاتحها للأدمن ده (جاية من /profile/me). الـ owner
+// بيرجع بكل المفاتيح، فمفيش حالة خاصة ليه في أي فحص هنا.
+let currentUserPerms = [];
+function hasPerm(key) { return currentUserIsOwner || currentUserPerms.includes(key); }
+window.hasPerm = hasPerm;
 
 // ═══ TAB SWITCHING ═══
 let paymentsLoaded = false;
@@ -43,7 +48,8 @@ function initTabs() {
     'projects': 'Projects Review',
     'reports': 'Daily Reports',
     'feedbacks': 'Community Feedbacks',
-    'emails': 'Email Campaigns'
+    'emails': 'Email Campaigns',
+    'permissions': 'Staff Permissions'
   };
 
   tabs.forEach(tab => {
@@ -103,6 +109,9 @@ function initTabs() {
       if (target === 'feedbacks') {
         if (typeof loadFeedbacksTab === 'function') loadFeedbacksTab();
       }
+      if (target === 'permissions') {
+        loadPermissionsTab();
+      }
       if (target === 'emails') {
         // دايماً افتح على قائمة الحملات كصفحة أولى (حتى لو رجعنا للتاب بعد ما كنا في المنشئ)
         if (!emailsLoaded) { loadEmailsTab(); emailsLoaded = true; }
@@ -111,33 +120,40 @@ function initTabs() {
     });
   });
 
-  // 🔒 Hide owner-only tabs from non-owner admins
-  // This runs after profile is loaded — called from loadTeamPage() after setting currentUserIsOwner
+  // 🔒 Show only the tabs this staff member is allowed to see.
+  // Runs after /profile/me lands, from loadTeamPage(). The permission keys are
+  // the data-tab values themselves, so the list needs no translation table —
+  // and hiding a button is the convenience, not the lock: every tab here is
+  // enforced again server-side.
   function applyTabVisibility() {
-    // Non-owner admins get the people-facing tabs only: 'users' (Members, with
-    // contact details redacted server-side), 'students-progress', 'projects',
-    // 'reports' and 'feedbacks'. Everything money-, content- or analytics-shaped
-    // is owner-only, and every tab listed here is enforced server-side too —
-    // hiding the button is the convenience, not the lock.
-    const ownerOnlyTabs = [
-      'payments', 'pending-requests', 'coupons', 'analytics',
-      'live-sessions', 'guest-of-honors', 'courses', 'emails'
-    ];
-    ownerOnlyTabs.forEach(tabId => {
-      const btn = document.querySelector(`.team-section-btn[data-tab="${tabId}"]`);
-      if (btn) {
-        btn.style.display = currentUserIsOwner ? '' : 'none';
-      }
+    document.querySelectorAll('.team-section-btn').forEach(btn => {
+      const tabId = btn.dataset.tab;
+      // Permissions is where the owner hands the other tabs out — owner-only by
+      // definition, and never one of the keys an owner can grant away.
+      const allowed = tabId === 'permissions' ? currentUserIsOwner : hasPerm(tabId);
+      btn.style.display = allowed ? '' : 'none';
     });
 
-    // If the active tab is now hidden (non-owner admin landing on Members),
-    // switch to the first visible tab so the page isn't blank.
-    if (!currentUserIsOwner) {
-      const activeBtn = document.querySelector('.team-section-btn.active');
-      if (!activeBtn || activeBtn.style.display === 'none') {
-        const firstVisible = Array.from(document.querySelectorAll('.team-section-btn'))
-          .find(b => b.style.display !== 'none');
-        if (firstVisible) firstVisible.click();
+    // If the active tab is now hidden, switch to the first visible one so the
+    // page isn't blank.
+    const activeBtn = document.querySelector('.team-section-btn.active');
+    const firstVisible = Array.from(document.querySelectorAll('.team-section-btn'))
+      .find(b => b.style.display !== 'none');
+    if (!activeBtn || activeBtn.style.display === 'none') {
+      if (firstVisible) firstVisible.click();
+    }
+
+    // An admin the owner closed everything on: say so, rather than leaving them
+    // staring at an empty page wondering what broke.
+    if (!firstVisible) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      const area = document.querySelector('.team-content-area');
+      if (area && !document.getElementById('perm-no-access')) {
+        const msg = document.createElement('div');
+        msg.id = 'perm-no-access';
+        msg.className = 'perm-empty';
+        msg.textContent = 'مالكش صلاحية على أي قسم في لوحة الفريق. كلّم الـ owner لو المفروض تشوف حاجة هنا.';
+        area.appendChild(msg);
       }
     }
   }
@@ -163,6 +179,7 @@ async function loadTeamPage() {
       const badgeLabel = getBadgeLabel(u.badge);
       currentUserIsAdmin = !!u.is_admin;
       currentUserIsOwner = !!u.is_owner;
+      currentUserPerms = Array.isArray(u.permissions) ? u.permissions : [];
       if (typeof applyTabVisibility === 'function') applyTabVisibility();
       const badgeEl = document.getElementById('sidebarBadge');
       if (badgeEl) {
@@ -200,9 +217,11 @@ async function loadTeamPage() {
       });
     }
   } catch (e) { }
-  // Members list is available to admins (owners + non-owner admins).
-  // Contact details are redacted server-side for non-owner admins.
-  if (currentUserIsAdmin) await loadUsers();
+  // Members is the landing tab, so it loads up front — but only for whoever
+  // the owner left it open to; for anyone else this is a guaranteed 403 and an
+  // "access required" toast on a page that is behaving correctly.
+  // Contact details are redacted server-side without `member-contacts`.
+  if (hasPerm('users')) await loadUsers();
 
   // A restored or autofilled search box shows a name while the table below it
   // is unfiltered — the filters live in JS state that starts empty. Clearing
@@ -241,9 +260,9 @@ async function loadTeamPage() {
     loadProjectsTab();
   });
 
-  // Pending Requests is owner-only, so only owners fetch its badge counts —
-  // for an admin these would just be two guaranteed 403s on every page load.
-  if (currentUserIsOwner) {
+  // Only whoever can open Pending Requests fetches its badge counts — for
+  // anyone else these would just be two guaranteed 403s on every page load.
+  if (hasPerm('pending-requests')) {
     loadManualPaymentStats(); // fetch badge count
     loadBirthdayClaims();     // birthday gift claims count into the same badge
   }
@@ -319,8 +338,8 @@ function renderTable() {
           </div>
         </div>
       </td>
-      <td class="text-secondary">${currentUserIsOwner ? escapeHtml(user.email || '—') : '<span style="color:#666" title="Owners only">🔒</span>'}</td>
-      <td class="text-secondary">${currentUserIsOwner ? (user.phone || '—') : '<span style="color:#666" title="Owners only">🔒</span>'}</td>
+      <td class="text-secondary">${hasPerm('member-contacts') ? escapeHtml(user.email || '—') : '<span style="color:#666" title="مالكش صلاحية بيانات التواصل">🔒</span>'}</td>
+      <td class="text-secondary">${hasPerm('member-contacts') ? (user.phone || '—') : '<span style="color:#666" title="مالكش صلاحية بيانات التواصل">🔒</span>'}</td>
       <td class="text-secondary">${user.country || '—'}</td>
       <td class="text-secondary">${escapeHtml(user.governorate || '—')}</td>
       <td class="text-secondary">${formatBirthDate(user.birth_date)}</td>
@@ -371,7 +390,7 @@ function renderTable() {
         : ''}
           <button class="btn-action" style="color:#3f8ff9" onclick="openExtendModal(${user.id}, '${escapeHtml(user.full_name).replace(/'/g, "\\'")}')" title="Extend Subscription"><i data-lucide="calendar-plus" style="width:14px;height:14px;"></i></button>
           <button class="btn-action reset" onclick="openResetPasswordModal(${user.id})" title="Reset Password"><i data-lucide="key" style="width:14px;height:14px;"></i></button>
-          ${currentUserIsOwner && user.social_media_url ? `
+          ${hasPerm('member-contacts') && user.social_media_url ? `
           <a href="${window.safeExternalUrl(user.social_media_url)}" target="_blank" rel="noopener noreferrer"
             class="btn-action" style="color:#a855f7;text-decoration:none;display:inline-flex;align-items:center;"
             title="Social Link">
@@ -1096,7 +1115,7 @@ function exportMembersCSV() {
   const rows = filteredUsers;
   if (!rows.length) { showToast('No members to export', 'error'); return; }
 
-  const showContact = currentUserIsOwner;
+  const showContact = hasPerm('member-contacts');
   const headers = ['ID', 'Name', 'Role', ...(showContact ? ['Email', 'Phone'] : []),
     'Country', 'Governorate', 'Birth Date', 'Joined', 'Subscription Start', 'End Date', 'Status'];
 
@@ -2125,8 +2144,8 @@ function renderMprCards(requests, container) {
       `;
     } else if (req.status === 'rejected') {
       actionsHtml = `
-        <div class="mpr-reject-reason" title="${req.rejection_reason || ''}">
-          Reason: ${req.rejection_reason || 'N/A'}
+        <div class="mpr-reject-reason" title="${escapeHtml(req.rejection_reason || '')}">
+          Reason: ${escapeHtml(req.rejection_reason || 'N/A')}
         </div>
       `;
     }
@@ -2217,7 +2236,7 @@ async function loadCouponsTab() {
   container.innerHTML = `<div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Loading...</div>`;
 
   const newBtn = document.getElementById('coupon-new-btn');
-  if (newBtn) newBtn.style.display = currentUserIsOwner ? '' : 'none';
+  if (newBtn) newBtn.style.display = hasPerm('coupons') ? '' : 'none';
 
   try {
     const res = await authFetch(`${API}/coupons/admin`);
@@ -2266,7 +2285,7 @@ function renderCouponCard(c) {
         </tr>`).join('')
     : `<tr><td colspan="5" style="text-align:center;color:#888;padding:18px;">Nobody has used this code yet.</td></tr>`;
 
-  const actions = currentUserIsOwner ? `
+  const actions = hasPerm('coupons') ? `
       <div class="coupon-admin-actions">
         <button class="coupon-admin-btn" onclick="openCouponModal(${c.id})">
           <i data-lucide="pencil"></i> Edit
@@ -2316,7 +2335,7 @@ let couponEditingId = null;
 function couponFormEl(id) { return document.getElementById(id); }
 
 function openCouponModal(id = null) {
-  if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
+  if (!hasPerm('coupons')) return showToast('🚫 مالكش صلاحية الكوبونات', 'error');
 
   couponEditingId = id;
   const c = id != null ? couponsById[id] : null;
@@ -2440,7 +2459,7 @@ async function saveCoupon() {
 // the code with reason `inactive`, and every redemption already recorded
 // against it stays exactly where it is.
 async function toggleCouponActive(id) {
-  if (!currentUserIsOwner) return showToast('👑 Owners only', 'error');
+  if (!hasPerm('coupons')) return showToast('🚫 مالكش صلاحية الكوبونات', 'error');
 
   const c = couponsById[id];
   if (!c) return;
@@ -2671,7 +2690,10 @@ async function loadLiveSessionsTab() {
 
 function escapeHtmlTeam(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // الاقتباسات لازم تتهرّب هي كمان: نفس الدالة بتتحط جوه title="..."
+  // و value="..."، وبدونها اسم فيه " بيخرج من الخاصية ويكتب خاصية جديدة.
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ─── Add Session ─────────────────────────────────────
@@ -2835,7 +2857,7 @@ async function viewAttendees(sessionId) {
           <tbody>${data.attendees.map(a => `
             <tr style="border-bottom:1px solid #1e1e1e;">
               <td style="padding:8px;color:#fff;">${escapeHtmlTeam(a.full_name)}</td>
-              <td style="padding:8px;color:#888;">${a.email}</td>
+              <td style="padding:8px;color:#888;">${escapeHtmlTeam(a.email)}</td>
               <td style="padding:8px;color:#555;">${new Date(a.registered_at).toLocaleDateString()}</td>
             </tr>`).join('')}
           </tbody>
@@ -3758,7 +3780,7 @@ async function openProjectReviewModal(projectId) {
         </div>
         <div class="modal-body-team">
           <div style="display:grid;gap:10px;margin-bottom:14px;color:#ccc;font-size:14px;">
-            <div><strong style="color:#fff;">Member:</strong> ${escapeHtml(project.member_name || 'Unknown')} (${escapeHtml(project.member_email || '')})</div>
+            <div><strong style="color:#fff;">Member:</strong> ${escapeHtml(project.member_name || 'Unknown')}${project.member_email ? ` (${escapeHtml(project.member_email)})` : ''}</div>
             <div><strong style="color:#fff;">Course:</strong> ${escapeHtml(project.course_title || 'Unknown course')}</div>
             <div><strong style="color:#fff;">Status:</strong> <span class="project-admin-status ${project.status}">${projectAdminStatusLabel(project.status)}</span></div>
             <div><strong style="color:#fff;">File:</strong> <a href="${projectFileHref(project)}" target="_blank" style="color:#3f8ff9;">${escapeHtml(project.file_name || 'project.json')}</a></div>
@@ -4163,9 +4185,9 @@ function renderLessonPdfs(pdfUrl) {
   container.innerHTML = pdfs.map((p, i) => `
     <div style="display:flex;align-items:center;gap:8px;background:#111;border:1px solid #222;border-radius:8px;padding:8px 12px;" id="lesson-pdf-row-${i}">
       <i class="fa-solid fa-file-pdf" style="color:#ef4444;font-size:14px;flex-shrink:0;"></i>
-      <a href="${API + p.url}" target="_blank"
+      <a href="${escapeHtml(API + p.url)}" target="_blank"
         style="flex:1;font-size:12px;color:#3f8ff9;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-        title="${p.name}">${p.name}</a>
+        title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</a>
       <button onclick="deleteLessonPdf('${encodeURIComponent(p.url)}')"
         style="background:none;border:1px solid #3a1a1a;color:#ef4444;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
         title="Delete PDF">
@@ -5968,4 +5990,179 @@ function ecPollStatus(campaignId, queuedTotal) {
   };
   tick();
   ecStatusTimer = setInterval(tick, 4000);
+}
+
+
+// ═══ STAFF PERMISSIONS (owner-only tab) ═══
+// الـ owner بيفتح/يقفل تابات لوحة الفريق لكل أدمن لوحده. الشاشة دي بترسم
+// الكتالوج اللي السيرفر بيرجعه — أي صلاحية جديدة في permissions.py بتظهر هنا
+// لوحدها من غير أي تعديل في الفرونت.
+
+let permCatalog = [];      // [{key,label,label_ar,group}]
+let permGroups = {};       // {group: {label,label_ar}}
+let permStaff = [];        // [{id,full_name,...,permissions:[]}]
+let permDraft = {};        // user_id -> Set(keys) — اللي المستخدم شخبط عليه لسه ماحفظش
+
+async function loadPermissionsTab() {
+  const box = document.getElementById('perm-staff-list');
+  if (!box) return;
+  box.innerHTML = '<div class="perm-empty">Loading...</div>';
+
+  try {
+    const res = await authFetch(`${API}/admin/staff`);
+    if (res.status === 403) {
+      box.innerHTML = '<div class="perm-empty">👑 الشاشة دي للـ owner بس</div>';
+      return;
+    }
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+
+    permCatalog = data.catalog || [];
+    permGroups = data.groups || {};
+    permStaff = data.staff || [];
+    permDraft = {};
+    renderPermissionsList();
+  } catch (e) {
+    box.innerHTML = '<div class="perm-empty" style="color:#ef4444;">❌ مقدرناش نجيب قايمة الفريق</div>';
+  }
+}
+
+function permDraftFor(userId) {
+  if (!permDraft[userId]) {
+    const staff = permStaff.find(u => u.id === userId);
+    permDraft[userId] = new Set(staff ? staff.permissions : []);
+  }
+  return permDraft[userId];
+}
+
+function permIsDirty(userId) {
+  const staff = permStaff.find(u => u.id === userId);
+  if (!staff) return false;
+  const draft = permDraftFor(userId);
+  const saved = new Set(staff.permissions);
+  if (draft.size !== saved.size) return true;
+  for (const k of draft) if (!saved.has(k)) return true;
+  return false;
+}
+
+function renderPermissionsList() {
+  const box = document.getElementById('perm-staff-list');
+  if (!box) return;
+
+  const admins = permStaff.filter(u => !u.is_owner);
+  const owners = permStaff.filter(u => u.is_owner);
+
+  const adminsHtml = admins.length ? admins.map(u => renderPermCard(u)).join('') : `
+    <div class="perm-empty">مفيش أدمن دلوقتي. اعمل حد أدمن من تاب الأعضاء الأول، وهيظهر هنا.</div>`;
+
+  // الـ owners سطر واحد في الآخر: مفيش حاجة تتظبط ليهم، بس المفروض تعرف مين فيهم.
+  const ownersHtml = owners.length ? `
+    <div class="perm-card perm-card-owner">
+      <div class="perm-owner-note">👑 الـ owners شايفين كل حاجة في اللوحة ومفيش صلاحيات تتشال منهم من هنا:
+        ${owners.map(u => `<span class="perm-owner-chip">${escapeHtml(u.full_name || '—')}</span>`).join('')}
+      </div>
+    </div>` : '';
+
+  box.innerHTML = adminsHtml + ownersHtml;
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderPermCard(u) {
+  const draft = permDraftFor(u.id);
+  const order = ['people', 'money', 'content', 'extra'];
+  const groups = order.filter(g => permCatalog.some(p => p.group === g));
+
+  const grid = groups.map(g => {
+    const items = permCatalog.filter(p => p.group === g).map(p => {
+      const on = draft.has(p.key);
+      return `
+        <label class="perm-item ${on ? 'on' : ''}">
+          <input type="checkbox" ${on ? 'checked' : ''}
+                 onchange="togglePerm(${u.id}, '${p.key}', this.checked)">
+          <span class="perm-item-label">${escapeHtml(p.label_ar || p.label)}</span>
+          <span class="perm-item-sub">${escapeHtml(p.label)}</span>
+        </label>`;
+    }).join('');
+    const gl = permGroups[g] || {};
+    return `
+      <div class="perm-group">
+        <div class="perm-group-title">${escapeHtml(gl.label_ar || g)}</div>
+        <div class="perm-group-items">${items}</div>
+      </div>`;
+  }).join('');
+
+  const dirty = permIsDirty(u.id);
+  const count = draft.size;
+
+  return `
+    <div class="perm-card" id="perm-card-${u.id}">
+      <div class="perm-card-head">
+        <div class="perm-who">
+          <div class="perm-name">${escapeHtml(u.full_name || '—')} <span class="perm-role">Admin</span></div>
+          <div class="perm-email">${escapeHtml(u.email || '')}</div>
+        </div>
+        <div class="perm-head-actions">
+          <span class="perm-count">${count} / ${permCatalog.length}</span>
+          <button class="perm-btn ghost" onclick="permSelectAll(${u.id}, true)">فتح الكل</button>
+          <button class="perm-btn ghost" onclick="permSelectAll(${u.id}, false)">قفل الكل</button>
+          <button class="perm-btn save ${dirty ? '' : 'disabled'}"
+                  onclick="savePermissions(${u.id})" ${dirty ? '' : 'disabled'}>
+            ${dirty ? 'احفظ' : 'متسجّل'}
+          </button>
+        </div>
+      </div>
+      ${u.is_default ? '<div class="perm-default-note">لسه على الوضع الافتراضي (تابات الناس بس).</div>' : ''}
+      <div class="perm-grid">${grid}</div>
+    </div>`;
+}
+
+function togglePerm(userId, key, on) {
+  const draft = permDraftFor(userId);
+  if (on) draft.add(key); else draft.delete(key);
+  refreshPermCard(userId);
+}
+
+function permSelectAll(userId, on) {
+  const draft = permDraftFor(userId);
+  draft.clear();
+  if (on) permCatalog.forEach(p => draft.add(p.key));
+  refreshPermCard(userId);
+}
+
+function refreshPermCard(userId) {
+  const card = document.getElementById(`perm-card-${userId}`);
+  const u = permStaff.find(x => x.id === userId);
+  if (!card || !u) return;
+  card.outerHTML = renderPermCard(u);
+  if (window.lucide) lucide.createIcons();
+}
+
+async function savePermissions(userId) {
+  const draft = permDraftFor(userId);
+  // بترتيب الكتالوج، عشان اللي بيتبعت يبقى نفس اللي السيرفر بيرجعه بالظبط
+  const permissions = permCatalog.map(p => p.key).filter(k => draft.has(k));
+
+  const btn = document.querySelector(`#perm-card-${userId} .perm-btn.save`);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  try {
+    const res = await authFetch(`${API}/admin/staff/${userId}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed');
+    }
+    const saved = await res.json();
+
+    const idx = permStaff.findIndex(u => u.id === userId);
+    if (idx >= 0) permStaff[idx] = { ...permStaff[idx], ...saved };
+    delete permDraft[userId];
+    refreshPermCard(userId);
+    showToast('✅ اتحفظت — هتشتغل عنده على طول', 'success');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'احفظ'; }
+    showToast(`❌ ${e.message || 'مقدرناش نحفظ'}`, 'error');
+  }
 }

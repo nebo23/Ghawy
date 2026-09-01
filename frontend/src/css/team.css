@@ -1782,3 +1782,605 @@
 @media (max-width: 1100px) {
   #tab-emails .ec-grid { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Staff Permissions tab (owner-only)
+   ══════════════════════════════════════════════════════════════ */
+#tab-permissions .perm-intro { margin-bottom: 20px; }
+#tab-permissions .perm-intro h3 { margin: 0; color: #fff; font-size: 1.1rem; }
+#tab-permissions .perm-intro p {
+  margin: 6px 0 0; color: #888; font-size: 13px; line-height: 1.9; max-width: 760px;
+}
+
+#tab-permissions .perm-staff-list { display: flex; flex-direction: column; gap: 16px; }
+#tab-permissions .perm-empty {
+  padding: 50px; text-align: center; color: #666; font-size: 14px;
+  border: 1px dashed #2a2a2a; border-radius: 14px;
+}
+
+#tab-permissions .perm-card {
+  background: #141414; border: 1px solid #262626; border-radius: 14px; padding: 18px;
+}
+#tab-permissions .perm-card-owner {
+  background: rgba(168,85,247,0.06); border-color: rgba(168,85,247,0.28);
+}
+#tab-permissions .perm-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+}
+#tab-permissions .perm-name {
+  color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+}
+#tab-permissions .perm-role {
+  font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3);
+}
+#tab-permissions .perm-role.owner {
+  background: rgba(168,85,247,0.14); color: #c084fc; border-color: rgba(168,85,247,0.4);
+}
+#tab-permissions .perm-email { color: #777; font-size: 12px; margin-top: 3px; direction: ltr; }
+#tab-permissions .perm-owner-note { color: #c4b5fd; font-size: 13px; margin-top: 10px; line-height: 1.8; }
+#tab-permissions .perm-default-note { color: #8a8a8a; font-size: 12px; margin-top: 10px; }
+
+#tab-permissions .perm-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#tab-permissions .perm-count {
+  color: #999; font-size: 12px; background: #1d1d1d; border: 1px solid #2c2c2c;
+  border-radius: 999px; padding: 3px 10px; direction: ltr;
+}
+#tab-permissions .perm-btn {
+  border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: filter .15s, background .15s;
+}
+#tab-permissions .perm-btn.ghost { background: transparent; color: #999; border: 1px solid #333; }
+#tab-permissions .perm-btn.ghost:hover { background: rgba(255,255,255,0.06); color: #ddd; }
+#tab-permissions .perm-btn.save { background: #22c55e; color: #06210f; border: none; }
+#tab-permissions .perm-btn.save:hover { filter: brightness(1.08); }
+#tab-permissions .perm-btn.save.disabled,
+#tab-permissions .perm-btn.save:disabled {
+  background: #232323; color: #666; cursor: default; filter: none;
+}
+
+#tab-permissions .perm-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px; margin-top: 16px;
+}
+#tab-permissions .perm-group {
+  background: #0f0f0f; border: 1px solid #232323; border-radius: 12px; padding: 12px;
+}
+#tab-permissions .perm-group-title {
+  color: #bbb; font-size: 12px; font-weight: 700; margin-bottom: 10px;
+  letter-spacing: .2px;
+}
+#tab-permissions .perm-group-items { display: flex; flex-direction: column; gap: 6px; }
+
+#tab-permissions .perm-item {
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  column-gap: 9px; row-gap: 0;
+  padding: 8px 10px; border-radius: 9px; cursor: pointer;
+  border: 1px solid transparent; transition: background .12s, border-color .12s;
+}
+#tab-permissions .perm-item:hover { background: rgba(255,255,255,0.04); }
+#tab-permissions .perm-item.on {
+  background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.25);
+}
+#tab-permissions .perm-item input { width: 15px; height: 15px; accent-color: #22c55e; cursor: pointer; grid-row: 1 / span 2; }
+#tab-permissions .perm-item-label { color: #ddd; font-size: 13px; }
+#tab-permissions .perm-item.on .perm-item-label { color: #fff; }
+#tab-permissions .perm-item-sub { color: #666; font-size: 10.5px; direction: ltr; text-align: start; }
+#tab-permissions .perm-owner-chip {
+  display: inline-block; margin: 0 4px; padding: 2px 10px; border-radius: 999px;
+  background: rgba(168,85,247,0.14); color: #ddd6fe; border: 1px solid rgba(168,85,247,0.3);
+  font-size: 12px;
+}
+#perm-no-access {
+  padding: 60px 24px; text-align: center; color: #888; font-size: 14px;
+  border: 1px dashed #2a2a2a; border-radius: 14px; line-height: 1.9;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE PASS — كل تابات لوحة الفريق على كل المقاسات
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. الشل: الصفحة دي مفيهاش .dash-sidebar أصلاً ──────────────
+   dashboard.css بيحجز جنب بعرض var(--sidebar-w) للسايدبار، والـ
+   inline style بيصفّر margin-left بس؛ لما اللغة عربي (dir=rtl)
+   بيتحوّل لـ margin-right فبيضيع 220px على يمين الشاشة في كل
+   المقاسات فوق 768px — على تابلت ده بياكل تلت العرض. */
+.dash-main {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* خلّي عناصر الـ flex/grid تقدر تصغّر فعلاً بدل ما تفضل بعرض محتواها */
+.team-content-area,
+.tab-panel {
+  min-width: 0;
+}
+
+.team-layout {
+  min-width: 0;
+}
+
+/* ── 2. كروت الأرقام (Members / Payments / Analytics / Progress) ──
+   كانت flex فيها رقم مايتكسرش، والـ grid item الافتراضي
+   min-width:auto — فالكارت بيفضل أعرض من عموده وبيتقص. */
+.team-stats,
+.payments-stats,
+.analytics-kpis,
+.sp-stats {
+  min-width: 0;
+}
+
+.team-stats > *,
+.payments-stats > *,
+.analytics-kpis > *,
+.sp-stats > *,
+.stat-card,
+.pay-stat-card,
+.kpi-card {
+  min-width: 0;
+}
+
+.stat-card > *,
+.pay-stat-card > *,
+.kpi-card > * {
+  min-width: 0;
+}
+
+.stat-number,
+.pay-stat-number,
+.kpi-number,
+.stat-label,
+.pay-stat-label,
+.kpi-label {
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+/* الأيقونة مش لازم تاخد 48px على الموبايل */
+@media (max-width: 640px) {
+  .pay-stat-icon,
+  .kpi-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .stat-card,
+  .pay-stat-card,
+  .kpi-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .stat-number { font-size: 1.35rem; }
+  .pay-stat-number,
+  .kpi-number { font-size: 1.2rem; }
+  .stat-icon { font-size: 1.5rem; }
+}
+
+/* عمودين على التابلت، وعمود واحد على الشاشات الضيقة جداً */
+@media (max-width: 1024px) {
+  .team-stats,
+  .payments-stats,
+  .analytics-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .team-stats,
+  .payments-stats,
+  .analytics-kpis,
+  .sp-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 3. الشبكات اللي بتستخدم minmax ثابت ──────────────────────
+   minmax(420px,1fr) جوه عمود عرضه 300px = خروج بره الشاشة.
+   min() بتخلّي الحد الأدنى ياخد 100% لما المساحة أضيق. */
+.coupon-admin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+}
+
+.mpr-cards-grid,
+.ec-campaigns-grid,
+#tab-emails .ec-campaigns-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+}
+
+.sp-detail-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+
+#tab-permissions .perm-group-items {
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+}
+
+/* ── 4. الجداول: من صفوف لكروت على الموبايل ────────────────────
+   جدول الأعضاء فيه 11 عمود والريبورتات 20 — على تليفون ده سحب
+   أفقي أعمى. تحت 700px كل صف بيبقى كارت وكل خلية سطر
+   "العنوان: القيمة" (العنوان جاي من data-label اللي الـ JS بيحطه). */
+@media (max-width: 700px) {
+  .team-table-wrap,
+  .payments-table-wrap {
+    overflow-x: visible !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .team-table,
+  .payments-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    white-space: normal !important;
+    border-collapse: separate;
+  }
+
+  /* الهيدر بيتشال بصرياً بس فاضل لقارئ الشاشة */
+  .team-table > thead,
+  .payments-table > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .team-table > tbody,
+  .payments-table > tbody {
+    display: block;
+  }
+
+  .team-table > tbody > tr,
+  .payments-table > tbody > tr {
+    display: block;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    padding: 4px 2px;
+    margin-bottom: 12px;
+  }
+
+  .team-table > tbody > tr:hover,
+  .payments-table > tbody > tr:hover {
+    background: #171717;
+  }
+
+  .team-table > tbody > tr > td,
+  .payments-table > tbody > tr > td {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: auto !important;
+    min-width: 0;
+    padding: 9px 12px !important;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    text-align: start;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .team-table > tbody > tr > td:last-child,
+  .payments-table > tbody > tr > td:last-child {
+    border-bottom: none;
+  }
+
+  .team-table > tbody > tr > td[data-label]::before,
+  .payments-table > tbody > tr > td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    color: #7c7c7c;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+
+  /* صفوف "جاري التحميل" / "مفيش نتايج" — كارت واحد بعرض كامل */
+  .team-table > tbody > tr > td[colspan],
+  .payments-table > tbody > tr > td[colspan] {
+    display: block !important;
+    text-align: center;
+  }
+
+  .team-table > tbody > tr > td[colspan]::before {
+    content: none;
+  }
+
+  /* صف التفاصيل المتوسّع في تاب تقدّم الطلاب */
+  .team-table > tbody > tr.sp-detail-row {
+    padding: 0;
+  }
+
+  .team-table > tbody > tr.sp-detail-row > td {
+    display: block !important;
+    padding: 12px !important;
+  }
+
+  /* آخر خلية غالباً هي الإجراءات: العنوان فوق والأزرار تحته
+     بتلفّ في أسطر — بدل ما تتزنق جنب بعض وتتقطّع حروفها. */
+  .team-table > tbody > tr > td:last-child,
+  .payments-table > tbody > tr > td:last-child {
+    display: block !important;
+  }
+
+  .team-table > tbody > tr > td:last-child::before,
+  .payments-table > tbody > tr > td:last-child::before {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .team-table > tbody > tr > td:last-child > button,
+  .team-table > tbody > tr > td:last-child > a,
+  .payments-table > tbody > tr > td:last-child > button,
+  .payments-table > tbody > tr > td:last-child > a {
+    margin-bottom: 6px;
+  }
+
+  /* أي زرار جوه كارت: نصّه على سطر واحد ومايتقطعش */
+  .team-table > tbody > tr > td button,
+  .payments-table > tbody > tr > td button,
+  .team-table > tbody > tr > td .btn-action,
+  .payments-table > tbody > tr > td .btn-action {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* مجموعات الأزرار الملفوفة في div */
+  .team-table > tbody > tr > td .team-actions,
+  .team-table > tbody > tr > td .project-actions,
+  .payments-table > tbody > tr > td .pay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .project-actions-cell {
+    width: auto !important;
+  }
+
+  .project-actions {
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
+  }
+}
+
+/* ── 5. الجداول اللي فاضلة جدول (تابلت): سحب أفقي مريح ─────── */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .team-table-wrap,
+  .payments-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .team-table th,
+  .team-table td,
+  .payments-table th,
+  .payments-table td {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 13px;
+  }
+}
+
+/* ── 6. المساحات: الـ 32px الجانبية بتاكل نص شاشة التليفون ──── */
+@media (max-width: 900px) {
+  .team-content-area {
+    padding: 0 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .team-content-area {
+    padding: 0 12px;
+  }
+
+  .page-hdr {
+    padding: 0 12px !important;
+  }
+}
+
+/* ── 7. أشرطة الأدوات والفلاتر ─────────────────────────────── */
+@media (max-width: 900px) {
+  .team-toolbar,
+  .payments-toolbar,
+  .projects-admin-filters,
+  .sp-toolbar,
+  .mpr-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .team-toolbar > *,
+  .payments-toolbar > * {
+    min-width: 0;
+  }
+
+  .search-wrap {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .team-quickdates {
+    gap: 5px;
+  }
+
+  .team-quickdates button,
+  .range-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .pagination,
+  .payments-pagination {
+    flex-wrap: wrap;
+    padding: 18px 0;
+  }
+
+  .page-btn {
+    padding: 7px 11px;
+    font-size: 13px;
+  }
+}
+
+/* ── 8. المودالات ──────────────────────────────────────────── */
+.modal-overlay-team {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .modal-box-team,
+  .modal-box-team.small {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100vh - 32px);
+  }
+
+  .modal-header-team {
+    padding: 16px;
+  }
+
+  .modal-body-team,
+  .modal-footer-team {
+    padding: 16px;
+  }
+
+  .form-row-team {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-row-team > * {
+    width: 100%;
+  }
+}
+
+/* ── 9. الشارتات: الكانفس لازم يمشي مع الكارت ───────────────── */
+.chart-card,
+.chart-card > * {
+  min-width: 0;
+}
+
+.chart-card canvas {
+  max-width: 100% !important;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .chart-card {
+    padding: 14px;
+  }
+}
+
+/* ── 10. تاب الإيميلات: المحرّر والمعاينة ────────────────────── */
+@media (max-width: 640px) {
+  #tab-emails .ec-card {
+    padding: 14px;
+  }
+
+  #tab-emails .ec-toolbar {
+    flex-wrap: wrap;
+  }
+
+  #tab-emails .ec-preview-frame,
+  #tab-emails iframe {
+    max-width: 100%;
+  }
+}
+
+/* ── 11. الدرَج على الموبايل: تحت التوب-بار مش فوقه ─────────── */
+@media (max-width: 768px) {
+  .team-sections-nav {
+    top: 60px;
+  }
+
+  .team-sections-backdrop {
+    top: 60px;
+  }
+
+  .team-layout {
+    margin-top: 16px;
+    min-height: 0;
+  }
+}
+
+/* ── 12. الجداول الفرعية جوه الكروت (كوبونات / سجل الإيميلات) ──
+   دي مش .team-table فمابتتحوّلش لكروت — بس كانت بتخرج بره الكارت
+   من غير أي سحب. بنخليها بلوك بيتسحب أفقياً. */
+@media (max-width: 700px) {
+  .team-content-area table:not(.team-table):not(.payments-table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── 13. فلاتر تاب تقدّم الطلاب ─────────────────────────────
+   .sp-toolbar select عليها max-width:220px بـ specificity أعلى من
+   قاعدة الموبايل العامة، فكانت بتفضل ضيقة في النص. */
+@media (max-width: 900px) {
+  .sp-toolbar select,
+  .sp-toolbar input {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+/* ── 14. لمسات الموبايل الأخيرة ─────────────────────────────── */
+@media (max-width: 640px) {
+  /* أهداف اللمس مايقلّوش عن ~38px */
+  .btn-action,
+  .pay-action-btn,
+  .page-btn {
+    min-height: 34px;
+  }
+
+  /* عنوان الصفحة أصغر شوية عشان مايلفّش 3 سطور */
+  .page-hdr h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .team-sections-label {
+    padding: 4px 14px 8px;
+  }
+}
+
+/* ── 15. اللابتوب (1025–1500): جدول الأعضاء 11 عمود ────────────
+   الحشو 16px × 11 عمود = ~350px زيادة، فعمود الإجراءات كان
+   بيتقص برّه الشاشة. بنضيّق الحشو في المدى ده بس. */
+@media (min-width: 1025px) and (max-width: 1500px) {
+  .team-table {
+    font-size: 13px;
+  }
+
+  .team-table th,
+  .team-table td {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .member-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .team-toolbar {
+    flex-wrap: wrap;
+  }
+}

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.name_utils import split_full_name, clean_display_name
+from app.services.permissions import has_permission
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
 from app.routers.users import get_current_user, get_current_active_member, hash_password, verify_password, issue_token_for
@@ -513,12 +514,16 @@ def get_member_profile(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    is_staff = current_user.is_admin or getattr(current_user, "is_owner", False)
-    if user.id == current_user.id or is_staff:
+    # "طاقم" هنا مش أي أدمن: الإيميل ده بالظبط اللي صلاحية member-contacts
+    # بتحجبه في تاب الأعضاء، وأدمن متقفولة عنه كان لسه يقدر يعدّي على
+    # /profile/1, /profile/2 … وياخده واحد واحد.
+    sees_contacts = has_permission(current_user, "member-contacts")
+    if user.id == current_user.id or sees_contacts:
         return user
 
     out = UserMemberOut.model_validate(user)
     out.email = None
+    out.permissions = []   # صلاحيات الفريق شغل الفريق، مش بيانات كارت العضو
     return out
 
 
