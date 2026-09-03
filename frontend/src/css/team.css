@@ -2452,10 +2452,237 @@
 }
 /* ══════════════════════════════════════════════════════════
    COMMUNITY ANNOUNCEMENTS — in-app member campaigns
-   Reuses the .ec-* shells from the Emails tab (intro, toolbar,
-   editor head, empty state) so the two campaign screens read as
-   one system; only what is genuinely different is defined here.
+
+   This tab owns every class it uses, under `.an-*`.
+
+   It used to borrow the Emails tab's `.ec-*` shells on the
+   assumption they were global. They are not: all of them are
+   scoped `#tab-emails .ec-…`, so none ever reached
+   `#tab-announcements` and the screen rendered as unstyled text —
+   only `.ec-mini.danger`, which happens to be unscoped, was
+   landing, which is why one button had a border and its
+   neighbour did not.
+
+   The fix is NOT to add `#tab-announcements` to those selectors.
+   Comma-listing two tab ids would mean every future change to the
+   Emails tab silently changes this one, and the two screens
+   already have different controls and are going to grow further
+   apart. Where the Emails tab's treatment is right, the
+   declarations are copied. Duplicated CSS is the cheap side of
+   that trade.
+
+   Palette is the team dashboard's, not the member product's:
+   primary #3f8ff9, #111 panels on #0a0a0a, #1e1e1e borders,
+   muted #888. The only lime on this screen is the `promo`
+   campaign-type dot, where it carries meaning.
+
+   The panel is dir="rtl" — use logical properties
+   (margin-inline, border-inline-start), never left/right.
 ══════════════════════════════════════════════════════════ */
+
+/* ── Intro line ── */
+#tab-announcements .an-intro {
+    margin: 0 0 18px;
+    color: #888;
+    font-size: 13px;
+    line-height: 1.8;
+    max-width: 820px;
+}
+
+#tab-announcements .an-intro b { color: #ccc; }
+
+/* ── Buttons ── */
+#tab-announcements .an-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #3f8ff9;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    height: 40px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+    white-space: nowrap;
+}
+
+#tab-announcements .an-new-btn:hover { background: #5aa0ff; }
+
+#tab-announcements .an-ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: #aaa;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 0 14px;
+    height: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+}
+
+#tab-announcements .an-ghost-btn:hover {
+    background: rgba(255, 255, 255, .05);
+    color: #fff;
+    border-color: #333;
+}
+
+/* Small inline action — the one that sits on cards and in rows. */
+#tab-announcements .an-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, .05);
+    color: #bbb;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+#tab-announcements .an-mini:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+#tab-announcements .an-mini.danger { color: #ef4444; border-color: rgba(239, 68, 68, .3); }
+#tab-announcements .an-mini.danger:hover { background: rgba(239, 68, 68, .1); color: #ef4444; }
+#tab-announcements .an-mini.resume { color: #f59e0b; border-color: rgba(245, 158, 11, .35); }
+#tab-announcements .an-mini.resume:hover { background: rgba(245, 158, 11, .1); color: #f59e0b; }
+
+/* The recipients drawer lives on <body>, outside #tab-announcements, so its
+   buttons need the rule too. Same declarations, one extra selector — not a
+   second design. */
+.an-rcp-panel .an-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, .05);
+    color: #bbb;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.an-rcp-panel .an-mini:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+
+/* ── Toolbar ── */
+#tab-announcements .an-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+/* ── Editor head (back + save) ── */
+#tab-announcements .an-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+#tab-announcements .an-editor-head-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#tab-announcements .an-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, .05);
+    color: #ccc;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 0 14px;
+    height: 38px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+#tab-announcements .an-back-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+
+#tab-announcements .an-save-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #22c55e;
+    color: #06210f;
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    height: 38px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter .15s;
+}
+
+#tab-announcements .an-save-btn:hover { filter: brightness(1.08); }
+
+/* ── Editor intro (names the campaign being edited, not the screen) ── */
+#tab-announcements .an-editor-intro { margin-bottom: 18px; }
+#tab-announcements .an-editor-intro h3 { margin: 0 0 4px; color: #fff; font-size: 1.1rem; }
+#tab-announcements .an-editor-intro p { margin: 0; color: #888; font-size: 13px; line-height: 1.7; max-width: 820px; }
+
+/* ── Empty / loading / error — one shape for all three ── */
+#tab-announcements .an-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 56px 24px;
+    background: #0e0e0e;
+    border: 1px dashed #232323;
+    border-radius: 14px;
+}
+
+#tab-announcements .an-state-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(63, 143, 249, .1);
+    color: #3f8ff9;
+    margin-bottom: 2px;
+}
+
+#tab-announcements .an-state-icon svg { width: 22px; height: 22px; }
+#tab-announcements .an-state-title { font-size: .95rem; font-weight: 700; color: #ddd; }
+
+#tab-announcements .an-state-sub {
+    font-size: .8rem;
+    color: #777;
+    line-height: 1.7;
+    max-width: 460px;
+}
+
+#tab-announcements .an-state-action { margin-top: 6px; }
+#tab-announcements .an-state.error .an-state-icon { background: rgba(239, 68, 68, .1); color: #ef4444; }
+#tab-announcements .an-state.error .an-state-title { color: #ef4444; }
+
 
 .an-grid {
     display: grid;
@@ -2474,6 +2701,11 @@
     transition: border-color .2s, transform .2s;
 }
 
+/* Cards in a row stretch to the tallest, so without this the action rows sat
+   at whatever height their own content ended at and the grid read as ragged.
+   The footer is pinned to the bottom of every card instead. */
+.an-card-foot { margin-top: auto; }
+
 .an-card:hover {
     border-color: #2c2c2c;
     transform: translateY(-2px);
@@ -2483,6 +2715,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .an-card-dot {
@@ -2539,7 +2772,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 2px;
 }
 
 .an-card-when {
@@ -2550,6 +2785,8 @@
 .an-card-actions {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .ec-mini.danger {
@@ -2590,34 +2827,70 @@
     color: #3f8ff9;
 }
 
+.an-status-badge.scheduled {
+    background: rgba(63, 143, 249, .1);
+    color: #7fb3ff;
+    border: 1px solid rgba(63, 143, 249, .22);
+}
+
 /* ── List: search, filters, paging ──
    The list was an unpaged limit of 200. These controls are what make campaign
-   201 findable rather than gone. */
-.an-list-filters {
+   201 findable rather than gone.
+
+   Sizing is deliberate: a full-width search box across a 1900px viewport, for
+   a list of campaigns, reads as a mistake. It is capped, the selects are sized
+   to their content, and the row wraps as one unit below ~900px. Control height
+   matches the toolbar buttons so the two rows read as one bar. */
+#tab-announcements .an-list-filters {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
 }
 
 /* `.an-input` sets width:100% and is defined further down the file, so these
    need the parent in the selector to win on specificity rather than order —
-   without it every control claims a full row and the toolbar stacks. */
-.an-list-filters .an-filter-search { flex: 1 1 220px; min-width: 180px; width: auto; }
-.an-list-filters .an-filter-sel { flex: 0 0 auto; width: auto; min-width: 150px; }
+   without it every control claims a full row and the bar stacks. */
+#tab-announcements .an-list-filters .an-filter-search {
+    flex: 1 1 260px;
+    width: auto;
+    min-width: 200px;
+    max-width: 420px;
+    height: 40px;
+    padding-block: 0;
+}
 
-.an-list-count {
+#tab-announcements .an-list-filters .an-filter-sel {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    height: 40px;
+    padding-block: 0;
+    padding-inline: 12px 30px;
+    color: #bbb;
+}
+
+@media (max-width: 900px) {
+    #tab-announcements .an-list-filters .an-filter-search {
+        flex: 1 1 100%;
+        max-width: none;
+    }
+    #tab-announcements .an-list-filters .an-filter-sel { flex: 1 1 45%; }
+}
+
+#tab-announcements .an-list-count {
     margin-inline-start: auto;
     font-size: .72rem;
     color: #666;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
-.an-list-more {
+#tab-announcements .an-list-more {
     display: flex;
     justify-content: center;
-    margin-top: 14px;
+    margin-top: 18px;
 }
 
 /* ── Delivery mode ──
@@ -2625,10 +2898,14 @@
    that lands in a named person's inbox. The two must never be told apart only
    by reading the body, so the mode is a badge on every card and the DM colour
    runs through the whole editor. */
+/* Status and delivery badge share a row of their own. Sitting them beside the
+   title squeezed all three, and the title is the part that needs the width. */
 .an-card-modes {
     display: flex;
+    align-items: center;
     gap: 6px;
     flex-wrap: wrap;
+    margin-top: -2px;
 }
 
 .an-mode-badge {
@@ -2648,36 +2925,48 @@
     border: 1px solid #1f1f1f;
 }
 
+/* DM mode is purple (#a855f7 — already the dashboard's accent on the owner
+   role badge), NOT lime. Lime is the member-facing product's colour and the
+   only lime on this screen is the `promo` campaign-type dot, where it carries
+   meaning. The colours here are a system:
+     blue   #3f8ff9  primary / bell
+     purple #a855f7  DM mode
+     amber  #f59e0b  stopped part-way, resumable
+     red    #ef4444  failed / destructive
+     green  #22c55e  save                                                */
 .an-mode-badge.dm {
-    background: rgba(193, 255, 17, .1);
-    color: #c1ff11;
-    border: 1px solid rgba(193, 255, 17, .28);
+    background: rgba(168, 85, 247, .12);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, .32);
 }
 
-.an-card.dm { border-inline-start: 3px solid rgba(193, 255, 17, .5); }
+.an-card.dm { border-inline-start: 3px solid rgba(168, 85, 247, .55); }
 
 .an-delivery-sel { font-weight: 700; }
 
 /* The editor takes the DM accent as a whole, so there is no way to be halfway
    through writing one and think you are writing the other. */
-#an-editor-view.dm-mode .an-panel { border-color: rgba(193, 255, 17, .22); }
+#an-editor-view.dm-mode .an-panel { border-color: rgba(168, 85, 247, .28); }
 #an-editor-view.dm-mode .an-send-btn {
-    background: #c1ff11;
-    color: #0a0a0a;
+    background: #a855f7;
+    color: #fff;
 }
 
+/* Explains the mode; it is not an error. Amber on this screen means one
+   specific thing — a campaign that stopped part-way — so it is not spent
+   here. */
 .an-dm-warn {
     margin: 10px 0 4px;
     padding: 11px 13px;
     border-radius: 10px;
-    background: rgba(193, 255, 17, .07);
-    border: 1px solid rgba(193, 255, 17, .25);
+    background: rgba(168, 85, 247, .08);
+    border: 1px solid rgba(168, 85, 247, .28);
     color: #d9d9d9;
     font-size: .76rem;
     line-height: 1.75;
 }
 
-.an-dm-warn b { color: #c1ff11; }
+.an-dm-warn b { color: #c084fc; }
 
 /* ── DM preview: a chat bubble, not a notification row ──
    Whatever gets approved here has to be the surface the member actually sees. */
@@ -2689,12 +2978,12 @@
     gap: 5px;
     font-size: .72rem;
     font-weight: 700;
-    color: #c1ff11;
+    color: #c084fc;
 }
 
 .an-dm-bubble {
-    background: #17210a;
-    border: 1px solid rgba(193, 255, 17, .2);
+    background: #1a1226;
+    border: 1px solid rgba(168, 85, 247, .25);
     border-radius: 12px 12px 12px 4px;
     padding: 11px 13px;
     font-size: .82rem;
@@ -2725,11 +3014,6 @@
     color: #8a8a8a;
     line-height: 1.6;
     word-break: break-word;
-}
-
-.ec-mini.resume {
-    color: #f59e0b;
-    border-color: rgba(245, 158, 11, .35);
 }
 
 .an-resume-state {

@@ -107,7 +107,7 @@ function anLoadMore() {
 async function loadAnnouncementsList(append) {
   const grid = document.getElementById('an-grid');
   if (!grid) return;
-  if (!append) grid.innerHTML = '<div class="ec-empty">جاري التحميل...</div>';
+  if (!append) grid.innerHTML = anStateHTML('loader-circle', 'جاري التحميل…');
 
   const qs = new URLSearchParams({ limit: anList.limit, offset: anList.offset });
   if (anList.q) qs.set('q', anList.q);
@@ -117,7 +117,7 @@ async function loadAnnouncementsList(append) {
   try {
     const res = await authFetch(`${API}/admin/announcements?${qs}`);
     if (res.status === 403) {
-      grid.innerHTML = '<div class="ec-empty">🔒 مالكش صلاحية الحملات دي</div>';
+      grid.innerHTML = '<div class="an-empty">🔒 مالكش صلاحية الحملات دي</div>';
       return;
     }
     if (!res.ok) throw new Error('failed');
@@ -128,10 +128,16 @@ async function loadAnnouncementsList(append) {
     anList.hasMore = !!data.has_more;
 
     if (!anCampaigns.length) {
-      grid.innerHTML = (anList.q || anList.status !== 'all' || anList.delivery !== 'all')
-        ? '<div class="ec-empty">مفيش حملة مطابقة للبحث ده.</div>'
-        : `<div class="ec-empty">
-             لسه مفيش حملات. اضغط "حملة جديدة" عشان تبدأ أول واحدة.</div>`;
+      const filtered = !!(anList.q || anList.status !== 'all' || anList.delivery !== 'all');
+      grid.innerHTML = filtered
+        ? anStateHTML('search-x', 'مفيش حملة مطابقة للبحث ده',
+            'جرّب كلمة تانية، أو امسح الفلاتر عشان تشوف كل الحملات.',
+            '<button class="an-ghost-btn" onclick="anClearFilters()">امسح الفلاتر</button>')
+        // The first campaign should be one click away from the empty screen,
+        // not a hunt back up to the toolbar.
+        : anStateHTML('megaphone', 'لسه مفيش حملات',
+            'الحملة بتوصل للأعضاء وهُمّ على الموقع — في جرس الإشعارات، أو كرسالة خاصة.',
+            '<button class="an-new-btn" onclick="anNewCampaign()"><i data-lucide="plus" style="width:16px;height:16px;"></i> ابدأ أول حملة</button>');
     } else {
       grid.innerHTML = anCampaigns.map(anCardHTML).join('');
     }
@@ -147,8 +153,33 @@ async function loadAnnouncementsList(append) {
 
     if (window.lucide) lucide.createIcons();
   } catch (e) {
-    if (!append) grid.innerHTML = '<div class="ec-empty" style="color:#ef4444">❌ مقدرناش نجيب الحملات</div>';
+    if (!append) grid.innerHTML = anStateHTML('triangle-alert', 'مقدرناش نجيب الحملات',
+      'في مشكلة في الاتصال بالسيرفر.',
+      '<button class="an-ghost-btn" onclick="loadAnnouncementsList()">جرّب تاني</button>', 'error');
   }
+}
+
+// One shape for every "nothing to show here" state on this tab — loading, empty,
+// no search results, failed load. Centred, an icon, a muted line, and where
+// there is an obvious next step, the button for it. Matches how the rest of
+// this dashboard draws its empty states rather than dropping a bare sentence
+// into a grid cell.
+function anStateHTML(icon, title, sub, action, variant) {
+  return `
+    <div class="an-state${variant ? ' ' + variant : ''}">
+      <div class="an-state-icon"><i data-lucide="${icon}"></i></div>
+      <div class="an-state-title">${escapeHtml(title)}</div>
+      ${sub ? `<div class="an-state-sub">${escapeHtml(sub)}</div>` : ''}
+      ${action ? `<div class="an-state-action">${action}</div>` : ''}
+    </div>`;
+}
+
+function anClearFilters() {
+  anSetField('an-search', '');
+  anSetField('an-filter-status', 'all');
+  anSetField('an-filter-delivery', 'all');
+  anList = { ...anList, q: '', status: 'all', delivery: 'all', offset: 0 };
+  loadAnnouncementsList();
 }
 
 function anCardHTML(c) {
@@ -161,14 +192,17 @@ function anCardHTML(c) {
   // mid-fan-out showed as "مسودة" until somebody refreshed. The send returns
   // before the fan-out finishes now, so this state is the normal one to be in
   // for a second or two — it needs its own badge.
+  // The scheduled date used to live inside this badge, which made it long
+  // enough to squeeze the title out of the row. It belongs on the footer line
+  // with the other timestamps.
   const statusBadge = sent
     ? `<span class="an-status-badge sent">اتبعتت</span>`
     : c.status === 'failed'
       ? `<span class="an-status-badge failed">فشلت</span>`
       : c.status === 'sending'
-        ? `<span class="an-status-badge sending">بتتبعت دلوقتي…</span>`
+        ? `<span class="an-status-badge sending">بتتبعت دلوقتي</span>`
         : c.status === 'scheduled'
-          ? `<span class="an-status-badge scheduled">مجدولة ${escapeHtml(anFmtDate(c.scheduled_for))}</span>`
+          ? `<span class="an-status-badge scheduled">مجدولة</span>`
           : `<span class="an-status-badge draft">مسودة</span>`;
 
   // The delivery mode gets its own badge on every card, sent or not. The two
@@ -201,29 +235,34 @@ function anCardHTML(c) {
     ? `<div class="an-card-reason">${escapeHtml(c.failure_reason)}</div>` : '';
 
   const actions = sent
-    ? `<button class="ec-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>
-       <button class="ec-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
+    ? `<button class="an-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>
+       <button class="an-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
     : c.status === 'scheduled'
-      ? `<button class="ec-mini" onclick="anUnschedule(${c.id})"><i data-lucide="x" style="width:13px;height:13px;"></i> الغي الجدولة</button>`
+      ? `<button class="an-mini" onclick="anUnschedule(${c.id})"><i data-lucide="x" style="width:13px;height:13px;"></i> الغي الجدولة</button>`
       : c.status === 'failed'
-        ? `<button class="ec-mini resume" onclick="anOpenCampaign(${c.id})"><i data-lucide="rotate-cw" style="width:13px;height:13px;"></i> كمّل</button>
-           ${delivered > 0 ? `<button class="ec-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>` : ''}
-           <button class="ec-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`
-        : `<button class="ec-mini" onclick="anOpenCampaign(${c.id})"><i data-lucide="pen-line" style="width:13px;height:13px;"></i> تعديل</button>
-           <button class="ec-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`;
+        ? `<button class="an-mini resume" onclick="anOpenCampaign(${c.id})"><i data-lucide="rotate-cw" style="width:13px;height:13px;"></i> كمّل</button>
+           ${delivered > 0 ? `<button class="an-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>` : ''}
+           <button class="an-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`
+        : `<button class="an-mini" onclick="anOpenCampaign(${c.id})"><i data-lucide="pen-line" style="width:13px;height:13px;"></i> تعديل</button>
+           <button class="an-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`;
+
+  const when = sent
+    ? 'اتبعتت ' + anFmtDate(c.sent_at)
+    : c.status === 'scheduled'
+      ? 'هتتبعت ' + anFmtDate(c.scheduled_for)
+      : 'اتعدّلت ' + anFmtDate(c.updated_at);
 
   return `
     <div class="an-card${isDm ? ' dm' : ''}">
       <div class="an-card-head">
-        <span class="an-card-dot" style="background:${meta.color}"></span>
+        <span class="an-card-dot" style="background:${meta.color}" title="${escapeHtml(meta.label)}"></span>
         <div class="an-card-title">${escapeHtml(c.title || '(من غير عنوان)')}</div>
-        ${statusBadge}
       </div>
-      <div class="an-card-modes">${modeBadge}</div>
+      <div class="an-card-modes">${statusBadge}${modeBadge}</div>
       <div class="an-card-body">${escapeHtml((c.body || '').slice(0, 140))}${(c.body || '').length > 140 ? '…' : ''}</div>
       ${partial}${reason}${stats}
       <div class="an-card-foot">
-        <span class="an-card-when">${sent ? 'اتبعتت ' + anFmtDate(c.sent_at) : 'اتعدّلت ' + anFmtDate(c.updated_at)}</span>
+        <span class="an-card-when">${escapeHtml(when)}</span>
         <div class="an-card-actions">${actions}</div>
       </div>
     </div>`;
@@ -831,6 +870,9 @@ async function anOpenRecipients(id) {
     const el = document.createElement('div');
     el.id = 'an-rcp-drawer';
     el.className = 'an-rcp-backdrop';
+    // The drawer is appended to <body>, so it sits outside the panel's
+    // dir="rtl" and would inherit the document's LTR. Its content is Arabic.
+    el.dir = 'rtl';
     el.onclick = (e) => { if (e.target === el) anRcpClose(); };
     el.innerHTML = `
       <div class="an-rcp-panel" role="dialog" aria-modal="true">
@@ -846,7 +888,7 @@ async function anOpenRecipients(id) {
         <input class="an-rcp-search" id="an-rcp-search" type="search" placeholder="دوّر باسم أو إيميل…" />
         <div class="an-rcp-summary" id="an-rcp-summary"></div>
         <div class="an-rcp-list" id="an-rcp-list"></div>
-        <div class="an-rcp-foot"><button class="ec-mini" id="an-rcp-more" onclick="anRcpMore()">حمّل كمان</button></div>
+        <div class="an-rcp-foot"><button class="an-mini" id="an-rcp-more" onclick="anRcpMore()">حمّل كمان</button></div>
       </div>`;
     document.body.appendChild(el);
     const box = document.getElementById('an-rcp-search');

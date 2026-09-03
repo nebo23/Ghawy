@@ -593,3 +593,33 @@ At 20,000 recipients the two unfiltered counts on that endpoint walk the whole
 campaign. If a DM campaign ever goes out at that size, the counts want turning
 into one grouped join rather than an EXISTS per row. Noted rather than
 pre-optimised: the largest audience on this platform today is 1,915.
+
+### F-32 · The Emails tab has the same RTL bug the Announcements tab just had — `appearance, PRE-EXISTING`
+
+`teamdashboard.html` is `<html lang="en" dir="ltr">` and `#tab-emails` is
+entirely Arabic, exactly like `#tab-announcements` was. The symptoms are the
+same and visible in any screenshot of it: sentence-final punctuation lands at
+the start of the line (`.دي كل حملات الإيميل…`), and the `+` and `⟳` glyphs sit
+after their labels instead of before.
+
+The fix is the same one line — `dir="rtl"` on the panel — plus a pass over the
+controls inside it to confirm nothing was relying on the LTR direction. It was
+left alone because this pass was scoped to the Announcements tab and touching
+the Emails panel would have made "the emails tab is unchanged" impossible to
+verify.
+
+Note for whoever does it: the Emails tab has ~125 `#tab-emails .ec-*` rules and
+several use `left`/`right` rather than logical properties. Those are what will
+break, and they are the reason this is a small job rather than a one-line one.
+
+### F-33 · The team dashboard's two campaign screens use two different primaries — `design debt`
+
+`#tab-emails` paints its primary action lime (`#D0FA06`), which is the
+member-facing product's brand colour, not this dashboard's. Every other tab —
+Members, Payments, Coupons — uses `#3f8ff9`. The Announcements tab now uses
+`#3f8ff9` too, so the two campaign screens no longer match each other.
+
+That is the correct direction (the dashboard should be internally consistent,
+and lime should mean "member-facing product"), but it leaves the Emails tab as
+the odd one out until somebody repaints it. Logged rather than done: repainting
+the Emails tab is a change to a screen this pass was asked to leave untouched.

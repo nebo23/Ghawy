@@ -34,23 +34,29 @@ function initTabs() {
   const panels = document.querySelectorAll('.tab-panel');
   const breadcrumb = document.getElementById('page-breadcrumb');
   const heading = document.getElementById('page-heading');
+  const subtitle = document.getElementById('page-subtitle');
 
+  // [title, subtitle] per tab. The subtitle used to be a static line in the
+  // markup reading "Manage members, roles and access for your community", so
+  // all fifteen tabs claimed to be about members and roles — including
+  // Coupons, Courses and Announcements. It is driven from here now, from the
+  // same place the heading and breadcrumb already were.
   const titleMap = {
-    'users': 'Team Dashboard',
-    'students-progress': 'Students Progress',
-    'payments': 'Payments & Subscriptions',
-    'analytics': 'Platform Analytics',
-    'pending-requests': 'Pending Requests',
-    'coupons': 'Discount Coupons',
-    'live-sessions': 'Live Sessions',
-    'guest-of-honors': 'Guest of Honors',
-    'courses': 'Courses Management',
-    'projects': 'Projects Review',
-    'reports': 'Daily Reports',
-    'feedbacks': 'Community Feedbacks',
-    'emails': 'Email Campaigns',
-    'announcements': 'Community Announcements',
-    'permissions': 'Staff Permissions'
+    'users': ['Team Dashboard', 'Manage members, roles and access for your community'],
+    'students-progress': ['Students Progress', 'How far each member has got through every course'],
+    'payments': ['Payments & Subscriptions', 'Confirmed payments, plans and subscription history'],
+    'analytics': ['Platform Analytics', 'Revenue, signups and engagement across the platform'],
+    'pending-requests': ['Pending Requests', 'Manual payments and gift claims waiting on a decision'],
+    'coupons': ['Discount Coupons', 'Discount codes, their limits and how many are left'],
+    'live-sessions': ['Live Sessions', 'Scheduled, running and finished live sessions'],
+    'guest-of-honors': ['Guest of Honors', 'Guest speakers and the sessions they are hosting'],
+    'courses': ['Courses Management', 'Courses, their lessons and what is published'],
+    'projects': ['Projects Review', 'Member project submissions waiting to be reviewed'],
+    'reports': ['Daily Reports', 'Daily reports filed by the team'],
+    'feedbacks': ['Community Feedbacks', 'What members are telling you about the community'],
+    'emails': ['Email Campaigns', 'Campaigns that reach members in their inbox'],
+    'announcements': ['Community Announcements', 'Campaigns that reach members inside the platform — in the bell, or as a private message'],
+    'permissions': ['Staff Permissions', 'Which sections of this dashboard each admin can open']
   };
 
   tabs.forEach(tab => {
@@ -64,9 +70,11 @@ function initTabs() {
       const targetPanel = document.getElementById(`tab-${target}`);
       if (targetPanel) targetPanel.style.display = 'block';
 
-      if (breadcrumb && heading && titleMap[target]) {
-        breadcrumb.textContent = titleMap[target];
-        heading.textContent = titleMap[target];
+      const [pageTitle, pageSubtitle] = titleMap[target] || [];
+      if (breadcrumb && heading && pageTitle) {
+        breadcrumb.textContent = pageTitle;
+        heading.textContent = pageTitle;
+        if (subtitle && pageSubtitle) subtitle.textContent = pageSubtitle;
       }
 
       if (target === 'payments' && !paymentsLoaded) {
