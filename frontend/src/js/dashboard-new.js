@@ -116,11 +116,30 @@ function showWelcomeToast() {
 // 3. USER PROFILE
 // ═══════════════════════════════════════════════════════
 
+// ── One /dashboard/summary per page load, shared ────────────────────────────
+// Three separate functions each fetched this endpoint — and loadStatsCards
+// fetched it four times by itself — so a dashboard load asked for the same
+// payload five or six times. Measured in production nginx logs: 5-6 requests to
+// /api/dashboard/summary within 6 seconds of a single page load.
+//
+// They are all rendering different parts of the same object, so they can share
+// one in-flight promise. The cache-buster stays on that one request, keeping the
+// original intent (never a stale summary on load) without paying for it five
+// more times. Pass force=true to deliberately refetch after a mutation.
+let _summaryPromise = null;
+function getDashboardSummary(force) {
+    if (!_summaryPromise || force) {
+        _summaryPromise = api('/dashboard/summary?_t=' + Date.now())
+            .then(r => (r.ok ? r.json() : null))
+            .catch(() => null);
+    }
+    return _summaryPromise;
+}
+
 async function loadUserProfile() {
     try {
-        const res = await api('/dashboard/summary?_t=' + Date.now());
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await getDashboardSummary();
+        if (!data) return;
 
         renderUser(data.user);
         renderCourses(data.courses || []);
@@ -200,20 +219,16 @@ async function loadStatsCards() {
     const statsRow = document.getElementById('statsRow');
     if (!statsRow) return;
 
-    // Optimistic fetch all in parallel, fall back gracefully
-    const [courseCount, achievCount, streakData, xpData, dashboard] = await Promise.allSettled([
-        api('/courses/my?limit=100').then(r => r.ok ? r.json() : null),
-        api('/dashboard/summary').then(r => r.ok ? r.json() : null),
-        api('/dashboard/summary').then(r => r.ok ? r.json() : null),
-        api('/dashboard/summary').then(r => r.ok ? r.json() : null),
-        api('/dashboard/summary').then(r => r.ok ? r.json() : null),
-    ]);
-
-    // Use the single dashboard summary for all stats to avoid N+1 calls
-    let dashData = null;
-    if (dashboard.status === 'fulfilled' && dashboard.value) {
-        dashData = dashboard.value;
-    }
+    // Every card on this row comes out of the one summary object. The comment
+    // that used to sit here said the same thing — "use the single dashboard
+    // summary for all stats to avoid N+1 calls" — and it was true of how the
+    // data was *read*: only the last of five results was ever used. But the
+    // fetches were left behind, so this function requested /dashboard/summary
+    // four times and /courses/my once, then threw four of the five away.
+    // courseCount, achievCount, streakData and xpData were bound and never
+    // referenced, and /courses/my is not needed at all: the course list this
+    // row counts is dashData.courses.
+    const dashData = await getDashboardSummary();
 
     const user = dashData?.user || {};
     const courses = dashData?.courses || [];
@@ -832,9 +847,8 @@ async function loadContinueLearning() {
 
     try {
         // Use dashboard summary courses — find first in-progress
-        const res = await api('/dashboard/summary');
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await getDashboardSummary();
+        if (!data) return;
         const inProgress = (data.courses || []).find(c => c.percent > 0 && c.percent < 100);
         if (inProgress) {
             btn.href = `course-detail.html?id=${inProgress.id}`;
