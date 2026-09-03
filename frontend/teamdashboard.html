@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=31" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260903c" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260903d" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -2233,8 +2233,23 @@
                     </button>
                   </div>
                 </div>
+                <!-- Scheduling. The same confirm phrase above is what authorises
+                     it: the decision is taken here, with a person present, and
+                     the scheduler only carries it out later. -->
+                <div class="an-sched-row">
+                  <label class="an-sched-lbl" for="an-sched-at">أو ابعتها في وقت محدد</label>
+                  <input type="datetime-local" id="an-sched-at" class="an-input an-sched-input" />
+                  <button class="an-sched-btn" onclick="anSchedule()">
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i> اجدول
+                  </button>
+                  <button class="an-sched-btn cancel" id="an-unsched-btn" style="display:none;" onclick="anUnschedule()">
+                    <i data-lucide="x" style="width:14px;height:14px;"></i> الغي الجدولة
+                  </button>
+                </div>
+                <div class="an-sched-state" id="an-sched-state"></div>
                 <div class="an-warn">
                   ⚠️ الإرسال الحقيقي بيوصل لكل عضو في الجمهور فوراً ومش بيترجع. الحملة اللي اتبعتت مابتتبعتش تاني — اعمل نسخة لو عايز تكررها.
+                  الجدولة كمان محتاجة نفس جملة التأكيد، والحملة المجدولة مابتتعدّلش غير لما تلغي جدولتها.
                 </div>
               </div>
             </div>
@@ -2987,7 +3002,7 @@
     <script src="src/js/dashboard-new.js?v=20260902a"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/team.js?v=20260903a"></script>
-  <script src="src/js/team-announcements.js?v=20260903c"></script>
+  <script src="src/js/team-announcements.js?v=20260903d"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

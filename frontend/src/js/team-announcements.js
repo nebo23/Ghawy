@@ -104,7 +104,9 @@ function anCardHTML(c) {
       ? `<span class="an-status-badge failed">فشلت</span>`
       : c.status === 'sending'
         ? `<span class="an-status-badge sending">بتتبعت دلوقتي…</span>`
-        : `<span class="an-status-badge draft">مسودة</span>`;
+        : c.status === 'scheduled'
+          ? `<span class="an-status-badge scheduled">مجدولة ${escapeHtml(anFmtDate(c.scheduled_for))}</span>`
+          : `<span class="an-status-badge draft">مسودة</span>`;
 
   // Stats only mean something once it has gone out — a draft showing "0% read"
   // reads like a failure rather than "not sent yet".
@@ -118,8 +120,10 @@ function anCardHTML(c) {
   const actions = sent
     ? `<button class="ec-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>
        <button class="ec-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
-    : `<button class="ec-mini" onclick="anOpenCampaign(${c.id})"><i data-lucide="pen-line" style="width:13px;height:13px;"></i> تعديل</button>
-       <button class="ec-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`;
+    : c.status === 'scheduled'
+      ? `<button class="ec-mini" onclick="anUnschedule(${c.id})"><i data-lucide="x" style="width:13px;height:13px;"></i> الغي الجدولة</button>`
+      : `<button class="ec-mini" onclick="anOpenCampaign(${c.id})"><i data-lucide="pen-line" style="width:13px;height:13px;"></i> تعديل</button>
+         <button class="ec-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`;
 
   return `
     <div class="an-card">
@@ -164,6 +168,8 @@ function anNewCampaign() {
   const staff = document.getElementById('an-aud-staff');
   if (staff) staff.checked = false;
   anSetField('an-confirm', '');
+  anSetField('an-sched-at', '');
+  anRenderSchedState();
 
   document.getElementById('an-editor-title').textContent = '📢 حملة جديدة';
   document.getElementById('an-editor-badge').innerHTML = '<span class="an-status-badge draft">مسودة</span>';
@@ -193,6 +199,13 @@ async function anOpenCampaign(id) {
   const staff = document.getElementById('an-aud-staff');
   if (staff) staff.checked = !!a.include_staff;
   anSetField('an-confirm', '');
+  // datetime-local wants local wall-clock with no zone; the stored value is
+  // naive UTC, so mark it before parsing or it lands three hours out.
+  anSetField('an-sched-at', c.scheduled_for
+    ? new Date(/[Zz]|[+-]\d{2}:?\d{2}$/.test(c.scheduled_for) ? c.scheduled_for : c.scheduled_for + 'Z')
+        .toLocaleString('sv').slice(0, 16).replace(' ', 'T')
+    : '');
+  anRenderSchedState();
 
   document.getElementById('an-editor-title').textContent = '📢 ' + (c.title || 'حملة');
   document.getElementById('an-editor-badge').innerHTML =
@@ -578,4 +591,82 @@ async function anRcpLoad(append) {
 
   const more = document.getElementById('an-rcp-more');
   if (more) more.style.display = data.has_more ? '' : 'none';
+}
+
+
+// ═══ SCHEDULING ═══
+//
+// The confirm phrase is required to SCHEDULE, not to fire. Somebody decides to
+// send this text to this audience while they are sitting here; the scheduler
+// then carries that decision out at 8pm with nobody present. Asking for the
+// phrase at fire time would mean asking nobody.
+
+function anSchedStateHTML(c) {
+  if (!c || c.status !== 'scheduled') return '';
+  return `⏳ مجدولة: ${escapeHtml(anFmtDate(c.scheduled_for))}`;
+}
+
+function anRenderSchedState() {
+  const box = document.getElementById('an-sched-state');
+  const cancel = document.getElementById('an-unsched-btn');
+  const scheduled = !!(anCurrent && anCurrent.status === 'scheduled');
+  if (box) box.innerHTML = anSchedStateHTML(anCurrent);
+  if (cancel) cancel.style.display = scheduled ? '' : 'none';
+}
+
+async function anSchedule() {
+  if (!anCurrent || !anCurrent.id) {
+    showToast('❌ احفظ الحملة الأول', 'error');
+    return;
+  }
+  const when = (document.getElementById('an-sched-at') || {}).value || '';
+  if (!when) {
+    showToast('❌ اختار التاريخ والوقت الأول', 'error');
+    return;
+  }
+  const typed = ((document.getElementById('an-confirm') || {}).value || '').trim();
+  if (typed !== AN_CONFIRM_PHRASE) {
+    showToast(`❌ اكتب ${AN_CONFIRM_PHRASE} بالظبط في خانة التأكيد عشان تجدول`, 'error');
+    return;
+  }
+  const count = (document.getElementById('an-aud-count') || {}).textContent || '?';
+  const local = new Date(when);
+  if (!confirm(`هتتبعت لـ ${count} عضو في ${local.toLocaleString('ar-EG')}. تكمّل؟`)) return;
+
+  try {
+    // datetime-local has no zone; the browser read it as local time, so send an
+    // absolute instant and let the server store UTC rather than guessing.
+    const res = await authFetch(`${API}/admin/announcements/${anCurrent.id}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify({ scheduled_for: local.toISOString(), confirm_phrase: typed }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'failed');
+    anCurrent = data;
+    anSetField('an-confirm', '');
+    anRenderSchedState();
+    showToast('✅ الحملة اتجدولت', 'success');
+    await loadAnnouncementsList();
+    anBackToList();
+  } catch (e) {
+    showToast(`❌ ${e.message || 'الجدولة فشلت'}`, 'error');
+  }
+}
+
+async function anUnschedule(id) {
+  const target = id || (anCurrent && anCurrent.id);
+  if (!target) return;
+  try {
+    const res = await authFetch(`${API}/admin/announcements/${target}/unschedule`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'failed');
+    if (anCurrent && anCurrent.id === target) {
+      anCurrent = data;
+      anRenderSchedState();
+    }
+    showToast('✅ اتلغت الجدولة — بقت مسودة', 'success');
+    await loadAnnouncementsList();
+  } catch (e) {
+    showToast(`❌ ${e.message || 'مقدرناش نلغي الجدولة'}`, 'error');
+  }
 }

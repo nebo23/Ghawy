@@ -362,6 +362,80 @@ r = client.get(f"/admin/announcements/{big_id}/recipients")
 check("recipients refuses anonymous", r.status_code == 401, r.status_code)
 
 
+# ══════════════════════════════════════════════════════════════
+print("\n=== scheduling: the human decision happens at schedule time ===")
+# ══════════════════════════════════════════════════════════════
+import asyncio                                                    # noqa: E402
+from datetime import datetime as _dt, timedelta as _td            # noqa: E402
+
+def iso_in(**kw):
+    return (_dt.utcnow() + _td(**kw)).isoformat()
+
+c = mkcampaign(audience={"status": "active", "country": "Jordan"})
+SID = c["id"]
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+                json={"scheduled_for": iso_in(hours=2)})
+check("scheduling without the confirm phrase is refused", r.status_code == 400, r.text[:120])
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+                json={"scheduled_for": iso_in(hours=2), "confirm_phrase": "nope"})
+check("scheduling with a wrong confirm phrase is refused", r.status_code == 400, r.text[:120])
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+                json={"scheduled_for": iso_in(hours=-1), "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
+check("scheduling in the past is refused", r.status_code == 400, r.text[:120])
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+                json={"scheduled_for": "not-a-date", "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
+check("an unparseable date is refused", r.status_code == 400, r.text[:120])
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(member),
+                json={"scheduled_for": iso_in(hours=2), "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
+check("scheduling needs the announcements permission", r.status_code == 403, r.status_code)
+
+r = client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+                json={"scheduled_for": iso_in(hours=2), "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
+check("a valid schedule is accepted", r.status_code == 200, r.text[:160])
+check("...and the campaign is now 'scheduled'", (r.json() or {}).get("status") == "scheduled", r.json())
+check("...with the due time stored", bool((r.json() or {}).get("scheduled_for")), r.json())
+
+# The phrase was typed against THIS text, so the text is frozen until unscheduled.
+r = client.put(f"/admin/announcements/{SID}", headers=H(sender),
+               json={"title": "SWAPPED", "body": "SWAPPED", "type": "promo"})
+row = db.query(M.Announcement).filter(M.Announcement.id == SID).first(); db.refresh(row)
+check("a scheduled campaign cannot be edited", r.status_code == 400, r.text[:120])
+check("...and its text is untouched", row.title != "SWAPPED", row.title)
+
+r = client.post(f"/admin/announcements/{SID}/unschedule", headers=H(sender))
+row = db.query(M.Announcement).filter(M.Announcement.id == SID).first(); db.refresh(row)
+check("unscheduling returns it to draft",
+      r.status_code == 200 and row.status == "draft" and row.scheduled_for is None,
+      f"{r.status_code} {row.status} {row.scheduled_for}")
+r = client.post(f"/admin/announcements/{SID}/unschedule", headers=H(sender))
+check("unscheduling something that is not scheduled is refused", r.status_code == 400, r.status_code)
+
+# ── the job itself ──
+from app.scheduler import fire_scheduled_announcements, _due_scheduled_announcements   # noqa: E402
+
+client.post(f"/admin/announcements/{SID}/schedule", headers=H(sender),
+            json={"scheduled_for": iso_in(hours=2), "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
+check("a future campaign is not yet due", SID not in _due_scheduled_announcements())
+
+row = db.query(M.Announcement).filter(M.Announcement.id == SID).first()
+row.scheduled_for = _dt.utcnow() - _td(minutes=1)          # its moment arrives
+db.commit()
+check("a past-due campaign is picked up by the sweep", SID in _due_scheduled_announcements())
+
+before = notif_count(SID)
+asyncio.run(fire_scheduled_announcements())
+st = wait_sent(SID)
+check("the scheduler fires it without any phrase at fire time", st["status"] == "sent", st)
+check("...and it delivered", st["delivered"] >= 1 and notif_count(SID) > before,
+      f"{before} -> {notif_count(SID)}")
+check("...and it is no longer due", SID not in _due_scheduled_announcements())
+
+
 print("\n" + "=" * 72)
 print(f"passed {len(PASS)}   failed {len(FAIL)}")
 for f in FAIL:

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import extract
 from app.database import SessionLocal
-from app.models import User, Payment, PaymentStatus, UserCourseProgress
+from app.models import User, Payment, PaymentStatus, UserCourseProgress, Announcement
 
 logger = logging.getLogger(__name__)
 
@@ -378,3 +378,81 @@ async def send_winback_emails():
         await asyncio.to_thread(_send_winback_batch)
     except Exception as e:
         logger.error("💥 Winback scheduler error: %s", e)
+
+
+# ─── Scheduled In-App Campaigns ────────────────────────────
+def _due_scheduled_announcements() -> list[int]:
+    """Sync body — runs in a thread. Returns campaign ids that are due."""
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Announcement.id)
+            .filter(Announcement.status == "scheduled",
+                    Announcement.scheduled_for.isnot(None),
+                    Announcement.scheduled_for <= datetime.utcnow())
+            .order_by(Announcement.scheduled_for.asc())
+            .all()
+        )
+        return [r[0] for r in rows]
+    finally:
+        db.close()
+
+
+# دقيقة واحدة: الجدولة بالدقيقة، ومسحة على عمود مفهرس تقريباً ببلاش.
+# الـ next_run_time هنا لنفس سبب الـ winback — الوركر بيعمل restart والعدّاد
+# بيتصفّر، فأول تشغيلة لازم تبقى قريبة من الإقلاع.
+@scheduler.scheduled_job(
+    "interval",
+    minutes=1,
+    id="scheduled_announcements",
+    next_run_time=datetime.now(timezone.utc) + timedelta(seconds=45),
+)
+async def fire_scheduled_announcements():
+    """يبعت الحملات اللي جه ميعادها.
+
+    الجدولة اتأكّدت وقت ما اتعملت (جملة التأكيد اتكتبت ساعتها)، فالـ job هنا
+    بينفّذ قرار اتاخد خلاص — مش بياخد قرار جديد.
+
+    بيستخدم نفس `_begin_real_send` بتاع الإرسال اليدوي: الفان-آوت بيروح لثريد،
+    والـ job ده على الـ event loop زي أي job تاني، فأي شغل طويل هنا كان
+    هيجمّد الموقع.
+    """
+    from app.routers.announcements import _begin_real_send, _send_lock
+
+    try:
+        due = await asyncio.to_thread(_due_scheduled_announcements)
+    except Exception as e:
+        logger.error("💥 Scheduled announcements lookup failed: %s", e)
+        return
+    if not due:
+        return
+
+    loop = asyncio.get_running_loop()
+    for announcement_id in due:
+        # نفس القفل بتاع الإرسال اليدوي: إرسالة حقيقية واحدة في نفس الوقت.
+        # لو في واحدة شغالة بنسيب الباقي للمسحة الجاية بعد دقيقة.
+        if not _send_lock.acquire(blocking=False):
+            logger.info("📅 في إرسالة شغالة — الحملات المجدولة هتستنى الدورة الجاية")
+            return
+
+        db = SessionLocal()
+        try:
+            row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+            # اتغيّرت بين المسحة والقفل (اتلغت جدولتها، أو اتبعتت يدوي)
+            if not row or row.status != "scheduled":
+                _send_lock.release()
+                continue
+            count = _begin_real_send(db, row, loop)   # الثريد هو اللي بيفك القفل
+            logger.info("📅 حملة #%s المجدولة بدأت الإرسال لـ %s عضو", announcement_id, count)
+        except Exception as e:
+            _send_lock.release()
+            logger.error("💥 Scheduled announcement #%s failed to start: %s", announcement_id, e)
+            try:
+                row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+                if row and row.status == "scheduled":
+                    row.status = "failed"
+                    db.commit()
+            except Exception:
+                logger.exception("📅 حملة #%s: مقدرناش نسجّلها failed", announcement_id)
+        finally:
+            db.close()
