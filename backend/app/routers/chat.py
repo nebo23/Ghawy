@@ -452,18 +452,27 @@ async def mark_read(
         Message.sender_id != current_user.id
     ).all()
 
+    # Which of these the caller has already read — one query for the whole page
+    # instead of one per message. This is the mark-as-read call the client makes
+    # every time a channel is opened, and message_reads is the largest table in
+    # the schema, so the per-message lookup was the most expensive shape here.
+    msg_ids = [m.id for m in msgs]
+    already_read = {
+        mid
+        for (mid,) in (
+            db.query(MessageRead.message_id).filter(
+                MessageRead.message_id.in_(msg_ids),
+                MessageRead.user_id == current_user.id,
+            ).all()
+            if msg_ids else []
+        )
+    }
+
     for msg in msgs:
-        # Check if already read using the constraint logic or a query
-        # Since we added UNIQUE constraint, we can just attempt insert
-        # or do a query check to be safe
-        existing = db.query(MessageRead).filter(
-            MessageRead.message_id == msg.id,
-            MessageRead.user_id == current_user.id
-        ).first()
-        if not existing:
+        if msg.id not in already_read:
             db.add(MessageRead(message_id=msg.id, user_id=current_user.id))
             msg.read_count = (msg.read_count or 0) + 1
-            
+
     db.commit()
 
     # Broadcast read update to the affected channels

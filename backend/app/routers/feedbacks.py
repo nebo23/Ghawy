@@ -97,9 +97,17 @@ def get_all_feedbacks(
         .order_by(CommunityFeedback.created_at.desc())
         .offset(skip).limit(limit).all()
     )
+    # One query for every submitter on the page rather than one per row — the
+    # same batching the chat message list uses.
+    submitter_ids = {f.user_id for f in feedbacks if f.user_id is not None}
+    submitters = {
+        u.id: u
+        for u in (db.query(User).filter(User.id.in_(submitter_ids)).all() if submitter_ids else [])
+    }
+
     result = []
     for f in feedbacks:
-        submitter = db.query(User).filter(User.id == f.user_id).first()
+        submitter = submitters.get(f.user_id)
         out = FeedbackOut(
             id=f.id,
             user_id=f.user_id,

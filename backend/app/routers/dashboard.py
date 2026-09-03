@@ -117,14 +117,25 @@ def get_dashboard_summary(current_user: User = Depends(get_current_active_member
 
     # 2. Courses (For now, let's just return all published courses with the user's progress)
     courses_query = db.query(Course).filter(Course.is_published == True).all()
+
+    # This ran one COUNT per published course. /dashboard/summary is the single
+    # busiest authenticated endpoint on the site — the dashboard draws its user
+    # card, its stat row and its continue-learning button from it — so the loop
+    # cost was paid on every dashboard load and grew with the catalogue. One
+    # grouped query gives the same per-course numbers at a fixed cost, which is
+    # the shape the exam stats below already use.
+    from app.models import UserProgress
+    completed_by_course = dict(
+        db.query(UserProgress.course_id, func.count(UserProgress.id))
+        .filter(UserProgress.user_id == current_user.id)
+        .group_by(UserProgress.course_id)
+        .all()
+    )
+
     courses_data = []
     for course in courses_query:
-        from app.models import UserProgress
-        completed_lessons = db.query(UserProgress).filter(
-            UserProgress.course_id == course.id,
-            UserProgress.user_id == current_user.id
-        ).count()
-        
+        completed_lessons = completed_by_course.get(course.id, 0)
+
         percent = 0.0
         if course.total_lessons > 0:
             percent = (completed_lessons / course.total_lessons) * 100

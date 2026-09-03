@@ -95,6 +95,18 @@ for slug in ("ideas", "wins", "questions", "jobs", "resources", "offtopic"):
                       title=f"{slug} {i}", body="body text here"))
 db.commit()
 
+# 9 published courses, as production has, with lessons and some progress for
+# `me` — /dashboard/summary counts completed lessons per course.
+for ci in range(9):
+    c = M.Course(title=f"Course {ci}", description="d", is_published=True, total_lessons=6)
+    db.add(c); db.commit(); db.refresh(c)
+    for li in range(6):
+        l = M.Lesson(course_id=c.id, title=f"L{li}", order=li, video_status="ready")
+        db.add(l); db.commit(); db.refresh(l)
+        if li < 3:
+            db.add(M.UserProgress(user_id=me.id, course_id=c.id, lesson_id=l.id))
+db.commit()
+
 from app.routers.users import issue_token_for                      # noqa: E402
 H = {"Authorization": "Bearer " + issue_token_for(me)}
 client = TestClient(main.app, raise_server_exceptions=False)
