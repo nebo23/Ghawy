@@ -56,13 +56,19 @@ main.py
 
 Two structural problems, both Phase 1 work:
 
-* **`create_all()` and `seed_defaults()` run at import time**, not inside a
-  lifespan handler. Under `--workers N` they execute once per worker.
-* **`create_all()` is how half the schema actually exists.** 25 of the 50
-  tables in `models.py` are never mentioned by any migration — see §7.
+* ~~`create_all()` and `seed_defaults()` run at import time~~ — **fixed in
+  Phase 1.** Both now run inside the `lifespan` handler, and seeding takes a
+  Postgres advisory lock so N workers cannot race.
+* ~~`create_all()` is how half the schema actually exists~~ — **fixed in
+  Phase 1.** It was worse than half: only **8** of the 50 tables were ever
+  created by a migration. `ghawy_baseline` now creates all 50, and `create_all`
+  is off the production path entirely. See §7.
 
-`expand_threadpool` raises the anyio threadpool to 120; that is the fix for the
-2026-07-21 congestion collapse and must not be reverted casually.
+The anyio threadpool is raised to 120 in that same `lifespan` handler; that is
+the fix for the 2026-07-21 congestion collapse and must not be reverted
+casually. It moved off `@app.on_event` in Phase 1 because FastAPI silently
+ignores `on_event` once a `lifespan` is passed — leaving it there would have
+disabled it with no error anywhere.
 
 ## 4. Routers
 

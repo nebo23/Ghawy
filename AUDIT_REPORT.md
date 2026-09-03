@@ -60,13 +60,36 @@ API key. The body's `hash` field is not usable for this and is not used.
 > rule was added remain in git history, and have never been rotated. That is
 > tracked as a live security item, not as part of this issue.
 
-### ❌ Issue 4 — "Broken Alembic migration tree" — WAS NEVER TRUE
+### ❌ Issue 4 — "Broken Alembic migration tree" — WAS NEVER TRUE (and neither was its successor)
 
-The report says `alembic check` cannot locate revision `8f370e02e750`. That
-revision id **appears nowhere in the repository** — not as a `revision`, not as
-a `down_revision`, not in any file under `backend/`.
+Two separate claims have been made about this tree. **Both were wrong, and the
+real defect was something neither of them described.** Recording all three
+together, because a stale finding left standing in the record is exactly the
+failure mode this document exists to correct.
 
-The tree is intact, verified against alembic itself rather than by reading:
+**Claim 1 — "`alembic check` cannot locate revision `8f370e02e750`."** That
+revision id appears nowhere in the repository — not as a `revision`, not as a
+`down_revision`, not in any file under `backend/`.
+
+**Claim 2 — "3 heads, 2 roots and a fork; `alembic upgrade head` fails
+outright."** Listed as finding #3 of the phased-audit brief, with heads
+`b3d7e91c2a45`, `307efdf1db45`, `c1a7f4e9b8d2` and roots `4823c6c0b288`,
+`2668e3beafa9`. Also false, and confirmed independently by the owner
+(2026-09-03).
+
+`4823c6c0b288` is a **merge revision**. Its parent is a two-element tuple that
+spans two lines:
+
+```python
+down_revision: Union[str, Sequence[str], None] = (
+    '307efdf1db45', 'c1a7f4e9b8d2'
+)
+```
+
+A regex that only matches a quoted string or `None` matches neither line, so it
+reads `4823c6c0b288` as parentless — a phantom second root — and reads its two
+real parents as revisions nobody points at — phantom heads. A tuple-aware parse
+returns **exactly one head and one root**. So does alembic:
 
 ```
 $ docker exec ghawy_backend alembic heads
@@ -75,19 +98,27 @@ $ docker exec ghawy_backend alembic current
 c9e1d3a7b542 (head)
 ```
 
-48 revisions, **one root, one head, no missing parents**, and production is
-stamped at head. The fork at `f1201efadb0f` is closed by
-`4823c6c0b288_merge_multiple_heads.py`.
+The fork at `f1201efadb0f` is real and has always been closed by that merge.
+No merge revision was needed in Phase 1, and no `down_revision` was edited to
+silence an error.
 
-> **A caution for anyone re-auditing this.** `4823c6c0b288` is a *merge* — its
-> `down_revision` is a two-element tuple spanning two lines. A naive line-based
-> parser reads that as a broken or absent parent and reports phantom extra heads
-> and roots. Ask alembic; do not grep.
->
-> **The real migration defect is a different one**, and this report never found
-> it: 25 of the 50 tables have no migration at any point in the history and
-> exist only because `Base.metadata.create_all()` runs at import time. See
-> [`docs/ARCHITECTURE.md` §7](docs/ARCHITECTURE.md).
+> **A caution for anyone re-auditing this.** Ask alembic. Do not grep. Both
+> false claims above came from reading the files instead of asking the tool.
+
+**The defect that was real**, which neither claim found: `alembic upgrade head`
+against an **empty** database genuinely did fail — but four revisions in, on
+`ALTER TABLE comment_reactions`, because **only 8 of the 50 tables were ever
+created by a migration**. The rest existed solely because
+`Base.metadata.create_all()` ran at import time, and `--autogenerate` was then
+run against databases that already had them — which is why five revisions titled
+"add *X* table" contain nothing but `pass`. Against production, which had every
+table, the history replayed fine, so this stayed invisible.
+
+**Status: fixed in Phase 1** (2026-09-03, commit `316b86b`). `ghawy_baseline` is
+now the root of the history and creates all 50 tables, verified equal to
+production's `pg_dump --schema-only`. See
+[`docs/ARCHITECTURE.md` §7](docs/ARCHITECTURE.md) and
+[`docs/PHASE-1-REPORT.md`](docs/PHASE-1-REPORT.md).
 
 ---
 

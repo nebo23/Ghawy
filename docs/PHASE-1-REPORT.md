@@ -59,7 +59,9 @@ The eight are `audit_records`, `chat_message_reactions`, `coupon_redemptions`,
 The other 42 tables existed only because `Base.metadata.create_all()` ran at
 import. `--autogenerate` was then run against a database `create_all` had
 already updated, so it correctly found nothing to do — which is how five
-revisions titled "add *X* table" contain no code at all (F-12).
+revisions titled "add *X* table" contain no code at all. Six revisions have an
+empty `upgrade()` in total: those five, plus the merge `4823c6c0b288`, which is
+empty because that is what a merge revision is (F-13).
 
 So the history replayed only against a database that already had the schema.
 That is the rot, and it is what made every model change a gamble.
@@ -87,7 +89,7 @@ direction — production is authoritative. These are DDL-level attributes; no
 query, no ORM behaviour and no API response changes.
 
 Three remaining differences are naming-only and were deliberately left alone
-(F-11).
+(F-12).
 
 ## 4. The fix
 
@@ -150,9 +152,9 @@ rebuilt and not deployed to. It has been `Up … (healthy)` throughout.
 **② The resulting schema equals production's.** `pg_dump --schema-only` of both,
 normalised and sorted, diffed. **Zero substantive differences** — every column,
 type, nullability, default, index and foreign key matches. What remains is the
-three naming-only items in F-11, plus `alembic_version`, the new
+three naming-only items in F-12, plus `alembic_version`, the new
 `ghawy_schema_baseline`, and production's orphan `subscription_repair_2026_08_14`
-(F-10).
+(F-03).
 
 **③ A production database with data upgrades with no loss.** Full 34 MB
 `pg_dump` of production restored to a scratch database, `alembic upgrade head`
@@ -252,4 +254,4 @@ the DB pool on reconnect. **Awaiting your go-ahead.**
 | `backend/app/models.py` | 7 drifts aligned to production + 1 redundant index dropped |
 | `backend/main.py` | `lifespan` handler; `create_all`/`seed_defaults`/threadpool/scheduler off import time and off `on_event` |
 | `docs/ARCHITECTURE.md` | §7 rewritten to the resolved state |
-| `docs/FINDINGS.md` | F-10 … F-13 |
+| `docs/FINDINGS.md` | F-03 answered; F-12 … F-16 opened |
