@@ -44,5 +44,7 @@ ACCEPTANCE_DESTROY_DB=my_db DATABASE_URL=postgresql://.../my_db python ...
 | `acceptance_security.py` | Access control across courses, lessons, files, chat, admin |
 | `acceptance_atlas_promo_and_reset.py` | Atlas free-month promo rounds, password reset |
 | `acceptance_team_roles.py` | Named team roles and the permissions they grant |
+| `acceptance_access_control.py` | Phase 3 findings: live sessions, lesson duration, DM privacy, announcement links, file cookies |
+| `acceptance_announcements.py` | Announcement permissions, audience filtering, send rules, background fan-out |
 
 Real tests — ones safe to run anywhere — belong in `backend/tests/`.

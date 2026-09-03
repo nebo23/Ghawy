@@ -3,7 +3,7 @@ Chat Router — Channels, Messages (REST), File Uploads, Read Receipts, Delete
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc, func, text as sqltext
+from sqlalchemy import and_, desc, func, or_, text as sqltext
 from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
@@ -652,9 +652,22 @@ def list_messages(
     messages.reverse()  # Return in chronological order
     reactions_map = get_reaction_summaries(db, [msg.id for msg in messages], current_user.id)
 
+    # One query for every sender on the page, not one per message. This ran
+    # `db.query(User)...first()` inside the loop below, so a 50-message page —
+    # the default — was 50 extra round trips on the most-requested endpoint in
+    # the app, and dashboard-new.js asks for messages too. The same page of
+    # messages usually comes from a handful of distinct people, so the map is
+    # far smaller than the message list. get_reaction_summaries directly above
+    # already batches by message id; this is the same shape.
+    sender_ids = {msg.sender_id for msg in messages if msg.sender_id is not None}
+    senders = {
+        u.id: u
+        for u in (db.query(User).filter(User.id.in_(sender_ids)).all() if sender_ids else [])
+    }
+
     result = []
     for msg in messages:
-        sender = db.query(User).filter(User.id == msg.sender_id).first()
+        sender = senders.get(msg.sender_id)
         result.append(MessageOut(
             id=msg.id,
             channel_id=msg.channel_id,
