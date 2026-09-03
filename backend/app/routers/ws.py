@@ -105,14 +105,15 @@ async def websocket_endpoint(websocket: WebSocket):
             all_group_channels = db.query(Channel).filter(Channel.channel_type == "group").all()
             for ch in all_group_channels:
                 if ch.id not in channel_ids:
+                    # Reaching here already means there is no membership row:
+                    # channel_ids is built from this user's memberships, loaded
+                    # immediately above, and this branch only runs for a channel
+                    # that is not in it. The per-channel "already_member" SELECT
+                    # that used to sit here could therefore only ever return
+                    # None — one wasted query per group channel on every socket
+                    # connect, asking a question the list in hand had answered.
                     channel_ids.append(ch.id)
-                    # Auto-create membership only if not already a member
-                    already_member = db.query(ChatMember).filter(
-                        ChatMember.channel_id == ch.id,
-                        ChatMember.user_id == user_id
-                    ).first()
-                    if not already_member:
-                        db.add(ChatMember(channel_id=ch.id, user_id=user_id))
+                    db.add(ChatMember(channel_id=ch.id, user_id=user_id))
             db.commit()
 
         # Connect (already accepted above, so skip the accept inside the manager)
