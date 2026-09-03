@@ -116,7 +116,8 @@ function anCardHTML(c) {
     </div>` : '';
 
   const actions = sent
-    ? `<button class="ec-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
+    ? `<button class="ec-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>
+       <button class="ec-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
     : `<button class="ec-mini" onclick="anOpenCampaign(${c.id})"><i data-lucide="pen-line" style="width:13px;height:13px;"></i> تعديل</button>
        <button class="ec-mini danger" onclick="anDelete(${c.id})"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> مسح</button>`;
 
@@ -463,4 +464,118 @@ async function anWatchSend(id) {
       return;
     }
   }
+}
+
+
+// ═══ RECIPIENTS ═══
+//
+// "نسبة القراءة ٣١%" مابيقولش مين الـ ٦٩%. الداتا كانت موجودة أصلاً — صفوف
+// الإشعارات اللي شايلة الـ announcement_id مربوطة باليوزرز — بس مكانش ليها
+// شاشة. الافتراضي هنا "مافتحوهاش" مش "الكل": ده السؤال اللي بيتفتح الدرج
+// عشانه.
+
+let anRcpState = { id: null, state: 'unread', search: '', offset: 0, limit: 50, items: [] };
+
+function anRcpClose() {
+  const d = document.getElementById('an-rcp-drawer');
+  if (d) d.remove();
+  anRcpState.id = null;
+}
+
+async function anOpenRecipients(id) {
+  anRcpState = { id, state: 'unread', search: '', offset: 0, limit: 50, items: [] };
+  if (!document.getElementById('an-rcp-drawer')) {
+    const el = document.createElement('div');
+    el.id = 'an-rcp-drawer';
+    el.className = 'an-rcp-backdrop';
+    el.onclick = (e) => { if (e.target === el) anRcpClose(); };
+    el.innerHTML = `
+      <div class="an-rcp-panel" role="dialog" aria-modal="true">
+        <div class="an-rcp-head">
+          <div class="an-rcp-title">مين استلم الحملة</div>
+          <button class="an-rcp-x" onclick="anRcpClose()" aria-label="اقفل">✕</button>
+        </div>
+        <div class="an-rcp-tabs">
+          <button class="an-rcp-tab" data-state="unread" onclick="anRcpSetState('unread')">مافتحوهاش</button>
+          <button class="an-rcp-tab" data-state="read"   onclick="anRcpSetState('read')">فتحوها</button>
+          <button class="an-rcp-tab" data-state="all"    onclick="anRcpSetState('all')">الكل</button>
+        </div>
+        <input class="an-rcp-search" id="an-rcp-search" type="search" placeholder="دوّر باسم أو إيميل…" />
+        <div class="an-rcp-summary" id="an-rcp-summary"></div>
+        <div class="an-rcp-list" id="an-rcp-list"></div>
+        <div class="an-rcp-foot"><button class="ec-mini" id="an-rcp-more" onclick="anRcpMore()">حمّل كمان</button></div>
+      </div>`;
+    document.body.appendChild(el);
+    const box = document.getElementById('an-rcp-search');
+    let t = null;
+    box.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => { anRcpState.search = box.value; anRcpState.offset = 0; anRcpState.items = []; anRcpLoad(); }, 300);
+    });
+  }
+  await anRcpLoad();
+}
+
+function anRcpSetState(state) {
+  anRcpState.state = state;
+  anRcpState.offset = 0;
+  anRcpState.items = [];
+  anRcpLoad();
+}
+
+function anRcpMore() {
+  anRcpState.offset += anRcpState.limit;
+  anRcpLoad(true);
+}
+
+async function anRcpLoad(append) {
+  const s = anRcpState;
+  if (!s.id) return;
+  const list = document.getElementById('an-rcp-list');
+  if (list && !append) list.innerHTML = '<div class="an-rcp-empty">بيحمّل…</div>';
+
+  const qs = new URLSearchParams({ state: s.state, limit: s.limit, offset: s.offset });
+  if (s.search) qs.set('search', s.search);
+
+  let data;
+  try {
+    const res = await authFetch(`${API}/admin/announcements/${s.id}/recipients?${qs}`);
+    if (!res.ok) throw new Error('failed');
+    data = await res.json();
+  } catch (e) {
+    if (list) list.innerHTML = '<div class="an-rcp-empty">مقدرناش نحمّل القائمة</div>';
+    return;
+  }
+
+  s.items = append ? s.items.concat(data.items) : data.items;
+
+  document.querySelectorAll('.an-rcp-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.state === s.state));
+
+  const sum = document.getElementById('an-rcp-summary');
+  if (sum) {
+    sum.innerHTML = `
+      <span><b>${data.delivered}</b> اتسلّمت</span>
+      <span><b>${data.read}</b> فتحوها</span>
+      <span><b>${data.unread}</b> مافتحوهاش</span>`;
+  }
+
+  if (list) {
+    list.innerHTML = s.items.length
+      ? s.items.map(u => `
+          <div class="an-rcp-row">
+            <div class="an-rcp-av">${u.avatar_url
+                ? `<img src="${escapeHtml(u.avatar_url.startsWith('http') ? u.avatar_url : API + u.avatar_url)}" alt="" onerror="this.remove()"/>`
+                : ''}</div>
+            <div class="an-rcp-who">
+              <div class="an-rcp-name">${escapeHtml(u.full_name || '—')}</div>
+              <div class="an-rcp-mail">${escapeHtml(u.email || '')}</div>
+            </div>
+            <span class="an-rcp-flag ${u.is_read ? 'read' : 'unread'}">${u.is_read ? 'فتحها' : 'مافتحهاش'}</span>
+          </div>`).join('')
+      : '<div class="an-rcp-empty">مفيش حد هنا</div>';
+  }
+
+  const more = document.getElementById('an-rcp-more');
+  if (more) more.style.display = data.has_more ? '' : 'none';
 }

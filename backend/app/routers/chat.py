@@ -847,20 +847,43 @@ def get_community_unread(
 
     total = 0
     per_channel = {}
-    for ch in group_channels:
-        m = memberships.get(ch.id)
-        since = (m.last_read_at or m.joined_at) if m else current_user.created_at
-        q = db.query(func.count(Message.id)).filter(
-            Message.channel_id == ch.id,
-            Message.sender_id != current_user.id,
-            Message.is_deleted == False,
+
+    # One grouped query for every channel, not one COUNT per channel. This is
+    # polled every 30s by utils.js on every page that draws the sidebar badge,
+    # so the loop's cost was paid by every member continuously.
+    #
+    # Each channel has its own "since" cutoff, which is why this is not a plain
+    # GROUP BY: the cutoff is folded into the predicate as one OR-arm per
+    # channel, so a single scan can still be grouped by channel_id. A channel
+    # with no cutoff at all contributes an arm with no time bound.
+    if group_channels:
+        arms = []
+        for ch in group_channels:
+            m = memberships.get(ch.id)
+            since = (m.last_read_at or m.joined_at) if m else current_user.created_at
+            arm = Message.channel_id == ch.id
+            if since:
+                arm = and_(arm, Message.created_at > since)
+            arms.append(arm)
+
+        rows = (
+            db.query(Message.channel_id, func.count(Message.id))
+            .filter(
+                Message.sender_id != current_user.id,
+                Message.is_deleted == False,
+                or_(*arms),
+            )
+            .group_by(Message.channel_id)
+            .all()
         )
-        if since:
-            q = q.filter(Message.created_at > since)
-        count = q.scalar() or 0
-        total += count
-        if count:
-            per_channel[ch.name] = per_channel.get(ch.name, 0) + count
+        counts = {cid: n for cid, n in rows}
+        # Walk the channels rather than the rows, so the name-keyed accumulation
+        # below behaves exactly as the loop did when two channels share a name.
+        for ch in group_channels:
+            count = counts.get(ch.id, 0)
+            total += count
+            if count:
+                per_channel[ch.name] = per_channel.get(ch.name, 0) + count
 
     # ── Community post channels (forum categories on the chat page) ──
     post_slugs = [
@@ -871,19 +894,30 @@ def get_community_unread(
         r.channel: r
         for r in db.query(PostChannelRead).filter(PostChannelRead.user_id == current_user.id).all()
     }
-    for slug in post_slugs:
-        r = post_reads.get(slug)
-        since = (r.last_read_at if r else None) or current_user.created_at
-        q = db.query(func.count(Post.id)).filter(
-            Post.category_slug == slug,
-            Post.user_id != current_user.id,
+    # Same shape for the forum categories: one grouped query rather than one
+    # COUNT per slug.
+    if post_slugs:
+        arms = []
+        for slug in post_slugs:
+            r = post_reads.get(slug)
+            since = (r.last_read_at if r else None) or current_user.created_at
+            arm = Post.category_slug == slug
+            if since:
+                arm = and_(arm, Post.created_at > since)
+            arms.append(arm)
+
+        rows = (
+            db.query(Post.category_slug, func.count(Post.id))
+            .filter(Post.user_id != current_user.id, or_(*arms))
+            .group_by(Post.category_slug)
+            .all()
         )
-        if since:
-            q = q.filter(Post.created_at > since)
-        count = q.scalar() or 0
-        total += count
-        if count:
-            per_channel[slug] = per_channel.get(slug, 0) + count
+        counts = {slug: n for slug, n in rows}
+        for slug in post_slugs:
+            count = counts.get(slug, 0)
+            total += count
+            if count:
+                per_channel[slug] = per_channel.get(slug, 0) + count
 
     return {"unread_count": total, "channels": per_channel}
 

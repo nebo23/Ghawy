@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import Integer, cast, func as sql_func
+from sqlalchemy import Integer, cast, func as sql_func, or_
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
@@ -587,4 +587,82 @@ def send_status(
         "delivered": delivered,
         "sent_at": row.sent_at,
         "stalled": bool(row.status == "sending" and not active),
+    }
+
+
+@router.get("/{announcement_id}/recipients")
+def list_recipients(
+    announcement_id: int,
+    state: str = Query("all"),                       # all | read | unread
+    search: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """مين استلم الحملة دي، ومين فتحها.
+
+    أول سؤال بيتسأل على نسبة قراءة واطية هو "مين اللي مافتحهاش" — والرقم لوحده
+    مابيجاوبش عليه. الداتا موجودة أصلاً: صفوف الإشعارات اللي شايلة الـ id ده
+    مربوطة باليوزرز، فمحتاجة endpoint مش جدول جديد.
+
+    بصفحات: حملة لـ ٢٠ ألف عضو مالهاش لازمة تترمي كلها في ريسبونس واحد.
+    """
+    require_permission(current_user, "announcements")
+    row = _get_or_404(db, announcement_id)
+
+    base = (
+        db.query(Notification, User)
+        .join(User, User.id == Notification.user_id)
+        .filter(Notification.announcement_id == row.id)
+    )
+
+    if state == "read":
+        base = base.filter(Notification.is_read.is_(True))
+    elif state == "unread":
+        base = base.filter(Notification.is_read.is_(False))
+
+    term = (search or "").strip()
+    if term:
+        like = f"%{term}%"
+        base = base.filter(or_(User.full_name.ilike(like), User.email.ilike(like)))
+
+    total = base.with_entities(sql_func.count(Notification.id)).scalar() or 0
+
+    # العدّادات دي على الحملة كلها، مش على الصفحة ولا على الفلتر — عشان الهيدر
+    # يفضل ثابت وإنت بتقلب بين "اتقرت" و"مافتحهاش".
+    totals = dict(
+        db.query(Notification.is_read, sql_func.count(Notification.id))
+        .filter(Notification.announcement_id == row.id)
+        .group_by(Notification.is_read)
+        .all()
+    )
+    read_count = int(totals.get(True, 0))
+    unread_count = int(totals.get(False, 0))
+
+    rows = (
+        base.order_by(Notification.is_read.asc(), User.full_name.asc())
+        .offset(offset).limit(limit).all()
+    )
+
+    return {
+        "announcement_id": row.id,
+        "total": total,
+        "delivered": read_count + unread_count,
+        "read": read_count,
+        "unread": unread_count,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + len(rows) < total,
+        "items": [
+            {
+                "user_id": u.id,
+                "full_name": u.full_name,
+                "email": u.email,
+                "avatar_url": u.avatar_url,
+                "is_read": bool(n.is_read),
+                "sent_at": n.created_at,
+            }
+            for n, u in rows
+        ],
     }

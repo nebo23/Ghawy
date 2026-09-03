@@ -116,6 +116,46 @@ with Count("unread badge poll") as c3:
 assert r.status_code == 200, r.text
 print(f"       -> status {r.status_code}, body {str(r.json())[:110]}")
 
+# ── correctness: the grouped queries must equal the naive per-channel loop ──
+print("\nP-3  correctness vs the naive loop it replaces")
+from sqlalchemy import func as _f                                   # noqa: E402
+naive_total, naive_per = 0, {}
+for ch in db.query(M.Channel).filter(
+        M.Channel.channel_type == M.ChannelType.GROUP,
+        M.Channel.name.notin_(["start-here", "start_here"])).all():
+    mem = db.query(M.ChatMember).filter(M.ChatMember.channel_id == ch.id,
+                                        M.ChatMember.user_id == me.id).first()
+    since = (mem.last_read_at or mem.joined_at) if mem else me.created_at
+    q = db.query(_f.count(M.Message.id)).filter(
+        M.Message.channel_id == ch.id, M.Message.sender_id != me.id,
+        M.Message.is_deleted == False)
+    if since:
+        q = q.filter(M.Message.created_at > since)
+    n = q.scalar() or 0
+    naive_total += n
+    if n:
+        naive_per[ch.name] = naive_per.get(ch.name, 0) + n
+for slug in [s for (s,) in db.query(M.Post.category_slug).filter(
+        M.Post.category_slug.isnot(None)).distinct().all()]:
+    r = db.query(M.PostChannelRead).filter(M.PostChannelRead.user_id == me.id,
+                                           M.PostChannelRead.channel == slug).first()
+    since = (r.last_read_at if r else None) or me.created_at
+    q = db.query(_f.count(M.Post.id)).filter(M.Post.category_slug == slug,
+                                             M.Post.user_id != me.id)
+    if since:
+        q = q.filter(M.Post.created_at > since)
+    n = q.scalar() or 0
+    naive_total += n
+    if n:
+        naive_per[slug] = naive_per.get(slug, 0) + n
+
+got = client.get("/chat/community/unread", headers=H).json()
+ok_total = got["unread_count"] == naive_total
+ok_per = got["channels"] == naive_per
+print(f"       total   endpoint={got['unread_count']}  naive={naive_total}  {'MATCH' if ok_total else 'MISMATCH'}")
+print(f"       per-chan {'MATCH' if ok_per else 'MISMATCH: %s vs %s' % (got['channels'], naive_per)}")
+assert ok_total and ok_per, "grouped query changed the answer"
+
 print("\nP-5  dashboard-adjacent endpoints")
 for path in ("/dashboard/summary", "/chat/online-count", "/chat/channels"):
     with Count(path):
