@@ -526,6 +526,14 @@ class Message(Base):
     edited_at = Column(DateTime, nullable=True)  # set when the sender edits the message
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
+    # Set when this message was fanned out by a DM campaign. Null for every
+    # message a person actually typed. Same device as Notification carries for
+    # the bell path, and for the same reason: campaign stats need no second
+    # delivery table, and "read" is answerable from the MessageRead rows that
+    # already exist rather than from a mechanism invented for campaigns.
+    announcement_id = Column(Integer, ForeignKey("announcements.id", ondelete="SET NULL"),
+                             nullable=True, index=True)
+
     channel = relationship("Channel", back_populates="messages")
     sender = relationship("User", back_populates="messages")
     reply_to = relationship("Message", remote_side=[id])
@@ -1124,7 +1132,57 @@ class Announcement(Base):
     # which a later filter change would otherwise erase.
     recipients_count = Column(Integer, server_default=text('0'), default=0)
 
+    # How the campaign reaches the member: "bell" (a Notification row, the
+    # default and what every campaign before this column did) or "dm" (a real
+    # direct message from a chosen admin). The two are not interchangeable —
+    # a bell notification is one-way, a DM invites a reply into somebody's
+    # inbox — so the mode is stored on the campaign and shown on the card.
+    delivery = Column(String(10), nullable=False, server_default=text("'bell'"), default="bell")
+
+    # DM mode: whose account the member sees the message from. Must be an admin
+    # or the owner, and only the owner may point it at anybody but themselves —
+    # otherwise one admin can put words in another admin's mouth, and the
+    # member-facing record says that admin wrote them. Enforced in the router,
+    # not only in the composer's dropdown.
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Who actually pushed the button (or scheduled it). Deliberately separate
+    # from `sender_id`: the audit trail has to answer "who really sent this"
+    # independently of what the member saw. Written for every mode, and even
+    # when the two are the same person — a field that is only populated in the
+    # interesting case cannot be trusted in the uninteresting one.
+    sent_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Why a campaign is sitting at "failed". An operator looking at a red card
+    # needs to know whether the audience was empty, the send crashed, or the
+    # scheduler skipped it for being stale — a dead end with no explanation is
+    # worse than any of those outcomes.
+    failure_reason = Column(String(300), nullable=True)
+
     author = relationship("User", foreign_keys=[created_by])
+    sender = relationship("User", foreign_keys=[sender_id])
+
+
+class AnnouncementSegment(Base):
+    """A named, reusable audience filter.
+
+    Stores the FILTER, never a resolved member list — the same reason the
+    campaign does. A segment called "expiring this week" has to mean different
+    people next week, and a frozen id list would quietly stop meaning that.
+
+    Deleting a segment does not touch the campaigns that were built from it:
+    a campaign copies the filter into its own `audience` column when it is
+    saved, so the two stop being connected the moment the copy is made.
+    """
+    __tablename__ = "announcement_segments"
+    __table_args__ = (UniqueConstraint("name", name="uq_announcement_segment_name"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(80), nullable=False)
+    filters = Column(Text, nullable=False)          # JSON, normalised by services/audience.py
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
 
 # ══════════════════════════════════════════════════════════════

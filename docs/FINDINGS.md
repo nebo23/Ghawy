@@ -540,3 +540,56 @@ So: only `*.supabase.co` was removable, because it is the only one where the
 calling code itself was deleted. For anything else, check the database and the
 server-generated URLs before concluding an origin is unused — a CSP that blocks
 something real is a broken page, and the breakage is silent.
+
+---
+
+## Opened while closing out announcements
+
+### F-29 · A campaign mid-fan-out still offers "edit" and "delete" — `PRE-EXISTING, small`
+
+`anCardHTML` in `frontend/src/js/team-announcements.js` matches `sent`,
+`scheduled` and `failed` explicitly and lets everything else fall through to
+the draft branch, so a campaign at `status = "sending"` shows the edit and
+delete buttons for the second or two the fan-out is running.
+
+Edit is harmless — `update_announcement` refuses `sending` with a 400. Delete
+is not: `delete_announcement` removes the row while the worker thread is still
+holding it, and the worker's `row.status = "sent"` then commits against a row
+that no longer exists. It ends in the `except` branch, which tries to mark a
+deleted campaign `failed` and logs an exception. Nothing is corrupted and no
+member is affected — the notification rows are already written and their
+`announcement_id` is `SET NULL` — but the log line is a lie about what
+happened, and the operator gets no feedback.
+
+The fix is one branch in `anCardHTML` (no actions while `sending`) plus a
+`status == "sending"` guard in `delete_announcement`. Left alone deliberately:
+this pass was scoped to closing the feature, and the window is a couple of
+seconds wide behind a permission only the owner and a named admin hold.
+
+### F-30 · `channels.name` has no unique constraint — `structural, latent`
+
+The whole guarantee that two people have exactly one conversation rests on the
+deterministic name `dm_{lower}_{higher}` plus a `SELECT ... .first()`. Nothing
+in the schema enforces it. `services/dm_service.py` now takes the lowest id
+when a name matches more than one row, so both the single-pair path and the
+bulk campaign path resolve to the same channel if duplicates ever appear — but
+that is a mitigation, not the constraint.
+
+A partial unique index (`UNIQUE (name) WHERE channel_type = 'DM'`) would make
+it structural, and would also turn a concurrent double-create into a clean
+integrity error instead of a second thread. Not added here because it needs a
+check for existing duplicates in production first, and creating one on a live
+`channels` table is its own small piece of work rather than part of this pass.
+
+### F-31 · The DM recipients drawer runs a correlated EXISTS per row — `performance, watch`
+
+`_recipients_dm` in `backend/app/routers/announcements.py` answers "did this
+member open it" with an `EXISTS` against `message_reads`, correlated per
+message. It is indexed (`ix_message_reads_message_id`) and fine at the current
+audience size, and it deliberately reuses the read receipts the chat already
+writes rather than inventing a second mechanism for campaigns.
+
+At 20,000 recipients the two unfiltered counts on that endpoint walk the whole
+campaign. If a DM campaign ever goes out at that size, the counts want turning
+into one grouped join rather than an EXISTS per row. Noted rather than
+pre-optimised: the largest audience on this platform today is 1,915.

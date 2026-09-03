@@ -382,18 +382,64 @@ async def send_winback_emails():
 
 # ─── Scheduled In-App Campaigns ────────────────────────────
 def _due_scheduled_announcements() -> list[int]:
-    """Sync body — runs in a thread. Returns campaign ids that are due."""
+    """Sync body — runs in a thread. Returns campaign ids that are due.
+
+    Bounded on BOTH sides. Firing anything overdue is the right default — a
+    campaign missed during a restart must not silently vanish — but with no
+    lower bound, three days of downtime means "the new course is out today"
+    arrives three days late to everybody. Anything older than the grace
+    window is not sent at all; `_expire_stale_scheduled` closes it out with a
+    reason instead. The window and the reasoning behind it live next to the
+    rest of this feature's rules, in routers/announcements.py.
+    """
+    from app.routers.announcements import SCHEDULE_GRACE
+
     db = SessionLocal()
     try:
+        now = datetime.utcnow()
         rows = (
             db.query(Announcement.id)
             .filter(Announcement.status == "scheduled",
                     Announcement.scheduled_for.isnot(None),
-                    Announcement.scheduled_for <= datetime.utcnow())
+                    Announcement.scheduled_for <= now,
+                    Announcement.scheduled_for >= now - SCHEDULE_GRACE)
             .order_by(Announcement.scheduled_for.asc())
             .all()
         )
         return [r[0] for r in rows]
+    finally:
+        db.close()
+
+
+def _expire_stale_scheduled() -> list[int]:
+    """Close out campaigns that missed their moment. Returns the ids closed.
+
+    A campaign this late usually wants rewriting rather than sending, so it
+    is marked `failed` with the reason written into the row — the tab shows
+    that text on the card, which is the difference between "this did not go
+    out, and here is why" and a campaign that silently stopped existing.
+    Duplicating it is the way back, exactly as for any other finished state.
+    """
+    from app.routers.announcements import SCHEDULE_GRACE, STALE_SCHEDULE_REASON
+
+    db = SessionLocal()
+    try:
+        cutoff = datetime.utcnow() - SCHEDULE_GRACE
+        rows = (
+            db.query(Announcement)
+            .filter(Announcement.status == "scheduled",
+                    Announcement.scheduled_for.isnot(None),
+                    Announcement.scheduled_for < cutoff)
+            .all()
+        )
+        closed = []
+        for row in rows:
+            row.status = "failed"
+            row.failure_reason = STALE_SCHEDULE_REASON
+            closed.append(row.id)
+        if closed:
+            db.commit()
+        return closed
     finally:
         db.close()
 
@@ -420,6 +466,9 @@ async def fire_scheduled_announcements():
     from app.routers.announcements import _begin_real_send, _send_lock
 
     try:
+        stale = await asyncio.to_thread(_expire_stale_scheduled)
+        if stale:
+            logger.warning("📅 حملات فات ميعادها بأكتر من المسموح فاتقفلت: %s", stale)
         due = await asyncio.to_thread(_due_scheduled_announcements)
     except Exception as e:
         logger.error("💥 Scheduled announcements lookup failed: %s", e)
@@ -442,8 +491,9 @@ async def fire_scheduled_announcements():
             if not row or row.status != "scheduled":
                 _send_lock.release()
                 continue
-            count = _begin_real_send(db, row, loop)   # الثريد هو اللي بيفك القفل
-            logger.info("📅 حملة #%s المجدولة بدأت الإرسال لـ %s عضو", announcement_id, count)
+            outcome = _begin_real_send(db, row, loop)   # الثريد هو اللي بيفك القفل
+            logger.info("📅 حملة #%s المجدولة بدأت الإرسال لـ %s عضو (جمهور %s)",
+                        announcement_id, outcome["pending"], outcome["audience"])
         except Exception as e:
             _send_lock.release()
             logger.error("💥 Scheduled announcement #%s failed to start: %s", announcement_id, e)
@@ -451,6 +501,12 @@ async def fire_scheduled_announcements():
                 row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
                 if row and row.status == "scheduled":
                     row.status = "failed"
+                    # The tab shows this text on the card. A campaign that
+                    # refused to start (empty audience, a sender who is no
+                    # longer an admin) has to say which, or the operator is
+                    # looking at a red box with nothing to act on.
+                    row.failure_reason = getattr(e, "detail", None) or f"{type(e).__name__}: {e}"
+                    row.failure_reason = str(row.failure_reason)[:300]
                     db.commit()
             except Exception:
                 logger.exception("📅 حملة #%s: مقدرناش نسجّلها failed", announcement_id)

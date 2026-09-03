@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=31" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260903e" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260903f" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -2101,8 +2101,34 @@
                   <button class="ec-new-btn" onclick="anNewCampaign()"><i data-lucide="plus" style="width:16px;height:16px;"></i> حملة جديدة</button>
                   <button class="ec-mini" onclick="loadAnnouncementsList()"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> تحديث</button>
                 </div>
+                <!-- Search + filters + paging. The list was an unpaged limit of
+                     200, which works right up until campaign 201 disappears
+                     without anyone being told. -->
+                <div class="an-list-filters">
+                  <input type="search" id="an-search" class="an-input an-filter-search"
+                         placeholder="دوّر في العنوان أو النص…" oninput="anListFilterChanged()" />
+                  <select id="an-filter-status" class="an-input an-filter-sel" onchange="anListFilterChanged()">
+                    <option value="all">كل الحالات</option>
+                    <option value="draft">مسودة</option>
+                    <option value="scheduled">مجدولة</option>
+                    <option value="sending">بتتبعت</option>
+                    <option value="sent">اتبعتت</option>
+                    <option value="failed">فشلت</option>
+                  </select>
+                  <select id="an-filter-delivery" class="an-input an-filter-sel" onchange="anListFilterChanged()">
+                    <option value="all">كل الأنواع</option>
+                    <option value="bell">جرس</option>
+                    <option value="dm">رسالة خاصة</option>
+                  </select>
+                  <span class="an-list-count" id="an-list-count"></span>
+                </div>
                 <div class="an-grid" id="an-grid">
                   <div class="ec-empty">جاري التحميل...</div>
+                </div>
+                <div class="an-list-more">
+                  <button class="ec-mini" id="an-more-btn" style="display:none;" onclick="anLoadMore()">
+                    <i data-lucide="chevron-down" style="width:13px;height:13px;"></i> حمّل كمان
+                  </button>
                 </div>
               </div>
 
@@ -2126,6 +2152,29 @@
                   <!-- ── المحتوى ── -->
                   <div class="an-panel">
                     <div class="an-panel-title"><i data-lucide="pen-line" style="width:15px;height:15px;"></i> المحتوى</div>
+
+                    <!-- Delivery mode. Deliberately the FIRST decision on the
+                         screen and visually loud: a bell notification is
+                         one-way, a private message is an invitation to reply,
+                         and the two must never look interchangeable. -->
+                    <label class="an-label">توصل إزاي؟</label>
+                    <select id="an-delivery" class="an-input an-delivery-sel" onchange="anRenderDeliveryState(); anRefreshAudience();">
+                      <option value="bell">🔔 إشعار في الجرس (الافتراضي)</option>
+                      <option value="dm">✉️ رسالة خاصة من حساب أدمن</option>
+                    </select>
+
+                    <div id="an-sender-wrap" style="display:none;">
+                      <label class="an-label">تتبعت من حساب مين؟</label>
+                      <select id="an-sender" class="an-input" onchange="anRenderPreview()"></select>
+                      <div class="an-hint">الـ owner بس اللي يقدر يبعت باسم حد تاني. لو اخترت حساب مش بتاعك،
+                        صاحبه هياخد إشعار إن حملة خرجت من حسابه.</div>
+                    </div>
+
+                    <div id="an-dm-warn" class="an-dm-warn" style="display:none;">
+                      ⚠️ <b>دي محادثة خاصة حقيقية، مش إشعار.</b> كل عضو في الجمهور هتتفتح معاه محادثة
+                      لوحدها، وأي رد منه هيرجع في الرسايل الخاصة بتاعة الحساب اللي فوق —
+                      يعني ممكن آلاف المحادثات تقع في بريد شخص واحد. اتأكد إن في حد هيرد.
+                    </div>
 
                     <label class="an-label">العنوان *</label>
                     <input type="text" id="an-title" class="an-input" maxlength="160"
@@ -2212,6 +2261,23 @@
                       <span>ضمّ الأدمن والأونر (افتراضي: مستبعدين)</span>
                     </label>
 
+                    <!-- Saved segments. A segment stores the FILTER, never a
+                         resolved member list: the roster changes daily, and a
+                         frozen id list would quietly stop meaning what its name
+                         says. Deleting one leaves every campaign built from it
+                         alone — each carries its own copy. -->
+                    <div class="an-seg-row">
+                      <select id="an-segment" class="an-input an-seg-sel" onchange="anApplySegment()">
+                        <option value="">— اختار مقطع محفوظ —</option>
+                      </select>
+                      <button class="ec-mini" onclick="anSaveSegment()" title="احفظ الفلاتر دي كمقطع">
+                        <i data-lucide="bookmark" style="width:13px;height:13px;"></i> احفظ المقطع
+                      </button>
+                      <button class="ec-mini danger" id="an-seg-del" style="display:none;" onclick="anDeleteSegment()">
+                        <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+                      </button>
+                    </div>
+
                     <div class="an-audience-box" id="an-audience-box">
                       <div class="an-aud-count"><span id="an-aud-count">—</span></div>
                       <div class="an-aud-sub" id="an-aud-sub">اضبط الفلاتر عشان نحسب الجمهور</div>
@@ -2221,14 +2287,18 @@
                 </div>
 
                 <!-- ── الإرسال ── -->
+                <!-- A campaign that stopped part-way. It says how far it got
+                     and what "send" will do now, because a failed campaign with
+                     no explanation is a dead end. -->
+                <div class="an-resume-state" id="an-resume-state" style="display:none;"></div>
                 <div class="an-send-bar">
-                  <button class="an-test-btn" onclick="anSend('test')">
+                  <button class="an-test-btn" id="an-test-btn" onclick="anSend('test')">
                     <i data-lucide="flask-conical" style="width:15px;height:15px;"></i> إرسال تجريبي (ليك إنت بس)
                   </button>
                   <div class="an-real-wrap">
                     <input type="text" id="an-confirm" class="an-input an-confirm-input"
                            placeholder="اكتب GHAWY-OFFICIAL-SEND للتأكيد" autocomplete="off" />
-                    <button class="an-send-btn" onclick="anSend('real')">
+                    <button class="an-send-btn" id="an-send-btn" onclick="anSend('real')">
                       <i data-lucide="send" style="width:15px;height:15px;"></i> إرسال حقيقي
                     </button>
                   </div>
@@ -2249,7 +2319,9 @@
                 <div class="an-sched-state" id="an-sched-state"></div>
                 <div class="an-warn">
                   ⚠️ الإرسال الحقيقي بيوصل لكل عضو في الجمهور فوراً ومش بيترجع. الحملة اللي اتبعتت مابتتبعتش تاني — اعمل نسخة لو عايز تكررها.
-                  الجدولة كمان محتاجة نفس جملة التأكيد، والحملة المجدولة مابتتعدّلش غير لما تلغي جدولتها.
+                  الجدولة كمان محتاجة نفس جملة التأكيد، والحملة المجدولة مابتتعدّلش غير لما تلغي جدولتها،
+                  ولو فات ميعادها بأكتر من 3 ساعات مابتتبعتش متأخرة.
+                  الحملة اللي وقفت في النص بتتكمّل: الإرسال التاني بيروح <b>للي ماستلمهاش بس</b>، فمحدش بياخدها مرتين.
                 </div>
               </div>
             </div>
@@ -3002,7 +3074,7 @@
     <script src="src/js/dashboard-new.js?v=20260903b"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/team.js?v=20260903a"></script>
-  <script src="src/js/team-announcements.js?v=20260903d"></script>
+  <script src="src/js/team-announcements.js?v=20260903f"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

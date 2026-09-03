@@ -15,6 +15,7 @@ from app.services.file_service import save_upload
 from app.services.attachments import resolve_attachment, InvalidAttachment
 from app.services.chat_reactions import get_reaction_summaries
 from app.services.mentions_service import process_admin_mentions
+from app.services import dm_service
 from pydantic import BaseModel
 
 import json
@@ -1025,7 +1026,14 @@ def get_or_create_dm(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    """Get or create a DM channel between current user and target user."""
+    """Get or create a DM channel between current user and target user.
+
+    The naming rule and the row-creation steps live in services/dm_service.py,
+    which the DM-campaign fan-out also calls. Two implementations of
+    `dm_{lower}_{higher}` that drift apart do not fail loudly — they produce a
+    second conversation between the same two people, and nobody notices until
+    a member asks why they have two threads with the same person.
+    """
     if data.target_user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot DM yourself")
 
@@ -1033,31 +1041,10 @@ def get_or_create_dm(
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Deterministic channel name: dm_{lower_id}_{higher_id}
-    ids = sorted([current_user.id, data.target_user_id])
-    dm_name = f"dm_{ids[0]}_{ids[1]}"
-
-    # Check if DM channel already exists
-    ch = db.query(Channel).filter(
-        Channel.name == dm_name,
-        Channel.channel_type == ChannelType.DM
-    ).first()
-
-    if not ch:
-        ch = Channel(name=dm_name, channel_type=ChannelType.DM)
-        db.add(ch)
-        db.commit()
-        db.refresh(ch)
-
-        # Add both users as members
-        db.add(ChatMember(channel_id=ch.id, user_id=current_user.id, role=MemberRole.MEMBER))
-        db.add(ChatMember(channel_id=ch.id, user_id=data.target_user_id, role=MemberRole.MEMBER))
-        db.commit()
-        manager.subscribe(current_user.id, [ch.id])
-        manager.subscribe(data.target_user_id, [ch.id])
+    ch, _created = dm_service.get_or_create_dm_channel(db, current_user.id, data.target_user_id)
 
     return {
-        "channel_name": dm_name,
+        "channel_name": ch.name,
         "channel_id": ch.id,
         "target_user": {
             "id": target.id,

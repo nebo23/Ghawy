@@ -2590,6 +2590,168 @@
     color: #3f8ff9;
 }
 
+/* ── List: search, filters, paging ──
+   The list was an unpaged limit of 200. These controls are what make campaign
+   201 findable rather than gone. */
+.an-list-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.an-filter-search { flex: 1 1 220px; min-width: 180px; }
+.an-filter-sel { flex: 0 0 auto; width: auto; min-width: 140px; }
+
+.an-list-count {
+    margin-inline-start: auto;
+    font-size: .72rem;
+    color: #666;
+    font-variant-numeric: tabular-nums;
+}
+
+.an-list-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+/* ── Delivery mode ──
+   A bell notification is one-way; a private message is an invitation to reply
+   that lands in a named person's inbox. The two must never be told apart only
+   by reading the body, so the mode is a badge on every card and the DM colour
+   runs through the whole editor. */
+.an-card-modes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.an-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .64rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.an-mode-badge.bell {
+    background: rgba(255, 255, 255, .05);
+    color: #8a8a8a;
+    border: 1px solid #1f1f1f;
+}
+
+.an-mode-badge.dm {
+    background: rgba(193, 255, 17, .1);
+    color: #c1ff11;
+    border: 1px solid rgba(193, 255, 17, .28);
+}
+
+.an-card.dm { border-inline-start: 3px solid rgba(193, 255, 17, .5); }
+
+.an-delivery-sel { font-weight: 700; }
+
+/* The editor takes the DM accent as a whole, so there is no way to be halfway
+   through writing one and think you are writing the other. */
+#an-editor-view.dm-mode .an-panel { border-color: rgba(193, 255, 17, .22); }
+#an-editor-view.dm-mode .an-send-btn {
+    background: #c1ff11;
+    color: #0a0a0a;
+}
+
+.an-dm-warn {
+    margin: 10px 0 4px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: rgba(193, 255, 17, .07);
+    border: 1px solid rgba(193, 255, 17, .25);
+    color: #d9d9d9;
+    font-size: .76rem;
+    line-height: 1.75;
+}
+
+.an-dm-warn b { color: #c1ff11; }
+
+/* ── DM preview: a chat bubble, not a notification row ──
+   Whatever gets approved here has to be the surface the member actually sees. */
+.an-dm-preview { display: flex; flex-direction: column; gap: 6px; }
+
+.an-dm-from {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #c1ff11;
+}
+
+.an-dm-bubble {
+    background: #17210a;
+    border: 1px solid rgba(193, 255, 17, .2);
+    border-radius: 12px 12px 12px 4px;
+    padding: 11px 13px;
+    font-size: .82rem;
+    color: #e4e4e4;
+    line-height: 1.7;
+    max-width: 92%;
+}
+
+.an-dm-line { white-space: pre-wrap; word-break: break-word; }
+.an-dm-gap { height: 9px; }
+.an-dm-url { color: #7fb3ff; direction: ltr; text-align: start; }
+
+/* ── Partial delivery / resume ──
+   The first thing anybody needs from a red card is whether it reached nobody
+   or two-thirds of the list. */
+.an-card-partial {
+    font-size: .74rem;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, .08);
+    border: 1px solid rgba(245, 158, 11, .2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    line-height: 1.6;
+}
+
+.an-card-reason {
+    font-size: .68rem;
+    color: #8a8a8a;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.ec-mini.resume {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, .35);
+}
+
+.an-resume-state {
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, .07);
+    border: 1px solid rgba(245, 158, 11, .25);
+    color: #ddd;
+    font-size: .78rem;
+    line-height: 1.8;
+}
+
+.an-resume-state b { color: #f59e0b; }
+
+/* ── Saved segments ── */
+.an-seg-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 4px;
+}
+
+.an-seg-sel { flex: 1; min-width: 0; }
+
 /* ── Editor ── */
 .an-editor-grid {
     display: grid;
