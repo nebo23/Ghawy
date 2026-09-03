@@ -397,12 +397,18 @@ with its own (or no) limit since they are public static files already excluded
 from auth, raise the burst, or sprite/lazy-load them. Do not simply raise the
 global `api` rate — that zone is what absorbed the July abuse swarm.
 
-### F-24 · The Supabase project is being deleted — key burned, CSP allowance removed — `RESOLVED by owner action`
+### F-24 · Supabase purchases table was world-writable — `AWAITING CONFIRMATION that the project is deleted`
 
-**Resolution (2026-09-03): the owner confirmed Supabase is not needed and is
-deleting the project.** Deleting it closes this permanently — it is a stronger
-fix than enabling RLS, because it removes the data and the endpoint together
-rather than restricting access to them.
+**Status (2026-09-03): two of the three removals are done. The third — the one
+that actually closes the exposure — is with the owner.** Do not mark this
+resolved until the Supabase project is confirmed deleted; until then the table
+is still reachable by anyone holding the key.
+
+The owner's starting belief was that there was **no Supabase project at all**.
+The probes below are what showed otherwise, and that is why this finding
+mattered: nobody was going to close an exposure they did not believe existed.
+Deleting the project is a stronger fix than enabling RLS, because it removes the
+data and the endpoint together rather than restricting access to them.
 
 What this was: `frontend/src/js/main.js` carried a hardcoded Supabase
 publishable key for a landing-page purchase ticker. Checking the premise rather
@@ -419,11 +425,23 @@ the same key with `?id=gt.0` would have emptied the table. So the severity was
 never "238 first names are readable" but "anyone can destroy or forge the
 purchase record".
 
-Closed out in three steps:
+**Three separate removals, and this is the lesson worth keeping.** They looked
+like one job and were not:
 
-1. **The polling code** — removed in `41bfd21`. It fetched a row every 10s for an element that does not exist on any page.
-2. **The CSP allowance** — `https://*.supabase.co` removed from `connect-src` in both the enforced and report-only headers in `nginx/conf.d/security_headers.conf`, and reloaded. It had outlived its only caller: an allowance for a service nothing calls is a standing permission with no user, still reachable by an injected script.
-3. **The project itself** — the owner is deleting it. That is what actually closes the write exposure.
+1. **The polling code** — removed in `41bfd21`. ✅ It fetched a row every 10s for an element that exists on no page.
+2. **The CSP allowance** — `https://*.supabase.co` removed from `connect-src` in both headers, `ca8b757`. ✅ It had outlived its only caller by surviving step 1 entirely: an allowance for a service nothing calls is a standing permission with no user, still reachable by an injected script.
+3. **The project itself** — ⏳ with the owner. Only this one closes the write exposure.
+
+After step 1 the feature looked gone. After step 2 the permission looked gone.
+**The data was still world-writable through the whole of both.** Deleting the
+caller does not revoke the permission, and removing the permission does not
+close the endpoint — the browser was never the only way to reach it. Anyone with
+the key could `curl` the REST API directly no matter what our CSP said, because
+CSP constrains *our pages*, not the service.
+
+So when retiring an integration, treat it as three questions, not one: is the
+code gone, is the permission gone, and is the *thing itself* gone. Two of those
+can be true while the risk is entirely unchanged.
 
 ⚠️ **The publishable key is burned regardless, and permanently.** It sits in this
 repository's git history, which is not being rewritten. Deleting the project
@@ -477,17 +495,23 @@ is pre-existing and not a regression — but it means GA4's Google-Signals /
 remarketing beacon has been silently dropped for as long as the CSP has been
 enforcing. Analytics still work; this specific collection call does not.
 
-Not fixed here, deliberately. The brief for this change was to *remove* origins
-that are proven unused; adding one is the opposite action, and adding a
-doubleclick host has privacy implications (it is the ads-network side of GA4,
-not plain analytics) that are the owner's call, not a maintenance decision. Two
-defensible outcomes:
+**Decided (2026-09-03): turn Google Signals off in the GA4 property. Do not add
+`stats.g.doubleclick.net` to the CSP.** Removing the request beats permitting
+it — the beacon stops being attempted at all rather than being allowed through,
+and it needs no CSP change, so there is nothing to deploy and nothing to keep
+in sync between the repo and the server.
 
-  * If Google Signals is wanted — add `https://stats.g.doubleclick.net` to
-    `connect-src` in both headers.
-  * If it is not — turn Google Signals off in the GA4 property, and the beacon
-    stops being attempted at all. This is the cleaner option: it removes the
-    request rather than permitting it.
+**This is an owner action in the GA4 admin console, not a code change.** Nothing
+in this repository can do it, and no follow-up here is pending: recorded, not
+chased. Until it is actioned the only effect is that this one collection call
+keeps being blocked, which is the current behaviour anyway — the CSP has been
+dropping it for as long as it has been enforcing. Ordinary GA4 analytics are
+unaffected.
+
+For the record, the rejected alternative was adding the origin to `connect-src`
+in both headers. It was rejected on principle rather than effort: it is an
+ads-network host, and permitting one to satisfy a beacon nobody asked for is the
+wrong direction for a policy whose whole value is that it is narrow.
 
 Worth also noting what the audit *confirmed* rather than changed: the
 report-only header correctly reports every inline `<script>` as a violation.
