@@ -220,9 +220,41 @@ pure Python over pre-loaded maps. Already the right shape; left alone.
 - [x] **No behaviour change visible to a member** — `acceptance_security` 86/86, `acceptance_access_control` 32/32, `acceptance_team_roles` 64/64 throughout; unread totals asserted identical (468 = 468); dashboard rendered with 0 JS errors.
 - [x] **The global rate-limit zone is unchanged** — `nginx/` was not touched in this phase.
 
-**Nothing in this phase is deployed.** It can wait for a quiet window, as you
-said — with one exception that is not a deploy at all: the Supabase RLS problem
-in P-1 is live right now and only you can close it.
+## ⚠️ Deployment status — part of this phase IS live, and I did not deploy it
+
+I planned to leave all of Phase 4 undeployed. That is not what happened. At
+**08:49:53** the concurrent session ran a deploy, which rebuilt the image from
+the working tree as it stood at that moment and ran `alembic upgrade head` on
+startup. Verified by diffing the running container against this tree:
+
+**Live in production now:**
+
+| Change | How it got there |
+|---|---|
+| P-2 batched message senders | in the tree at 08:49, baked into the image |
+| P-3 grouped unread counts | same |
+| **All five indexes** (`b7c3d9e1f204`) | `alembic upgrade head` on container start |
+| P-5 dashboard-new.js (5 summary calls → 1) | frontend is bind-mounted, live on save |
+| P-1 landing page (polling removed) | bind-mounted, live on save |
+
+**Still undeployed** (committed after 08:49):
+
+- `dashboard.py` grouped course counts — production still runs the per-course COUNT loop (confirmed at line 123 of the live file)
+- `feedbacks.py` batching
+- `chat.py` batched read-receipts
+- `ws.py` redundant-query removal
+
+So production currently has a *partial* Phase 4. Nothing is broken by that —
+every piece is independent, and the acceptance suites passed at each step — but
+it is not the clean "deploy in a quiet window" you asked for, and the index
+migration reached production without the review you intended. `alembic current`
+is `b7c3d9e1f204`, single head, all row counts unchanged.
+
+**The remaining four changes still need a deploy.** They are backend-only, so
+they need a rebuild; there is no migration left to run.
+
+And one thing that is not a deploy at all: the Supabase RLS problem in P-1 is
+live right now, it allows anonymous DELETE and PATCH, and only you can close it.
 
 ---
 
