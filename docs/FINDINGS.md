@@ -451,3 +451,25 @@ page. Same class as the live-purchase widget, but it costs no requests — it is
 an inert scroll listener, not a poll. Left alone deliberately: dead frontend
 code is Phase 5's scope, not Phase 4's, and this phase is about request and
 query load.
+
+### F-26 · `/profile/me` is fetched three times per page from `utils.js` — `PHASE 4, proposed and stopped`
+
+Measured in the browser on the dashboard: 3 × `GET /api/profile/me` per load.
+All three come from `utils.js`, so this repeats on all 13 pages that load it.
+
+The shared in-flight promise used for `/dashboard/summary` would collapse them,
+but the three call sites do **not** behave the same way on failure:
+
+    utils.js:257   401 → clear token+user, redirect to /login
+    utils.js:321   401 → logout(); 402 → redirect to /renewal; returns null
+    utils.js:412   only reads is_admin; no error handling at all
+
+Sharing one promise hands whichever call ran first the deciding vote on the auth
+guard and the renewal redirect, on every page. That is a functional risk out of
+proportion to two saved requests per load.
+
+If it is taken up: keep the three failure paths intact and share only the
+*successful* payload — resolve a promise carrying the parsed user plus its
+status, and let each caller apply its own handling. Verify against a 401 and a
+402 account on a members page and on `/renewal` itself before shipping. Do not
+fold the guards together.
