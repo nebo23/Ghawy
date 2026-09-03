@@ -486,6 +486,14 @@ class Channel(Base):
 
 class ChatMember(Base):
     __tablename__ = "chat_members"
+    # Names match migration b7c3d9e1f204 exactly, so the model and the live
+    # schema describe the same objects. ensure_channel_access looks up the
+    # (channel, user) pair on every chat request; the unread poll looks up all
+    # of one user's memberships.
+    __table_args__ = (
+        Index("ix_chat_members_channel_user", "channel_id", "user_id"),
+        Index("ix_chat_members_user_id", "user_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
@@ -499,6 +507,10 @@ class ChatMember(Base):
 
 class Message(Base):
     __tablename__ = "messages"
+    # Serves both "latest N in this channel" and the grouped unread counts.
+    __table_args__ = (
+        Index("ix_messages_channel_created", "channel_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
@@ -537,6 +549,11 @@ class ChatMessageReaction(Base):
 
 class MessageRead(Base):
     __tablename__ = "message_reads"
+    # The largest table in the schema; the chat page looks up receipts for a
+    # page of message ids at a time, which was a full scan without this.
+    __table_args__ = (
+        Index("ix_message_reads_message_id", "message_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
@@ -1038,6 +1055,10 @@ class CourseReview(Base):
 
 class Notification(Base):
     __tablename__ = "notifications"
+    # The bell polls this every 30s from every page.
+    __table_args__ = (
+        Index("ix_notifications_user_created", "user_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
