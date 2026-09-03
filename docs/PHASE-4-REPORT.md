@@ -237,21 +237,30 @@ startup. Verified by diffing the running container against this tree:
 | P-5 dashboard-new.js (5 summary calls → 1) | frontend is bind-mounted, live on save |
 | P-1 landing page (polling removed) | bind-mounted, live on save |
 
-**Still undeployed** (committed after 08:49):
+**Deployed 2026-09-03 13:11** — the remaining four shipped in a second, deliberate
+deploy: `dashboard.py` grouped course counts, `feedbacks.py` batching,
+`chat.py` batched read-receipts, `ws.py` redundant-query removal.
 
-- `dashboard.py` grouped course counts — production still runs the per-course COUNT loop (confirmed at line 123 of the live file)
-- `feedbacks.py` batching
-- `chat.py` batched read-receipts
-- `ws.py` redundant-query removal
+That deploy applied **zero migrations** (`alembic current` was already
+`b7c3d9e1f204` and stayed there), and the diff against the running image was
+exactly those four files and nothing else. Verified after:
 
-So production currently has a *partial* Phase 4. Nothing is broken by that —
-every piece is independent, and the acceptance suites passed at each step — but
-it is not the clean "deploy in a quiet window" you asked for, and the index
-migration reached production without the review you intended. `alembic current`
-is `b7c3d9e1f204`, single head, all row counts unchanged.
+- The per-course COUNT loop is gone from the live `dashboard.py`.
+- `/dashboard/summary` output checked against the database directly, not just for plausibility — 10/10, 3/7, 4/4, 3/6 per course, an exact match to `user_progress` ground truth.
+- `/feedbacks/admin` resolves 42/42 submitter names through the batched lookup.
+- Chat message list resolves sender names; `/chat/community/unread` answers correctly.
+- 3,071 × 200 of real traffic, 67 WebSocket upgrades, 0 backend errors, 0 × 403.
+- The 14 × 502 all fall in the single second of the container restart, none since.
+- `acceptance_security` 86/86, `acceptance_access_control` 32/32, `acceptance_team_roles` 64/64.
 
-**The remaining four changes still need a deploy.** They are backend-only, so
-they need a rebuild; there is no migration left to run.
+Rollback point tagged `ghawy-backend:rollback-2026-09-03-phase4`; backup
+`db-2026-09-03_1310.dump` taken and `pg_restore -l` verified first.
+
+So the whole of Phase 4 is now live. Two false alarms during verification were
+my own testing errors, not regressions: the chat check read `sender_name` when
+the endpoint returns `author_name`, and the feedbacks check called `/feedbacks/`
+(`get_feedbacks`, which never populated `submitted_by_name`) rather than
+`/feedbacks/admin`, the function this phase actually changed.
 
 And one thing that is not a deploy at all: the Supabase RLS problem in P-1 is
 live right now, it allows anonymous DELETE and PATCH, and only you can close it.
