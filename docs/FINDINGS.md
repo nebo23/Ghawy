@@ -397,24 +397,46 @@ with its own (or no) limit since they are public static files already excluded
 from auth, raise the burst, or sprite/lazy-load them. Do not simply raise the
 global `api` rate — that zone is what absorbed the July abuse swarm.
 
-### F-24 · The Supabase purchases table is world-readable, and removing our key does not close it — `PHASE 4, needs an owner action`
+### F-24 · The Supabase purchases table has RLS off — anonymous read AND write — `PHASE 4, needs an owner action, URGENT`
 
 `frontend/src/js/main.js` carried a hardcoded Supabase publishable key. Phase 4
 deleted the code that used it, so the key is no longer served from ghawy.ai —
 but **that does not revoke it**. The key still exists, and it was public in a
 static JS file for as long as that file shipped, so it must be assumed copied.
 
-What it grants an anonymous caller today (verified with one request):
+What it grants an anonymous caller today (re-verified in Phase 4):
 
-    GET /rest/v1/purchases?select=name,created_at,product   → 238 rows
+    GET    /rest/v1/purchases?select=*            → HTTP 200, 238 rows
+                                                    (id, name, product, created_at)
+    DELETE /rest/v1/purchases?id=eq.-1            → HTTP 204
+    PATCH  /rest/v1/purchases?id=eq.-1            → HTTP 204
 
-That is every customer first name, what they bought, and when. Low severity —
-first names only, no contact details, no payment data — but it is customer data
-readable by anyone, and it is not ours to leave open by omission.
+**RLS is not enforcing on this table.** The read exposure was already recorded
+above; the writes are new information and they change the severity. The two
+write probes were run with a filter matching no rows, so nothing was altered —
+the row count was 238 before and after — but a 204 is the server saying the
+operation is permitted, not that it found nothing. The same key with
+`?id=gt.0` would empty the table, and `PATCH` would rewrite it.
 
-Two things are needed, and neither is a code change I should make unilaterally:
-rotate/revoke that key, and put a row-level-security policy on `purchases` (or
-make the table non-public). Until then the exposure is unchanged by our cleanup.
+So this is not "238 first names are readable", which is low severity. It is
+"any anonymous caller can destroy or forge the purchase record", with a key
+that is in git history permanently and must be assumed copied.
+
+Confirmed by direct request against the live project, not inferred from the
+absence of a policy: a publishable key is *designed* to be public, so its
+presence in the source was never the flaw. RLS being off is the flaw.
+
+Two things are needed, and neither is a code change I should make unilaterally
+— both live in the Supabase project, not in this repo:
+
+  1. **Enable RLS on `purchases` and add policies.** With RLS off, every
+     anonymous caller has full CRUD. This is the urgent half: it is a data-loss
+     exposure, not just a disclosure one.
+  2. Rotate/revoke the publishable key. On its own this does **not** fix (1) —
+     it only slows down whoever has the old key.
+
+Until (1) is done the exposure is unchanged by our cleanup, and deleting the
+widget did nothing to close it.
 
 Also worth the owner's attention: the newest row is **2026-07-01**. Nothing has
 written to that table in over two months, so whatever pipeline fed it has
