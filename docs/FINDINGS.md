@@ -380,3 +380,19 @@ Every other public course path filters `is_published == True`; this one resolves
 the course by id alone, so reviews attached to an unpublished course are
 readable. Content is review text plus reviewer display name and avatar. Low
 value, but it is an inconsistency in a rule the rest of the file applies.
+
+### F-23 · Avatar loads trip the per-IP rate limit — `observed during the Phase 3 deploy, for PHASE 4`
+
+`GET /api/uploads/avatars/…` and `/api/static/avatars/…` return 429 in bursts:
+41 occurrences from 2 IPs in the 12 minutes after the Phase 3 deploy, and **53
+in the equivalent window before it** — so this is pre-existing and unrelated to
+the security fixes, not a regression.
+
+Cause is shape, not abuse: a chat or members page renders many avatars at once
+and a single browser exceeds the `api` zone (30r/s, burst 20) on its own image
+requests. The member sees broken avatars.
+
+Belongs to Phase 4. Options worth weighing there: serve avatars from a location
+with its own (or no) limit since they are public static files already excluded
+from auth, raise the burst, or sprite/lazy-load them. Do not simply raise the
+global `api` rate — that zone is what absorbed the July abuse swarm.
