@@ -19,6 +19,7 @@ Community Announcements — حملات جوّه المنصة، مش إيميل.
   • الجمهور بيتحدّد على السيرفر من الفلتر. الفرونت مابيبعتش IDs أبداً — لو بعتها
     يبقى أي حد معاه صلاحية الحملات يقدر يلزق أي id ويوصل لأي حد.
 """
+import re
 import logging
 import threading
 from datetime import datetime
@@ -80,31 +81,42 @@ def _clean_link(raw: Optional[str]) -> Optional[str]:
     if not link:
         return None
 
-    # المتصفح بيشيل tab/newline/CR من الـ URL قبل ما يقرا الـ scheme، يعني
-    # "java\tscript:" بيتنفّذ كـ javascript:. فبنشيلهم إحنا الأول وبعدين
-    # نفحص — بدل ما الفحص يشوف نص والمتصفح يشوف نص تاني.
-    link = "".join(ch for ch in link if ch not in "\t\r\n" and ord(ch) >= 0x20)
+    # ── ١) طبّع الأول، وبعدين احكم ─────────────────────────────
+    # القاعدة هنا: منقارنش النص اللي المستخدم كتبه — نقارن النص اللي **المتصفح
+    # هيشوفه** بعد ما يعمل التطبيع بتاعه. أي فحص بيشتغل على الأصل بيبقى
+    # بيحكم على حاجة والمتصفح بينفّذ حاجة تانية.
+    #
+    #   • control chars: المتصفح بيشيل tab/CR/LF قبل ما يقرا الـ scheme،
+    #     فـ "java\tscript:" بيتنفّذ javascript:.
+    #   • backslash: في موضع الـ authority المتصفح بيعتبر "\" زي "/"، فـ
+    #     "\/evil.com" و "/\evil.com" و "\\evil.com" كلهم بيطلعوا برة الأصل
+    #     زي "//evil.com" بالظبط.
+    #
+    # قايمة سوداء بالإملاءات ("//" و "/\" و "\\" …) بتفضل ناقصة إملاء —
+    # النسخة اللي قبل دي كانت بتمسك "/\evil.com" وتفوّت "\/evil.com". التطبيع
+    # بيخلّي كل الإملاءات دي شكل واحد، فالفحص بيبقى فحص واحد.
+    link = "".join(ch for ch in link if 0x20 <= ord(ch) != 0x7F)
+    link = link.replace("\\", "/").strip()
     if not link:
         return None
 
     lowered = link.lower()
 
-    # ⚠️ الترتيب مهم. الفحص ده لازم ييجي **قبل** أي `startswith("/")`:
-    # "//evil.com" بيبدأ بـ "/" برضه، فكان بيعدّي من غير ما يوصل لفحص الـ "//"
-    # تحت خالص — والمتصفح بينفّذ `location.href = "//evil.com"` كإنه
-    # https://evil.com. يعني اللينك اللي المفروض داخلي كان بيطلّع كل عضو بره
-    # المنصة. و"/\evil.com" نفس الحكاية: المتصفحات بتعامله زي "//".
-    if lowered.startswith(("//", "/\\", "\\\\")):
+    # ── ٢) أي scheme خالص مرفوض ────────────────────────────────
+    # الـ scheme ماينفعش يحتوي على "/" ولا "?" ولا "#"، فاللي قبل أول واحد
+    # فيهم هو المكان الوحيد اللي ممكن يبقى فيه scheme. رفض أي ":" هناك بيمسك
+    # javascript: و data: و vbscript: و أي حاجة تانية مش مكتوبة في أي قايمة —
+    # ومابيرفضش "/x?t=12:30" لأن النقطتين دول بعد "?".
+    head = re.split(r"[/?#]", lowered, maxsplit=1)[0]
+    if ":" in head:
         raise HTTPException(status_code=400, detail="اللينك لازم يكون مسار داخلي في المنصة")
 
-    if link.startswith("/"):
-        return link[:500]
-
-    # "dashboard-courses.html?id=3" — مسار نسبي عادي
-    if "://" in lowered or ":" in lowered.split("/", 1)[0]:
-        # أي scheme خالص (javascript:, data:, vbscript:, mailto: …) مرفوض —
-        # قايمة سوداء بأسماء مخصوصة بتفوت اللي مش مكتوب فيها.
+    # ── ٣) protocol-relative بأي إملاء ─────────────────────────
+    # بعد التطبيع فوق، كل إملاءات "//" بقت "//" فعلاً.
+    if lowered.startswith("//"):
         raise HTTPException(status_code=400, detail="اللينك لازم يكون مسار داخلي في المنصة")
+
+    # بنرجّع النص المطبّع مش الأصل: اللي اتخزّن لازم يكون بالظبط اللي اتفحص.
     return link[:500]
 
 

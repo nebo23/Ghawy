@@ -152,7 +152,14 @@ check("member can still read an open community channel", r.status_code == 200,
       f"{r.status_code} {r.text[:120]}")
 
 print("\n=== F-D: announcement links must be internal paths only ===")
-for payload in ["//evil.example", "/\\evil.example", "java\tscript:alert(1)"]:
+# Every spelling that a browser normalises into "//" or into a scheme. The
+# backslash family is here because a reject-list of literal spellings is always
+# one spelling short: the first fix caught "/\evil" and let "\/evil" through.
+for payload in ["//evil.example", "/\\evil.example", "\\/evil.example",
+                "\\\\evil.example", "/\\/evil.example", "\\\\/evil.example",
+                "//\tevil.example", "java\tscript:alert(1)",
+                "JaVaScRiPt:alert(1)", "https://evil.example",
+                "data:text/html,<script>1</script>", "mailto:x@y.z"]:
     r = client.post("/admin/announcements", headers=H(staff),
                     json={"title": "t", "body": "b", "link": payload})
     stored = (r.json() or {}).get("link") if r.status_code == 201 else None
@@ -162,11 +169,13 @@ for payload in ["//evil.example", "/\\evil.example", "java\tscript:alert(1)"]:
     check(f"link {payload!r} cannot escape the origin", safe,
           f"status={r.status_code} stored={stored!r}")
 
-r = client.post("/admin/announcements", headers=H(staff),
-                json={"title": "t", "body": "b", "link": "/dashboard.html"})
-check("a genuine internal link is still accepted",
-      r.status_code == 201 and (r.json() or {}).get("link") == "/dashboard.html",
-      f"{r.status_code} {r.text[:160]}")
+for good in ["/dashboard.html", "dashboard-courses.html?id=3",
+             "/chat.html?channel=2&post=9", "/x?t=12:30"]:
+    r = client.post("/admin/announcements", headers=H(staff),
+                    json={"title": "t", "body": "b", "link": good})
+    check(f"a genuine internal link is still accepted: {good}",
+          r.status_code == 201 and (r.json() or {}).get("link") == good,
+          f"{r.status_code} {r.text[:160]}")
 
 print("\n=== F-E: the file cookie must honour the token_version kill switch ===")
 stale_file_cookie = create_file_token(alice.id)
