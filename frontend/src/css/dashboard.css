@@ -101,6 +101,21 @@ img{max-width:100%;display:block}
 .notif-item-name { font-size: 0.85rem; font-weight: 600; color: #f1f0ea; }
 .notif-item-text { font-size: 0.78rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notif-item-count { background: var(--gold); color: #000; font-size: 0.7rem; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
+/* A system notification is one short line, but a campaign body is admin-authored
+   free text with no length limit on the model — so the body wraps to two lines
+   here instead of being cut to one. Two classes and not one on purpose:
+   chat.html and direct-messages.html each carry their own
+   `.notif-item-text { white-space: nowrap }` in an inline <style>, which would
+   win on source order against a single-class rule in this file. */
+.notif-item-text.notif-clamp {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.notif-item-time { font-size: 0.7rem; color: #666; margin-block-start: 3px; }
 
 /* Mobile/tablet: pin the notification panel to the viewport so it never overflows */
 @media (max-width: 1024px) {

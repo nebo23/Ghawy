@@ -741,6 +741,11 @@
         [/^(\d+)\s*m ago$/, 'منذ $1 د'],
         [/^(\d+)\s*h ago$/, 'منذ $1 س'],
         [/^(\d+)\s*d ago$/, 'منذ $1 يوم'],
+        /* time_ago() switches to months past 30 days ("3mo ago"); without this
+           the bell showed that one in English while every shorter age was
+           Arabic. It sits after the "d" row and before "m" cannot catch it —
+           "m ago" does not match "mo ago" — so order is safe either way. */
+        [/^(\d+)\s*mo ago$/, 'منذ $1 شهر'],
         [/^(\d+)\s*(?:seconds?|s) ago$/, 'منذ $1 ث'],
         [/^just now$/i, 'دلوقتي حالاً'],
         [/^(\d+) [Ll]essons?$/, '$1 درس'],

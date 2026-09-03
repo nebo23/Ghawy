@@ -525,6 +525,23 @@ async function fetchGlobalNotifications() {
   } catch (e) { console.error('Global notif error:', e); }
 }
 
+// The four types an admin can pick in the announcements composer, drawn with
+// the palette the composer previews (AN_TYPE_META in team-announcements.js) so
+// what the admin chose is what the member gets. Font Awesome and not Lucide on
+// purpose: FA draws from a class name, so it survives the bell being
+// re-rendered, while a Lucide icon would need createIcons() called again on
+// every poll. A campaign is still an ordinary notification — this table only
+// changes the glyph and its colour, never the row.
+const NOTIF_TYPE_META = {
+  info:    { icon: 'fa-circle-info',          color: '#3f8ff9' },
+  success: { icon: 'fa-circle-check',         color: '#22c55e' },
+  warning: { icon: 'fa-triangle-exclamation', color: '#f59e0b' },
+  promo:   { icon: 'fa-gift',                 color: '#c1ff11' },
+};
+// Anything else — an unknown type, or a system notification that never set one
+// — keeps the gold bell the platform has always drawn.
+const NOTIF_TYPE_FALLBACK = { icon: 'fa-bell', color: 'var(--gold)' };
+
 function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
   const el = document.getElementById('notifList');
   if (!el) return;
@@ -588,12 +605,23 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
   // escapeHtml on every interpolation of it, without exception.
   notifs.forEach(n => {
      const link = String(n.link || '#').replace(/[\\'"]/g, '');
+     // Only ever the table's own constants reach the HTML here — n.type is a
+     // lookup key, never interpolated — so the icon and colour cannot carry
+     // anything a user wrote.
+     const meta = NOTIF_TYPE_META[n.type] || NOTIF_TYPE_FALLBACK;
+     // time_ago has been in the payload since the endpoint was written and the
+     // bell threw it away, so "5 minutes ago" and "last month" looked alike.
+     // The Arabic layer matches it by pattern, so it stays the backend's
+     // English here and gets translated in place.
+     const when = n.time_ago ? String(n.time_ago) : '';
+     const body = String(n.body || '');
      html += `
         <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${Number(n.id)}, '${link}')">
-            <div class="notif-item-av"><i class="fa-solid fa-bell" style="color:var(--gold)"></i></div>
+            <div class="notif-item-av"><i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i></div>
             <div class="notif-item-body">
                 <div class="notif-item-name">${escapeHtml(n.title)}</div>
-                <div class="notif-item-text">${escapeHtml(n.body)}</div>
+                <div class="notif-item-text notif-clamp" title="${escapeHtml(body)}">${escapeHtml(body)}</div>
+                ${when ? `<div class="notif-item-time">${escapeHtml(when)}</div>` : ''}
             </div>
             ${!n.is_read ? `<div class="notif-item-count">1</div>` : ''}
         </div>
