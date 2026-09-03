@@ -346,3 +346,37 @@ only then may `scripts/cleanup_seeded_public_figures.py` run. Run in the other
 order and the rows come back on the next boot. Verified: after deleting the rows
 on a production clone and booting the Phase 2 code, `guests = 0` and
 `guest_sessions = 0` — they stay gone.
+
+---
+
+### F-19 · Account enumeration on `/login` — `PHASE 3, left for the owner's decision`
+
+`/auth/login` returns three distinguishable outcomes: 400 "use the Google button"
+(registered via Google), 403 "verify your email" (registered, unverified), 401
+(wrong password *or* no such account). A nonexistent address also returns faster,
+because `if not user or not verify_password(...)` short-circuits before bcrypt.
+
+Not fixed in Phase 3 because the Google message is deliberate UX, and collapsing
+the responses degrades it. Rate-limited at 30r/m. Needs a product decision, not a
+security one.
+
+### F-20 · `_send_lock` is per-process — `PHASE 3, informational`
+
+`announcements.py` guards real sends with a `threading.Lock`. Correct on this
+deployment (one gunicorn worker) and it holds today, but it would not serialise
+across `--workers N`. If the worker count ever rises, the single-send guarantee
+becomes the `status == "sent"` check alone. Recorded so that is a known
+consequence rather than a surprise.
+
+### F-21 · Geo-lookup interpolates a client header into a URL path — `PHASE 3, informational`
+
+`google_auth.py:96` builds `https://ipapi.co/{ip}/json/` where `ip` comes from
+`X-Forwarded-For`. Not SSRF: scheme and host are literal, so the request cannot
+be steered off `ipapi.co`, and urllib rejects control characters. Cosmetic only.
+
+### F-22 · `GET /courses/{id}/reviews` ignores `is_published` — `PHASE 3, informational`
+
+Every other public course path filters `is_published == True`; this one resolves
+the course by id alone, so reviews attached to an unpublished course are
+readable. Content is review text plus reviewer display name and avatar. Low
+value, but it is an inconsistency in a rule the rest of the file applies.

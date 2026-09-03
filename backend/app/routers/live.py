@@ -324,42 +324,23 @@ def unregister_from_session(
 #  LEGACY ENDPOINTS (kept for backward compatibility)
 # ═══════════════════════════════════════════════════════════════
 
-@router.get("/api/live-sessions")
-def get_live_sessions_legacy(status_filter: Optional[str] = None, db: Session = Depends(get_db)):
-    """Legacy endpoint kept for backward compat with bwm.js."""
-    query = db.query(LiveSession)
-    if status_filter:
-        try:
-            status_enum = LiveSessionStatus(status_filter)
-            query = query.filter(LiveSession.status == status_enum)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid status filter")
-
-    sessions = query.order_by(LiveSession.start_time).all()
-    result = []
-    for s in sessions:
-        instructor = db.query(User).filter(User.id == s.instructor_id).first() if s.instructor_id else None
-        result.append({
-            "id": s.id,
-            "title": s.title,
-            "slug": s.slug,
-            "description": s.description,
-            "thumbnail_url": s.thumbnail_url,
-            "instructor": {
-                "id": instructor.id,
-                "name": instructor.full_name,
-                "avatar_url": instructor.avatar_url
-            } if instructor else None,
-            "status": s.status.value if s.status else "upcoming",
-            "difficulty": s.difficulty.value if s.difficulty else "beginner",
-            "start_time": s.start_time.isoformat() if s.start_time else None,
-            "end_time": s.end_time.isoformat() if s.end_time else None,
-            "max_attendees": s.max_attendees,
-            "current_viewers": s.current_viewers,
-            "is_recording_available": s.is_recording_available,
-            "tags": s.tags.split(',') if s.tags else [],
-        })
-    return result
+# GET /api/live-sessions was here, and it is deliberately gone.
+#
+# It carried no auth dependency of any kind and returned every LiveSession row
+# — title, description, thumbnail, the instructor's name and avatar, schedule,
+# attendee caps and recording availability — to any anonymous caller. It also
+# ran one db.query(User) per session for the instructor.
+#
+# Its docstring claimed bwm.js needed it. It did not: bwm.js references only
+# /api/live-sessions/ws, the WebSocket below, which authenticates over its first
+# message. Nothing in the frontend called the REST endpoint, and 77k requests of
+# production nginx logs contained not one hit on it (the only /api/live-sessions
+# lines in that window were the /ws upgrade).
+#
+# Members read sessions through GET /live/sessions, which requires a member;
+# the team dashboard reads GET /admin/live/sessions, which requires the
+# live-sessions permission. Both were already in use — this was a third, open
+# door onto the same rows.
 
 
 # ═══════════════════════════════════════════════════════════════

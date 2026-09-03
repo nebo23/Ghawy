@@ -451,16 +451,31 @@ async def update_lesson_duration(
     course_id: int,
     lesson_id: int,
     duration_seconds: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db)
 ):
-    """Called by the frontend player to save real video duration to DB."""
+    """Called by the frontend player to save real video duration to DB.
+
+    The player is the only thing that knows a video's true length, so the write
+    stays where it is rather than moving behind PERM_COURSES — but it is a write
+    to global course content, and it took get_current_user, so *any* registered
+    account (including one that never paid) could set the advertised duration of
+    any lesson in any course. The "only if zero" test below is a race, not an
+    authorization check: it decides whether to write, never who may.
+
+    So the caller must now be someone actually entitled to watch this lesson —
+    the same rule, via the same function, that decides whether they may have its
+    video at all. A member reporting the length of a video they are watching is
+    the intended use; anyone else is not.
+    """
     lesson = db.query(Lesson).filter(
         Lesson.id == lesson_id,
         Lesson.course_id == course_id
     ).first()
     if not lesson:
         raise HTTPException(404, "Lesson not found")
+    if not _can_watch(current_user, lesson):
+        raise HTTPException(403, "Subscription required to watch this lesson")
     # Only update if currently 0 to avoid overwriting manually-set durations
     if lesson.duration_minutes == 0 and duration_seconds > 0:
         lesson.duration_minutes = max(1, round(duration_seconds / 60))
