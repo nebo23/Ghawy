@@ -2449,6 +2449,7 @@
 .role-badge.no-role {
   background: rgba(245,158,11,.12); color: #f59e0b;
   border: 1px solid rgba(245,158,11,.25);
+}
 /* ══════════════════════════════════════════════════════════
    COMMUNITY ANNOUNCEMENTS — in-app member campaigns
    Reuses the .ec-* shells from the Emails tab (intro, toolbar,
