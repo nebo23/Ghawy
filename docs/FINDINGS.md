@@ -396,3 +396,36 @@ Belongs to Phase 4. Options worth weighing there: serve avatars from a location
 with its own (or no) limit since they are public static files already excluded
 from auth, raise the burst, or sprite/lazy-load them. Do not simply raise the
 global `api` rate — that zone is what absorbed the July abuse swarm.
+
+### F-24 · The Supabase purchases table is world-readable, and removing our key does not close it — `PHASE 4, needs an owner action`
+
+`frontend/src/js/main.js` carried a hardcoded Supabase publishable key. Phase 4
+deleted the code that used it, so the key is no longer served from ghawy.ai —
+but **that does not revoke it**. The key still exists, and it was public in a
+static JS file for as long as that file shipped, so it must be assumed copied.
+
+What it grants an anonymous caller today (verified with one request):
+
+    GET /rest/v1/purchases?select=name,created_at,product   → 238 rows
+
+That is every customer first name, what they bought, and when. Low severity —
+first names only, no contact details, no payment data — but it is customer data
+readable by anyone, and it is not ours to leave open by omission.
+
+Two things are needed, and neither is a code change I should make unilaterally:
+rotate/revoke that key, and put a row-level-security policy on `purchases` (or
+make the table non-public). Until then the exposure is unchanged by our cleanup.
+
+Also worth the owner's attention: the newest row is **2026-07-01**. Nothing has
+written to that table in over two months, so whatever pipeline fed it has
+stopped. If live purchase social proof is wanted on the landing page, that is
+the thing to fix first — the widget was the symptom.
+
+### F-25 · `#stickyCta` handler binds to an element that does not exist — `PHASE 5`
+
+`main.js` does `document.getElementById("stickyCta")` and attaches a scroll
+handler; no element with that id exists in `index.html` or in the rendered live
+page. Same class as the live-purchase widget, but it costs no requests — it is
+an inert scroll listener, not a poll. Left alone deliberately: dead frontend
+code is Phase 5's scope, not Phase 4's, and this phase is about request and
+query load.
