@@ -1084,7 +1084,14 @@ class Announcement(Base):
     link = Column(String, nullable=True)
 
     audience = Column(Text, nullable=True)          # JSON: the saved filter
-    status = Column(String(20), nullable=False, server_default=text("'draft'"), default="draft")  # draft | sending | sent | failed
+    # draft | scheduled | sending | sent | failed
+    status = Column(String(20), nullable=False, server_default=text("'draft'"), default="draft")
+
+    # When a scheduled campaign is due. Naive UTC like every other timestamp
+    # here. The confirm phrase is typed when the schedule is set, not when it
+    # fires — the decision to send to everyone is made while a human is
+    # present, and the scheduler only carries it out.
+    scheduled_for = Column(DateTime, nullable=True)
 
     created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)

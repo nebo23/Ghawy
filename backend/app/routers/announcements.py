@@ -23,7 +23,7 @@ import re
 import asyncio
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -73,6 +73,14 @@ class AnnouncementSave(BaseModel):
 
 class SendRequest(BaseModel):
     mode: str = "test"                       # test | real
+    confirm_phrase: Optional[str] = None
+
+
+class ScheduleRequest(BaseModel):
+    # ISO-8601. The confirm phrase is required HERE and not when the job fires:
+    # the decision to send to everybody must be made by a person, and at fire
+    # time there is nobody to make it.
+    scheduled_for: str
     confirm_phrase: Optional[str] = None
 
 
@@ -170,6 +178,7 @@ def _serialize(a: Announcement, stats: Optional[Dict[str, int]] = None,
         "created_at": a.created_at,
         "updated_at": a.updated_at,
         "sent_at": a.sent_at,
+        "scheduled_for": a.scheduled_for,
         "recipients_count": a.recipients_count or 0,
         "delivered": delivered,
         "read": read,
@@ -342,6 +351,12 @@ def update_announcement(
     if row.status == "sent":
         raise HTTPException(status_code=400, detail="الحملة دي اتبعتت خلاص — اعمل نسخة لو عايز تعدّل")
 
+    # حملة مجدولة متقفلة على نصها عن قصد: جملة التأكيد اتكتبت على **النص ده**.
+    # لو النص يتغيّر بعد التأكيد يبقى اللي وافق عليه حد هو مش اللي هيتبعت.
+    if row.status in ("scheduled", "sending"):
+        raise HTTPException(status_code=400,
+                            detail="الحملة دي مجدولة — الغي الجدولة الأول لو عايز تعدّل")
+
     row.title = (data.title or "").strip()[:160]
     row.body = (data.body or "").strip()
     row.type = _clean_type(data.type)
@@ -474,6 +489,36 @@ def _run_real_send(announcement_id: int, user_ids: List[int], loop) -> None:
         _send_lock.release()
 
 
+def _begin_real_send(db: Session, row: Announcement, loop) -> int:
+    """Resolve the audience, mark the row sending and hand off to a thread.
+
+    Shared by the send endpoint and the scheduler job so a scheduled campaign
+    goes out through exactly the same path as one sent by hand — a second
+    implementation is a second set of bugs.
+
+    Caller must already hold `_send_lock`; the worker releases it.
+    """
+    filters = aud.load_filters(row.audience)
+    users = aud.resolve_users(db, filters)
+    if not users:
+        raise HTTPException(status_code=400, detail="الفلتر ده مالوش أي عضو — عدّله وجرّب تاني")
+
+    user_ids = [u.id for u in users]
+    row.status = "sending"
+    row.recipients_count = len(user_ids)
+    db.commit()
+
+    _active_send.update(running=True, announcement_id=row.id, total=len(user_ids),
+                        started_at=datetime.utcnow().isoformat())
+    threading.Thread(
+        target=_run_real_send,
+        args=(row.id, user_ids, loop),
+        name=f"announcement-send-{row.id}",
+        daemon=True,
+    ).start()
+    return len(user_ids)
+
+
 @router.post("/{announcement_id}/send")
 async def send_announcement(
     announcement_id: int,
@@ -513,16 +558,7 @@ async def send_announcement(
     # القفل بيتاخد هنا وبيتفك في الثريد، مش في الريكوست: الإرسال بيفضل شغّال
     # بعد ما الريكوست يرجّع، فلو فكّيناه هنا تاني ضغطة كانت هتبدأ إرسالة موازية.
     try:
-        filters = aud.load_filters(row.audience)
-        users = aud.resolve_users(db, filters)
-        if not users:
-            raise HTTPException(status_code=400, detail="الفلتر ده مالوش أي عضو — عدّله وجرّب تاني")
-
-        user_ids = [u.id for u in users]
-
-        row.status = "sending"
-        row.recipients_count = len(user_ids)
-        db.commit()
+        count = _begin_real_send(db, row, asyncio.get_running_loop())
     except Exception:
         # أي فشل قبل ما الثريد يقوم لازم يفك القفل هنا — مفيش حد تاني هيفكّه.
         # الـ finally حوالين محاولة الإصلاح مقصود: لو الـ rollback نفسه رمى،
@@ -539,23 +575,79 @@ async def send_announcement(
             _send_lock.release()
         raise
 
-    _active_send.update(running=True, announcement_id=row.id, total=len(user_ids),
-                        started_at=datetime.utcnow().isoformat())
-
-    threading.Thread(
-        target=_run_real_send,
-        args=(row.id, user_ids, asyncio.get_running_loop()),
-        name=f"announcement-send-{row.id}",
-        daemon=True,
-    ).start()
-
     logger.info("📢 حملة #%s بدأت الإرسال لـ %s عضو بواسطة user_id=%s",
-                row.id, len(user_ids), current_user.id)
+                row.id, count, current_user.id)
 
     # بيرجّع على طول والحالة لسه "sending" — التاب بيـ poll الحالة تحت.
-    return {"mode": "real", "started": True, "delivered": len(user_ids),
+    return {"mode": "real", "started": True, "delivered": count,
             "status": "sending",
-            "message": f"بدأ الإرسال لـ {len(user_ids)} عضو في الخلفية"}
+            "message": f"بدأ الإرسال لـ {count} عضو في الخلفية"}
+
+
+@router.post("/{announcement_id}/schedule")
+def schedule_announcement(
+    announcement_id: int,
+    payload: ScheduleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """اجدول الحملة تتبعت في وقت معيّن.
+
+    جملة التأكيد بتتكتب هنا، مش وقت ما الـ job يشتغل. قرار إن ده يروح لكل
+    الأعضاء لازم يتاخد وفي حد واقف قدام الشاشة — الساعة ٨ بالليل مفيش حد.
+    الجمهور نفسه بيتحلّ وقت الإرسال زي أي إرسالة عادية، عشان فلتر زي
+    "اشتراكه بيخلص خلال ٧ أيام" يفضل معناه واحد.
+    """
+    require_permission(current_user, "announcements")
+    row = _get_or_404(db, announcement_id)
+    _require_sendable(row)
+
+    if row.status in ("sent", "sending"):
+        raise HTTPException(status_code=400, detail="الحملة دي اتبعتت خلاص — اعمل نسخة لو عايز تبعتها تاني")
+
+    if (payload.confirm_phrase or "").strip() != CONFIRM_PHRASE:
+        raise HTTPException(status_code=400, detail=f'الجدولة محتاجة تكتب "{CONFIRM_PHRASE}" بالظبط')
+
+    raw = (payload.scheduled_for or "").strip()
+    try:
+        when = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="التاريخ مش مفهوم")
+
+    # الفرونت بيبعت وقت بتوقيت المستخدم؛ التخزين UTC ساذج زي باقي الجدول.
+    if when.tzinfo is not None:
+        when = when.astimezone(timezone.utc).replace(tzinfo=None)
+
+    if when <= datetime.utcnow() + timedelta(minutes=1):
+        raise HTTPException(status_code=400, detail="لازم تجدولها بعد دقيقة على الأقل من دلوقتي")
+
+    row.scheduled_for = when
+    row.status = "scheduled"
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    logger.info("📅 حملة #%s اتجدولت لـ %s بواسطة user_id=%s", row.id, when, current_user.id)
+    return _serialize(row)
+
+
+@router.post("/{announcement_id}/unschedule")
+def unschedule_announcement(
+    announcement_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """ارجّع الحملة المجدولة مسودة. لازم يكون في طريق للتراجع قبل ما توصل."""
+    require_permission(current_user, "announcements")
+    row = _get_or_404(db, announcement_id)
+    if row.status != "scheduled":
+        raise HTTPException(status_code=400, detail="الحملة دي مش مجدولة")
+    row.scheduled_for = None
+    row.status = "draft"
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    logger.info("📅 حملة #%s اتلغت جدولتها بواسطة user_id=%s", row.id, current_user.id)
+    return _serialize(row)
 
 
 @router.get("/{announcement_id}/status")

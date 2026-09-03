@@ -129,171 +129,35 @@
 })();
 
 // ═══════════════════════════════════════════
-//   SUPABASE — Live Purchase Popup
+//   Live-purchase widget — REMOVED (Phase 4)
 // ═══════════════════════════════════════════
-let lastId = null;
-
-async function checkPurchases() {
-    try {
-        const res = await fetch(
-            "https://opetjxxzbmqzmqouqare.supabase.co/rest/v1/purchases?select=*&order=created_at.desc&limit=1",
-            {
-                headers: {
-                    apikey: "sb_publishable_j-hpKwGwIf40c9vT8V2QYw_VbjbtSQF",
-                    Authorization: "Bearer sb_publishable_j-hpKwGwIf40c9vT8V2QYw_VbjbtSQF",
-                    "Content-Type": "application/json",
-                    Prefer: "count=exact",
-                },
-            },
-        );
-
-        const range = res.headers.get("content-range");
-        let totalPurchases = 0;
-        if (range) totalPurchases = parseInt(range.split("/")[1]);
-
-        updateProgressBarUI(totalPurchases);
-
-        const data = await res.json();
-        if (!data.length) return;
-
-        const p = data[0];
-        if (p.id !== lastId) {
-            if (lastId !== null) showPopup(`${p.name} اشترك في الكورس منذ لحظات`);
-            lastId = p.id;
-        }
-    } catch (err) {
-        console.error("Supabase Error:", err);
-    }
-}
-
-function updateProgressBarUI(totalPurchases) {
-    let cycle = totalPurchases % 50;
-    let registeredCount = cycle === 0 && totalPurchases > 0 ? 100 : 50 + cycle;
-    let remaining = 100 - registeredCount;
-
-    localStorage.setItem("courseProgressCache", JSON.stringify({ registeredCount, remaining }));
-
-    const labels = document.querySelectorAll(".progress-labels span");
-    const barFill = document.querySelector(".progress-bar-fill");
-
-    if (labels.length >= 2) {
-        labels[0].textContent = `اتسجل ${registeredCount} / 100`;
-        labels[1].textContent = `باقي ${remaining}`;
-    }
-    if (barFill) {
-        barFill.style.width = `${registeredCount}%`;
-        barFill.style.transition = "width 1s ease, background 0.5s ease";
-    }
-
-    const slotsNumberLabel = document.querySelector(".slots-label span:last-child");
-    const slotsFill = document.querySelector(".slots-fill");
-
-    if (slotsNumberLabel) slotsNumberLabel.textContent = `${remaining} مقعد متبقي`;
-    if (slotsFill) {
-        slotsFill.style.width = `${registeredCount}%`;
-        slotsFill.style.transition = "width 1s ease";
-    }
-}
-
-function showPopup(text) {
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:10px; height:10px; background:var(--green); border-radius:50%; box-shadow:0 0 10px var(--green);"></div>
-        <span>${text}</span>
-      </div>
-    `;
-    div.style = `
-        position: fixed; bottom: 20px; left: 20px;
-        background: rgba(21, 24, 12, 0.95);
-        backdrop-filter: blur(10px);
-        color: #fff; font-weight: bold;
-        padding: 16px 20px; border-radius: 12px;
-        z-index: 9999;
-        box-shadow: 0 2px 40px rgba(193, 255, 17, 0.3);
-        border: 1px solid rgba(193, 255, 17, 0.25);
-        font-family: "Cairo";
-        animation: slideIn 0.5s ease-out;
-    `;
-    document.body.appendChild(div);
-    setTimeout(() => {
-        div.style.animation = "slideOut 0.5s ease-in";
-        setTimeout(() => div.remove(), 500);
-    }, 7000);
-}
-
-const style = document.createElement("style");
-style.innerHTML = `
-    @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
-`;
-document.head.appendChild(style);
-
-if (document.querySelector('.progress-bar-fill')) {
-    setInterval(checkPurchases, 5000);
-    checkPurchases();
-}
-
-// ═══════════════════════════════════════════
-//   Live Purchase Text Update
-// ═══════════════════════════════════════════
-let lastPurchase = null;
-
-function timeAgo(dateString) {
-    const purchaseTime = new Date(dateString + "Z");
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - purchaseTime.getTime()) / 1000);
-    if (diff < 10) return "الآن";
-    if (diff < 60) return `${diff} ثانية`;
-    if (diff < 3600) return `${Math.floor(diff / 60)} دقائق`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} ساعة`;
-    return `${Math.floor(diff / 86400)} يوم`;
-}
-
-async function fetchLastPurchase() {
-    try {
-        const res = await fetch(
-            "https://opetjxxzbmqzmqouqare.supabase.co/rest/v1/purchases?select=name,created_at&order=created_at.desc&limit=1",
-            {
-                headers: {
-                    apikey: "sb_publishable_j-hpKwGwIf40c9vT8V2QYw_VbjbtSQF",
-                    Authorization: "Bearer sb_publishable_j-hpKwGwIf40c9vT8V2QYw_VbjbtSQF",
-                },
-            },
-        );
-        const data = await res.json();
-        if (!data.length) return;
-        lastPurchase = data[0];
-    } catch (e) {
-        console.error("Live purchase error:", e);
-    }
-}
-
-function updateLiveText() {
-    if (!lastPurchase) return;
-    const el = document.getElementById("livePurchaseText");
-    if (!el) return;
-    const ago = timeAgo(lastPurchase.created_at);
-    el.textContent = `${lastPurchase.name} اشترى منذ ${ago}`;
-}
-
-fetchLastPurchase();
-setInterval(updateLiveText, 1000);
-setInterval(fetchLastPurchase, 10000);
-
-// ═══════════════════════════════════════════
-//   Cache-based initial bar rendering
-// ═══════════════════════════════════════════
-(function () {
-    const cached = localStorage.getItem("courseProgressCache");
-    if (cached) {
-        const data = JSON.parse(cached);
-        const bar = document.getElementById("initialBar");
-        if (bar) bar.style.width = data.registeredCount + "%";
-        const slotsFill = document.getElementById("initialSlotsFill");
-        if (slotsFill) slotsFill.style.width = data.registeredCount + "%";
-    }
-})();
+// This block polled a third-party Supabase table from every landing-page
+// visitor's browser. It is gone because none of it reached the page:
+//
+//   .progress-bar-fill  — no such element, and it is this file's own guard, so
+//                         checkPurchases() and its 5s interval never started
+//   #livePurchaseText   — no such element, so updateLiveText() returned early
+//                         every second while fetchLastPurchase() kept polling
+//   #initialBar         — no such element, so the cached-bar block did nothing
+//   #initialSlotsFill   — no such element, same
+//
+// Verified absent from index.html (the only page that loads main.js), from the
+// live page served in production, and from every commit in this repo's history:
+// `git log -S` finds no commit that ever added that markup anywhere.
+//
+// What it actually cost: fetchLastPurchase was the one unguarded caller, so
+// every landing-page visitor made 6 requests/minute to a third party for a row
+// that fed nothing, plus a 1-second timer that did nothing.
+//
+// It could not have shown anything useful even with the markup present: the
+// newest row in that table is 2026-07-01, so the "someone just bought" popup
+// could never fire (the id never changes) and the live text would have read
+// "اشترى منذ ٦٣ يوم".
+//
+// If live social proof is wanted back it needs three things this never had:
+// the markup, a data source that is still being written to, and an interval
+// derived from the real purchase rate (median gap in that table: ~2 hours) —
+// not a 5-second poll. See docs/PHASE-4-REPORT.md.
 
 // ═══════════════════════════════════════════
 //   Courses Carousel
