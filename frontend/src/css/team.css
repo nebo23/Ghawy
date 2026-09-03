@@ -2860,3 +2860,121 @@
     color: #f59e0b;
     line-height: 1.6;
 }
+
+/* ── "Who received this" drawer ──────────────────────────────
+   A read rate does not answer the question people actually ask, which is
+   which members did not open it. Logical properties throughout: the team
+   dashboard is LTR but this markup is Arabic and the community pages flip
+   `dir` at runtime. */
+.an-rcp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .6);
+    z-index: 9999;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.an-rcp-panel {
+    background: #121212;
+    border-inline-start: 1px solid rgba(255, 255, 255, .08);
+    inline-size: min(440px, 100%);
+    block-size: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.an-rcp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.an-rcp-title { font-size: .95rem; font-weight: 700; color: #f1f0ea; }
+
+.an-rcp-x {
+    background: none;
+    border: 0;
+    color: #888;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.an-rcp-tabs { display: flex; gap: 6px; }
+
+.an-rcp-tab {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .03);
+    color: #aaa;
+    font-size: .72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.an-rcp-tab.active { background: rgba(63, 143, 249, .14); color: #3f8ff9; border-color: rgba(63, 143, 249, .3); }
+
+.an-rcp-search {
+    inline-size: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, .03);
+    color: #f1f0ea;
+    font-size: .78rem;
+}
+
+.an-rcp-summary { display: flex; gap: 14px; font-size: .72rem; color: #888; }
+.an-rcp-summary b { color: #f1f0ea; }
+
+.an-rcp-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+
+.an-rcp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: 8px;
+}
+
+.an-rcp-row:hover { background: rgba(255, 255, 255, .03); }
+
+.an-rcp-av {
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.an-rcp-av img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+.an-rcp-who { flex: 1; min-inline-size: 0; }
+.an-rcp-name { font-size: .78rem; color: #f1f0ea; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.an-rcp-mail { font-size: .68rem; color: #777; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.an-rcp-flag {
+    font-size: .62rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+
+.an-rcp-flag.read { background: rgba(34, 197, 94, .14); color: #22c55e; }
+.an-rcp-flag.unread { background: rgba(255, 255, 255, .06); color: #999; }
+
+.an-rcp-empty { text-align: center; color: #777; font-size: .76rem; padding: 20px 0; }
+.an-rcp-foot { display: flex; justify-content: center; }
+
+@media (max-width: 700px) {
+    .an-rcp-panel { inline-size: 100%; }
+}

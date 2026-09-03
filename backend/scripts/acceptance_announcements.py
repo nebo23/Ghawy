@@ -210,24 +210,30 @@ r = client.post(f"/admin/announcements/{c_ws['id']}/send", headers=H(sender),
 check("whitespace around the confirm phrase is trimmed, not refused",
       r.status_code == 200, f"{r.status_code} {r.text[:120]}")
 
+
+def wait_sent(cid, timeout=30):
+    """The fan-out runs in a thread now — wait for it before asserting.
+
+    Also what keeps these cases independent: the send lock is held until the
+    worker finishes, so firing the next send too early gets a 409 rather than
+    the behaviour under test.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        st = client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
+        if st["status"] in ("sent", "failed"):
+            return st
+        time.sleep(0.2)
+    return client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
+
+
+wait_sent(c_ws["id"])                      # release the lock before the next send
+
 c = mkcampaign(audience={"status": "active", "country": "Jordan"})
 r = client.post(f"/admin/announcements/{c['id']}/send", headers=H(sender),
                 json={"mode": "real", "confirm_phrase": "GHAWY-OFFICIAL-SEND"})
 check("the exact phrase is accepted", r.status_code == 200, f"{r.status_code} {r.text[:160]}")
 
-
-def wait_sent(cid, timeout=30):
-    """The fan-out runs in a thread now — wait for it before asserting."""
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        s = client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
-        if s["status"] in ("sent", "failed"):
-            return s
-        time.sleep(0.2)
-    return client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
-
-
-wait_sent(c_ws["id"])                      # let the trimmed-phrase send settle first
 st = wait_sent(c["id"])
 check("the accepted send reaches status=sent", st["status"] == "sent", st)
 check("it delivered to exactly the filtered member", st["delivered"] == 1, st)
@@ -308,6 +314,52 @@ test_rows = db.query(M.Notification).filter(M.Notification.announcement_id == c2
 check("...addressed to the sender and nobody else",
       [n.user_id for n in test_rows] == [sender.id], [n.user_id for n in test_rows])
 check("...and it leaves the campaign a draft", row.status == "draft", row.status)
+
+
+# ══════════════════════════════════════════════════════════════
+print("\n=== the recipients view answers 'who did not open it' ===")
+# ══════════════════════════════════════════════════════════════
+big_id = c["id"]                                   # the 60+ member campaign above
+rows = db.query(M.Notification).filter(M.Notification.announcement_id == big_id).all()
+for n in rows[:5]:                                 # five of them opened it
+    n.is_read = True
+db.commit()
+total = len(rows)
+
+r = client.get(f"/admin/announcements/{big_id}/recipients", headers=H(sender))
+d = r.json()
+check("recipients answers for someone with the permission", r.status_code == 200, r.text[:120])
+check("it reports read/unread over the whole campaign",
+      d["delivered"] == total and d["read"] == 5 and d["unread"] == total - 5, d)
+check("it defaults to the members who did NOT open it",
+      all(i["is_read"] is False for i in d["items"]), [i["is_read"] for i in d["items"]][:5])
+
+r = client.get(f"/admin/announcements/{big_id}/recipients?state=read", headers=H(sender))
+d_read = r.json()
+check("state=read returns only openers", d_read["total"] == 5
+      and all(i["is_read"] for i in d_read["items"]), d_read["total"])
+
+r = client.get(f"/admin/announcements/{big_id}/recipients?state=all&limit=10&offset=0", headers=H(sender))
+p1 = r.json()
+r = client.get(f"/admin/announcements/{big_id}/recipients?state=all&limit=10&offset=10", headers=H(sender))
+p2 = r.json()
+check("it pages rather than dumping the whole audience",
+      len(p1["items"]) == 10 and p1["has_more"] is True, f"{len(p1['items'])} has_more={p1['has_more']}")
+check("paging does not repeat rows",
+      not ({i["user_id"] for i in p1["items"]} & {i["user_id"] for i in p2["items"]}))
+check("the page total counts the campaign, not the page", p1["total"] == total, p1["total"])
+
+r = client.get(f"/admin/announcements/{big_id}/recipients?state=all&search=Crowd%207", headers=H(sender))
+d_s = r.json()
+check("search narrows by name", d_s["total"] >= 1
+      and all("Crowd 7" in i["full_name"] for i in d_s["items"]), d_s["total"])
+
+r = client.get(f"/admin/announcements/{big_id}/recipients", headers=H(member))
+leaked = any(x in r.text for x in ("Crowd 1", "crowd1@t.co"))
+check("recipients leaks no member to someone without the permission",
+      r.status_code == 403 and not leaked, f"{r.status_code} {r.text[:120]}")
+r = client.get(f"/admin/announcements/{big_id}/recipients")
+check("recipients refuses anonymous", r.status_code == 401, r.status_code)
 
 
 print("\n" + "=" * 72)
