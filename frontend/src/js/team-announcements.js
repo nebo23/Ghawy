@@ -35,6 +35,10 @@ let anFacetsLoaded = false;
 let anSending = false;
 let anSenders = [];        // accounts this operator may send as
 let anSegments = [];       // saved audience filters
+let anAudMode = 'filter';  // 'filter' | 'picked'
+let anPicked = [];         // hand-picked members: {id, full_name, email, ...}
+let anPickTimer = null;
+let anPickSeesContacts = false;
 
 // List paging/search state. The list used to be an unpaged `.limit(200)`,
 // which is fine right up until campaign 201 disappears without anybody being
@@ -60,7 +64,21 @@ function anDelivery() {
 
 async function loadAnnouncementsTab() {
   anShowListView();
+  anBindPicker();
   await Promise.all([loadAnnouncementsList(), anLoadSenders(), anLoadSegments()]);
+}
+
+// Bound once. Debounced because every keystroke is an ILIKE over the roster.
+let anPickerBound = false;
+function anBindPicker() {
+  if (anPickerBound) return;
+  const box = document.getElementById('an-pick-search');
+  if (!box) return;
+  box.addEventListener('input', () => {
+    clearTimeout(anPickTimer);
+    anPickTimer = setTimeout(anPickSearch, 300);
+  });
+  anPickerBound = true;
 }
 
 function anShowListView() {
@@ -372,6 +390,9 @@ function anNewCampaign() {
   anSetField('an-confirm', '');
   anSetField('an-sched-at', '');
   anSetField('an-segment', '');
+  anSetField('an-pick-search', '');
+  anPicked = [];
+  anSetAudMode('filter');
   const self = anSenders.find(s => s.is_self);
   anFillSenders(self ? self.id : undefined);
   anRenderSchedState();
@@ -408,6 +429,9 @@ async function anOpenCampaign(id) {
   if (staff) staff.checked = !!a.include_staff;
   anSetField('an-confirm', '');
   anSetField('an-segment', '');
+  anSetField('an-pick-search', '');
+  anSetAudMode(a.member_ids && a.member_ids.length ? 'picked' : 'filter');
+  anLoadPicked(a.member_ids);
   // datetime-local wants local wall-clock with no zone; the stored value is
   // naive UTC, so mark it before parsing or it lands three hours out.
   anSetField('an-sched-at', c.scheduled_for
@@ -461,6 +485,10 @@ function anReadForm() {
     delivery: anDelivery(),
     sender_id: senderRaw ? Number(senderRaw) : null,
     audience: {
+      // Hand-picked members are the audience on their own — the server drops
+      // the other filters when this is set, so sending them would be quoting a
+      // shape the server does not use.
+      member_ids: anAudMode === 'picked' ? anPicked.map(m => m.id) : null,
       status: (document.getElementById('an-aud-status') || {}).value || 'all',
       plan: (document.getElementById('an-aud-plan') || {}).value || 'all',
       country: (document.getElementById('an-aud-country') || {}).value || '',
@@ -536,6 +564,9 @@ async function anLoadAudience() {
 
   const a = anReadForm().audience;
   const qs = new URLSearchParams();
+  if (a.member_ids && a.member_ids.length) {
+    a.member_ids.forEach(id => qs.append('member_ids', id));
+  }
   if (a.search) qs.set('search', a.search);
   if (a.country) qs.set('country', a.country);
   if (a.governorate) qs.set('governorate', a.governorate);
@@ -554,8 +585,9 @@ async function anLoadAudience() {
 
     countEl.textContent = d.count;
     const dm = anDelivery() === 'dm';
+    const picked = anAudMode === 'picked';
     subEl.textContent = d.count === 0
-      ? 'الفلتر ده مالوش أي عضو — عدّله'
+      ? (picked ? 'مختارتش حد لسه — دوّر بالاسم أو الإيميل فوق' : 'الفلتر ده مالوش أي عضو — عدّله')
       : (dm
           ? `محادثة خاصة جديدة هتتفتح · ${d.online_now} منهم متصل دلوقتي`
           : `عضو هيوصلهم الإشعار · ${d.online_now} منهم متصل دلوقتي هيشوفه فوراً`)
@@ -572,6 +604,131 @@ async function anLoadAudience() {
     subEl.textContent = 'مقدرناش نحسب الجمهور';
     sampleEl.innerHTML = '';
   }
+}
+
+// ═══ MEMBER PICKER ═══
+//
+// "Send to exactly these people, by name or email." The filter and the picker
+// are mutually exclusive: the server drops the other filters when a picked list
+// is present, so offering both at once would show a count that is not what
+// gets sent.
+//
+// Searching BY email only works for an operator who is allowed to SEE emails
+// (`member-contacts`). That is not a detail — a search that matches on a field
+// it will not display is an email-guessing tool, which is the thing that
+// permission exists to prevent. The server enforces it; this only reflects it.
+
+function anSetAudMode(mode) {
+  anAudMode = mode === 'picked' ? 'picked' : 'filter';
+  const picked = anAudMode === 'picked';
+  const f = document.getElementById('an-filter-wrap');
+  const p = document.getElementById('an-picker-wrap');
+  if (f) f.style.display = picked ? 'none' : '';
+  if (p) p.style.display = picked ? '' : 'none';
+  const bf = document.getElementById('an-mode-filter');
+  const bp = document.getElementById('an-mode-picked');
+  if (bf) bf.classList.toggle('active', !picked);
+  if (bp) bp.classList.toggle('active', picked);
+  anRenderPicked();
+  anRefreshAudience();
+  if (window.lucide) lucide.createIcons();
+}
+
+function anPickHintText() {
+  return anPickSeesContacts
+    ? 'بيدوّر في الأسماء والإيميلات.'
+    : 'بيدوّر في الأسماء بس — عرض الإيميلات محتاج صلاحية «بيانات التواصل».';
+}
+
+async function anPickSearch() {
+  const box = document.getElementById('an-pick-search');
+  const out = document.getElementById('an-pick-results');
+  if (!box || !out) return;
+  const term = (box.value || '').trim();
+  if (term.length < 2) { out.innerHTML = ''; return; }
+
+  out.innerHTML = '<div class="an-pick-empty">بيدوّر…</div>';
+  try {
+    const res = await authFetch(`${API}/admin/announcements/members/search?q=${encodeURIComponent(term)}`);
+    if (!res.ok) throw new Error('failed');
+    const d = await res.json();
+    anPickSeesContacts = !!d.sees_contacts;
+    const hint = document.getElementById('an-pick-hint');
+    if (hint) hint.textContent = anPickHintText();
+
+    const items = (d.items || []).filter(u => !anPicked.some(m => m.id === u.id));
+    out.innerHTML = items.length
+      ? items.map(u => `
+          <button type="button" class="an-pick-row" onclick="anPickAdd(${u.id})">
+            <span class="an-pick-name">${escapeHtml(u.full_name || '—')}</span>
+            ${u.email ? `<span class="an-pick-mail">${escapeHtml(u.email)}</span>` : ''}
+            ${u.is_staff ? '<span class="an-pick-tag staff">أدمن</span>' : ''}
+            ${u.is_active ? '' : '<span class="an-pick-tag off">مش نشط</span>'}
+            <i data-lucide="plus" style="width:13px;height:13px;"></i>
+          </button>`).join('')
+      : '<div class="an-pick-empty">مفيش حد مطابق</div>';
+    window.__anPickLast = d.items || [];
+    if (window.lucide) lucide.createIcons();
+  } catch (e) {
+    out.innerHTML = '<div class="an-pick-empty">مقدرناش ندوّر</div>';
+  }
+}
+
+function anPickAdd(id) {
+  const found = (window.__anPickLast || []).find(u => u.id === id);
+  if (!found || anPicked.some(m => m.id === id)) return;
+  anPicked.push(found);
+  const box = document.getElementById('an-pick-search');
+  if (box) box.value = '';
+  const out = document.getElementById('an-pick-results');
+  if (out) out.innerHTML = '';
+  anRenderPicked();
+  anRefreshAudience();
+}
+
+function anPickRemove(id) {
+  anPicked = anPicked.filter(m => m.id !== id);
+  anRenderPicked();
+  anRefreshAudience();
+}
+
+function anPickClear() {
+  anPicked = [];
+  anRenderPicked();
+  anRefreshAudience();
+}
+
+function anRenderPicked() {
+  const box = document.getElementById('an-pick-chips');
+  if (!box) return;
+  if (!anPicked.length) {
+    box.innerHTML = '<div class="an-pick-empty">مفيش حد مختار لسه.</div>';
+    return;
+  }
+  box.innerHTML = anPicked.map(m => `
+      <span class="an-pick-chip${m.is_active ? '' : ' off'}">
+        ${escapeHtml(m.full_name || '—')}
+        <button type="button" class="an-pick-x" onclick="anPickRemove(${m.id})" aria-label="شيل">✕</button>
+      </span>`).join('')
+    + `<button type="button" class="an-mini" onclick="anPickClear()">امسح الكل (${anPicked.length})</button>`;
+}
+
+// A saved campaign stores ids. Whoever opens it has to see WHO those are before
+// they send, so the names are fetched back rather than shown as numbers.
+async function anLoadPicked(ids) {
+  anPicked = [];
+  if (!ids || !ids.length) { anRenderPicked(); return; }
+  const qs = new URLSearchParams();
+  ids.forEach(id => qs.append('ids', id));
+  try {
+    const res = await authFetch(`${API}/admin/announcements/members/resolve?${qs}`);
+    if (res.ok) {
+      const d = await res.json();
+      anPickSeesContacts = !!d.sees_contacts;
+      anPicked = d.items || [];
+    }
+  } catch (e) { /* names unavailable; the ids are still what will be sent */ }
+  anRenderPicked();
 }
 
 function anFillFacets(countries, govs) {

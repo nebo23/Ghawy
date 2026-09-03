@@ -14,8 +14,20 @@ audience.py — من هم الأعضاء اللي الحملة دي بتروح �
     مباشرةً، و email_campaigns يقدر ياخدها بعدين من غير ما يتغيّر سلوكه
     النهاردة — ده مسار إرسال إيميلات شغّال في الإنتاج ومش جزء من التغيير ده.
 
-الفلترة كلها بتتنفّذ على السيرفر: الفرونت بيبعت الفلتر، مش قائمة IDs. لو بعت
-IDs يبقى أي حد معاه صلاحية الحملات يقدر يلزق أي id ويوصل لأي حد.
+الفلترة كلها بتتنفّذ على السيرفر: الفرونت بيبعت الفلتر، والسيرفر هو اللي بيحدد
+مين دول.
+
+الاستثناء الوحيد هو `member_ids` — الاختيار اليدوي بالاسم. وده مضاف عن قصد
+وبالشروط دي:
+
+    اللي معاه صلاحية الحملات يقدر أصلاً يوصل لأي عضو لوحده من فلتر `search`
+    (بحث بالإيميل الكامل بيرجّع شخص واحد بالظبط)، فالاختيار اليدوي مش قدرة
+    جديدة — هو واجهة أحسن لقدرة موجودة. اللي لازم يفضل صح:
+
+      • الـ ids بتتحقق من الداتابيز وقت الحل، مش بتتصدّق زي ما جاية.
+      • ليها سقف (MAX_PICKED) — الاختيار اليدوي بالآلاف يبقى فلتر مش اختيار.
+      • لما يبقى في اختيار يدوي، باقي الفلاتر بتتلغى. مفيش خلط بيوسّع الجمهور
+        من ورا اللي بيبعت.
 """
 from __future__ import annotations
 
@@ -38,8 +50,12 @@ MAX_AUDIENCE = 20000
 # صامت ويوسّع الجمهور من غير ما حد ياخد باله.
 ALLOWED_KEYS = {
     "search", "country", "governorate", "status", "plan",
-    "expiring_days", "include_staff",
+    "expiring_days", "include_staff", "member_ids",
 }
+
+# سقف الاختيار اليدوي. الاختيار اليدوي معناه إن حد قعد يدوّر على الناس دول
+# بإيده — لو العدد بقى بالآلاف يبقى ده فلتر مش اختيار، والفلاتر ليها مكانها.
+MAX_PICKED = 500
 
 _PLAN_GROUPS = {
     "monthly": {"monthly", "month", "1m"},
@@ -60,6 +76,27 @@ def normalize_filters(raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     for key in ("search", "country", "governorate"):
         val = (out.get(key) or "").strip()
         out[key] = val or None
+
+    # اختيار يدوي لأعضاء بالاسم. بيتخزّن كأرقام نضيفة بس؛ التحقق إن الأرقام
+    # دي أعضاء موجودين فعلاً بيحصل وقت الحل (resolve) من الداتابيز نفسها.
+    picked = out.get("member_ids")
+    if picked in ("", None, []):
+        out["member_ids"] = None
+    else:
+        if not isinstance(picked, (list, tuple, set)):
+            picked = [picked]
+        clean, seen = [], set()
+        for v in picked:
+            try:
+                uid = int(v)
+            except (TypeError, ValueError):
+                continue
+            if uid > 0 and uid not in seen:
+                seen.add(uid)
+                clean.append(uid)
+            if len(clean) >= MAX_PICKED:
+                break
+        out["member_ids"] = clean or None
 
     days = out.get("expiring_days")
     if days in ("", None):
@@ -124,6 +161,22 @@ def resolve_users(db: Session, filters: Optional[Dict[str, Any]],
     معناه ناس مختلفين كل يوم، وده المقصود منه.
     """
     f = normalize_filters(filters)
+
+    # ── اختيار يدوي: الأعضاء دول بالظبط ─────────────────────────
+    # لما يكون في اختيار يدوي، هو الجمهور. باقي الفلاتر بتتلغى عن قصد: خلط
+    # «الخمس ناس دول» مع «وكمان كل النشطين في مصر» مالوش معنى واضح، والعدّاد
+    # في الشاشة كان هيقول رقم غير اللي هيتبعت.
+    #
+    # الـ ids بتتحقق من الداتابيز هنا — مش بتتصدّق زي ما جاية. اللي مش موجود
+    # بيتشال بهدوء بدل ما يكسر الإرسالة كلها.
+    if f.get("member_ids"):
+        return (
+            db.query(User)
+            .filter(User.id.in_(f["member_ids"][:limit]))
+            .order_by(User.full_name.asc())
+            .all()
+        )
+
     q = db.query(User)
 
     # الستاف مستبعدين افتراضياً: الحملة موجّهة للأعضاء، ومحدش عايز يبعت لنفسه

@@ -2217,6 +2217,34 @@
                   <div class="an-panel">
                     <div class="an-panel-title"><i data-lucide="users" style="width:15px;height:15px;"></i> الجمهور</div>
 
+                    <!-- Two ways to say who this goes to, and they are mutually
+                         exclusive on purpose: mixing "these five people" with
+                         "and everyone active in Egypt" has no clear meaning,
+                         and the counter would be quoting a number that is not
+                         what gets sent. The server enforces the same rule. -->
+                    <div class="an-aud-mode" role="tablist">
+                      <button type="button" class="an-aud-mode-btn active" id="an-mode-filter"
+                              onclick="anSetAudMode('filter')">
+                        <i data-lucide="filter" style="width:13px;height:13px;"></i> بالفلتر
+                      </button>
+                      <button type="button" class="an-aud-mode-btn" id="an-mode-picked"
+                              onclick="anSetAudMode('picked')">
+                        <i data-lucide="user-check" style="width:13px;height:13px;"></i> أعضاء محددين
+                      </button>
+                    </div>
+
+                    <!-- ── اختيار يدوي ── -->
+                    <div id="an-picker-wrap" style="display:none;">
+                      <label class="an-label">دوّر بالاسم أو الإيميل</label>
+                      <input type="search" id="an-pick-search" class="an-input"
+                             placeholder="اكتب حرفين على الأقل…" autocomplete="off" />
+                      <div class="an-pick-hint" id="an-pick-hint"></div>
+                      <div class="an-pick-results" id="an-pick-results"></div>
+                      <div class="an-pick-chips" id="an-pick-chips"></div>
+                    </div>
+
+                    <!-- ── بالفلتر ── -->
+                    <div id="an-filter-wrap">
                     <div class="an-row2">
                       <div>
                         <label class="an-label">الحالة</label>
@@ -2282,6 +2310,7 @@
                         <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
                       </button>
                     </div>
+                    </div><!-- end an-filter-wrap -->
 
                     <div class="an-audience-box" id="an-audience-box">
                       <div class="an-aud-count"><span id="an-aud-count">—</span></div>

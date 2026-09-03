@@ -238,7 +238,12 @@ def wait_sent(cid, timeout=30):
     deadline = time.time() + timeout
     while time.time() < deadline:
         st = client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
-        if st["status"] in ("sent", "failed"):
+        # Both conditions, not just the status. The worker commits the final
+        # status BEFORE it clears its in-process flag and drops the lock, so
+        # returning on the status alone means returning while the thread is
+        # still finishing — which made "sending_active is cleared" a race the
+        # test could lose rather than an assertion about the code.
+        if st["status"] in ("sent", "failed") and not st["sending_active"]:
             return st
         time.sleep(0.2)
     return client.get(f"/admin/announcements/{cid}/status", headers=H(sender)).json()
@@ -1069,6 +1074,101 @@ check("...and the campaign built from it keeps its own copy of the filter",
 check("...and is still there", row.status == "draft", row.status)
 r = client.delete(f"/admin/announcements/segments/{seg['id']}", headers=H(sender))
 check("deleting a segment that is gone is a clean 404", r.status_code == 404, r.status_code)
+
+# ══════════════════════════════════════════════════════════════
+print("\n=== picking specific members by name or email ===")
+# ══════════════════════════════════════════════════════════════
+# The audience is normally a filter the server resolves. A hand-picked list is
+# the one exception, and it is only safe because the ids are checked against
+# the database, capped, and never mixed with the other filters.
+pick_a = mkuser("pick.a@t.co", name="Picked Alpha", country="Malta")
+pick_b = mkuser("pick.b@t.co", name="Picked Beta", country="Malta")
+pick_c = mkuser("pick.c@t.co", name="Picked Gamma", country="Malta")
+
+c = mkcampaign(audience={"member_ids": [pick_a.id, pick_b.id]})
+check("a hand-picked list survives the save",
+      c["audience"].get("member_ids") == [pick_a.id, pick_b.id], c["audience"])
+
+r = client.get(f"/admin/announcements/audience/preview?member_ids={pick_a.id}&member_ids={pick_b.id}",
+               headers=H(sender)).json()
+check("the preview counts exactly the picked members", r["count"] == 2, r["count"])
+check("...and names them", {u["id"] for u in r["sample"]} == {pick_a.id, pick_b.id},
+      [u["id"] for u in r["sample"]])
+
+# The whole point of the rule: picked members win, other filters are dropped.
+r = client.get("/admin/announcements/audience/preview"
+               f"?member_ids={pick_a.id}&status=inactive&country=Egypt&plan=yearly",
+               headers=H(sender)).json()
+check("other filters cannot widen or narrow a hand-picked audience",
+      r["count"] == 1 and r["sample"][0]["id"] == pick_a.id, r["count"])
+
+send_real(c["id"])
+st = wait_sent(c["id"])
+check("a hand-picked campaign sends", st["status"] == "sent", st)
+got = {n.user_id for n in db.query(M.Notification).filter(M.Notification.announcement_id == c["id"]).all()}
+check("...to exactly the people who were picked", got == {pick_a.id, pick_b.id}, got)
+check("...and to nobody else in their country", pick_c.id not in got, got)
+
+# An id that is not a real account is dropped, not trusted.
+c = mkcampaign(audience={"member_ids": [pick_c.id, 99999999]})
+r = client.get(f"/admin/announcements/audience/preview?member_ids={pick_c.id}&member_ids=99999999",
+               headers=H(sender)).json()
+check("an id that matches no account is dropped rather than trusted",
+      r["count"] == 1 and r["sample"][0]["id"] == pick_c.id, r["count"])
+
+# Junk and over-long lists are normalised on the way in.
+c = mkcampaign(audience={"member_ids": [pick_a.id, pick_a.id, "abc", None, -4, 0]})
+check("duplicates and junk are stripped from a picked list",
+      c["audience"]["member_ids"] == [pick_a.id], c["audience"]["member_ids"])
+import app.services.audience as AUD                                   # noqa: E402
+c = mkcampaign(audience={"member_ids": list(range(1, AUD.MAX_PICKED + 50))})
+check("a picked list is capped",
+      len(c["audience"]["member_ids"]) == AUD.MAX_PICKED, len(c["audience"]["member_ids"]))
+
+# ── the search behind the picker ──
+r = client.get("/admin/announcements/members/search?q=Picked", headers=H(owner))
+d = r.json()
+check("the picker search finds members by name", r.status_code == 200
+      and {pick_a.id, pick_b.id, pick_c.id} <= {u["id"] for u in d["items"]},
+      f"{r.status_code} {[u['id'] for u in d.get('items', [])]}")
+check("a one-character query returns nothing rather than the whole roster",
+      client.get("/admin/announcements/members/search?q=P", headers=H(owner)).json()["items"] == [])
+check("the picker search needs the announcements permission",
+      client.get("/admin/announcements/members/search?q=Picked", headers=H(member)).status_code == 403)
+check("the picker search refuses anonymous",
+      client.get("/admin/announcements/members/search?q=Picked").status_code == 401)
+
+# Email search and email display are the SAME permission, on purpose: a search
+# that matches a field it will not show is an email-guessing tool.
+r = client.get("/admin/announcements/members/search?q=pick.a@t.co", headers=H(owner)).json()
+check("the owner can search by email", any(u["id"] == pick_a.id for u in r["items"]),
+      [u["id"] for u in r["items"]])
+check("...and gets the address back", r["sees_contacts"] is True
+      and any(u["email"] == "pick.a@t.co" for u in r["items"]), r["items"][:2])
+
+# `sender` is an admin holding only the announcements permission.
+r = client.get("/admin/announcements/members/search?q=Picked", headers=H(sender)).json()
+check("an admin without member-contacts still finds people by name",
+      any(u["id"] == pick_a.id for u in r["items"]), [u["id"] for u in r["items"]])
+check("...but gets no email addresses back",
+      r["sees_contacts"] is False and all(u["email"] is None for u in r["items"]),
+      [u.get("email") for u in r["items"]][:3])
+r2 = client.get("/admin/announcements/members/search?q=pick.a@t.co", headers=H(sender)).json()
+check("...and cannot search BY an address either (no email enumeration)",
+      r2["items"] == [], [u["id"] for u in r2["items"]])
+
+# Resolving ids back to names, for reopening a saved campaign.
+r = client.get(f"/admin/announcements/members/resolve?ids={pick_a.id}&ids={pick_b.id}",
+               headers=H(owner)).json()
+check("picked ids resolve back to names", {u["id"] for u in r["items"]} == {pick_a.id, pick_b.id},
+      [u["id"] for u in r["items"]])
+check("resolve needs the permission too",
+      client.get(f"/admin/announcements/members/resolve?ids={pick_a.id}",
+                 headers=H(member)).status_code == 403)
+r = client.get(f"/admin/announcements/members/resolve?ids={pick_a.id}", headers=H(sender)).json()
+check("resolve redacts addresses the same way search does",
+      all(u["email"] is None for u in r["items"]), r["items"])
+
 
 print("\n" + "=" * 72)
 print(f"passed {len(PASS)}   failed {len(FAIL)}")

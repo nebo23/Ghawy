@@ -93,7 +93,7 @@ from app.models import (
 from app.routers.users import get_current_user
 from app.services import audience as aud
 from app.services import dm_service
-from app.services.permissions import require_permission
+from app.services.permissions import has_permission, require_permission
 from app.services.ws_manager import manager
 
 logger = logging.getLogger("ghawy.announcements")
@@ -487,6 +487,7 @@ def preview_audience(
     plan: str = Query("all"),
     expiring_days: Optional[int] = Query(None, ge=0, le=365),
     include_staff: bool = Query(False),
+    member_ids: Optional[List[int]] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -500,7 +501,7 @@ def preview_audience(
     filters = {
         "search": search, "country": country, "governorate": governorate,
         "status": status, "plan": plan, "expiring_days": expiring_days,
-        "include_staff": include_staff,
+        "include_staff": include_staff, "member_ids": member_ids,
     }
     users = aud.resolve_users(db, filters)
     online = sum(1 for u in users if manager.is_online(u.id))
@@ -514,6 +515,101 @@ def preview_audience(
             for u in users[:PREVIEW_SAMPLE]
         ],
         **aud.facets(db),
+    }
+
+
+# ══════════════════════════════════════════════════════════════
+#  Member picker
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/members/search")
+def search_members(
+    q: str = Query("", description="اسم أو إيميل"),
+    limit: int = Query(20, ge=1, le=50),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """دوّر على أعضاء بالاسم أو الإيميل عشان تختارهم بإيدك.
+
+    الإيميل هنا بيمشي على نفس قاعدة باقي اللوحة بالحرف (شوف
+    `GET /admin/users` في admin.py): من غير صلاحية `member-contacts` الإيميل
+    مابيترجعش — **والبحث بيه كمان مابيشتغلش**. القاعدة التانية دي هي المهمة:
+    لو سيبنا البحث بالإيميل شغّال والعرض مقفول، يبقى الشاشة بقت أداة تخمين
+    إيميلات (تكتب إيميل وتشوف لو رجع حد) وهي بالظبط اللي الصلاحية موجودة
+    تمنعها.
+
+    بيرجّع عدد صغير: دي قايمة اختيار جنب خانة بحث، مش تصدير للروستر.
+    """
+    require_permission(current_user, "announcements")
+    sees_contacts = has_permission(current_user, "member-contacts")
+
+    term = (q or "").strip()
+    if len(term) < 2:
+        return {"items": [], "sees_contacts": sees_contacts}
+
+    like = f"%{term}%"
+    conditions = [User.full_name.ilike(like)]
+    if sees_contacts:
+        conditions.append(User.email.ilike(like))
+
+    rows = (
+        db.query(User)
+        .filter(or_(*conditions))
+        .order_by(User.is_active.desc(), User.full_name.asc())
+        .limit(limit)
+        .all()
+    )
+    return {
+        "sees_contacts": sees_contacts,
+        "items": [
+            {
+                "id": u.id,
+                "full_name": u.full_name,
+                "email": u.email if sees_contacts else None,
+                "avatar_url": u.avatar_url,
+                "is_active": bool(u.is_active),
+                "is_staff": bool(u.is_admin or u.is_owner),
+            }
+            for u in rows
+        ],
+    }
+
+
+@router.get("/members/resolve")
+def resolve_members(
+    ids: Optional[List[int]] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """أسامي الأعضاء المختارين، عشان الشاشة تعرض شرايح بأسماء مش أرقام.
+
+    محتاجة لما حملة متحفوظة تتفتح تاني: المتخزّن هو الـ ids، واللي بيفتحها
+    لازم يشوف مين دول قبل ما يبعت.
+    """
+    require_permission(current_user, "announcements")
+    sees_contacts = has_permission(current_user, "member-contacts")
+    if not ids:
+        return {"items": [], "sees_contacts": sees_contacts}
+
+    rows = (
+        db.query(User)
+        .filter(User.id.in_(ids[:aud.MAX_PICKED]))
+        .order_by(User.full_name.asc())
+        .all()
+    )
+    return {
+        "sees_contacts": sees_contacts,
+        "items": [
+            {
+                "id": u.id,
+                "full_name": u.full_name,
+                "email": u.email if sees_contacts else None,
+                "avatar_url": u.avatar_url,
+                "is_active": bool(u.is_active),
+                "is_staff": bool(u.is_admin or u.is_owner),
+            }
+            for u in rows
+        ],
     }
 
 

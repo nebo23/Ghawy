@@ -3029,6 +3029,144 @@
 
 .an-resume-state b { color: #f59e0b; }
 
+/* ── Member picker ──
+   "Send to exactly these people." Filter and picker are mutually exclusive, so
+   they get a segmented control rather than two panels fighting for the same
+   space. */
+#tab-announcements .an-aud-mode {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+
+#tab-announcements .an-aud-mode-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    color: #888;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+#tab-announcements .an-aud-mode-btn:hover { color: #ccc; }
+
+#tab-announcements .an-aud-mode-btn.active {
+    background: rgba(63, 143, 249, .14);
+    color: #7fb3ff;
+}
+
+#tab-announcements .an-pick-hint {
+    font-size: .68rem;
+    color: #666;
+    line-height: 1.6;
+    margin: 6px 0 8px;
+}
+
+#tab-announcements .an-pick-results {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 230px;
+    overflow-y: auto;
+}
+
+#tab-announcements .an-pick-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: #0e0e0e;
+    border: 1px solid #1e1e1e;
+    border-radius: 8px;
+    padding: 8px 11px;
+    color: #ddd;
+    font-family: inherit;
+    font-size: 12.5px;
+    text-align: start;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+
+#tab-announcements .an-pick-row:hover { background: #141414; border-color: #3f8ff9; }
+#tab-announcements .an-pick-name { font-weight: 600; white-space: nowrap; }
+
+#tab-announcements .an-pick-mail {
+    color: #777;
+    font-size: 11.5px;
+    direction: ltr;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+#tab-announcements .an-pick-tag {
+    font-size: .62rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+}
+
+#tab-announcements .an-pick-tag.staff { background: rgba(168, 85, 247, .14); color: #c084fc; }
+#tab-announcements .an-pick-tag.off { background: rgba(255, 255, 255, .06); color: #888; }
+
+#tab-announcements .an-pick-empty {
+    font-size: .74rem;
+    color: #666;
+    padding: 10px 2px;
+}
+
+#tab-announcements .an-pick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+#tab-announcements .an-pick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(63, 143, 249, .12);
+    border: 1px solid rgba(63, 143, 249, .28);
+    color: #cfe2ff;
+    border-radius: 20px;
+    padding: 4px 6px 4px 12px;
+    font-size: 12px;
+}
+
+#tab-announcements .an-pick-chip.off { background: rgba(255, 255, 255, .05); border-color: #2a2a2a; color: #999; }
+
+#tab-announcements .an-pick-x {
+    background: transparent;
+    border: none;
+    color: inherit;
+    opacity: .65;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 4px;
+    font-family: inherit;
+}
+
+#tab-announcements .an-pick-x:hover { opacity: 1; }
+
 /* ── Saved segments ── */
 .an-seg-row {
     display: flex;
