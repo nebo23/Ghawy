@@ -1048,7 +1048,55 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
+    # Set when this row was fanned out from an in-app campaign. Null for the
+    # notifications the platform raises on its own (a mention, a reply, a
+    # payment). It is what makes campaign stats possible without a second
+    # delivery table: "delivered" is the count of rows carrying this id, and
+    # "read" is the same count filtered on is_read.
+    announcement_id = Column(Integer, ForeignKey("announcements.id", ondelete="SET NULL"),
+                             nullable=True, index=True)
+
     user = relationship("User")
+
+
+class Announcement(Base):
+    """An in-app campaign — one message sent to a filtered slice of members.
+
+    The campaign row is the record; the actual delivery is ordinary
+    Notification rows carrying `announcement_id`. That is deliberate: the
+    member-side bell, its polling, its unread badge and its rendering already
+    exist and are already translated, so a campaign needs no member-facing
+    code at all and shows up wherever notifications already show up.
+
+    `audience` stores the filter that was used, not the resolved member list.
+    Storing ids would freeze a draft against a roster that keeps changing;
+    re-resolving at send time is what makes "everyone whose subscription
+    expires within 7 days" mean the same thing on the day you send it.
+    """
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(160), nullable=False)
+    body = Column(Text, nullable=False)
+    # Drives the icon and accent on the member's bell. Same vocabulary the
+    # existing notifications already use, plus "promo" for offers.
+    type = Column(String(20), nullable=False, server_default=text("'info'"), default="info")
+    link = Column(String, nullable=True)
+
+    audience = Column(Text, nullable=True)          # JSON: the saved filter
+    status = Column(String(20), nullable=False, server_default=text("'draft'"), default="draft")  # draft | sending | sent | failed
+
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+
+    # Snapshot taken at send time. The live counts come from the notifications
+    # themselves; this is what the audience actually resolved to on the day,
+    # which a later filter change would otherwise erase.
+    recipients_count = Column(Integer, server_default=text('0'), default=0)
+
+    author = relationship("User", foreign_keys=[created_by])
 
 
 # ══════════════════════════════════════════════════════════════

@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, atlas, help_center, exams, birthday, email_campaigns, stats, coupons, files
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, atlas, help_center, exams, birthday, email_campaigns, stats, coupons, files, announcements
 from app.routers.files import PUBLIC_CATEGORIES as PUBLIC_UPLOAD_CATEGORIES
 import os
 import logging
@@ -416,6 +416,7 @@ app.include_router(atlas.router)
 app.include_router(help_center.router)
 app.include_router(birthday.router)
 app.include_router(email_campaigns.router)
+app.include_router(announcements.router)
 app.include_router(stats.router)
 
 @app.get("/")

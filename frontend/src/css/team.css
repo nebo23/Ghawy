@@ -2449,4 +2449,406 @@
 .role-badge.no-role {
   background: rgba(245,158,11,.12); color: #f59e0b;
   border: 1px solid rgba(245,158,11,.25);
+/* ══════════════════════════════════════════════════════════
+   COMMUNITY ANNOUNCEMENTS — in-app member campaigns
+   Reuses the .ec-* shells from the Emails tab (intro, toolbar,
+   editor head, empty state) so the two campaign screens read as
+   one system; only what is genuinely different is defined here.
+══════════════════════════════════════════════════════════ */
+
+.an-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+}
+
+.an-card {
+    background: #111;
+    border: 1px solid #1e1e1e;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color .2s, transform .2s;
+}
+
+.an-card:hover {
+    border-color: #2c2c2c;
+    transform: translateY(-2px);
+}
+
+.an-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.an-card-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.an-card-title {
+    font-weight: 700;
+    font-size: .95rem;
+    color: #fff;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.an-card-body {
+    font-size: .82rem;
+    color: #999;
+    line-height: 1.6;
+}
+
+.an-card-stats {
+    display: flex;
+    gap: 18px;
+    padding: 10px 0;
+    border-top: 1px solid #1c1c1c;
+    border-bottom: 1px solid #1c1c1c;
+}
+
+.an-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.an-stat-num {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+
+.an-stat-lbl {
+    font-size: .68rem;
+    color: #777;
+}
+
+.an-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.an-card-when {
+    font-size: .7rem;
+    color: #666;
+}
+
+.an-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.ec-mini.danger {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, .3);
+}
+
+/* ── Status badge ── */
+.an-status-badge {
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.an-status-badge.draft {
+    background: rgba(255, 255, 255, .07);
+    color: #aaa;
+}
+
+.an-status-badge.sent {
+    background: rgba(34, 197, 94, .14);
+    color: #22c55e;
+}
+
+.an-status-badge.failed {
+    background: rgba(239, 68, 68, .14);
+    color: #ef4444;
+}
+
+/* ── Editor ── */
+.an-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+    .an-editor-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.an-panel {
+    background: #0e0e0e;
+    border: 1px solid #1e1e1e;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.an-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 700;
+    font-size: .9rem;
+    color: #fff;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #1c1c1c;
+}
+
+.an-label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #999;
+    margin: 12px 0 6px;
+}
+
+.an-panel .an-label:first-of-type {
+    margin-top: 0;
+}
+
+.an-input,
+.an-textarea {
+    width: 100%;
+    background: #141414;
+    border: 1px solid #262626;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .85rem;
+    transition: border-color .2s;
+}
+
+.an-input:focus,
+.an-textarea:focus {
+    outline: none;
+    border-color: #3f8ff9;
+}
+
+.an-textarea {
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.an-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.an-hint {
+    font-size: .7rem;
+    color: #666;
+    margin-top: 6px;
+}
+
+.an-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: .78rem;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.an-check input {
+    accent-color: #3f8ff9;
+}
+
+/* ── Audience result ── */
+.an-audience-box {
+    margin-top: 16px;
+    padding: 14px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 10px;
+}
+
+.an-aud-count {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #3f8ff9;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.an-aud-sub {
+    font-size: .74rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+.an-aud-sample {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.an-chip {
+    font-size: .68rem;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .06);
+    color: #bbb;
+    white-space: nowrap;
+}
+
+.an-chip.off {
+    opacity: .5;
+}
+
+.an-chip.more {
+    background: rgba(63, 143, 249, .14);
+    color: #3f8ff9;
+}
+
+/* ── Preview ── */
+.an-preview-wrap {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #1c1c1c;
+}
+
+.an-preview-empty {
+    font-size: .78rem;
+    color: #666;
+    padding: 14px;
+    text-align: center;
+    background: #141414;
+    border-radius: 8px;
+}
+
+.an-preview-row {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #141414;
+    border-radius: 8px;
+}
+
+.an-preview-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.an-preview-text {
+    min-width: 0;
+}
+
+.an-preview-title {
+    font-weight: 700;
+    font-size: .84rem;
+    color: #fff;
+}
+
+.an-preview-body {
+    font-size: .78rem;
+    color: #999;
+    line-height: 1.6;
+    margin-top: 3px;
+    word-break: break-word;
+}
+
+.an-preview-time {
+    font-size: .68rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* ── Send bar ── */
+.an-send-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: #0e0e0e;
+    border: 1px solid #1e1e1e;
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.an-real-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.an-confirm-input {
+    width: 260px;
+    font-family: monospace;
+    font-size: .78rem;
+}
+
+.an-test-btn,
+.an-send-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: .82rem;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all .2s;
+}
+
+.an-test-btn {
+    background: transparent;
+    border-color: #333;
+    color: #ccc;
+}
+
+.an-test-btn:hover {
+    border-color: #3f8ff9;
+    color: #3f8ff9;
+}
+
+/* Red, not the brand green: this is the one button in the tab that reaches
+   every member at once and cannot be undone. It should not look like Save. */
+.an-send-btn {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.an-send-btn:hover {
+    background: #dc2626;
+}
+
+.an-warn {
+    margin-top: 10px;
+    font-size: .74rem;
+    color: #f59e0b;
+    line-height: 1.6;
 }

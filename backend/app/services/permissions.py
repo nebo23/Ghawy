@@ -36,6 +36,7 @@ PERMISSIONS = [
     {"key": "live-sessions",     "label": "Live Sessions",     "label_ar": "اللايفات",           "group": "content"},
     {"key": "guest-of-honors",   "label": "Guest of Honors",   "label_ar": "ضيوف الشرف",         "group": "content"},
     {"key": "emails",            "label": "Emails",            "label_ar": "حملات الإيميل",      "group": "content"},
+    {"key": "announcements",     "label": "Announcements",     "label_ar": "حملات الأعضاء",      "group": "content"},
     # صلاحيات مش تاب — حاجات جوه تاب موجود
     {"key": "member-contacts",   "label": "Member contacts (email & phone)",
      "label_ar": "بيانات التواصل (إيميل وتليفون)", "group": "extra"},

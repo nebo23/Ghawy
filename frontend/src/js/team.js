@@ -49,6 +49,7 @@ function initTabs() {
     'reports': 'Daily Reports',
     'feedbacks': 'Community Feedbacks',
     'emails': 'Email Campaigns',
+    'announcements': 'Community Announcements',
     'permissions': 'Staff Permissions'
   };
 
@@ -111,6 +112,12 @@ function initTabs() {
       }
       if (target === 'permissions') {
         loadPermissionsTab();
+      }
+      if (target === 'announcements') {
+        // In-app member campaigns — lives in team-announcements.js, loaded after
+        // this file. Guarded the same way reports/feedbacks are, so a missing
+        // script degrades to an inert tab instead of a console error.
+        if (typeof loadAnnouncementsTab === 'function') loadAnnouncementsTab();
       }
       if (target === 'emails') {
         // دايماً افتح على قائمة الحملات كصفحة أولى (حتى لو رجعنا للتاب بعد ما كنا في المنشئ)
