@@ -21,9 +21,9 @@ from app.models import (
 )
 from app.routers.users import get_current_user
 from app.services.permissions import (
-    PERMISSIONS, GROUP_LABELS, DEFAULT_ADMIN_PERMISSIONS,
+    PERMISSIONS, GROUP_LABELS, DEFAULT_ADMIN_PERMISSIONS, TEAM_ROLES,
     permissions_for, has_permission, require_permission,
-    normalize_permissions, dump_permissions,
+    normalize_permissions, dump_permissions, role_preset, role_labels,
 )
 from app.services.name_utils import split_full_name, clean_display_name
 from app.services.subscription_service import extend_subscription
@@ -158,6 +158,8 @@ def list_users(
             "governorate": u.governorate,
             "social_media_url": u.social_media_url if viewer_sees_contacts else None,
             "is_owner": getattr(u, 'is_owner', False),
+            "team_role": getattr(u, 'team_role', None),
+            **{"team_role_" + k: v for k, v in role_labels(getattr(u, 'team_role', None)).items()},
             "winback_sent_at": u.winback_email_sent_at.isoformat() if u.winback_email_sent_at else None,
             # Subscription/package fields for Team Dashboard filtering & sorting
             "has_paid": u.id in paid_map,
@@ -404,6 +406,8 @@ def _staff_row(u: User) -> dict:
         "selected_avatar": u.selected_avatar,
         "is_owner": bool(getattr(u, "is_owner", False)),
         "is_admin": bool(u.is_admin),
+        "team_role": getattr(u, "team_role", None),
+        **{"team_role_" + k: v for k, v in role_labels(getattr(u, "team_role", None)).items()},
         # الـ owner بياخد الكتالوج كله، والأدمن اللي لسه محدش عدّله بياخد الديفولت
         "permissions": permissions_for(u),
         "is_default": (not getattr(u, "is_owner", False)) and getattr(u, "staff_permissions", None) in (None, ""),
@@ -431,6 +435,7 @@ def list_staff(
         "catalog": PERMISSIONS,
         "groups": GROUP_LABELS,
         "defaults": DEFAULT_ADMIN_PERMISSIONS,
+        "roles": TEAM_ROLES,
         "staff": [_staff_row(u) for u in staff],
     }
 
@@ -464,6 +469,104 @@ def set_staff_permissions(
     db.refresh(user)
 
     logger.info("Owner %s set permissions for admin %s: %s", current_user.id, user.id, cleaned)
+    return {"ok": True, **_staff_row(user)}
+
+
+class TeamRoleIn(BaseModel):
+    role: Optional[str] = None
+    reset_permissions: bool = True
+
+
+@router.get("/staff/roles")
+def list_team_roles(current_user: User = Depends(get_current_user)):
+    """الأدوار الجاهزة + كتالوج الصلاحيات، عشان مودال "غيّر الدور" يرسم نفسه.
+
+    بيرجّع الاتنين مع بعض لأن المودال بيعرض اسم كل صلاحية جوه كل دور — لو
+    رجّعنا المفاتيح بس كان الفرونت هيحتاج جدول ترجمة تاني يقع من الكتالوج.
+    """
+    require_owner(current_user)
+    return {"roles": TEAM_ROLES, "catalog": PERMISSIONS, "groups": GROUP_LABELS}
+
+
+@router.put("/users/{user_id}/team-role")
+def set_team_role(
+    user_id: int,
+    data: TeamRoleIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """ركّب دور على عضو، أو رجّعه عضو عادي بـ role=null.
+
+    ده الطريق الوحيد اللي بيدي أدمن دلوقتي، وهو owner-only لنفس السبب اللي
+    قفل toggle-admin: صناعة أدمن فعل ملكية مش إدارة أعضاء. أدمن معاه صلاحية
+    "الأعضاء" لو قدر يركّب دور، يبقى قدر يفتح لحساب تاني تحت إيده صلاحيات
+    الـ owner قافلها عنه هو — وبعدين الحساب ده يعمل تالت.
+
+    الدور تسمية + preset، مش قفل: بنكتب `team_role` وبنملا
+    `staff_permissions` من الـ preset، وبعد كده الـ owner يقدر يعدّل الصلاحيات
+    فرداً فرداً من تاب الصلاحيات والدور يفضل زي ما هو. عشان كده
+    `reset_permissions` موجودة: بتحدد إذا كنا هنكتب فوق الظبط اليدوي ولا لأ.
+    وبنفرضها لو الشخص ده مالوش صلاحيات متظبطة أصلاً — عضو بقى أدمن من غير
+    preset كان هيقع على الديفولت القديم، اللي غالباً مش هو الدور المختار.
+
+    `null` بترجّعه عضو: is_admin=False و staff_permissions=None و
+    team_role=None. بنمسح الصلاحيات مع الدور عن قصد — لو سبناها متخزنة،
+    ترجيعه أدمن تاني بعد شهور كان هيفتحله صلاحيات محدش قصدها دلوقتي.
+    """
+    require_owner(current_user)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # محدش بيغيّر دور نفسه. النهاردة الشرط ده بيتغطى بالصدفة من اللي تحته
+    # (اللي بينده هنا owner بالضرورة، فـ"نفسه" معناه owner)، بس دي قاعدة
+    # تانية غير قاعدة الـ owner: لو يوم اتفتح النداء ده لغير الـ owner،
+    # الشرط ده هو اللي هيفضل واقف. وبيتشك الأول عشان الرسالة تقول السبب
+    # الصح بدل ما تتكلم عن الملكية.
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You can't change your own role")
+
+    # الـ owner مش بيتدار من هنا: صلاحياته جاية من الملكية نفسها، ودور فوقها
+    # هيبقى اسم على حاجة مش بتتفرض. شيله من الـ owners الأول (toggle-owner).
+    if getattr(user, "is_owner", False):
+        raise HTTPException(
+            status_code=400,
+            detail="Owners already have every permission — remove the owner flag first",
+        )
+
+    role = (data.role or "").strip() or None
+
+    if role is None:
+        user.team_role = None
+        user.is_admin = False
+        user.staff_permissions = None
+        db.commit()
+        db.refresh(user)
+        logger.info("🛡️ team_role cleared for user_id=%s by admin_id=%s", user.id, current_user.id)
+        return {"ok": True, **_staff_row(user)}
+
+    preset = role_preset(role)
+    if preset is None:
+        raise HTTPException(status_code=400, detail="Unknown role")
+
+    # أول مرة الشخص ده بياخد دور؟ لازم ياخد الـ preset، مهما كانت التشيك بوكس:
+    # من غير كده هيبقى أدمن بـ staff_permissions=None، وده معناه الديفولت
+    # القديم — يعني تابات محدش اختارها له.
+    first_time = user.team_role is None or getattr(user, "staff_permissions", None) in (None, "")
+    if data.reset_permissions or first_time:
+        user.staff_permissions = dump_permissions(preset)
+
+    user.team_role = role
+    user.is_admin = True
+    db.commit()
+    db.refresh(user)
+
+    logger.info(
+        "🛡️ team_role=%s for user_id=%s set by admin_id=%s (permissions %s)",
+        role, user.id, current_user.id,
+        "reset to preset" if (data.reset_permissions or first_time) else "kept",
+    )
     return {"ok": True, **_staff_row(user)}
 
 
@@ -1292,18 +1395,14 @@ def payment_method_breakdown(
 def _effective_lesson_totals(db: Session, courses):
     """Effective lesson count per course — mirrors the student-facing rule in
     courses.get_course_progress: count only 'ready' lessons, fall back to all
-    lessons when the course has none ready."""
-    all_counts = dict(
-        db.query(Lesson.course_id, sql_func.count(Lesson.id))
-        .group_by(Lesson.course_id).all()
-    )
-    ready_counts = dict(
-        db.query(Lesson.course_id, sql_func.count(Lesson.id))
-        .filter(Lesson.video_status == "ready")
-        .group_by(Lesson.course_id).all()
-    )
-    totals = {c.id: (ready_counts.get(c.id) or all_counts.get(c.id, 0)) for c in courses}
-    return totals, ready_counts
+    lessons when the course has none ready.
+
+    The rule itself now lives in progress_service.effective_lesson_totals, so
+    this dashboard and the members' own progress endpoints can never drift into
+    quoting a student two different percentages for the same course.
+    """
+    from app.services.progress_service import effective_lesson_totals
+    return effective_lesson_totals(db, [c.id for c in courses])
 
 
 @router.get("/students-progress")

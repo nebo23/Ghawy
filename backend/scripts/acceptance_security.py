@@ -2,6 +2,11 @@
 import os, sys, json, datetime
 os.environ.setdefault("SECRET_KEY", "dummy_secret_for_import_check")
 
+# Approve the target database before anything imports the app: `import main`
+# writes to the database on import, so the guard has to come first.
+from _acceptance_guard import require_scratch_database  # noqa: E402
+require_scratch_database()
+
 from fastapi.testclient import TestClient
 import main
 from app.database import SessionLocal, engine

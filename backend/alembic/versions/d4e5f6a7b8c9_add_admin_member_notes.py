@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'd4e5f6a7b8c9'
@@ -19,6 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     # Create admin_member_notes table (safe: no-op if already present)
     op.execute("""
         CREATE TABLE IF NOT EXISTS admin_member_notes (
@@ -37,4 +43,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.drop_table('admin_member_notes')

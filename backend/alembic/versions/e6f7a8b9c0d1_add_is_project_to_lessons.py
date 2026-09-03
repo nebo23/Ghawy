@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 revision: str = "e6f7a8b9c0d1"
 down_revision: Union[str, Sequence[str], None] = "d5e6f7a8b9c0"
@@ -18,6 +20,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.add_column(
         "lessons",
         sa.Column("is_project", sa.Boolean(), server_default=sa.text("false"), nullable=False),
@@ -25,4 +31,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.drop_column("lessons", "is_project")

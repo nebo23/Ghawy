@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'f3a4b5c6d7e8'
@@ -19,6 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     # Add plan column (safe: no-op if already present, no default => fast catalog change)
     op.execute("""
         ALTER TABLE manual_payment_requests
@@ -27,4 +33,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("ALTER TABLE manual_payment_requests DROP COLUMN IF EXISTS plan;")

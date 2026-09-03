@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=30" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260901b" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260903a" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -1044,6 +1044,10 @@
             <button class="team-section-btn" data-tab="emails">
               <i data-lucide="mail" style="width:18px;height:18px;"></i>
               <span class="tab-label">Emails</span>
+            </button>
+            <button class="team-section-btn" data-tab="announcements">
+              <i data-lucide="megaphone" style="width:18px;height:18px;"></i>
+              <span class="tab-label">Announcements</span>
             </button>
             <button class="team-section-btn" data-tab="permissions">
               <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
@@ -2083,6 +2087,158 @@
               </div><!-- end emails-editor-view -->
             </div>
 
+            <!-- Tab Content: Community Announcements (in-app campaigns) -->
+            <div id="tab-announcements" class="tab-panel" style="display:none;">
+
+              <!-- ═══ LIST VIEW ═══ -->
+              <div id="an-list-view">
+                <div class="ec-intro">
+                  <h3>📢 حملات الأعضاء</h3>
+                  <p>دي حملات بتوصل للأعضاء وهُمّ <b>على الموقع</b> — بتظهر في جرس الإشعارات بتاعهم، مش في الإيميل.
+                     الحفظ <b>مابيبعتش حاجة</b>؛ الإرسال ليه شاشته وقواعده.</p>
+                </div>
+                <div class="ec-list-toolbar">
+                  <button class="ec-new-btn" onclick="anNewCampaign()"><i data-lucide="plus" style="width:16px;height:16px;"></i> حملة جديدة</button>
+                  <button class="ec-mini" onclick="loadAnnouncementsList()"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> تحديث</button>
+                </div>
+                <div class="an-grid" id="an-grid">
+                  <div class="ec-empty">جاري التحميل...</div>
+                </div>
+              </div>
+
+              <!-- ═══ EDITOR VIEW ═══ -->
+              <div id="an-editor-view" style="display:none;">
+                <div class="ec-editor-head">
+                  <button class="ec-back-btn" onclick="anBackToList()"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i> رجوع للحملات</button>
+                  <div class="ec-editor-head-right">
+                    <span class="an-status-badge" id="an-editor-badge"></span>
+                    <button class="ec-save-btn" onclick="anSaveCampaign()"><i data-lucide="save" style="width:15px;height:15px;"></i> حفظ</button>
+                  </div>
+                </div>
+
+                <div class="ec-intro">
+                  <h3 id="an-editor-title">📢 حملة جديدة</h3>
+                  <p>الوضع الافتراضي للإرسال دايماً <b>تجريبي</b> — بيروح ليك إنت بس. الإرسال الحقيقي محتاج تأكيد صريح.</p>
+                </div>
+
+                <div class="an-editor-grid">
+
+                  <!-- ── المحتوى ── -->
+                  <div class="an-panel">
+                    <div class="an-panel-title"><i data-lucide="pen-line" style="width:15px;height:15px;"></i> المحتوى</div>
+
+                    <label class="an-label">العنوان *</label>
+                    <input type="text" id="an-title" class="an-input" maxlength="160"
+                           placeholder="مثال: كورس جديد نزل النهاردة 🎉" oninput="anRenderPreview()" />
+
+                    <label class="an-label">النص *</label>
+                    <textarea id="an-body" class="an-textarea" rows="4"
+                              placeholder="اكتب رسالتك للأعضاء..." oninput="anRenderPreview()"></textarea>
+
+                    <div class="an-row2">
+                      <div>
+                        <label class="an-label">النوع</label>
+                        <select id="an-type" class="an-input" onchange="anRenderPreview()">
+                          <option value="info">معلومة (أزرق)</option>
+                          <option value="success">خبر كويس (أخضر)</option>
+                          <option value="warning">تنبيه (أصفر)</option>
+                          <option value="promo">عرض (ذهبي)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="an-label">لينك داخلي (اختياري)</label>
+                        <input type="text" id="an-link" class="an-input"
+                               placeholder="dashboard-courses.html" oninput="anRenderPreview()" />
+                      </div>
+                    </div>
+                    <div class="an-hint">اللينك لازم يكون مسار داخلي في المنصة — اللينكات الخارجية مرفوضة.</div>
+
+                    <div class="an-preview-wrap">
+                      <div class="an-label" style="margin-bottom:8px">معاينة — زي ما العضو هيشوفها في الجرس</div>
+                      <div class="an-preview" id="an-preview"></div>
+                    </div>
+                  </div>
+
+                  <!-- ── الجمهور ── -->
+                  <div class="an-panel">
+                    <div class="an-panel-title"><i data-lucide="users" style="width:15px;height:15px;"></i> الجمهور</div>
+
+                    <div class="an-row2">
+                      <div>
+                        <label class="an-label">الحالة</label>
+                        <select id="an-aud-status" class="an-input" onchange="anRefreshAudience()">
+                          <option value="all">كل الأعضاء</option>
+                          <option value="active">النشطين بس</option>
+                          <option value="inactive">غير النشطين</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="an-label">الباقة</label>
+                        <select id="an-aud-plan" class="an-input" onchange="anRefreshAudience()">
+                          <option value="all">كل الباقات</option>
+                          <option value="monthly">شهري</option>
+                          <option value="quarterly">ربع سنوي</option>
+                          <option value="yearly">سنوي</option>
+                          <option value="none">من غير باقة</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="an-row2">
+                      <div>
+                        <label class="an-label">البلد</label>
+                        <select id="an-aud-country" class="an-input" onchange="anRefreshAudience()">
+                          <option value="">الكل</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="an-label">المحافظة</label>
+                        <select id="an-aud-gov" class="an-input" onchange="anRefreshAudience()">
+                          <option value="">الكل</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <label class="an-label">اشتراكه بيخلص خلال (يوم)</label>
+                    <input type="number" id="an-aud-expiring" class="an-input" min="0" max="365"
+                           placeholder="سيبها فاضية لو مش عايز الفلتر ده" oninput="anRefreshAudience()" />
+
+                    <label class="an-label">بحث بالاسم أو الإيميل</label>
+                    <input type="text" id="an-aud-search" class="an-input"
+                           placeholder="اختياري" oninput="anRefreshAudience()" />
+
+                    <label class="an-check">
+                      <input type="checkbox" id="an-aud-staff" onchange="anRefreshAudience()" />
+                      <span>ضمّ الأدمن والأونر (افتراضي: مستبعدين)</span>
+                    </label>
+
+                    <div class="an-audience-box" id="an-audience-box">
+                      <div class="an-aud-count"><span id="an-aud-count">—</span></div>
+                      <div class="an-aud-sub" id="an-aud-sub">اضبط الفلاتر عشان نحسب الجمهور</div>
+                      <div class="an-aud-sample" id="an-aud-sample"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ── الإرسال ── -->
+                <div class="an-send-bar">
+                  <button class="an-test-btn" onclick="anSend('test')">
+                    <i data-lucide="flask-conical" style="width:15px;height:15px;"></i> إرسال تجريبي (ليك إنت بس)
+                  </button>
+                  <div class="an-real-wrap">
+                    <input type="text" id="an-confirm" class="an-input an-confirm-input"
+                           placeholder="اكتب GHAWY-OFFICIAL-SEND للتأكيد" autocomplete="off" />
+                    <button class="an-send-btn" onclick="anSend('real')">
+                      <i data-lucide="send" style="width:15px;height:15px;"></i> إرسال حقيقي
+                    </button>
+                  </div>
+                </div>
+                <div class="an-warn">
+                  ⚠️ الإرسال الحقيقي بيوصل لكل عضو في الجمهور فوراً ومش بيترجع. الحملة اللي اتبعتت مابتتبعتش تاني — اعمل نسخة لو عايز تكررها.
+                </div>
+              </div>
+            </div>
+
             <!-- Tab Content: Staff Permissions (owner-only) -->
             <div id="tab-permissions" class="tab-panel" style="display:none;">
               <div class="perm-intro">
@@ -2337,6 +2493,34 @@
       <div class="modal-footer-team">
         <button class="btn-cancel-team" onclick="closeModal('extend-modal')">Cancel</button>
         <button class="btn-confirm-team" onclick="submitExtend()">✅ Extend</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Role Modal — owner-only; behaviour in src/js/team.js -->
+  <div class="modal-overlay-team" id="role-modal" style="display:none">
+    <div class="modal-box-team">
+      <div class="modal-header-team">
+        <h3>🛡️ الدور في الفريق</h3><button class="modal-close-team" onclick="closeModal('role-modal')">✕</button>
+      </div>
+      <div class="modal-body-team">
+        <p style="color:#ccc;font-size:14px;margin:0 0 4px;">بتغيّر دور: <strong id="role-user-name" style="color:#3f8ff9;"></strong></p>
+        <p style="color:#777;font-size:12.5px;line-height:1.8;margin:0 0 14px;">
+          الدور بيفتح تابات لوحة الفريق اللي جواه. بعد ما تحطه تقدر تفتح وتقفل
+          أي صلاحية للشخص ده لوحده من تاب الصلاحيات، والدور هيفضل زي ما هو.
+        </p>
+        <div class="role-options" id="role-options"></div>
+        <label class="role-reset-row">
+          <input type="checkbox" id="role-reset" />
+          <span>ارجّع الصلاحيات لديفولت الدور ده (هيمسح أي ظبط يدوي)</span>
+        </label>
+      </div>
+      <div class="modal-footer-team" style="justify-content:space-between;">
+        <button class="role-owner-btn" onclick="promoteToOwner()" title="Owners see every tab and hand out roles">👑 اعمله owner</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-cancel-team" onclick="closeModal('role-modal')">إلغاء</button>
+          <button class="btn-confirm-team" id="role-save-btn" onclick="submitRole()">احفظ الدور</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2800,9 +2984,10 @@
   <!-- Close dropdowns on outside click -->
   <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open'); const np = document.getElementById('notifPanel'); const nw = document.getElementById('notifWrapper'); if (np && nw && !nw.contains(e.target)) np.classList.remove('open'); })</script>
   <script src="src/js/utils.js?v=20260828a"></script>
-    <script src="src/js/dashboard-new.js?v=20260828a"></script>
+    <script src="src/js/dashboard-new.js?v=20260902a"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
-  <script src="src/js/team.js?v=20260901b"></script>
+  <script src="src/js/team.js?v=20260903a"></script>
+  <script src="src/js/team-announcements.js?v=20260903a"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

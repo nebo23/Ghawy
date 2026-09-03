@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = "f4a5b6c7d8e9"
@@ -19,6 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     with op.batch_alter_table("ai_update_posts") as batch_op:
         batch_op.add_column(
             sa.Column("category", sa.String(length=30), nullable=True)
@@ -28,5 +34,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     with op.batch_alter_table("ai_update_posts") as batch_op:
         batch_op.drop_column("category")

@@ -16,6 +16,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'a7b8c9d0e1f2'
@@ -25,6 +27,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     # No DEFAULT on the ALTER: a plain nullable ADD COLUMN is a catalog-only
     # change and cannot rewrite the table (this DB has had ALTER TABLE hang on
     # a leaked idle-in-transaction before). The backfill is a separate UPDATE.
@@ -40,4 +46,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("ALTER TABLE manual_payment_requests DROP COLUMN IF EXISTS method;")

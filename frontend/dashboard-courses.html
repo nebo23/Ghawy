@@ -68,8 +68,8 @@
             // Removed auth guard logic to allow public access
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=17" />
-    <script src="src/js/community-i18n.js?v=20260819a"></script>
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=18" />
+    <script src="src/js/community-i18n.js?v=20260902a"></script>
 </head>
 
 <body>
@@ -258,32 +258,135 @@
                     </div>
                     <h1 data-i18n="allCourses">جميع الكورسات</h1>
                 </div>
-                <div class="courses-grid" id="coursesGrid">
-                    <div class="empty-state" id="coursesLoading">
-                        <div class="spinner-ring"
-                            style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite">
+                <!-- ── Search + filters ──
+                     The dropdowns are built by src/js/courses.js from one table
+                     (FILTERS), so the option lists, the chips below and the URL
+                     keys can never disagree with each other. The markup here is
+                     only the shell; the mobile sheet reuses the same dropdown
+                     ids with an "m-" prefix so both copies stay in step. -->
+                <div class="courses-toolbar">
+                    <div class="cx-search" id="cxSearch">
+                        <i class="cx-search-ico fa-solid fa-magnifying-glass"></i>
+                        <input id="cxSearchInput" type="search" autocomplete="off" spellcheck="false"
+                            placeholder="Search courses, instructors, tracks..."
+                            aria-label="Search courses" />
+                        <span class="cx-slash" aria-hidden="true">/</span>
+                        <button class="cx-clear" id="cxSearchClear" type="button" aria-label="Clear search">✕</button>
+                    </div>
+
+                    <div class="cx-filters" id="cxFilters">
+                        <div class="cx-dd" id="cx-dd-sort">
+                            <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="cx-dd-label">All Courses</span>
+                                <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="cx-dd-list" role="listbox" aria-label="Sort"></div>
                         </div>
-                        <p>Loading courses...</p>
+                        <div class="cx-dd" id="cx-dd-track">
+                            <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="cx-dd-label">All Tracks</span>
+                                <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="cx-dd-list" role="listbox" aria-label="Track"></div>
+                        </div>
+                        <div class="cx-dd" id="cx-dd-instructor">
+                            <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="cx-dd-label">All Instructors</span>
+                                <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="cx-dd-list" role="listbox" aria-label="Instructor"></div>
+                        </div>
+                        <div class="cx-dd" id="cx-dd-progress">
+                            <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="cx-dd-label">My Progress</span>
+                                <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="cx-dd-list" role="listbox" aria-label="My Progress"></div>
+                        </div>
+                        <div class="cx-dd" id="cx-dd-duration">
+                            <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="cx-dd-label">Duration</span>
+                                <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="cx-dd-list" role="listbox" aria-label="Duration"></div>
+                        </div>
+                    </div>
+
+                    <button class="cx-mobile-btn" id="cxMobileBtn" type="button">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Filters</span>
+                        <span class="cx-mobile-badge" id="cxMobileCount">0</span>
+                    </button>
+
+                    <span class="cx-count" id="cxCount"></span>
+                </div>
+
+                <div class="cx-chips" id="cxChips"></div>
+
+                <div class="courses-grid" id="coursesGrid"></div>
+
+                <!-- Mobile filter sheet — the same five dropdowns, stacked. -->
+                <div class="cx-sheet-backdrop" id="cxSheet">
+                    <div class="cx-sheet" role="dialog" aria-modal="true" aria-label="Filters">
+                        <div class="cx-sheet-grip"></div>
+                        <div class="cx-sheet-head">
+                            <h4>Filters</h4>
+                            <button class="cx-sheet-done" id="cxSheetDone" type="button">Done</button>
+                        </div>
+                        <div class="cx-filters">
+                            <div class="cx-dd" id="cx-dd-m-sort">
+                                <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="cx-dd-label">All Courses</span>
+                                    <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="cx-dd-list" role="listbox" aria-label="Sort"></div>
+                            </div>
+                            <div class="cx-dd" id="cx-dd-m-track">
+                                <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="cx-dd-label">All Tracks</span>
+                                    <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="cx-dd-list" role="listbox" aria-label="Track"></div>
+                            </div>
+                            <div class="cx-dd" id="cx-dd-m-instructor">
+                                <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="cx-dd-label">All Instructors</span>
+                                    <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="cx-dd-list" role="listbox" aria-label="Instructor"></div>
+                            </div>
+                            <div class="cx-dd" id="cx-dd-m-progress">
+                                <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="cx-dd-label">My Progress</span>
+                                    <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="cx-dd-list" role="listbox" aria-label="My Progress"></div>
+                            </div>
+                            <div class="cx-dd" id="cx-dd-m-duration">
+                                <button class="cx-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="cx-dd-label">Duration</span>
+                                    <i class="cx-dd-caret fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="cx-dd-list" role="listbox" aria-label="Duration"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <style>
-                    @keyframes spin {
-                        to {
-                            transform: rotate(360deg)
-                        }
-                    }
-                </style>
             </div>
         </div>
     </div>
     <script>document.addEventListener('click', e => { const d = document.getElementById('userDropdown'); const u = document.getElementById('topbarUser'); if (d && !d.contains(e.target) && !u.contains(e.target)) d.classList.remove('open') })</script>
     <script src="src/js/utils.js?v=20260828a"></script>
     <script src="src/js/i18n.js?v=20260818a"></script>
-    <script src="src/js/courses.js?v=13"></script>
+    <!-- Course/instructor/track facts. catalog-data.js ONLY: catalog.js would
+         also render the public marketing cards into #coursesGrid above. -->
+    <script src="src/js/catalog-data.js?v=1"></script>
+    <script src="src/js/course-card.js?v=1"></script>
+    <script src="src/js/courses.js?v=20260902a"></script>
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=20260828a"></script>
+    <script src="src/js/dashboard-new.js?v=20260902a"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

@@ -93,11 +93,17 @@ class User(Base):
     password_reset_code = Column(String(6), nullable=True)
     password_reset_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
-    is_owner = Column(Boolean, server_default=text('false'), default=False)
+    is_owner = Column(Boolean, nullable=False, server_default=text('false'), default=False)
     # أي تابات لوحة الفريق الـ owner فتحها للأدمن ده — JSON list نصّية.
     # NULL = متعدّلتش، فبتقع على الديفولت في app/services/permissions.py؛
     # "[]" = الـ owner قفل كل حاجة بإيده. الفرق بينهم مقصود.
     staff_permissions = Column(Text, nullable=True)
+    # اسم الدور اللي الـ owner ركّبه عليه (مفتاح من TEAM_ROLES في
+    # app/services/permissions.py). ده تسمية بس — اللي بيتفرض على أي طلب هو
+    # staff_permissions فوق، والدور مجرد الـ preset اللي ملاه أول مرة. النوع
+    # String مش Enum عن قصد: إضافة دور جديد لازم تبقى سطر واحد في بايثون، مش
+    # سطر + ميجريشن على نوع في الداتابيز.
+    team_role = Column(String(40), nullable=True)
     avatar_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     level = Column(Integer, server_default=text('1'), default=1)
@@ -257,7 +263,7 @@ class Coupon(Base):
     display_code = Column(String(64), nullable=True)
     discount_percent = Column(Numeric(5, 2), nullable=False)
     max_redemptions = Column(Integer, nullable=False)
-    is_active = Column(Boolean, nullable=False, default=True)
+    is_active = Column(Boolean, nullable=False, server_default=text('true'), default=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     redemptions = relationship("CouponRedemption", back_populates="coupon")
@@ -295,7 +301,7 @@ class CouponRedemption(Base):
     payment_id = Column(Integer, ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
     manual_request_id = Column(Integer, ForeignKey("manual_payment_requests.id", ondelete="SET NULL"), nullable=True)
 
-    status = Column(String(16), nullable=False, default=CouponRedemptionStatus.PENDING.value, index=True)
+    status = Column(String(16), nullable=False, server_default=text("'pending'"), default=CouponRedemptionStatus.PENDING.value, index=True)
     slot_no = Column(Integer, nullable=True)
 
     # The arithmetic, kept so the admin panel and any later dispute can see what
@@ -303,7 +309,7 @@ class CouponRedemption(Base):
     # have been edited since.
     original_amount = Column(Numeric(12, 2), nullable=False)
     final_amount = Column(Numeric(12, 2), nullable=False)
-    currency = Column(String(8), nullable=False, default="EGP")
+    currency = Column(String(8), nullable=False, server_default=text("'EGP'"), default="EGP")
     plan_key = Column(String, nullable=True)
 
     # Only meaningful while PENDING — the moment the hold lapses.
@@ -557,7 +563,7 @@ class Course(Base):
     total_lessons = Column(Integer, server_default=text('0'), default=0)
     course_time = Column(String, nullable=True)
     is_published = Column(Boolean, server_default=text('false'), default=False)
-    sort_order = Column(Integer, server_default=text('0'), default=0)
+    sort_order = Column(Integer, nullable=False, server_default=text('0'), default=0, index=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
@@ -586,7 +592,7 @@ class Lesson(Base):
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
     is_free_preview = Column(Boolean, server_default=text('false'), default=False)
     # Marks a lesson that has an associated project — course page shows a "Go to Projects" button
-    is_project = Column(Boolean, server_default=text('false'), default=False)
+    is_project = Column(Boolean, nullable=False, server_default=text('false'), default=False)
     # PDF attachment
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
@@ -1042,7 +1048,55 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
+    # Set when this row was fanned out from an in-app campaign. Null for the
+    # notifications the platform raises on its own (a mention, a reply, a
+    # payment). It is what makes campaign stats possible without a second
+    # delivery table: "delivered" is the count of rows carrying this id, and
+    # "read" is the same count filtered on is_read.
+    announcement_id = Column(Integer, ForeignKey("announcements.id", ondelete="SET NULL"),
+                             nullable=True, index=True)
+
     user = relationship("User")
+
+
+class Announcement(Base):
+    """An in-app campaign — one message sent to a filtered slice of members.
+
+    The campaign row is the record; the actual delivery is ordinary
+    Notification rows carrying `announcement_id`. That is deliberate: the
+    member-side bell, its polling, its unread badge and its rendering already
+    exist and are already translated, so a campaign needs no member-facing
+    code at all and shows up wherever notifications already show up.
+
+    `audience` stores the filter that was used, not the resolved member list.
+    Storing ids would freeze a draft against a roster that keeps changing;
+    re-resolving at send time is what makes "everyone whose subscription
+    expires within 7 days" mean the same thing on the day you send it.
+    """
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(160), nullable=False)
+    body = Column(Text, nullable=False)
+    # Drives the icon and accent on the member's bell. Same vocabulary the
+    # existing notifications already use, plus "promo" for offers.
+    type = Column(String(20), nullable=False, server_default=text("'info'"), default="info")
+    link = Column(String, nullable=True)
+
+    audience = Column(Text, nullable=True)          # JSON: the saved filter
+    status = Column(String(20), nullable=False, server_default=text("'draft'"), default="draft")  # draft | sending | sent | failed
+
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+
+    # Snapshot taken at send time. The live counts come from the notifications
+    # themselves; this is what the audience actually resolved to on the day,
+    # which a later filter change would otherwise erase.
+    recipients_count = Column(Integer, server_default=text('0'), default=0)
+
+    author = relationship("User", foreign_keys=[created_by])
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1131,9 +1185,9 @@ class AdminMemberNote(Base):
     """
     __tablename__ = "admin_member_notes"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     member_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
-    note = Column(Text, nullable=False, default='')
+    note = Column(Text, nullable=False, server_default=text("''"), default='')
     updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=datetime.utcnow, default=datetime.utcnow)
