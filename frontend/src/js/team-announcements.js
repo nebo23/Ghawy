@@ -300,6 +300,15 @@ function anRenderDeliveryState() {
       ? '<i data-lucide="flask-conical" style="width:15px;height:15px;"></i> إرسال تجريبي (رسالة خاصة ليك إنت)'
       : '<i data-lucide="flask-conical" style="width:15px;height:15px;"></i> إرسال تجريبي (ليك إنت بس)';
   }
+  // The preview label names the surface being previewed. Leaving it saying
+  // "in the bell" over a chat bubble is the same mistake as previewing the
+  // wrong surface in the first place.
+  const plabel = document.getElementById('an-preview-label');
+  if (plabel) {
+    plabel.textContent = dm
+      ? 'معاينة — زي ما العضو هيشوفها في الرسايل الخاصة'
+      : 'معاينة — زي ما العضو هيشوفها في الجرس';
+  }
   anRenderPreview();
   if (window.lucide) lucide.createIcons();
 }

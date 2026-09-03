@@ -2601,8 +2601,11 @@
     margin-bottom: 12px;
 }
 
-.an-filter-search { flex: 1 1 220px; min-width: 180px; }
-.an-filter-sel { flex: 0 0 auto; width: auto; min-width: 140px; }
+/* `.an-input` sets width:100% and is defined further down the file, so these
+   need the parent in the selector to win on specificity rather than order —
+   without it every control claims a full row and the toolbar stacks. */
+.an-list-filters .an-filter-search { flex: 1 1 220px; min-width: 180px; width: auto; }
+.an-list-filters .an-filter-sel { flex: 0 0 auto; width: auto; min-width: 150px; }
 
 .an-list-count {
     margin-inline-start: auto;
@@ -2750,7 +2753,7 @@
     margin: 12px 0 4px;
 }
 
-.an-seg-sel { flex: 1; min-width: 0; }
+.an-seg-row .an-seg-sel { flex: 1; min-width: 0; width: auto; }
 
 /* ── Editor ── */
 .an-editor-grid {
