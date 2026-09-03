@@ -42,17 +42,21 @@ Of the 33,375 HTML lines, **12,267 are inline `<script>`** — chat (3,120), DMs
 ## 3. Entrypoint — `backend/main.py`
 
 ```
-main.py
- ├─ FastAPI(...)                        line 259
- ├─ SessionMiddleware                   line 274   (starlette, SECRET_KEY)
- ├─ CORSMiddleware                      line 275   (origins from env)
- ├─ Base.metadata.create_all(engine)    line 285   ⚠ at import time
- ├─ seed_defaults()                     line 286   ⚠ at import time
- ├─ mount /static                       line 305
- ├─ include_router × 27                 lines 308–334
- ├─ 5 endpoints defined inline          lines 336–387
- └─ @app.on_event("startup")            line 389   expand_threadpool
+main.py                                            253 lines (was 418)
+ ├─ lifespan(app)                        line 100  threadpool → schema check →
+ │                                                 seed (advisory lock) → scheduler
+ ├─ FastAPI(..., lifespan=lifespan)      line 127
+ ├─ SessionMiddleware                    line 143  (starlette, SECRET_KEY)
+ ├─ CORSMiddleware                       line 145  (origins from env)
+ ├─ mount /static + public upload dirs   lines 155–177
+ ├─ include_router × 27                  lines 179–200
+ └─ 5 endpoints defined inline           lines 202–250
 ```
+
+Nothing runs at import time any more, and there are no `@app.on_event`
+handlers left — see §7 for why mixing them with `lifespan` is a trap. The
+223-line `seed_defaults()` that used to sit at the top of this file now lives
+in `app/seed.py`; see §7a.
 
 Two structural problems, both Phase 1 work:
 
@@ -243,6 +247,45 @@ Migrations run on container start, before Gunicorn:
 ```yaml
 command: sh -c "alembic upgrade head && gunicorn main:app --config gunicorn.conf.py"
 ```
+
+## 7a. Seeding
+
+`app/seed.py`, called once per boot from the `lifespan` handler under a Postgres
+advisory lock. Three layers, because they answer different questions:
+
+| Layer | What | When |
+|---|---|---|
+| `seed_production_defaults()` | 4 categories, 4 channels (`start-here` checked by name as well as by count), the `monzer`/`os10` discount coupons | every boot, every environment, idempotent |
+| `seed_demo_data()` | 3 `Demo Guest N` rows with a session each, 4 `Demo — …` courses with 46 lessons | only when `SEED_DEMO_DATA=1` **and** `ENVIRONMENT != production` |
+| test fixtures | not here — `scripts/acceptance_*.py` build their own against a throwaway database | never at boot |
+
+Setting `SEED_DEMO_DATA=1` in production is not honoured. It logs a warning and
+returns; demo rows in the production database is the exact failure this split
+exists to prevent.
+
+The coupons stayed in the production layer deliberately. They are real discount
+codes, not demo data, and on a database built from `ghawy_baseline` the
+migration that would otherwise create them is skipped — so this is their only
+source. Existing rows are never modified, only created when absent.
+
+### What was here before
+
+`seed_defaults()` inserted **five real, named public figures** — Sam Altman,
+Sundar Pichai, Lex Fridman, Fei-Fei Li and Mark Zuckerberg — as Guests of Honor,
+each with an invented rating (4.9), an invented attendance figure (up to
+15,000), and a fabricated "upcoming" live session. Those rows reached production
+and are still served unauthenticated at `/api/guests/`.
+
+The guard was `if db.query(Guest).count() == 0`, which made them **self-healing**:
+an admin deleting them did not remove them, because the next restart put them
+back. Production's `guests_id_seq` stands at 37 for 5 rows, which is what that
+loop looks like from the outside.
+
+Removing the code does not remove the rows.
+`backend/scripts/cleanup_seeded_public_figures.py` does that — staged, dry-run by
+default, and it aborts rather than delete any row that no longer matches exactly
+what the seed wrote. It must be run **after** the Phase 2 backend is deployed;
+run against the old code, the rows come back.
 
 ## 8. Payments
 

@@ -82,7 +82,10 @@ Those are documentation and are not to be stripped as clutter.
 
 | File | Classification | Evidence |
 |---|---|---|
-| `main.py` | `REQUIRED` | entrypoint; `gunicorn main:app` |
+| `main.py` | `REQUIRED` | entrypoint; `gunicorn main:app`. 418 → 253 lines in Phase 2 (seeding moved out) |
+| `app/seed.py` | `REQUIRED` | added in Phase 2; the three seeding layers, called from `main.py`'s lifespan |
+| `migration_utils.py` | `REQUIRED` | added in Phase 1; imported by 42 alembic revisions |
+| `scripts/cleanup_seeded_public_figures.py` | `DEV-ONLY`, staged | added in Phase 2; one-shot production data fix, **not executed** |
 | `gunicorn.conf.py` | `REQUIRED` | named in the compose `command` |
 | `alembic/env.py`, `alembic.ini` | `REQUIRED` | `alembic upgrade head` runs on every boot |
 | `alembic/versions/*.py` (48) | `REQUIRED` | migration history; **none may be deleted** |

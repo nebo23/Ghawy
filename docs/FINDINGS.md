@@ -303,3 +303,46 @@ infer where an unstamped database sits in the history.
 The supported recovery is `alembic stamp <the revision that matches the schema>`
 — `alembic stamp head` when the schema is current. Verified: after stamping,
 `upgrade head` is a clean no-op and all 1912 users are untouched.
+
+---
+
+## Opened in Phase 2
+
+### F-17 · Sixteen dead model imports in `main.py` — `TRIVIAL`
+
+`main.py` imports 26 names from `app.models`; only `User` and `Payment` are
+used. Phase 2 removed the eight it orphaned itself (`Category`, `Channel`,
+`ChannelType`, `Course`, `Lesson`, `Guest`, `GuestSession`, `Coupon` — they moved
+to `app/seed.py` with the seed code) and left the other sixteen, which were
+already unused before this phase:
+
+```
+ChatMember  MemberRole  MessageRead  Message  PostReaction  CommentReaction
+ManualPaymentRequest  LiveAttendee  LiveSession  AiUpdatePost  AiUpdatePoll
+AiUpdatePollOption  AiUpdatePollVote  AiUpdateReaction  AiUpdateComment
+CommunityFeedback
+```
+
+Left deliberately rather than swept up: they are pre-existing and belong to the
+Phase 5 cleanup pass, not to a seed-data phase. Zero runtime cost beyond the
+import.
+
+### F-18 · The fabricated guest rows were self-healing — `CONTEXT for F-00`
+
+Not a new defect, but the mechanism was not recorded and it changes the order of
+operations for the fix. The seed guard was:
+
+```python
+if db.query(Guest).count() == 0:
+```
+
+so **deleting the fabricated guests did not remove them** — the next restart put
+them straight back. Production's `guests_id_seq` sits at `37` while holding only
+5 rows (ids 33–37), which is the fingerprint of that loop having run more than
+once against an emptied table.
+
+Consequence for the cleanup: the Phase 2 backend must be **deployed first**, and
+only then may `scripts/cleanup_seeded_public_figures.py` run. Run in the other
+order and the rows come back on the next boot. Verified: after deleting the rows
+on a production clone and booting the Phase 2 code, `guests = 0` and
+`guest_sessions = 0` — they stay gone.
