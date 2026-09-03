@@ -397,51 +397,41 @@ with its own (or no) limit since they are public static files already excluded
 from auth, raise the burst, or sprite/lazy-load them. Do not simply raise the
 global `api` rate — that zone is what absorbed the July abuse swarm.
 
-### F-24 · The Supabase purchases table has RLS off — anonymous read AND write — `PHASE 4, needs an owner action, URGENT`
+### F-24 · The Supabase project is being deleted — key burned, CSP allowance removed — `RESOLVED by owner action`
 
-`frontend/src/js/main.js` carried a hardcoded Supabase publishable key. Phase 4
-deleted the code that used it, so the key is no longer served from ghawy.ai —
-but **that does not revoke it**. The key still exists, and it was public in a
-static JS file for as long as that file shipped, so it must be assumed copied.
+**Resolution (2026-09-03): the owner confirmed Supabase is not needed and is
+deleting the project.** Deleting it closes this permanently — it is a stronger
+fix than enabling RLS, because it removes the data and the endpoint together
+rather than restricting access to them.
 
-What it grants an anonymous caller today (re-verified in Phase 4):
+What this was: `frontend/src/js/main.js` carried a hardcoded Supabase
+publishable key for a landing-page purchase ticker. Checking the premise rather
+than the key — a publishable key is meant to be public, so its presence in the
+source was never the flaw — RLS was not enforcing on the table at all:
 
-    GET    /rest/v1/purchases?select=*            → HTTP 200, 238 rows
-                                                    (id, name, product, created_at)
-    DELETE /rest/v1/purchases?id=eq.-1            → HTTP 204
-    PATCH  /rest/v1/purchases?id=eq.-1            → HTTP 204
+    GET    /rest/v1/purchases?select=*   → 200, 238 rows
+    DELETE /rest/v1/purchases?id=eq.-1   → 204
+    PATCH  /rest/v1/purchases?id=eq.-1   → 204
 
-**RLS is not enforcing on this table.** The read exposure was already recorded
-above; the writes are new information and they change the severity. The two
-write probes were run with a filter matching no rows, so nothing was altered —
-the row count was 238 before and after — but a 204 is the server saying the
-operation is permitted, not that it found nothing. The same key with
-`?id=gt.0` would empty the table, and `PATCH` would rewrite it.
+Both write probes used a filter matching no rows and the count was 238 before
+and after, so nothing was altered. But 204 means the operation was permitted;
+the same key with `?id=gt.0` would have emptied the table. So the severity was
+never "238 first names are readable" but "anyone can destroy or forge the
+purchase record".
 
-So this is not "238 first names are readable", which is low severity. It is
-"any anonymous caller can destroy or forge the purchase record", with a key
-that is in git history permanently and must be assumed copied.
+Closed out in three steps:
 
-Confirmed by direct request against the live project, not inferred from the
-absence of a policy: a publishable key is *designed* to be public, so its
-presence in the source was never the flaw. RLS being off is the flaw.
+1. **The polling code** — removed in `41bfd21`. It fetched a row every 10s for an element that does not exist on any page.
+2. **The CSP allowance** — `https://*.supabase.co` removed from `connect-src` in both the enforced and report-only headers in `nginx/conf.d/security_headers.conf`, and reloaded. It had outlived its only caller: an allowance for a service nothing calls is a standing permission with no user, still reachable by an injected script.
+3. **The project itself** — the owner is deleting it. That is what actually closes the write exposure.
 
-Two things are needed, and neither is a code change I should make unilaterally
-— both live in the Supabase project, not in this repo:
-
-  1. **Enable RLS on `purchases` and add policies.** With RLS off, every
-     anonymous caller has full CRUD. This is the urgent half: it is a data-loss
-     exposure, not just a disclosure one.
-  2. Rotate/revoke the publishable key. On its own this does **not** fix (1) —
-     it only slows down whoever has the old key.
-
-Until (1) is done the exposure is unchanged by our cleanup, and deleting the
-widget did nothing to close it.
-
-Also worth the owner's attention: the newest row is **2026-07-01**. Nothing has
-written to that table in over two months, so whatever pipeline fed it has
-stopped. If live purchase social proof is wanted on the landing page, that is
-the thing to fix first — the widget was the symptom.
+⚠️ **The publishable key is burned regardless, and permanently.** It sits in this
+repository's git history, which is not being rewritten. Deleting the project
+makes the key point at nothing, which is why this is resolved — but **if that
+Supabase project is ever recreated, or another one is created for this site, it
+must use a new key**. Reusing the old one restores a credential that has been
+public since it was committed. The same caution applies to any other project in
+that Supabase organisation if the key was ever shared across them.
 
 ### F-25 · `#stickyCta` handler binds to an element that does not exist — `PHASE 5`
 
@@ -473,3 +463,56 @@ If it is taken up: keep the three failure paths intact and share only the
 status, and let each caller apply its own handling. Verify against a 401 and a
 402 account on a members page and on `/renewal` itself before shipping. Do not
 fold the guards together.
+
+### F-27 · GA4 is being blocked by our own CSP — `found during the connect-src audit, PRE-EXISTING`
+
+Rendering the landing page in a browser after the Supabase removal surfaced a
+violation that has nothing to do with it:
+
+    Refused to connect to 'https://stats.g.doubleclick.net/g/collect?v=2&tid=G-…'
+    because it violates … connect-src
+
+`stats.g.doubleclick.net` is absent from both the old and the new policy, so this
+is pre-existing and not a regression — but it means GA4's Google-Signals /
+remarketing beacon has been silently dropped for as long as the CSP has been
+enforcing. Analytics still work; this specific collection call does not.
+
+Not fixed here, deliberately. The brief for this change was to *remove* origins
+that are proven unused; adding one is the opposite action, and adding a
+doubleclick host has privacy implications (it is the ads-network side of GA4,
+not plain analytics) that are the owner's call, not a maintenance decision. Two
+defensible outcomes:
+
+  * If Google Signals is wanted — add `https://stats.g.doubleclick.net` to
+    `connect-src` in both headers.
+  * If it is not — turn Google Signals off in the GA4 property, and the beacon
+    stops being attempted at all. This is the cleaner option: it removes the
+    request rather than permitting it.
+
+Worth also noting what the audit *confirmed* rather than changed: the
+report-only header correctly reports every inline `<script>` as a violation.
+That is its stated job — it is the next policy, without `'unsafe-inline'` — so
+those reports are the to-do list for that migration, not a fault.
+
+### F-28 · CSP origins that a source grep cannot clear — `method note for future audits`
+
+Auditing `connect-src`/`script-src`/`frame-src` by grepping the repo gives the
+wrong answer for four classes of origin, and every one of them appeared in this
+audit with **zero source hits** while being genuinely required:
+
+  * **Stored in the database** — `player.mediadelivery.net` has no reference in
+    any file, but an AI Updates post's `media` column points at it. Found by
+    querying the column, not the tree.
+  * **Generated server-side** — `payments.kashier.io` is built in
+    `kashier_manager.py`; `accounts.google.com` comes from the OAuth metadata
+    URL. Neither appears in frontend source.
+  * **Fetched at runtime by a third-party script** — GTM pulls
+    `google-analytics.com`, Clarity beacons to `c.bing.com`, the Meta Pixel to
+    `facebook.com`. Our source names none of them.
+  * **Hardcoded in one page far from the feature** — `*.b-cdn.net` lives in a
+    `<video src>` in `index.html` and a VSL URL in `chat.html`.
+
+So: only `*.supabase.co` was removable, because it is the only one where the
+calling code itself was deleted. For anything else, check the database and the
+server-generated URLs before concluding an origin is unused — a CSP that blocks
+something real is a broken page, and the breakage is silent.
