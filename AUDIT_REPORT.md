@@ -1,67 +1,172 @@
 # Ghawy Project Audit Report
 
-## 🔴 Critical Issues (لازم تتحل قبل Launch)
+> ## ⚠️ Status: SUPERSEDED — corrected 2026-09-03
+>
+> This report was written before launch. **Every one of its four "critical"
+> issues is now closed**: three were fixed in the code, and the fourth was never
+> real. Its two remaining open items are minor and are restated accurately
+> below.
+>
+> Leaving it as it stood was the dangerous option: it named `main.py:494` and
+> `:503` as unauthenticated when those lines are admin-guarded, and it described
+> the migration tree as broken over a revision id that does not exist anywhere
+> in the repository. An audit document that reports fixed problems as open
+> teaches the reader to ignore it.
+>
+> Each item below was **re-verified against the code on 2026-09-03**, with the
+> evidence quoted. The current audit lives in [`docs/`](docs/):
+> [ARCHITECTURE](docs/ARCHITECTURE.md) · [API-MAP](docs/API-MAP.md) ·
+> [INVENTORY](docs/INVENTORY.md) · [BASELINE](docs/BASELINE.md) ·
+> [FINDINGS](docs/FINDINGS.md).
 
-- [ ] **Issue 1: Unprotected Critical Endpoints (Security)**
-  - **الملف:** `backend/main.py`
-  - **السطر:** 494, 503 (`delete_user`, `delete_payment`)
-  - **وصف المشكلة:** الـ endpoints دي مش بتستخدم `Depends(get_current_admin_user)` أو أي نوع من الـ authentication. أي حد يقدر يبعت Request ويمسح أي User أو Payment من غير ما يكون Admin.
-  - **الحل المقترح:** إضافة `current_user: User = Depends(get_current_admin_user)` للـ function parameters لحمايتها.
+---
 
-- [ ] **Issue 2: Kashier Webhook Signature Bypass (Payment Security)**
-  - **الملف:** `backend/app/routers/webhooks.py`
-  - **السطر:** 39-40
-  - **وصف المشكلة:** الـ code بيعمل verify للـ Kashier signature، بس لو الـ verification فشل بيعمل `logger.warning` وبيكمل الـ execution عادي ويفعل الاشتراك! ده معناه إن أي حد ممكن يعمل payment confirmation مزيف لنفسه.
-  - **الحل المقترح:** إضافة `raise HTTPException(status_code=400, detail="Invalid signature")` لو الـ signature مش مطابق، عشان نـ block الـ request فوراً.
+## 🔴 Critical Issues — all four closed
 
-- [ ] **Issue 3: Missing .env from .gitignore (Sensitive Data)**
-  - **الملف:** `.gitignore`
-  - **وصف المشكلة:** ملف الـ `.env` مش موجود في الـ `.gitignore`، وده بيعرض الـ Secrets والـ API Keys إنها تتعمل لها Commit بالغلط على GitHub.
-  - **الحل المقترح:** إضافة `.env` لملف الـ `.gitignore`.
+### ✅ Issue 1 — Unprotected `delete_user` / `delete_payment` — FIXED
 
-- [ ] **Issue 4: Broken Alembic Migration Tree (Data Integrity)**
-  - **الملف:** `backend/alembic/`
-  - **وصف المشكلة:** تشغيل `alembic check` بيطلع error `Can't locate revision identified by '8f370e02e750'`. شجرة الـ migrations مكسورة، وده هيمنع تطبيق الـ migrations الجديدة في المستقبل أو في الـ production.
-  - **الحل المقترح:** مراجعة مجلد `alembic/versions` وإصلاح الـ `down_revision` المكسور أو مسح الـ version اللي مش موجود من الـ database `alembic_version` table.
+Both endpoints now require an admin. `backend/main.py:341` and `:354`:
 
-## 🟡 Important Issues (مهمة بس مش blocking)
+```python
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_admin_user)):
+```
 
-- [ ] **Issue 1: N+1 Query Problems (Performance)**
-  - **الملف:** `backend/app/routers/` (أكثر من ملف زي `courses.py`, `chat.py`, `ws.py`, `live.py`)
-  - **وصف المشكلة:** الـ endpoints بتستخدم `.all()` لعمل fetch لـ data كبيرة زي الـ courses و users، ولما بيتم الوصول لـ relationships بعدها بيعمل N+1 queries.
-  - **الحل المقترح:** استخدام `joinedload` للـ relationships اللي هتحتاجها، وإضافة pagination (limit/offset) على الـ queries اللي ممكن ترجع داتا كبيرة جداً.
+(The line numbers in the original report, 494 and 503, no longer correspond to
+these functions.)
 
-- [ ] **Issue 2: Native window.alert & window.confirm (UX/Consistency)**
-  - **الملف:** `frontend/src/js/onboarding.js`, `team.js`, `course-detail.html`, وغيرها.
-  - **وصف المشكلة:** استخدام `window.alert` و `window.confirm` في أماكن كتير جداً في الـ Frontend، وده بيخالف قاعدة المشروع الثابتة (لا window.alert أو window.confirm — المفروض showToast).
-  - **الحل المقترح:** استبدال كل الـ native alerts بـ `showToast` والـ custom confirmation modals.
+### ✅ Issue 2 — Kashier webhook signature bypass — FIXED
 
-- [ ] **Issue 3: Production CORS Configuration (Deployment Readiness)**
-  - **الملف:** `backend/main.py`
-  - **السطر:** 447
-  - **وصف المشكلة:** الـ CORS مضبوط فقط على `localhost:5500` و `127.0.0.1:5500`. في الـ production الـ Frontend مش هيقدر يكلم الـ Backend.
-  - **الحل المقترح:** قراءة الـ `allow_origins` من الـ `.env` عشان يدعم الـ production domain.
+The webhook no longer warns and continues. `backend/app/routers/webhooks.py:134`:
 
-## 🟢 Minor Issues (تحسينات)
+```python
+if not received_signature:
+    raise HTTPException(status_code=401, detail="Missing signature")
+if not verify_kashier_webhook(data, received_signature):
+    raise HTTPException(status_code=401, detail="Invalid signature")
+```
 
-- [ ] **Issue 1: استخدام لون ممنوع (#84cc16) (Consistency)**
-  - **الملف:** `goh.css`, `team.css`, `dashboard.css`, `team.js`
-  - **وصف المشكلة:** اللون `#84cc16` مستخدم كـ hardcoded color في أكثر من 15 مكان في الـ CSS والـ JS، بالرغم من إن قواعد المشروع بتنص على استخدام `#3f8ff9` فقط ومنع `#84cc16`.
-  - **الحل المقترح:** عمل Find & Replace وتغيير كل `#84cc16` إلى `#3f8ff9`.
+It additionally rejects amount and currency mismatches (lines 169–179). The
+signature checked is the `x-kashier-signature` header — sorted keys, RFC3986,
+API key. The body's `hash` field is not usable for this and is not used.
 
-- [ ] **Issue 2: Skeleton Loading & Empty States (UX)**
-  - **الملف:** أغلب الـ JS files
-  - **وصف المشكلة:** بعض القوائم في الـ Frontend بتعمل render للبيانات من غير Skeleton loading في الأول، ومش بتعرض Empty state واضح لو القائمة فاضية (قاعدة ثابتة في المشروع).
-  - **الحل المقترح:** مراجعة دوال الـ `renderLists` وإضافة Skeleton UI قبل الـ Fetch و Empty UI لو الـ response فاضي.
+### ✅ Issue 3 — `.env` missing from `.gitignore` — FIXED
 
-## ✅ What's Working Well
-- **API Structure:** الـ FastAPI routers متقسمة بشكل ممتاز جداً ومنظم.
-- **Auto Migrations (SQLite fallback):** فكرة الـ `apply_sqlite_compat_migrations` لحل مشاكل SQLite ممتازة وبتخلي التطوير المحلي سريع.
-- **Seeding:** دالة `seed_defaults` بتضمن إن الـ Database دايماً جاهزة للاستخدام من غير Setup معقد.
-- **Modular Services:** فصل الـ logic لـ `services` (زي `kashier_manager.py`) بيخلي الكود أنظف.
+`.gitignore:17-21` covers `.env`, `.env.*`, `backend/.env` and
+`backend/.env.production`, with `!.env.example` re-included.
 
-## 📊 Summary
-- Critical: 4 issues
-- Important: 3 issues  
-- Minor: 2 issues
-- Estimated fix time: 3-5 hours
+> Not fixed by this, and still open: secrets committed **before** the ignore
+> rule was added remain in git history, and have never been rotated. That is
+> tracked as a live security item, not as part of this issue.
+
+### ❌ Issue 4 — "Broken Alembic migration tree" — WAS NEVER TRUE
+
+The report says `alembic check` cannot locate revision `8f370e02e750`. That
+revision id **appears nowhere in the repository** — not as a `revision`, not as
+a `down_revision`, not in any file under `backend/`.
+
+The tree is intact, verified against alembic itself rather than by reading:
+
+```
+$ docker exec ghawy_backend alembic heads
+c9e1d3a7b542 (head)
+$ docker exec ghawy_backend alembic current
+c9e1d3a7b542 (head)
+```
+
+48 revisions, **one root, one head, no missing parents**, and production is
+stamped at head. The fork at `f1201efadb0f` is closed by
+`4823c6c0b288_merge_multiple_heads.py`.
+
+> **A caution for anyone re-auditing this.** `4823c6c0b288` is a *merge* — its
+> `down_revision` is a two-element tuple spanning two lines. A naive line-based
+> parser reads that as a broken or absent parent and reports phantom extra heads
+> and roots. Ask alembic; do not grep.
+>
+> **The real migration defect is a different one**, and this report never found
+> it: 25 of the 50 tables have no migration at any point in the history and
+> exist only because `Base.metadata.create_all()` runs at import time. See
+> [`docs/ARCHITECTURE.md` §7](docs/ARCHITECTURE.md).
+
+---
+
+## 🟡 Important Issues
+
+### ✅ Issue 3 — Production CORS — FIXED
+
+`backend/main.py:277` reads the allowlist from the environment:
+
+```python
+allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5500").split(",")
+```
+
+### ⏳ Issue 1 — N+1 queries — OPEN, scoped
+
+Still to be swept properly. One correction to the original: the community
+courses page is no longer an example — it previously called
+`/courses/{id}/progress` once per course and now makes three parallel calls,
+documented in the header of `frontend/src/js/courses.js`.
+`admin.students_progress` is the reference for how these should be written.
+Tracked as Phase 4.
+
+### ⏳ Issue 2 — Native `alert()` / `confirm()` — OPEN, and smaller than stated
+
+18 occurrences remain, not "أماكن كتير جداً":
+
+| File | Count |
+|---|---:|
+| `src/js/team.js` | 9 |
+| `teamdashboard.html` | 2 |
+| `src/js/onboarding.js` | 2 |
+| `src/js/ai-updates.js` | 2 |
+| `course-detail.html` | 2 |
+| `src/js/goh.js` | 1 |
+
+The project convention is `showToast` and a custom confirm modal.
+
+---
+
+## 🟢 Minor Issues
+
+### ✅ Issue 1 — Forbidden colour `#84cc16` — ALL BUT FIXED
+
+The reported "more than 15 places" is now **2**, neither of which is site chrome:
+
+* `src/js/goh.js:283` — a `ui-avatars.com` query parameter for a fallback avatar
+* `src/js/whats-new.js:77` — one SVG fill in the what's-new illustration
+
+### ⏳ Issue 2 — Skeleton loading / empty states — OPEN, unverified
+
+Neither confirmed nor refuted in the 2026-09-03 pass. Needs a browser and a real
+session to judge.
+
+---
+
+## ✅ What's Working Well — one correction
+
+The original praise stands for router separation and the `services/` split. Two
+entries need correcting:
+
+* **"Auto Migrations (SQLite fallback)"** — there is no SQLite path. The
+  application requires PostgreSQL: `app/database.py` raises at import unless
+  `DATABASE_URL` starts with `postgresql`.
+* **"Seeding: `seed_defaults` keeps the database always ready"** — this is the
+  report's most consequential misreading. `seed_defaults()` running at import
+  time is *why* half the schema has no migration, and it seeds **five real,
+  named public figures** as platform guests with invented ratings and attendance
+  numbers. It is a liability, not a strength. See `backend/main.py:52-90`.
+
+---
+
+## 📊 Summary — as of 2026-09-03
+
+| | Original | Now |
+|---|---:|---|
+| Critical | 4 | **0** — 3 fixed, 1 never real |
+| Important | 3 | 2 open (N+1 sweep, 18 native dialogs) |
+| Minor | 2 | 1 open (skeletons), 1 all but closed |
+
+Newly identified and **not** in the original report: 25 tables with no
+migration; seeded real public figures; a third-party Supabase dependency polled
+from the public landing page; secrets in git history, never rotated.

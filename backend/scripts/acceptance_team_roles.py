@@ -2,7 +2,7 @@
 
 Point DATABASE_URL at a scratch database before running — the first thing this
 file does is drop and rebuild the public schema, exactly like
-test_security_acceptance.py.
+acceptance_security.py.
 
 What it pins down, in the order the owner would actually do it:
 
@@ -16,6 +16,11 @@ What it pins down, in the order the owner would actually do it:
 """
 import os, sys, json
 os.environ.setdefault("SECRET_KEY", "dummy_secret_for_import_check")
+
+# Approve the target database before anything imports the app: `import main`
+# writes to the database on import, so the guard has to come first.
+from _acceptance_guard import require_scratch_database  # noqa: E402
+require_scratch_database()
 
 from fastapi.testclient import TestClient
 import main

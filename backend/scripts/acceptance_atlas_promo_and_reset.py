@@ -1,8 +1,8 @@
 """Acceptance checks for the Atlas free-month promo and the password reset flow.
 
-Runs against a throwaway DB, same shape as test_security_acceptance.py:
+Runs against a throwaway DB, same shape as acceptance_security.py:
 
-    DATABASE_URL=postgresql://... python backend/tests/test_atlas_promo_and_reset.py
+    DATABASE_URL=postgresql://...:5432/ghawy_test python backend/scripts/acceptance_atlas_promo_and_reset.py
 
 The three requirements named in the brief for "one free month per round" are
 checked explicitly and marked [C1]/[C2]/[C3]:
@@ -17,6 +17,11 @@ read back out of the store / the column rather than out of an inbox.
 """
 import os, sys, datetime
 os.environ.setdefault("SECRET_KEY", "dummy_secret_for_import_check")
+
+# Approve the target database before anything imports the app: `import main`
+# writes to the database on import, so the guard has to come first.
+from _acceptance_guard import require_scratch_database  # noqa: E402
+require_scratch_database()
 
 from fastapi.testclient import TestClient
 import main
@@ -288,7 +293,7 @@ r = c.post("/auth/verify-reset-code", json={"email": "burn@t.co", "code": burn_c
 check("and the burned code is refused even when it was the right one", r.status_code == 400, r.status_code)
 
 print("\n── nothing sensitive reaches the logs ──")
-# Same guard test_security_acceptance applies to users.py, extended to the two
+# Same guard acceptance_security applies to users.py, extended to the two
 # routers this branch adds code to. A code in a log file is a code anyone with
 # log access can spend.
 import inspect, re as _re

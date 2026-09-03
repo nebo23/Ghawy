@@ -433,7 +433,7 @@ def send_password_reset_email_bg(email: str, code: str) -> None:
 # does not eat a reset attempt.
 #
 # Note on the log lines below: they say "Reset code issued", not "Password reset
-# code issued". test_security_acceptance greps every logger call in this file for
+# code issued". acceptance_security greps every logger call in this file for
 # the words verification_code / submitted_code / otp / password and fails on a
 # hit. The check is deliberately blunt — it cannot tell prose from an
 # interpolated variable — and it is not worth loosening a leak guard to win an
