@@ -79,11 +79,31 @@ def _clean_link(raw: Optional[str]) -> Optional[str]:
     link = (raw or "").strip()
     if not link:
         return None
+
+    # المتصفح بيشيل tab/newline/CR من الـ URL قبل ما يقرا الـ scheme، يعني
+    # "java\tscript:" بيتنفّذ كـ javascript:. فبنشيلهم إحنا الأول وبعدين
+    # نفحص — بدل ما الفحص يشوف نص والمتصفح يشوف نص تاني.
+    link = "".join(ch for ch in link if ch not in "\t\r\n" and ord(ch) >= 0x20)
+    if not link:
+        return None
+
+    lowered = link.lower()
+
+    # ⚠️ الترتيب مهم. الفحص ده لازم ييجي **قبل** أي `startswith("/")`:
+    # "//evil.com" بيبدأ بـ "/" برضه، فكان بيعدّي من غير ما يوصل لفحص الـ "//"
+    # تحت خالص — والمتصفح بينفّذ `location.href = "//evil.com"` كإنه
+    # https://evil.com. يعني اللينك اللي المفروض داخلي كان بيطلّع كل عضو بره
+    # المنصة. و"/\evil.com" نفس الحكاية: المتصفحات بتعامله زي "//".
+    if lowered.startswith(("//", "/\\", "\\\\")):
+        raise HTTPException(status_code=400, detail="اللينك لازم يكون مسار داخلي في المنصة")
+
     if link.startswith("/"):
         return link[:500]
+
     # "dashboard-courses.html?id=3" — مسار نسبي عادي
-    lowered = link.lower()
-    if "://" in lowered or lowered.startswith(("javascript:", "data:", "vbscript:", "//")):
+    if "://" in lowered or ":" in lowered.split("/", 1)[0]:
+        # أي scheme خالص (javascript:, data:, vbscript:, mailto: …) مرفوض —
+        # قايمة سوداء بأسماء مخصوصة بتفوت اللي مش مكتوب فيها.
         raise HTTPException(status_code=400, detail="اللينك لازم يكون مسار داخلي في المنصة")
     return link[:500]
 
