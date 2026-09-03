@@ -194,7 +194,7 @@ def exchange_handoff(response: Response, request: Request, db: Session = Depends
     if not user:
         raise HTTPException(status_code=401, detail="Sign-in link expired — please sign in again")
 
-    set_file_cookie(response, user.id)
+    set_file_cookie(response, user.id, getattr(user, "token_version", 0) or 0)
     return {
         "access_token": create_session_token(user.id, getattr(user, "token_version", 0) or 0),
         "user": {

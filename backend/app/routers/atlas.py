@@ -268,7 +268,7 @@ def verify_otp(data: VerifyOTPRequest, response: Response, db: Session = Depends
     # The browser fetches protected uploads through <img>/<a>/<audio>, which
     # cannot send the bearer token — mint the read-only file cookie, same as
     # /auth/login does.
-    set_file_cookie(response, user.id)
+    set_file_cookie(response, user.id, getattr(user, "token_version", 0) or 0)
 
     return {
         "message": "تم التحقق بنجاح",

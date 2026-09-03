@@ -91,6 +91,25 @@ _NOT_FOUND = HTTPException(status_code=404, detail="File not found")
 
 # ─── Who is asking ────────────────────────────────────────────
 
+def _live_version(payload: dict, user: Optional[User]) -> Optional[User]:
+    """The user, but only while the token has not been revoked.
+
+    token_version is the platform's kill switch — /logout-all and a password
+    reset bump it to end every credential an account has issued. The file paths
+    read it for the same reason get_current_user does: a 7-day file cookie that
+    ignored it meant a copied cookie went on reading receipts, course PDFs and
+    DM attachments for a week after the member had locked their account, which
+    is exactly the case the switch exists for. A token minted before the claim
+    existed reads as 0 and so matches the default, keeping old cookies working
+    until that account's version is actually bumped.
+    """
+    if user is None:
+        return None
+    if int(payload.get("ver") or 0) != (getattr(user, "token_version", 0) or 0):
+        return None
+    return user
+
+
 def _user_from_file_cookie(token: Optional[str], db: Session) -> Optional[User]:
     if not token:
         return None
@@ -101,7 +120,7 @@ def _user_from_file_cookie(token: Optional[str], db: Session) -> Optional[User]:
         user_id = int(payload.get("sub"))
     except (JWTError, ValueError, TypeError):
         return None
-    return db.query(User).filter(User.id == user_id).first()
+    return _live_version(payload, db.query(User).filter(User.id == user_id).first())
 
 
 def file_requester(
@@ -117,8 +136,15 @@ def file_requester(
     if bearer:
         try:
             payload = jwt.decode(bearer, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("typ") != "file":
-                user = db.query(User).filter(User.id == int(payload.get("sub"))).first()
+            # A session token, which carries no "typ" at all — the same thing
+            # get_current_user accepts. This read "not file", which also let the
+            # 120-second OAuth hand-off token through as a file credential; it
+            # is minted for one same-origin POST and is not a session.
+            if payload.get("typ") is None:
+                user = _live_version(
+                    payload,
+                    db.query(User).filter(User.id == int(payload.get("sub"))).first(),
+                )
                 if user:
                     return user
         except (JWTError, ValueError, TypeError):
@@ -278,7 +304,7 @@ def start_file_session(response: Response, current_user: User = Depends(get_curr
     already signed in when the cookie was introduced, and for whenever it
     expires before the session does.
     """
-    set_file_cookie(response, current_user.id)
+    set_file_cookie(response, current_user.id, getattr(current_user, "token_version", 0) or 0)
     return {"ok": True}
 
 

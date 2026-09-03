@@ -87,18 +87,25 @@ def issue_token_for(user: User) -> str:
 FILE_TOKEN_COOKIE = "ghawy_files"
 FILE_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days; re-minted on every login
 
-def create_file_token(user_id: int) -> str:
+def create_file_token(user_id: int, token_version: int = 0) -> str:
+    # Carries "ver" for the same reason the session token does: /logout-all and
+    # a password reset bump token_version to kill every credential the account
+    # has issued, and a 7-day file cookie that ignored it was a copied cookie
+    # that still read receipts, course PDFs and DM attachments for a week after
+    # the member had locked their account. Tokens minted before this claim
+    # existed read as 0, which matches the default, so old cookies keep working
+    # until that account's version is actually bumped.
     expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=FILE_TOKEN_EXPIRE_MINUTES)
     return jwt.encode(
-        {"sub": str(user_id), "typ": "file", "exp": expire},
+        {"sub": str(user_id), "typ": "file", "ver": int(token_version or 0), "exp": expire},
         SECRET_KEY, algorithm=ALGORITHM,
     )
 
-def set_file_cookie(response, user_id: int) -> None:
+def set_file_cookie(response, user_id: int, token_version: int = 0) -> None:
     """Attach the file-access cookie to a response (login, OAuth, /files/session)."""
     response.set_cookie(
         key=FILE_TOKEN_COOKIE,
-        value=create_file_token(user_id),
+        value=create_file_token(user_id, token_version),
         max_age=FILE_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,
         secure=True,
@@ -266,7 +273,7 @@ def login(data: UserLogin, response: Response, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Please Verify Your Email First")
     # The browser fetches protected uploads through <img>/<a>/<audio>, which
     # cannot send the bearer token — mint the read-only file cookie here.
-    set_file_cookie(response, user.id)
+    set_file_cookie(response, user.id, getattr(user, "token_version", 0) or 0)
     return {
         "access_token": issue_token_for(user),
         "user": {
@@ -300,7 +307,7 @@ def token_login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
         raise HTTPException(status_code=403, detail="Please verify your email first")
     # The browser fetches protected uploads through <img>/<a>/<audio>, which
     # cannot send the bearer token — mint the read-only file cookie here.
-    set_file_cookie(response, user.id)
+    set_file_cookie(response, user.id, getattr(user, "token_version", 0) or 0)
     return {
         "access_token": issue_token_for(user),
         "user": {
