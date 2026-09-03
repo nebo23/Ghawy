@@ -159,44 +159,78 @@ Two known dead spots, both recorded in [`FINDINGS.md`](FINDINGS.md):
 `lesson_playback_grants ∪ user_progress`), and the production database carries a
 `subscription_repair_2026_08_14` table that no model declares.
 
-## 7. Migrations — the real state
+## 7. Migrations
 
-Alembic, 48 revisions in `backend/alembic/versions/`.
+Alembic, **49 revisions** in `backend/alembic/versions/`. One root
+(`ghawy_baseline`), one head (`c9e1d3a7b542`), no missing parents. Production is
+stamped at head.
 
 ```
-$ docker exec ghawy_backend alembic heads
+$ alembic heads
 c9e1d3a7b542 (head)
-$ docker exec ghawy_backend alembic current
-c9e1d3a7b542 (head)
 ```
 
-**One root, one head, no missing parents, and production is stamped at head.**
-The fork at `f1201efadb0f` (`9b2d6f5a8c31` / `e478012af2b4`) is already closed by
-`4823c6c0b288_merge_multiple_heads.py`. Reports of "3 heads and 2 roots" come
-from mis-parsing that merge's tuple `down_revision`, which spans two lines —
-`4823c6c0b288` is a *merge*, not a second root. See [`FINDINGS.md`](FINDINGS.md).
+Reports of "3 heads and 2 roots" come from mis-parsing the tuple
+`down_revision` of `4823c6c0b288_merge_multiple_heads.py`, which spans two
+lines — that revision is a *merge*, not a second root. Ask alembic, do not grep.
+The fork at `f1201efadb0f` (`9b2d6f5a8c31` / `e478012af2b4`) is closed by that
+merge and always was.
 
-The actual defect is different and worse:
+### The defect that was real, and how it is closed
 
-> **25 of the 50 tables have no migration at any point in the history.** They
-> exist only because `Base.metadata.create_all()` runs on import.
+For most of the project's life the schema was built by
+`Base.metadata.create_all()` at import time, not by Alembic. `--autogenerate`
+was then usually run against a database `create_all` had *already* updated, so
+six revisions came out completely empty and **only 8 of the 50 tables were ever
+created by a migration**. `alembic upgrade head` on an empty database died at
+the first ALTER against a table nothing had created:
 
 ```
-ai_update_comments      ai_update_poll_votes   ai_update_polls
-ai_update_reactions     ai_update_reads        birthday_gift_claims
-categories              channels               chat_members
-comments                course_reviews         email_campaign_sends
-feedbacks               lesson_playback_grants live_attendees
-message_reads           notifications          phone_otps
-post_channel_reads      posts                  session_bookings
-session_projects        session_reminders      suggested_guests
-user_course_progress
+sqlalchemy.exc.ProgrammingError: relation "comment_reactions" does not exist
+[SQL: ALTER TABLE comment_reactions ADD UNIQUE (comment_id, user_id)]
 ```
 
-So `alembic upgrade head` against an **empty** database cannot reproduce the
-schema — later migrations reference tables no migration ever created. Against
-the **existing** production database it works, which is why this has stayed
-invisible. Closing this is Phase 1.
+Against production — which already had every table — it worked, which is why
+this stayed invisible.
+
+**`ghawy_baseline`** (`0000_ghawy_baseline_schema_snapshot.py`) is now the root
+of the history and creates all 50 tables. It is a frozen snapshot, verified by
+diffing `pg_dump --schema-only` of production against the schema a clean
+`upgrade head` produces — every column, type, nullability, default, index and
+foreign key matches. It is *not* regenerated from the models; later schema
+changes go in later revisions as normal.
+
+The 42 pre-baseline revisions that do real work each open with:
+
+```python
+if baseline_created_schema():
+    return
+```
+
+`baseline_created_schema()` (`backend/migration_utils.py`) is true only when the
+`ghawy_schema_baseline` marker table exists, and only the baseline writes it —
+and only when it genuinely created the schema itself. So:
+
+| Database | Baseline | The 42 historical revisions |
+|---|---|---|
+| Empty | creates 50 tables, writes marker | skip — snapshot already has their change |
+| Production / a dump of it | already an ancestor, never runs | run for real if pending |
+| Has tables but never stamped | no-ops, **writes no marker** | run for real |
+
+Verified in all three directions: clean → head produces production's schema; a
+full production clone upgrades as a no-op with all 52 row counts unchanged; a
+clone rewound one revision really re-applies it.
+
+### Schema creation is no longer on the import path
+
+`Base.metadata.create_all()` and `seed_defaults()` used to run at module import
+in `backend/main.py`, i.e. once per Gunicorn worker, before the app object
+existed. They now live in a `lifespan` handler (alongside the anyio threadpool
+bump and the APScheduler start/stop, which moved off `@app.on_event` so FastAPI
+does not silently drop them). `create_all` is gone from the production path: if
+the schema is missing the app refuses to start and names the fix, unless
+`DEV_CREATE_ALL=1` is set outside production. Seeding takes a Postgres advisory
+lock so N workers cannot race each other into the same INSERT.
 
 Migrations run on container start, before Gunicorn:
 

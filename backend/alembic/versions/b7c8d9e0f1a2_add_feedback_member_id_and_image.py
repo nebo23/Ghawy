@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'b7c8d9e0f1a2'
@@ -19,6 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     # New feedbacks identify the member by id and may carry an image.
     # Plain integer (no FK) to avoid taking a lock on the busy users table.
     op.execute("""
@@ -34,6 +40,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("ALTER TABLE feedbacks DROP COLUMN IF EXISTS person_user_id;")
     op.execute("ALTER TABLE feedbacks DROP COLUMN IF EXISTS image_url;")
     # Note: not restoring NOT NULL on person_email to avoid failing on null rows.

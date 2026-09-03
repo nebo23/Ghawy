@@ -37,6 +37,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 revision: str = "b6c7d8e9f0a1"
 down_revision: Union[str, Sequence[str], None] = "a5b6c7d8e9f0"
@@ -45,6 +47,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.create_table(
         "coupons",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -124,6 +130,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.drop_column("manual_payment_requests", "coupon_code")
     op.drop_column("manual_payment_requests", "expected_amount")
 

@@ -41,6 +41,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'a7f1c93d20b4'
@@ -549,6 +551,10 @@ ATLAS_ROSTER: list[tuple[str, str | None]] = [
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     conn = op.get_bind()
 
     op.add_column('legacy_emails', sa.Column('full_name', sa.String(length=255), nullable=True))
@@ -593,6 +599,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     # The rows are deliberately left alone. Re-inserting the 171 misspellings
     # would be restoring the corruption this migration exists to remove, and the
     # addresses it added are real members either way.

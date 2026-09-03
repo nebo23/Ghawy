@@ -21,6 +21,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from migration_utils import baseline_created_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = "f5a6b7c8d9e0"
@@ -30,6 +32,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("SET lock_timeout = '5s'")
     op.add_column(
         "users",
@@ -39,6 +45,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("SET lock_timeout = '5s'")
     op.drop_column("users", "token_version")
     op.execute("SET lock_timeout = DEFAULT")

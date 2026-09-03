@@ -93,7 +93,7 @@ class User(Base):
     password_reset_code = Column(String(6), nullable=True)
     password_reset_expiry = Column(DateTime, nullable=True)
     is_admin = Column(Boolean, server_default=text('false'), default=False)
-    is_owner = Column(Boolean, server_default=text('false'), default=False)
+    is_owner = Column(Boolean, nullable=False, server_default=text('false'), default=False)
     # أي تابات لوحة الفريق الـ owner فتحها للأدمن ده — JSON list نصّية.
     # NULL = متعدّلتش، فبتقع على الديفولت في app/services/permissions.py؛
     # "[]" = الـ owner قفل كل حاجة بإيده. الفرق بينهم مقصود.
@@ -263,7 +263,7 @@ class Coupon(Base):
     display_code = Column(String(64), nullable=True)
     discount_percent = Column(Numeric(5, 2), nullable=False)
     max_redemptions = Column(Integer, nullable=False)
-    is_active = Column(Boolean, nullable=False, default=True)
+    is_active = Column(Boolean, nullable=False, server_default=text('true'), default=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     redemptions = relationship("CouponRedemption", back_populates="coupon")
@@ -301,7 +301,7 @@ class CouponRedemption(Base):
     payment_id = Column(Integer, ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
     manual_request_id = Column(Integer, ForeignKey("manual_payment_requests.id", ondelete="SET NULL"), nullable=True)
 
-    status = Column(String(16), nullable=False, default=CouponRedemptionStatus.PENDING.value, index=True)
+    status = Column(String(16), nullable=False, server_default=text("'pending'"), default=CouponRedemptionStatus.PENDING.value, index=True)
     slot_no = Column(Integer, nullable=True)
 
     # The arithmetic, kept so the admin panel and any later dispute can see what
@@ -309,7 +309,7 @@ class CouponRedemption(Base):
     # have been edited since.
     original_amount = Column(Numeric(12, 2), nullable=False)
     final_amount = Column(Numeric(12, 2), nullable=False)
-    currency = Column(String(8), nullable=False, default="EGP")
+    currency = Column(String(8), nullable=False, server_default=text("'EGP'"), default="EGP")
     plan_key = Column(String, nullable=True)
 
     # Only meaningful while PENDING — the moment the hold lapses.
@@ -563,7 +563,7 @@ class Course(Base):
     total_lessons = Column(Integer, server_default=text('0'), default=0)
     course_time = Column(String, nullable=True)
     is_published = Column(Boolean, server_default=text('false'), default=False)
-    sort_order = Column(Integer, server_default=text('0'), default=0)
+    sort_order = Column(Integer, nullable=False, server_default=text('0'), default=0, index=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order")
@@ -592,7 +592,7 @@ class Lesson(Base):
     video_status = Column(String, server_default=text("'pending'"), default="pending")  # pending | processing | ready | error
     is_free_preview = Column(Boolean, server_default=text('false'), default=False)
     # Marks a lesson that has an associated project — course page shows a "Go to Projects" button
-    is_project = Column(Boolean, server_default=text('false'), default=False)
+    is_project = Column(Boolean, nullable=False, server_default=text('false'), default=False)
     # PDF attachment
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
@@ -1137,9 +1137,9 @@ class AdminMemberNote(Base):
     """
     __tablename__ = "admin_member_notes"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     member_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
-    note = Column(Text, nullable=False, default='')
+    note = Column(Text, nullable=False, server_default=text("''"), default='')
     updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=datetime.utcnow, default=datetime.utcnow)

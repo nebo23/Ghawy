@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -250,6 +251,92 @@ def seed_defaults():
     finally:
         db.close()
 
+# ── Startup / shutdown ─────────────────────────────────────
+# Everything below used to run at *import* time — the schema was built by
+# Base.metadata.create_all() and seed_defaults() on line 285, before the app
+# object even existed. Two things were wrong with that. Gunicorn imports this
+# module once per worker, so both ran once per worker; and create_all silently
+# built tables that no migration had ever created, which is precisely how the
+# Alembic history rotted until ghawy_baseline. Schema now comes from
+# `alembic upgrade head` (run by the container command), and this handler only
+# checks that it happened.
+
+# One arbitrary constant, shared by every worker, so only one of them seeds.
+_SEED_LOCK_KEY = 0x64_6861_7779  # "ghawy"
+
+
+def _schema_is_present() -> bool:
+    try:
+        return inspect(engine).has_table("users")
+    except Exception:
+        return False
+
+
+def _bootstrap_schema() -> None:
+    """Make sure the database has a schema, and say so loudly if it does not."""
+    if _schema_is_present():
+        return
+    if os.getenv("DEV_CREATE_ALL") == "1" and ENVIRONMENT != "production":
+        # Local convenience only. `alembic upgrade head` works from an empty
+        # database now, so this is a shortcut, never the supported path.
+        logger.warning("DEV_CREATE_ALL=1 — building the schema from the models")
+        Base.metadata.create_all(bind=engine)
+        return
+    raise RuntimeError(
+        "The database has no schema. Run `alembic upgrade head` before starting "
+        "the app (or set DEV_CREATE_ALL=1 outside production to build it from "
+        "the models)."
+    )
+
+
+def _seed_once() -> None:
+    """Seed defaults under an advisory lock so N workers do not all write.
+
+    seed_defaults() is idempotent, so the lock is not what makes this safe — it
+    is what stops N workers racing each other into the same INSERT and losing
+    on a unique constraint.
+    """
+    with engine.connect() as conn:
+        conn.execute(text("SELECT pg_advisory_lock(:k)"), {"k": _SEED_LOCK_KEY})
+        try:
+            seed_defaults()
+        finally:
+            conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": _SEED_LOCK_KEY})
+            conn.commit()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # كل sync endpoint/dependency بياخد ثريد من anyio (الافتراضي 40). تحت ضغط،
+    # طلب بيعدي الـ auth (transaction مفتوحة + اتصال DB محجوز) وبعدين يقف في
+    # طابور الثريدات ماسك الاتصال → الـ pool بيفضى والموقع يتجمد (انهيار 2026-07-21،
+    # 26 دقيقة). 120 ثريد > سعة الـ DB pool بهامش يمنع الطابور-وهو-ماسك-اتصال.
+    import anyio.to_thread
+    anyio.to_thread.current_default_thread_limiter().total_tokens = 120
+    logger.info("✅ anyio threadpool capacity raised to 120")
+
+    _bootstrap_schema()
+    _seed_once()
+
+    scheduler = None
+    try:
+        from app.scheduler import scheduler as _scheduler
+        scheduler = _scheduler
+        scheduler.start()
+        logger.info("✅ APScheduler started")
+    except Exception as e:
+        logger.warning("⚠️ Scheduler not loaded: %s", e)
+
+    yield
+
+    if scheduler is not None:
+        try:
+            scheduler.shutdown()
+            logger.info("🛑 APScheduler stopped")
+        except Exception as e:
+            logger.warning("⚠️ Scheduler shutdown failed: %s", e)
+
+
 # ✅ app يتعمل الأول — disable docs in production
 # openapi_url كمان لازم يتقفل: docs_url=None بيخفي الـ UI بس، و/openapi.json كان
 # لسه شغال — ماسح 2026-07-21 سحب منه خريطة الـ API كاملة قبل ما يضرب الـ endpoints
@@ -259,6 +346,7 @@ _openapi_url = None if ENVIRONMENT == "production" else "/openapi.json"
 app = FastAPI(
     title="Community Backend",
     version="2.0.0",
+    lifespan=lifespan,
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
@@ -281,9 +369,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# إنشاء الجداول
-Base.metadata.create_all(bind=engine)
-seed_defaults()
 
 # Create uploads directory
 uploads_dir = BACKEND_DIR / "uploads"
@@ -386,33 +471,6 @@ def get_payment_info():
         "currency": "EGP"
     }
 
-@app.on_event("startup")
-async def expand_threadpool():
-    # كل sync endpoint/dependency بياخد ثريد من anyio (الافتراضي 40). تحت ضغط،
-    # طلب بيعدي الـ auth (transaction مفتوحة + اتصال DB محجوز) وبعدين يقف في
-    # طابور الثريدات ماسك الاتصال → الـ pool بيفضى والموقع يتجمد (انهيار 2026-07-21،
-    # 26 دقيقة). 120 ثريد > سعة الـ DB pool بهامش يمنع الطابور-وهو-ماسك-اتصال.
-    import anyio.to_thread
-    anyio.to_thread.current_default_thread_limiter().total_tokens = 120
-    logging.getLogger(__name__).info("✅ anyio threadpool capacity raised to 120")
-
-
-# ── Scheduler (recurring charges) ──────────────────────────
-try:
-    from app.scheduler import scheduler
-
-    @app.on_event("startup")
-    async def startup_scheduler():
-        scheduler.start()
-        logging.getLogger(__name__).info("✅ APScheduler started")
-
-    @app.on_event("shutdown")
-    async def shutdown_scheduler():
-        scheduler.shutdown()
-        logging.getLogger(__name__).info("🛑 APScheduler stopped")
-
-except Exception as e:
-    logging.getLogger(__name__).warning("⚠️ Scheduler not loaded: %s", e)
 # Force Reload
 
 # reload

@@ -8,6 +8,7 @@ Create Date: 2026-06-09 00:00:01.000000
 from typing import Sequence, Union
 
 from alembic import op
+from migration_utils import baseline_created_schema
 
 
 revision: str = "4c8b2a19e7d4"
@@ -17,6 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute(
         """
         DELETE FROM chat_message_reactions a
@@ -45,6 +50,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Predates ghawy_baseline: on a database built from that snapshot this
+    # change is already present, so there is nothing to apply.
+    if baseline_created_schema():
+        return
     op.execute("ALTER TABLE chat_message_reactions DROP CONSTRAINT IF EXISTS uq_chat_message_reaction_user")
     op.execute(
         """
