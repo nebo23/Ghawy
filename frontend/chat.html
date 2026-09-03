@@ -3162,7 +3162,13 @@
                     } else if (msg.event === 'connected') {
                         document.getElementById('onlineCount').textContent = msg.data.online_count + ' online';
                     } else if (msg.event === 'user_online' || msg.event === 'user_offline') {
-                        schedulePresenceRefresh();
+                        // The count now rides on the event; take it directly and
+                        // only fall back to the debounced refetch when it is
+                        // absent (an older backend). The DM list still needs the
+                        // refresh, so that part stays debounced either way.
+                        const oc = msg.data && msg.data.online_count;
+                        if (typeof oc === 'number') { applyPresenceCount(oc); scheduleDmRefresh(); }
+                        else schedulePresenceRefresh();
                     } else if (msg.event === 'new_post' && postMode) {
                         // Prepend new post to feed if we're viewing that channel
                         if (msg.data && msg.data.channel === currentChannel && msg.data.author && msg.data.author.id !== currentUserId) {
@@ -3343,11 +3349,30 @@
         }
 
         // ── Online Count ──
+        // Painting the count and fetching it are separate now: a presence event
+        // arrives carrying the number, so it can paint without a request.
+        function applyPresenceCount(n) {
+            const el = document.getElementById('onlineCount');
+            if (el) el.textContent = (n || 0) + ' online';
+        }
+
+        // The DM list still has to be refetched on a presence change — only the
+        // count rides on the event — so it keeps the 4s debounce that stopped
+        // the original storm.
+        let dmRefreshTimer = null;
+        function scheduleDmRefresh() {
+            clearTimeout(dmRefreshTimer);
+            dmRefreshTimer = setTimeout(() => {
+                if (document.hidden) return;
+                loadDmList();
+            }, 4000);
+        }
+
         async function fetchOnlineCount() {
             try {
                 const res = await apiFetch('/chat/online-count');
                 const data = await res.json();
-                document.getElementById('onlineCount').textContent = (data.online_count || 0) + ' online';
+                applyPresenceCount(data.online_count);
             } catch (e) { }
         }
 
@@ -5958,7 +5983,7 @@
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=20260903a"></script>
+    <script src="src/js/dashboard-new.js?v=20260903b"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

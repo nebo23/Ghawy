@@ -140,9 +140,18 @@ async def websocket_endpoint(websocket: WebSocket):
         # duplicate work on every open tab (13.7k /chat/dm/list calls in 30
         # minutes from 20 members, enough to sit on the rate limiter). One send
         # per connected user carries exactly the same information.
+        # The count rides along. Without it every receiving tab answered this
+        # event with a GET /chat/online-count, so one member connecting cost one
+        # request per open tab — O(N) per presence change, O(N squared) across a
+        # session. Measured on production: 27 online-count requests in 90s from
+        # a single idle dashboard, 24 of them one-for-one with these events and
+        # only 3 from the 30s interval. The server already knows the number.
         await manager.broadcast_to_all({
             "event": "user_online",
-            "data": {"user_id": user_id, "user_name": user_name}
+            "data": {
+                "user_id": user_id, "user_name": user_name,
+                "online_count": manager.get_online_count(),
+            }
         }, exclude_user=user_id)
 
         # Listen for messages — with periodic re-validation
@@ -238,7 +247,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 # teardown path no longer touches the DB at all.
                 await manager.broadcast_to_all({
                     "event": "user_offline",
-                    "data": {"user_id": user_id, "user_name": user_name}
+                    "data": {
+                        "user_id": user_id, "user_name": user_name,
+                        # Read after the disconnect, so it is the count the
+                        # receiver should now display.
+                        "online_count": manager.get_online_count(),
+                    }
                 })
             except Exception as cleanup_err:
                 logger.debug(f"WS cleanup error for user {user_id}: {cleanup_err}")
