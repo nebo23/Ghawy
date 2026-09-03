@@ -322,3 +322,36 @@ When you are ready:
 2. Confirm boot: threadpool at 120, six scheduler jobs, `GET /` → 200.
 3. **Then** run the cleanup script (B5), dry run first.
 4. Verify with the four commands in B5.
+
+---
+
+## B9. A parallel commit landed on the branch mid-phase
+
+While Phase 2 was running, another session pushed `3111ea7` ("Add in-app member
+campaigns to the team dashboard") to the same branch, so the first push was
+rejected. Nothing was forced. My two commits were rebased onto it and the result
+re-verified, because that commit touches two things Phase 1 and Phase 2 care
+about:
+
+**`backend/main.py`** was the only overlapping file. Git merged the two edits
+cleanly — their `announcements` router import and registration, my `lifespan`
+handler and `run_startup_seed()` — and the result parses and boots.
+
+**A new migration**, `a1c4e77b9d20_add_announcements.py`, sitting after
+`c9e1d3a7b542`. This is the first real test of the Phase 1 design against a
+post-baseline revision, and it behaves exactly as intended: it carries **no**
+baseline guard, which is correct — revisions written after `ghawy_baseline` must
+run on every database, fresh ones included.
+
+Re-verified on the merged tree, against isolated scratch databases:
+
+| Check | Result |
+|---|---|
+| `alembic heads` | one head, `a1c4e77b9d20` |
+| clean database → `upgrade head` | exit 0, 53 tables (50 baseline + `alembic_version` + marker + `announcements`) |
+| `announcements` created on a fresh database | yes — the new revision ran for real, it was not skipped |
+| production clone → `upgrade head` | one revision applied; **all pre-existing row counts identical**, `announcements` added empty |
+| app boots | `GET /` 200, `GET /guests/` `[]`, 253 routes registered |
+| seeding on the merged tree | `categories=4 channels=4 coupons=2 guests=0 courses=0` |
+
+Worth noting for later phases: the branch has more than one writer.
