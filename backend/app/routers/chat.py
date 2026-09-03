@@ -599,9 +599,16 @@ def join_channel(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
-    channel = db.query(Channel).filter(Channel.id == channel_id).first()
-    if not channel:
-        raise HTTPException(status_code=404, detail="Channel not found")
+    # The same gate the read and write paths use. This looked the channel up
+    # directly and made the caller a member of whatever id they sent, with no
+    # regard for its type — so POSTing a DM's id here minted the very membership
+    # row that ensure_channel_access accepts as proof of participation, and the
+    # caller could then read and post in someone else's conversation. Channel
+    # ids are sequential, so that was every DM on the platform.
+    #
+    # auto_join=False because the membership row is this endpoint's own job
+    # below; all that is wanted from the gate is its refusal.
+    ensure_channel_access(db, channel_id, current_user, auto_join=False)
 
     existing = db.query(ChatMember).filter(
         ChatMember.channel_id == channel_id,
