@@ -94,11 +94,17 @@ function anCardHTML(c) {
   const meta = anTypeMeta(c.type);
   const sent = c.status === 'sent';
 
+  // "sending" used to fall through to the draft branch, so a campaign that was
+  // mid-fan-out showed as "مسودة" until somebody refreshed. The send returns
+  // before the fan-out finishes now, so this state is the normal one to be in
+  // for a second or two — it needs its own badge.
   const statusBadge = sent
     ? `<span class="an-status-badge sent">اتبعتت</span>`
     : c.status === 'failed'
       ? `<span class="an-status-badge failed">فشلت</span>`
-      : `<span class="an-status-badge draft">مسودة</span>`;
+      : c.status === 'sending'
+        ? `<span class="an-status-badge sending">بتتبعت دلوقتي…</span>`
+        : `<span class="an-status-badge draft">مسودة</span>`;
 
   // Stats only mean something once it has gone out — a draft showing "0% read"
   // reads like a failure rather than "not sent yet".
@@ -405,10 +411,56 @@ async function anSend(mode) {
     showToast(`✅ ${data.message || 'اتبعتت'}`, 'success');
     anSetField('an-confirm', '');
     await loadAnnouncementsList();
-    if (mode === 'real') anBackToList();
+    if (mode === 'real') {
+      anBackToList();
+      // The request returns while the fan-out is still running, so the list we
+      // just loaded says "sending". Follow it until the worker finishes and
+      // repaint, instead of leaving the operator to guess and hit refresh.
+      anWatchSend(anCurrent.id);
+    }
   } catch (e) {
     showToast(`❌ ${e.message || 'الإرسال فشل'}`, 'error');
   } finally {
     anSending = false;
+  }
+}
+
+
+// ═══ SEND STATUS ═══
+
+// Polls one campaign until it stops being "sending". The status lives in the
+// database, so this survives the tab being reopened; what it cannot see is a
+// worker that died mid-send, which the endpoint reports as `stalled`.
+async function anWatchSend(id) {
+  if (!id) return;
+  const started = Date.now();
+  const TIMEOUT_MS = 10 * 60 * 1000;
+
+  while (Date.now() - started < TIMEOUT_MS) {
+    await new Promise(r => setTimeout(r, 1500));
+    let st;
+    try {
+      const res = await authFetch(`${API}/admin/announcements/${id}/status`);
+      if (!res.ok) return;
+      st = await res.json();
+    } catch (e) {
+      return;                       // a dropped poll is not worth an error toast
+    }
+
+    if (st.status !== 'sending') {
+      await loadAnnouncementsList();
+      if (st.status === 'sent') {
+        showToast(`✅ الحملة وصلت لـ ${st.delivered} عضو`, 'success');
+      } else if (st.status === 'failed') {
+        showToast('❌ الإرسال فشل — شوف اللوج', 'error');
+      }
+      return;
+    }
+
+    if (st.stalled) {               // status says sending, nothing is running
+      await loadAnnouncementsList();
+      showToast('⚠️ الإرسال وقف في النص — الحملة محتاجة مراجعة', 'error');
+      return;
+    }
   }
 }

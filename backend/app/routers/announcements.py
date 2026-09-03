@@ -20,6 +20,7 @@ Community Announcements — حملات جوّه المنصة، مش إيميل.
     يبقى أي حد معاه صلاحية الحملات يقدر يلزق أي id ويوصل لأي حد.
 """
 import re
+import asyncio
 import logging
 import threading
 from datetime import datetime
@@ -30,7 +31,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Integer, cast, func as sql_func
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import SessionLocal, get_db
 from app.models import Announcement, Notification, User
 from app.routers.users import get_current_user
 from app.services import audience as aud
@@ -45,8 +46,17 @@ CONFIRM_PHRASE = "GHAWY-OFFICIAL-SEND"
 ALLOWED_TYPES = {"info", "success", "warning", "promo"}
 PREVIEW_SAMPLE = 8
 
-# قفل: إرسالة حقيقية واحدة بس في نفس الوقت.
+# قفل: إرسالة حقيقية واحدة بس في نفس الوقت. بيتاخد في الريكوست وبيتفك في
+# الثريد اللي بيعمل الفان-آوت — الإرسال بيعيش بعد الريكوست دلوقتي.
+# gunicorn شغّال بـ workers=1، فالقفل ده فعلاً على مستوى التطبيق كله.
 _send_lock = threading.Lock()
+
+# صورة جوّه-البروسيس عن الإرسالة الشغّالة. عمود `status` هو المصدر الباقي بعد
+# أي restart؛ ده بيضيف "في ثريد شغّال عليها دلوقتي؟" — واللي بيسمح نفرّق بين
+# حملة بتتبعت وحملة الوركر وقع وهو بيبعتها. بيتكتب من ماسك القفل بس.
+_active_send: Dict[str, Any] = {
+    "running": False, "announcement_id": None, "total": 0, "started_at": None,
+}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -179,7 +189,23 @@ def _require_sendable(a: Announcement) -> None:
         raise HTTPException(status_code=400, detail="الحملة محتاجة عنوان ونص قبل الإرسال")
 
 
-async def _push_live(user_ids: List[int], notif_rows: List[Notification]) -> int:
+def _live_item(notif_id: int, user_id: int, a: Announcement) -> Dict[str, Any]:
+    """الحمولة اللي بتتبعت على الـ WebSocket — ديكشنري عادي، مش صف ORM.
+
+    مهم إنها dict: الإرسال الحقيقي بيحصل في ثريد، والـ push بيتنفّذ على الـ
+    event loop بتاع التطبيق. لو عدّينا صفوف ORM بين الاتنين كنا هنقرا من جلسة
+    اتقفلت في ثريد تاني.
+    """
+    return {
+        "user_id": user_id,
+        "data": {
+            "id": notif_id, "title": a.title, "body": a.body,
+            "type": a.type, "link": a.link, "is_read": False,
+        },
+    }
+
+
+async def _push_live(items: List[Dict[str, Any]]) -> int:
     """ابعت للأعضاء المتصلين دلوقتي عشان يشوفوها من غير ما يستنوا البولينج.
 
     بيتبعت للمتصلين بس — الباقي هيشوفها من الجرس خلال ٣٠ ثانية زي أي إشعار
@@ -187,21 +213,12 @@ async def _push_live(user_ids: List[int], notif_rows: List[Notification]) -> int
     مش طبقة تسليم.
     """
     pushed = 0
-    by_user = {n.user_id: n for n in notif_rows}
-    for uid in user_ids:
+    for item in items:
+        uid = item["user_id"]
         if not manager.is_online(uid):
             continue
-        n = by_user.get(uid)
-        if not n:
-            continue
         try:
-            await manager.send_personal(uid, {
-                "event": "notification",
-                "data": {
-                    "id": n.id, "title": n.title, "body": n.body,
-                    "type": n.type, "link": n.link, "is_read": False,
-                },
-            })
+            await manager.send_personal(uid, {"event": "notification", "data": item["data"]})
             pushed += 1
         except Exception:
             logger.debug("live push فشل لليوزر %s — الإشعار متسجّل برضه", uid)
@@ -380,6 +397,83 @@ def delete_announcement(
 #  Send
 # ══════════════════════════════════════════════════════════════
 
+def _run_real_send(announcement_id: int, user_ids: List[int], loop) -> None:
+    """الفان-آوت الحقيقي — بيشتغل في ثريد، مش جوّه الريكوست.
+
+    السبب هو نفس سبب حملات الإيميل بالحرف (شوف docstring بتاع
+    email_campaigns.py): nginx بيقطع أي ريكوست على `/api/` بعد ١٢٠ ثانية
+    (`proxy_read_timeout`)، وأي شغل طويل جوّه الـ event loop بيجمّد الموقع كله
+    مش الريكوست ده بس. على ١٩١٥ عضو الفان-آوت بيخلص في أقل من ثانية، فالمشكلة
+    مش دلوقتي — بس عند ٢٠ ألف عضو الريكوست ده بيبقى القنبلة.
+
+    الثريد ليه جلسة DB بتاعته: جلسة الريكوست بتتقفل أول ما الريكوست يرجّع.
+    """
+    db = SessionLocal()
+    now = datetime.utcnow()
+    try:
+        row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+        if not row:
+            logger.warning("📢 حملة #%s اختفت قبل ما الإرسال يبدأ", announcement_id)
+            return
+
+        # bulk_insert_mappings مش add_all: الـ add_all كان بيمسك صف ORM لكل عضو
+        # في الـ identity map عشان يرجّع الـ ids للـ live push. على ٢٠ ألف صف ده
+        # ذاكرة مدفوعة عشان حاجة محتاجينها للمتصلين بس — واللي بنقراهم تحت
+        # بـ SELECT واحد مفلتر عليهم هُمّ.
+        db.bulk_insert_mappings(Notification, [
+            {
+                "user_id": uid, "title": row.title, "body": row.body,
+                "type": row.type, "link": row.link,
+                "announcement_id": row.id, "is_read": False, "created_at": now,
+            }
+            for uid in user_ids
+        ])
+
+        row.status = "sent"
+        row.sent_at = now
+        row.recipients_count = len(user_ids)
+        db.commit()
+
+        # المتصلين بس هُمّ اللي محتاجين الـ id بتاعهم يترجع — الباقي هيشوفها من
+        # البولينج العادي، فمفيش داعي نقرا ٢٠ ألف id عشان نبعت لـ ٣٠ واحد.
+        online = [uid for uid in user_ids if manager.is_online(uid)]
+        pushed = 0
+        if online:
+            rows = (
+                db.query(Notification.id, Notification.user_id)
+                .filter(Notification.announcement_id == row.id,
+                        Notification.user_id.in_(online))
+                .all()
+            )
+            items = [_live_item(nid, uid, row) for nid, uid in rows]
+            try:
+                # الـ push لازم يتنفّذ على الـ loop بتاع التطبيق: الـ WebSockets
+                # عايشة هناك، والثريد ده مالوش loop.
+                pushed = asyncio.run_coroutine_threadsafe(_push_live(items), loop).result(timeout=60)
+            except Exception:
+                logger.exception("📢 حملة #%s: الـ live push فشل — الصفوف اتحفظت برضه", announcement_id)
+
+        logger.info("📢 حملة #%s اتبعتت لـ %s عضو (%s متصل دلوقتي)",
+                    announcement_id, len(user_ids), pushed)
+
+    except Exception:
+        logger.exception("📢 حملة #%s فشلت في الخلفية", announcement_id)
+        try:
+            db.rollback()
+            row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+            if row:
+                row.status = "failed"
+                db.commit()
+        except Exception:
+            logger.exception("📢 حملة #%s: مقدرناش نسجّل إنها failed", announcement_id)
+    finally:
+        db.close()
+        # الحالة الجوّه-بروسيس بتتصفّر قبل القفل ما يتفك، عشان أي بولينج جاي
+        # مايشوفش "بتتبعت" وهي خلصت.
+        _active_send.update(running=False, announcement_id=None, total=0, started_at=None)
+        _send_lock.release()
+
+
 @router.post("/{announcement_id}/send")
 async def send_announcement(
     announcement_id: int,
@@ -401,7 +495,8 @@ async def send_announcement(
         db.add(notif)
         db.commit()
         db.refresh(notif)
-        await _push_live([current_user.id], [notif])
+        # التست بيفضل synchronous: صف واحد، ومحدش مستني غير اللي ضغط.
+        await _push_live([_live_item(notif.id, current_user.id, row)])
         return {"mode": "test", "delivered": 1,
                 "message": "الحملة اتبعتت ليك إنت بس — شوفها في الجرس"}
 
@@ -415,53 +510,81 @@ async def send_announcement(
     if not _send_lock.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="في حملة بتتبعت دلوقتي — استنى لما تخلص")
 
+    # القفل بيتاخد هنا وبيتفك في الثريد، مش في الريكوست: الإرسال بيفضل شغّال
+    # بعد ما الريكوست يرجّع، فلو فكّيناه هنا تاني ضغطة كانت هتبدأ إرسالة موازية.
     try:
         filters = aud.load_filters(row.audience)
         users = aud.resolve_users(db, filters)
         if not users:
             raise HTTPException(status_code=400, detail="الفلتر ده مالوش أي عضو — عدّله وجرّب تاني")
 
+        user_ids = [u.id for u in users]
+
         row.status = "sending"
+        row.recipients_count = len(user_ids)
         db.commit()
-
-        # صفوف الإشعارات دفعة واحدة. بنعملها add_all عشان نرجّع الـ ids
-        # ونقدر نعمل live push — bulk_insert_mappings أسرع بس مابيرجّعش ids.
-        notifs = [
-            Notification(
-                user_id=u.id, title=row.title, body=row.body,
-                type=row.type, link=row.link,
-                announcement_id=row.id, is_read=False,
-            )
-            for u in users
-        ]
-        db.add_all(notifs)
-
-        row.status = "sent"
-        row.sent_at = datetime.utcnow()
-        row.recipients_count = len(users)
-        db.commit()
-
-        pushed = await _push_live([u.id for u in users], notifs)
-        logger.info("📢 حملة #%s اتبعتت لـ %s عضو (%s متصل دلوقتي) بواسطة user_id=%s",
-                    row.id, len(users), pushed, current_user.id)
-
-        return {"mode": "real", "delivered": len(users), "pushed_live": pushed,
-                "message": f"اتبعتت لـ {len(users)} عضو"}
-
-    except HTTPException:
-        db.rollback()
-        row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
-        if row and row.status == "sending":
-            row.status = "draft"
-            db.commit()
-        raise
     except Exception:
-        db.rollback()
-        logger.exception("📢 حملة #%s فشلت", announcement_id)
-        row = db.query(Announcement).filter(Announcement.id == announcement_id).first()
-        if row:
-            row.status = "failed"
-            db.commit()
-        raise HTTPException(status_code=500, detail="الإرسال فشل — الحملة اترجّعت لحالة failed")
-    finally:
-        _send_lock.release()
+        # أي فشل قبل ما الثريد يقوم لازم يفك القفل هنا — مفيش حد تاني هيفكّه.
+        # الـ finally حوالين محاولة الإصلاح مقصود: لو الـ rollback نفسه رمى،
+        # القفل لازم يتفك برضه وإلا التاب بيقفل على 409 للأبد.
+        try:
+            db.rollback()
+            stuck = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+            if stuck and stuck.status == "sending":
+                stuck.status = "draft"
+                db.commit()
+        except Exception:
+            logger.exception("📢 حملة #%s: مقدرناش نرجّعها draft بعد فشل البداية", announcement_id)
+        finally:
+            _send_lock.release()
+        raise
+
+    _active_send.update(running=True, announcement_id=row.id, total=len(user_ids),
+                        started_at=datetime.utcnow().isoformat())
+
+    threading.Thread(
+        target=_run_real_send,
+        args=(row.id, user_ids, asyncio.get_running_loop()),
+        name=f"announcement-send-{row.id}",
+        daemon=True,
+    ).start()
+
+    logger.info("📢 حملة #%s بدأت الإرسال لـ %s عضو بواسطة user_id=%s",
+                row.id, len(user_ids), current_user.id)
+
+    # بيرجّع على طول والحالة لسه "sending" — التاب بيـ poll الحالة تحت.
+    return {"mode": "real", "started": True, "delivered": len(user_ids),
+            "status": "sending",
+            "message": f"بدأ الإرسال لـ {len(user_ids)} عضو في الخلفية"}
+
+
+@router.get("/{announcement_id}/status")
+def send_status(
+    announcement_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """حالة الإرسال — عشان التاب يفرّق بين حملة بتتبعت دلوقتي وحملة واقفة.
+
+    عمود `status` في الداتابيز هو المصدر اللي بيعيش بعد أي restart؛ و
+    `sending_active` بيقول إن في ثريد فعلاً شغّال عليها في اللحظة دي. الاتنين
+    مع بعض بيمسكوا الحالة الوحيدة اللي الـ status لوحده مش بيوصفها: "sending"
+    من غير ثريد شغّال يبقى الوركر وقع في نص الإرسال.
+    """
+    require_permission(current_user, "announcements")
+    row = _get_or_404(db, announcement_id)
+    delivered = (
+        db.query(sql_func.count(Notification.id))
+        .filter(Notification.announcement_id == row.id)
+        .scalar()
+    ) or 0
+    active = bool(_active_send["running"] and _active_send["announcement_id"] == row.id)
+    return {
+        "id": row.id,
+        "status": row.status,
+        "sending_active": active,
+        "recipients_count": row.recipients_count or 0,
+        "delivered": delivered,
+        "sent_at": row.sent_at,
+        "stalled": bool(row.status == "sending" and not active),
+    }

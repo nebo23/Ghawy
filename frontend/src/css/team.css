@@ -2581,6 +2581,14 @@
     color: #ef4444;
 }
 
+/* Mid-fan-out. The send request returns before the worker finishes, so this is
+   a normal transient state now rather than a stuck one, and it should not read
+   like the grey "draft" it used to fall through to. */
+.an-status-badge.sending {
+    background: rgba(63, 143, 249, .14);
+    color: #3f8ff9;
+}
+
 /* ── Editor ── */
 .an-editor-grid {
     display: grid;
