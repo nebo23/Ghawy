@@ -644,7 +644,7 @@
      * other, and the role line has to be the short version.
      */
     function cardInstructorHTML(inst) {
-        if (!inst) return '<span></span>';   // keeps the runtime on its own edge
+        if (!inst) return '<span></span>';   // keeps the row (and its seam) in shape
         const role = inst.roleShort || inst.role;
         return `
             <a class="gc-inst" href="/instructors?i=${encodeURIComponent(inst.slug)}">
@@ -661,10 +661,12 @@
      * an instructor's page. There is never a second copy.
      *
      * The layout came from a reference the client sent: a green band across
-     * the top, a big title, and one row under it with the instructor on one
-     * side and the runtime on the other. That reference was a white card and
-     * the card was built white; the client then asked for the surface to go
-     * back to dark like the rest of the site.
+     * the top, a big title, and the numbers under it. The band is gone and the
+     * numbers have since split into two rows — the lesson count and the
+     * runtime on opposite edges, then the instructor under a hairline seam —
+     * but the shape is otherwise the reference's. That reference was a white
+     * card and the card was built white; the client then asked for the surface
+     * to go back to dark like the rest of the site.
      *
      * What the white surface was solving — "the green is taking everything" —
      * is still solved without it: the band and the clock icon are the only
@@ -719,6 +721,22 @@
             ? SOON
             : (mins ? hoursWord(Math.round(mins / 60)) : { ar: course.duration, en: course.duration });
 
+        // "10 دروس" — the count and its Arabic plural come out of lessonsWord()
+        // as ONE string, so nothing below splits them; the chip's flex `gap`
+        // only ever separates the icon from the label, and mirrors itself with
+        // the document direction.
+        // An unreleased course has no lesson count at all — that absence is
+        // part of what isSoon() reads — so its slot renders as an empty span
+        // rather than a second "قريباً". `space-between` then keeps the runtime
+        // chip on exactly the edge it occupies on every other card in the grid.
+        const lessons = (!soon && course.lessons) ? lessonsWord(course.lessons) : null;
+        const lessonChip = lessons
+            ? `<span class="gc-stat">
+                    <span class="gc-stat-ico"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
+                    <span ${i18nAttrs(lessons)}>${esc(L(lessons))}</span>
+                </span>`
+            : '<span></span>';
+
         const btn = soon
             ? `<span class="gc-btn gc-btn-soon" aria-disabled="true"
                      ${i18nAttrs(SOON)}>${esc(L(SOON))}</span>`
@@ -729,12 +747,15 @@
         ${courseMediaHTML(course, href)}
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
-            <div class="gc-meta">
-                ${cardInstructorHTML(inst)}
-                <span class="gc-hours${soon ? ' gc-hours-soon' : ''}">
-                    <i class="fa-regular fa-${soon ? 'hourglass-half' : 'clock'}" aria-hidden="true"></i>
+            <div class="gc-stats">
+                ${lessonChip}
+                <span class="gc-stat gc-hours${soon ? ' gc-hours-soon' : ''}">
+                    <span class="gc-stat-ico"><i class="fa-regular fa-${soon ? 'hourglass-half' : 'clock'}" aria-hidden="true"></i></span>
                     <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
                 </span>
+            </div>
+            <div class="gc-meta">
+                ${cardInstructorHTML(inst)}
             </div>
             ${btn}
         </div>
@@ -1038,9 +1059,12 @@
         <div class="gc-media gc-sk"></div>
         <div class="gc-body">
             <div class="gc-sk gc-sk-line gc-sk-title"></div>
+            <div class="gc-sk-stats">
+                <div class="gc-sk gc-sk-chip"></div>
+                <div class="gc-sk gc-sk-chip"></div>
+            </div>
             <div class="gc-sk-meta">
                 <div class="gc-sk gc-sk-inst"></div>
-                <div class="gc-sk gc-sk-line gc-sk-short"></div>
             </div>
             <div class="gc-sk gc-sk-btn"></div>
         </div>

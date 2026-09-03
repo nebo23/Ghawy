@@ -5784,10 +5784,11 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     align-items: stretch;
 }
 
-/* The card's layout came from a reference the client sent: a big title, and
-   the instructor and the runtime on opposite edges of one row. The reference
-   was white and the card was built white; the client then asked for the
-   surface to go back to dark like the rest of the site.
+/* The card's layout came from a reference the client sent: a big title, then
+   the lesson count and the runtime on opposite edges of one row, then the
+   instructor under a hairline seam. The reference was white and the card was
+   built white; the client then asked for the surface to go back to dark like
+   the rest of the site.
    Going dark does NOT mean going back to the card before all this. That one
    had a green glow on hover, a green-tinted thumbnail, a green-filled button
    and a green avatar, which is what "the green is taking everything" was
@@ -5798,11 +5799,38 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
 .gc-card {
     display: flex;
     flex-direction: column;
-    background: var(--bg-card);
+    /* Two soft directional washes over the card surface, so it catches light
+       from the top-left instead of sitting as one flat slab next to its
+       neighbours. Both layers are semi-transparent: --bg-card stays as the
+       LAST layer, because a background stack has no opaque backstop of its own
+       and dropping it would let the section behind show straight through. */
+    background:
+        linear-gradient(189deg, rgb(0 0 0 / 5%), rgba(255, 255, 255, .015)),
+        linear-gradient(238deg, rgb(0 0 0 / 14%), rgba(255, 255, 255, .04)),
+        var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* The card follows the PAGE's direction, not its section's.
+   `.premium-courses-section` sets `direction: rtl` unconditionally (see it
+   further up), which is right for the Arabic default and wrong once the site
+   is switched to English: it left the runtime chip reading "hours 12" instead
+   of "12 hours" and pinned the instructor to the right edge of an English
+   card. Everything inside .gc-card is written with logical properties and
+   `space-between`, so it mirrors correctly the moment `direction` is honest —
+   that is the whole reason there is not a single left/right rule in here.
+   Deliberately scoped to the card and not to the section: the section's
+   header, filters and headings were laid out under that rtl and are not this
+   change's business. */
+html[dir="ltr"] .gc-card {
+    direction: ltr;
+}
+
+html[dir="rtl"] .gc-card {
+    direction: rtl;
 }
 
 .gc-card:hover {
@@ -5855,14 +5883,70 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     color: var(--white);
 }
 
-/* Instructor on one edge, runtime on the other. `space-between` on a flex row
-   mirrors itself with the document direction, so this needs no [dir] rule —
-   in Arabic the instructor lands on the right and the clock on the left. */
+/* Lesson count on one edge, runtime on the other. `space-between` on a flex
+   row mirrors itself with the document direction, so this needs no [dir] rule
+   — in Arabic the lessons land on the right and the clock on the left. The
+   same reasoning as .gc-meta below, and the reason neither uses a margin. */
+.gc-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* One chip: a 24px icon square, then the label. `gap` is what separates them
+   — a margin would sit on the wrong side in Arabic. The count and its Arabic
+   plural ("درس واحد" / "درسين" / "10 دروس") arrive from lessonsWord() as a
+   single string, so nothing here splits them and the space between number and
+   word is the string's own in both languages.
+   Padding is deliberately tighter than the members' area .cc-pill this borrows
+   its shape from: seven of these down a public grid, at 0.8rem, should read as
+   quiet metadata rather than as buttons. */
+.gc-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding-block: 4px;
+    padding-inline: 5px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--muted-light);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* A plain 24px square holding the glyph — no border of its own. The chip is
+   already a bordered box; a second outline 5px inside it reads as a rendering
+   mistake at this size. */
+.gc-stat-ico {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(193, 255, 17, 0.1);
+    color: var(--gold);
+    font-size: 0.8rem;
+}
+
+/* Instructor on its own row under the stats. `space-between` for the same
+   mirroring reason as .gc-stats above.
+   The top border is the seam between the two rows. --border (0.08), not the
+   0.16 used under .gc-media: that one has to stay legible against a near-black
+   thumbnail, this one separates two text rows on the same surface and belongs
+   at the same weight as the card's own edge. */
 .gc-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    border-block-start: 1px solid var(--border);
+    padding-block-start: 16px;
 }
 
 /* Photo then name, in that order in the markup, so the row reads correctly in
@@ -5930,18 +6014,11 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
+/* The runtime chip. Everything visual lives on .gc-stat now — this class stays
+   because `.gc-hours span { unicode-bidi: isolate }` further up and the
+   `.gc-hours-soon` tint at the end of the file both hang off it. */
 .gc-hours {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
     flex-shrink: 0;
-    color: var(--muted-light);
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.gc-hours i {
-    color: var(--gold);
 }
 
 /* Pushed to the bottom so the button sits on one line across the row even
@@ -6002,12 +6079,29 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     background: none;
 }
 
-/* Mirrors `.gc-meta` so the skeleton has the real card's height. */
+/* Mirrors `.gc-stats` — the row of two chips above the instructor. */
+.gc-sk-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.gc-sk-chip {
+    width: 34%;
+    height: 32px;
+    border-radius: 10px;
+}
+
+/* Mirrors `.gc-meta` so the skeleton has the real card's height — including
+   the seam and the space under it, or the grid jumps when the cards land. */
 .gc-sk-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    border-block-start: 1px solid var(--border);
+    padding-block-start: 16px;
 }
 
 .gc-sk-line {
@@ -9419,8 +9513,11 @@ html[dir="ltr"] .hero-stats-cards {
     opacity: 0.95;
 }
 
-.gc-hours-soon i {
+/* The glyph's colour is set on the 24px square now, so the soon tint has to
+   land there — on the <i> alone it would lose to .gc-stat-ico's gold. */
+.gc-hours-soon .gc-stat-ico {
     color: inherit;
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* The disabled "محتوى الكورس". Same box as the real button so the row of
