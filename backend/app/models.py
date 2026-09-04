@@ -472,6 +472,18 @@ class CommentReaction(Base):
 
 class Channel(Base):
     __tablename__ = "channels"
+    # Name matches migration d1e4f7a2b9c3 exactly, so the model and the live
+    # schema describe the same object.
+    #
+    # A DM channel's name is machine-generated (`dm_{low}_{high}`) and IS the
+    # identity of the pair — the guarantee that two people have one conversation
+    # rested on application code alone until this index. Partial on purpose:
+    # group channels are a different question with different rules, and "two
+    # groups may not share a name" is a product decision nobody has made.
+    __table_args__ = (
+        Index("uq_channels_dm_name", "name", unique=True,
+              postgresql_where=text("channel_type = 'DM'")),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)

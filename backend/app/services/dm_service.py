@@ -23,6 +23,9 @@ import logging
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from sqlalchemy import text as sa_text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Channel, ChannelType, ChatMember, MemberRole
@@ -62,13 +65,32 @@ def get_or_create_dm_channel(db: Session, user_a_id: int, user_b_id: int) -> Tup
 
     ch = Channel(name=dm_channel_name(user_a_id, user_b_id), channel_type=ChannelType.DM)
     db.add(ch)
-    db.commit()
+
+    # القناة وعضويّتها بيتحفظوا مع بعض في ترانزاكشن واحد.
+    #
+    # قبل كده كان فيه `commit` بين الاتنين: القناة تتحفظ، وبعدين الأعضاء
+    # يتضافوا ويتحفظوا. أي حاجة تقطع بينهم — ريستارت، خطأ، الوركر يتقفل — كانت
+    # بتسيب قناة موجودة ومحدش فيها، ومحدش بياخد باله لأنها مش بتظهر لحد. في
+    # الإنتاج دلوقتي ٦ قنوات من غير أي عضو و٢٣ بعضو واحد بس (F-35)، وده شكلها
+    # بالظبط. الـ flush بيجيب الـ id من غير ما يقفل الترانزاكشن، فالاتنين
+    # بيروحوا سوا أو مابيروحوش.
+    try:
+        db.flush()
+        db.add(ChatMember(channel_id=ch.id, user_id=user_a_id, role=MemberRole.MEMBER))
+        db.add(ChatMember(channel_id=ch.id, user_id=user_b_id, role=MemberRole.MEMBER))
+        db.commit()
+    except IntegrityError:
+        # `uq_channels_dm_name` اشتغل: حد تاني عمل نفس القناة في نفس اللحظة —
+        # عضو فتح المحادثة وإحنا في نص فان-أوت، وده مسار مالوش قفل. ده مش
+        # فشل: المطلوب اتعمل، بس مش إحنا اللي عملناه. بنرجع القناة بتاعته.
+        db.rollback()
+        existing = find_dm_channel(db, user_a_id, user_b_id)
+        if existing is None:
+            raise
+        logger.info("سباق على قناة DM %s — استخدمنا الموجودة", existing.name)
+        return existing, False
+
     db.refresh(ch)
-
-    db.add(ChatMember(channel_id=ch.id, user_id=user_a_id, role=MemberRole.MEMBER))
-    db.add(ChatMember(channel_id=ch.id, user_id=user_b_id, role=MemberRole.MEMBER))
-    db.commit()
-
     manager.subscribe(user_a_id, [ch.id])
     manager.subscribe(user_b_id, [ch.id])
     return ch, True
@@ -98,9 +120,10 @@ def ensure_dm_channels(db: Session, sender_id: int,
         return {}
 
     names = list(set(wanted.values()))
-    # `channels.name` مش unique في السكيمة، فممكن نظرياً يرجع أكتر من صف لنفس
-    # الاسم. بناخد الأقدم (أصغر id) — نفس اللي `.first()` بيعمله في مسار الزوج
-    # الواحد، عشان الاتنين يوصلوا لنفس القناة.
+    # بناخد الأقدم (أصغر id) — نفس اللي `.first()` بيعمله في مسار الزوج الواحد،
+    # عشان الاتنين يوصلوا لنفس القناة. بقى `uq_channels_dm_name` بيضمن إن مفيش
+    # غير صف واحد أصلاً (migration d1e4f7a2b9c3)، بس الترتيب باقي: الاندكس
+    # اتضاف بعد ما الكود ده اتكتب، ومفيش سبب نشيل حزام كان شغّال.
     by_name: Dict[str, int] = {}
     for cid, cname in (
         db.query(Channel.id, Channel.name)
@@ -113,26 +136,52 @@ def ensure_dm_channels(db: Session, sender_id: int,
     missing = [n for n in names if n not in by_name]
     if missing:
         now = datetime.utcnow()
-        db.bulk_insert_mappings(Channel, [
-            {"name": n, "channel_type": ChannelType.DM, "created_at": now}
-            for n in missing
-        ])
-        db.flush()
-        for cid, cname in (
-            db.query(Channel.id, Channel.name)
-            .filter(Channel.name.in_(missing), Channel.channel_type == ChannelType.DM)
-            .order_by(Channel.id.asc())
-            .all()
-        ):
-            by_name.setdefault(cname, cid)
 
-        # العضويات للقنوات الجديدة بس. القنوات القديمة أطرافها موجودة خلاص،
-        # وإضافة صف تاني كانت هتعمل عضوية مكررة.
-        new_ids = [by_name[n] for n in missing if n in by_name]
+        # `ON CONFLICT DO NOTHING` مش تزيين: من غيره الفان-أوت بيقع لو عضو فتح
+        # محادثة مع المرسِل بين الـ SELECT اللي فوق والـ INSERT ده. القفل
+        # (`_send_lock`) بيمنع فان-أوتين يتصادموا، لكنه مايقدرش يمنع العضو —
+        # ده فعل بتاعه هو ومفيش قفل عليه. مع `uq_channels_dm_name` النتيجة كانت
+        # هتبقى IntegrityError توقّف الحملة كلها في نصها.
+        #
+        # و`RETURNING` هنا مش رفاهية: هو اللي بيقول لنا **إحنا** عملنا أنهي
+        # صفوف بالظبط. مع ON CONFLICT DO NOTHING الـ RETURNING بيرجّع اللي
+        # اتكتب فعلاً بس — القناة اللي حد تاني كسب السباق عليها مش بترجع. وده
+        # الفرق اللي العضويات تحت بتعتمد عليه: لو اعتبرنا كل اسم في `missing`
+        # قناة جديدة، القناة اللي اتعملت برّه (وأطرافها اتحطوا فيها خلاص) كانت
+        # هتاخد صف عضوية تاني لنفس الشخصين.
+        created: Dict[str, int] = {}
+        for cid, cname in db.execute(
+            pg_insert(Channel.__table__)
+            .values([{"name": n, "channel_type": ChannelType.DM, "created_at": now}
+                     for n in missing])
+            .on_conflict_do_nothing(index_elements=["name"],
+                                    index_where=sa_text("channel_type = 'DM'"))
+            .returning(Channel.__table__.c.id, Channel.__table__.c.name)
+        ).fetchall():
+            created[cname] = cid
+        by_name.update(created)
+
+        # اللي طلب يتعمل ومارجعش من الـ RETURNING = حد تاني عمله في نفس اللحظة.
+        # محتاجين الـ id بتاعه عشان نبعت فيه، بس **مش** محتاجين نضيف عضويات —
+        # اللي عمله ضافهم.
+        raced = [n for n in missing if n not in created]
+        if raced:
+            for cid, cname in (
+                db.query(Channel.id, Channel.name)
+                .filter(Channel.name.in_(raced), Channel.channel_type == ChannelType.DM)
+                .order_by(Channel.id.asc())
+                .all()
+            ):
+                by_name.setdefault(cname, cid)
+            logger.info("سباق على %d قناة DM في نص الفان-أوت — استخدمنا الموجود",
+                        len(raced))
+
+        # العضويات للقنوات اللي إحنا عملناها بس. القنوات القديمة أطرافها موجودة
+        # خلاص، وإضافة صف تاني كانت هتعمل عضوية مكررة.
         rows: List[dict] = []
-        rid_by_channel = {by_name[name]: rid for rid, name in wanted.items() if name in by_name}
-        for cid in new_ids:
-            rid = rid_by_channel.get(cid)
+        rid_by_name = {name: rid for rid, name in wanted.items()}
+        for cname, cid in created.items():
+            rid = rid_by_name.get(cname)
             if rid is None:
                 continue
             rows.append({"channel_id": cid, "user_id": int(sender_id),
