@@ -1557,13 +1557,20 @@ def list_recipients(
     require_permission(current_user, "announcements")
     row = _get_or_404(db, announcement_id)
 
+    # نفس قاعدة منتقي الأعضاء بالحرف (شوف `search_members` فوق): الإيميل
+    # مابيترجعش من غير صلاحية `member-contacts`، **والبحث بيه كمان مابيشتغلش**.
+    # الدرج ده كان الباب الوحيد اللي مابيسألش السؤال ده، فكان بيلغي الصلاحية:
+    # حد معاه `announcements` بس من غير `member-contacts` كان يقدر يعدّي على
+    # حملاته ويسحب إيميل كل عضو استلمها.
+    sees_contacts = has_permission(current_user, "member-contacts")
+
     if (row.delivery or "bell") == "dm":
-        return _recipients_dm(db, row, state, search, limit, offset)
-    return _recipients_bell(db, row, state, search, limit, offset)
+        return _recipients_dm(db, row, state, search, limit, offset, sees_contacts)
+    return _recipients_bell(db, row, state, search, limit, offset, sees_contacts)
 
 
 def _recipients_bell(db: Session, row: Announcement, state: str, search: Optional[str],
-                     limit: int, offset: int) -> Dict[str, Any]:
+                     limit: int, offset: int, sees_contacts: bool) -> Dict[str, Any]:
     base = (
         db.query(Notification, User)
         .join(User, User.id == Notification.user_id)
@@ -1578,7 +1585,10 @@ def _recipients_bell(db: Session, row: Announcement, state: str, search: Optiona
     term = (search or "").strip()
     if term:
         like = f"%{term}%"
-        base = base.filter(or_(User.full_name.ilike(like), User.email.ilike(like)))
+        conditions = [User.full_name.ilike(like)]
+        if sees_contacts:
+            conditions.append(User.email.ilike(like))
+        base = base.filter(or_(*conditions))
 
     total = base.with_entities(sql_func.count(Notification.id)).scalar() or 0
 
@@ -1601,6 +1611,7 @@ def _recipients_bell(db: Session, row: Announcement, state: str, search: Optiona
     return {
         "announcement_id": row.id,
         "delivery": "bell",
+        "sees_contacts": sees_contacts,
         "total": total,
         "delivered": read_count + unread_count,
         "read": read_count,
@@ -1612,7 +1623,7 @@ def _recipients_bell(db: Session, row: Announcement, state: str, search: Optiona
             {
                 "user_id": u.id,
                 "full_name": u.full_name,
-                "email": u.email,
+                "email": u.email if sees_contacts else None,
                 "avatar_url": u.avatar_url,
                 "is_read": bool(n.is_read),
                 "sent_at": n.created_at,
@@ -1623,7 +1634,7 @@ def _recipients_bell(db: Session, row: Announcement, state: str, search: Optiona
 
 
 def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[str],
-                   limit: int, offset: int) -> Dict[str, Any]:
+                   limit: int, offset: int, sees_contacts: bool) -> Dict[str, Any]:
     """نفس الشكل، بس مقروء من الرسايل وإيصالات قراءتها.
 
     "اتقرت" = فيه صف `MessageRead` من العضو (مش من المرسِل) على الرسالة —
@@ -1652,7 +1663,10 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
     term = (search or "").strip()
     if term:
         like = f"%{term}%"
-        base = base.filter(or_(User.full_name.ilike(like), User.email.ilike(like)))
+        conditions = [User.full_name.ilike(like)]
+        if sees_contacts:
+            conditions.append(User.email.ilike(like))
+        base = base.filter(or_(*conditions))
 
     total = base.with_entities(sql_func.count(Message.id)).scalar() or 0
 
@@ -1677,6 +1691,7 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
     return {
         "announcement_id": row.id,
         "delivery": "dm",
+        "sees_contacts": sees_contacts,
         "total": total,
         "delivered": read_count + unread_count,
         "read": read_count,
@@ -1688,7 +1703,7 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
             {
                 "user_id": u.id,
                 "full_name": u.full_name,
-                "email": u.email,
+                "email": u.email if sees_contacts else None,
                 "avatar_url": u.avatar_url,
                 "is_read": bool(is_read),
                 "sent_at": m.created_at,
