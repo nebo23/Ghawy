@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/6.5.0/css/all.min.css?v=650" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=31" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260903h" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260904a" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -2189,6 +2189,14 @@
                     <textarea id="an-body" class="an-textarea" rows="4"
                               placeholder="اكتب رسالتك للأعضاء..." oninput="anRenderPreview()"></textarea>
 
+                    <!-- التوكن مالوش لازمة لو محدش عارف إنه موجود. الزرار
+                         بيلزقه في النص وبيشغّل المعاينة على طول، فالمشغّل بيشوف
+                         نتيجته على عضو حقيقي قبل ما يسأل هي بتعمل إيه. -->
+                    <div class="an-token-hint">
+                      <button type="button" class="an-token-btn" onclick="anInsertNameToken()">{{name}}</button>
+                      <span>حطها في العنوان أو النص وهتتبدل باسم كل عضو الأول — معرّب لو عرفناه، وإلا زي ما هو، وإلا «صديقنا».</span>
+                    </div>
+
                     <div class="an-row2">
                       <div>
                         <label class="an-label">النوع</label>
@@ -2315,6 +2323,9 @@
                     <div class="an-audience-box" id="an-audience-box">
                       <div class="an-aud-count"><span id="an-aud-count">—</span></div>
                       <div class="an-aud-sub" id="an-aud-sub">اضبط الفلاتر عشان نحسب الجمهور</div>
+                      <!-- كام واحد من دول مش هيتنادى باسمه بالعربي. بيظهر لما
+                           الحملة تبقى فيها {{name}} بس — غير كده مالوش معنى. -->
+                      <div class="an-aud-names" id="an-aud-names" style="display:none"></div>
                       <div class="an-aud-sample" id="an-aud-sample"></div>
                     </div>
                   </div>
@@ -3108,7 +3119,7 @@
     <script src="src/js/dashboard-new.js?v=20260903b"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/team.js?v=20260903b"></script>
-  <script src="src/js/team-announcements.js?v=20260903h"></script>
+  <script src="src/js/team-announcements.js?v=20260904a"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

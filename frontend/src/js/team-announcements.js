@@ -39,6 +39,11 @@ let anAudMode = 'filter';  // 'filter' | 'picked'
 let anPicked = [];         // hand-picked members: {id, full_name, email, ...}
 let anPickTimer = null;
 let anPickSeesContacts = false;
+// Last `personalization` block from the audience preview. The composer preview
+// re-renders on every keystroke; the audience query is debounced. Holding the
+// last answer here lets the preview resolve {{name}} against a REAL member
+// without firing a query per character.
+let anPersonal = null;
 
 // List paging/search state. The list used to be an unpaged `.limit(200)`,
 // which is fine right up until campaign 201 disappears without anybody being
@@ -252,7 +257,13 @@ function anCardHTML(c) {
   const reason = (c.status === 'failed' && c.failure_reason)
     ? `<div class="an-card-reason">${escapeHtml(c.failure_reason)}</div>` : '';
 
-  const actions = sent
+  // A campaign mid-fan-out gets no buttons (F-29). Edit is already refused by
+  // the server with a 400; delete was not, and offering it here meant offering
+  // an action that would report a lie in the log and nothing at all to the
+  // operator. The server refuses both now — this stops the card asking.
+  const actions = c.status === 'sending'
+    ? `<span class="an-card-busy"><i data-lucide="loader" style="width:12px;height:12px;"></i> بتتبعت… استنى لما تخلص</span>`
+    : sent
     ? `<button class="an-mini" onclick="anOpenRecipients(${c.id})"><i data-lucide="users" style="width:13px;height:13px;"></i> مين استلمها</button>
        <button class="an-mini" onclick="anDuplicate(${c.id})"><i data-lucide="copy" style="width:13px;height:13px;"></i> نسخة</button>`
     : c.status === 'scheduled'
@@ -505,15 +516,92 @@ function anReadForm() {
 // utils.js in bell mode, a chat bubble in DM mode. Approving a preview of the
 // wrong surface is the same as not previewing at all.
 
+// ═══ {{name}} ═══
+//
+// One token. It resolves through the same chain the server sends with —
+// `name_utils.arabic_first_name` — which is why the preview cannot promise
+// something the send does not deliver: the NAME shown here came back from the
+// server already resolved, against a member actually in this audience.
+//
+// These mirror the server's `_NAME_TOKEN_RE` exactly (optional inner spaces,
+// case-insensitive). If one changes, the others must.
+//
+// Two of them, and not by accident: `.test()` on a /g/ regex advances
+// `lastIndex` and returns false on the very next identical call. Sharing one
+// object between the test and the replace would make the preview show the
+// token on every other keystroke.
+const AN_NAME_TOKEN_G = /\{\{\s*name\s*\}\}/gi;   // replace
+const AN_NAME_TOKEN = /\{\{\s*name\s*\}\}/i;      // test
+
+function anHasNameToken(f) {
+  return AN_NAME_TOKEN.test(`${f.title || ''}\n${f.body || ''}`);
+}
+
+// Substitution happens on the RAW text, then the result is escaped as one
+// string — so a resolved name is escaped exactly like the words around it.
+// Escaping first and substituting after would drop a live name into finished
+// HTML, which is the bug this ordering exists to prevent.
+function anFillName(text, name) {
+  return String(text || '').replace(AN_NAME_TOKEN_G, name);
+}
+
+// Insert at the caret in whichever field the operator last had focus in,
+// falling back to the body. Appending blindly to the end would drop the token
+// somewhere they did not mean and make the button feel broken.
+function anInsertNameToken() {
+  const active = document.activeElement;
+  const el = (active && (active.id === 'an-title' || active.id === 'an-body'))
+    ? active
+    : document.getElementById('an-body');
+  if (!el) return;
+
+  const start = el.selectionStart == null ? el.value.length : el.selectionStart;
+  const end = el.selectionEnd == null ? el.value.length : el.selectionEnd;
+  el.value = el.value.slice(0, start) + '{{name}}' + el.value.slice(end);
+  const caret = start + '{{name}}'.length;
+  el.focus();
+  try { el.setSelectionRange(caret, caret); } catch (e) { /* not all inputs support it */ }
+  anRenderPreview();
+}
+
+function anPreviewName(which) {
+  const p = anPersonal;
+  const s = p && (which === 'unresolved' ? p.sample_unresolved : p.sample_named);
+  // No audience resolved yet (or nobody in it): show the token rather than
+  // invent a member. A made-up example is worse than an honest gap — it is the
+  // hardcoded name this feature exists to avoid.
+  return s ? s.resolved : null;
+}
+
 function anRenderPreview() {
   const box = document.getElementById('an-preview');
   if (!box) return;
-  const f = anReadForm();
+  let f = anReadForm();
   const meta = anTypeMeta(f.type);
+
+  // Rendered from here so that typing {{name}} into the title or body updates
+  // the line under the audience count too — those inputs call this function
+  // and nothing else, and a coverage line that only refreshes when a FILTER
+  // changes would sit there stale while the operator edits the very text it
+  // describes.
+  anRenderNameCoverage();
 
   if (!f.title.trim() && !f.body.trim()) {
     box.innerHTML = '<div class="an-preview-empty">اكتب العنوان والنص عشان تشوف المعاينة</div>';
     return;
+  }
+
+  // {{name}} is resolved BEFORE the surface is drawn, so what follows renders
+  // the finished text — the same string the member's row will hold. The second
+  // card (the member whose name does not arabise) is drawn after it.
+  const raw = f;                      // pre-substitution, for the example below
+  const personalized = anHasNameToken(f);
+  const shownName = personalized ? anPreviewName('named') : null;
+  if (personalized && shownName) {
+    f = Object.assign({}, f, {
+      title: anFillName(f.title, shownName),
+      body: anFillName(f.body, shownName),
+    });
   }
 
   if (f.delivery === 'dm') {
@@ -527,7 +615,7 @@ function anRenderPreview() {
           ${f.link ? `<div class="an-dm-gap"></div><div class="an-dm-line an-dm-url">${escapeHtml(location.origin + '/' + f.link.replace(/^\//, ''))}</div>` : ''}
         </div>
         <div class="an-preview-time">هتوصل في الرسايل الخاصة · الردود بترجع لـ ${escapeHtml(from)}</div>
-      </div>`;
+      </div>` + anNameNoteHTML(personalized, shownName, raw);
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -542,8 +630,49 @@ function anRenderPreview() {
         <div class="an-preview-body">${escapeHtml(f.body) || '<span style="color:#666">(النص)</span>'}</div>
         <div class="an-preview-time">دلوقتي حالاً${f.link ? ' · بيروح لـ ' + escapeHtml(f.link) : ''}</div>
       </div>
-    </div>`;
+    </div>` + anNameNoteHTML(personalized, shownName, raw);
   if (window.lucide) lucide.createIcons();
+}
+
+
+// The half of the preview that exists to show the operator the case they would
+// otherwise never look at.
+//
+// A preview that only ever shows `أهلاً محمد` is a preview of the best member
+// in the audience. The one that decides whether the wording ships is the member
+// whose name does not arabise — they see `أهلاً Radhouane` in the middle of an
+// Arabic sentence, or `أهلاً صديقنا` if they have no usable name at all. That
+// is a judgement call, and it cannot be made against a sample that excludes it.
+function anNameNoteHTML(personalized, shownName, raw) {
+  if (!personalized) return '';
+  const p = anPersonal;
+
+  if (!shownName) {
+    return `<div class="an-name-note warn">
+      <b>{{name}}</b> — لسه مامسكناش جمهور نجرّب عليه.
+      اضبط الفلتر فوق وهتشوف الاسم بيتحل على عضو حقيقي منهم.
+    </div>`;
+  }
+
+  const src = (p.sample_named && p.sample_named.full_name) || '';
+  let html = `<div class="an-name-note">
+      <b>{{name}}</b> اتحل على <b>${escapeHtml(shownName)}</b>
+      — من <span class="an-name-src">${escapeHtml(src)}</span>، عضو حقيقي في الجمهور ده.
+    </div>`;
+
+  const bad = p.sample_unresolved;
+  if (bad) {
+    const kind = p.unresolved_kind === 'fallback'
+      ? `مالوش اسم نقدر نستخدمه، فهيتنادى <b>${escapeHtml(p.fallback_word)}</b>`
+      : `اسمه مش في قايمة التعريب، فهيتعرض زي ما هو كتبه: <b>${escapeHtml(bad.resolved)}</b>`;
+    const n = p.unresolved_kind === 'fallback' ? p.fallback_count : p.latin_count;
+    html += `<div class="an-name-note warn">
+      و<b>${n}</b> من <b>${p.total}</b> ${kind}
+      — <span class="an-name-src">${escapeHtml(bad.full_name || '')}</span> هيشوف:
+      <div class="an-name-example">${escapeHtml(anFillName(raw.title || raw.body, bad.resolved))}</div>
+    </div>`;
+  }
+  return html;
 }
 
 // ═══ AUDIENCE ═══
@@ -598,12 +727,57 @@ async function anLoadAudience() {
     ).join('') + (d.count > (d.sample || []).length
       ? `<span class="an-chip more">+${d.count - d.sample.length}</span>` : '');
 
+    // The personalization facts are computed on the server from the SAME
+    // resolved list the send walks, so this line cannot disagree with what
+    // actually goes out. Stored for the composer preview, which resolves
+    // {{name}} against these very members.
+    anPersonal = d.personalization || null;
+    anRenderPreview();          // also refreshes the coverage line
+
     if (!anFacetsLoaded) { anFillFacets(d.countries, d.governorates); anFacetsLoaded = true; }
   } catch (e) {
     countEl.textContent = '—';
     subEl.textContent = 'مقدرناش نحسب الجمهور';
     sampleEl.innerHTML = '';
+    anPersonal = null;
+    anRenderNameCoverage();      // clear the stale line; the preview text stands
   }
+}
+
+
+// One line under the count: how many of these people will NOT be greeted by an
+// Arabic name.
+//
+// It lives here, under the number it qualifies, and not in a report — this is
+// where the operator decides whether to send now or go fix the wording, and a
+// fact that arrives after that decision has not been delivered.
+//
+// Silent when the campaign has no {{name}} in it: there is nothing to warn
+// about, and a permanent zero teaches people to stop reading the line.
+function anRenderNameCoverage() {
+  const el = document.getElementById('an-aud-names');
+  if (!el) return;
+
+  const p = anPersonal;
+  if (!p || !p.total || !anHasNameToken(anReadForm())) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+
+  el.style.display = '';
+  const bits = [];
+  if (p.fallback_count) {
+    bits.push(`<b>${p.fallback_count}</b> من <b>${p.total}</b> هيتنادوا «${escapeHtml(p.fallback_word)}»`);
+  }
+  if (p.latin_count) {
+    bits.push(`<b>${p.latin_count}</b> من <b>${p.total}</b> هيتنادوا باسمهم اللاتيني زي ما هو`);
+  }
+  if (!bits.length) {
+    el.innerHTML = `<span class="ok">كل الـ ${p.total} هيتنادوا باسمهم بالعربي ✓</span>`;
+    return;
+  }
+  el.innerHTML = `<span class="warn">${bits.join(' · ')}</span>`;
 }
 
 // ═══ MEMBER PICKER ═══

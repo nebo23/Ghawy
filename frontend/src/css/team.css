@@ -3295,6 +3295,27 @@
     margin-top: 5px;
 }
 
+/* السطر اللي بيقول كام واحد مش هيتنادى باسمه بالعربي. تحت الرقم بالظبط —
+   ده مكان القرار، والمعلومة اللي بتوصل بعد القرار مافيش منها فايدة. */
+.an-aud-names {
+    font-size: .72rem;
+    margin-top: 6px;
+    line-height: 1.7;
+}
+
+.an-aud-names .warn {
+    color: #e0b341;
+}
+
+.an-aud-names .ok {
+    color: #56b877;
+}
+
+.an-aud-names b {
+    font-variant-numeric: tabular-nums;
+    color: #ddd;
+}
+
 .an-aud-sample {
     display: flex;
     flex-wrap: wrap;
@@ -3342,6 +3363,92 @@
     padding: 12px;
     background: #141414;
     border-radius: 8px;
+}
+
+/* Card mid-fan-out: a state, not a set of buttons (F-29). */
+.an-card-busy {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .68rem;
+    color: #e0b341;
+}
+
+.an-card-busy i {
+    animation: an-spin 1.1s linear infinite;
+}
+
+@keyframes an-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── {{name}} composer hint ── */
+.an-token-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -6px;
+    margin-bottom: 12px;
+    font-size: .7rem;
+    color: #777;
+    line-height: 1.6;
+}
+
+.an-token-btn {
+    flex: 0 0 auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .7rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(63, 143, 249, .35);
+    background: rgba(63, 143, 249, .12);
+    color: #3f8ff9;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.an-token-btn:hover {
+    background: rgba(63, 143, 249, .22);
+}
+
+/* ── {{name}} note under the preview ──
+   السطر الأول بيقول الاسم اتحل على إيه ومن مين. التاني (warn) بيوري الحالة
+   اللي المشغّل مش هيدوّر عليها لوحده: العضو اللي اسمه مش هيتعرّب. */
+.an-name-note {
+    font-size: .72rem;
+    color: #999;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #141414;
+    border-radius: 8px;
+    border-inline-start: 3px solid #3f8ff9;
+    line-height: 1.8;
+}
+
+.an-name-note b {
+    color: #ddd;
+}
+
+.an-name-note.warn {
+    border-inline-start-color: #e0b341;
+}
+
+.an-name-note.warn b {
+    color: #e0b341;
+}
+
+.an-name-src {
+    color: #777;
+    font-style: italic;
+}
+
+.an-name-example {
+    margin-top: 6px;
+    padding: 7px 9px;
+    background: #0e0e0e;
+    border-radius: 6px;
+    color: #ccc;
+    font-size: .74rem;
 }
 
 .an-preview-icon {

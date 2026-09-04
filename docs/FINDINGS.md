@@ -545,7 +545,7 @@ something real is a broken page, and the breakage is silent.
 
 ## Opened while closing out announcements
 
-### F-29 · A campaign mid-fan-out still offers "edit" and "delete" — `PRE-EXISTING, small`
+### F-29 · A campaign mid-fan-out still offers "edit" and "delete" — `FIXED 2026-09-04`
 
 `anCardHTML` in `frontend/src/js/team-announcements.js` matches `sent`,
 `scheduled` and `failed` explicitly and lets everything else fall through to
@@ -561,12 +561,16 @@ member is affected — the notification rows are already written and their
 `announcement_id` is `SET NULL` — but the log line is a lie about what
 happened, and the operator gets no feedback.
 
-The fix is one branch in `anCardHTML` (no actions while `sending`) plus a
-`status == "sending"` guard in `delete_announcement`. Left alone deliberately:
-this pass was scoped to closing the feature, and the window is a couple of
-seconds wide behind a permission only the owner and a named admin hold.
+**Fixed.** `delete_announcement` refuses a `sending` row with a 400, and
+`anCardHTML` gives that state a "بتتبعت… استنى" label instead of buttons. Both
+halves, because either alone is half a fix: the server guard is the one that
+holds (the card is not where a rule lives), and the card is what stops the
+operator being offered an action that will be refused.
 
-### F-30 · `channels.name` has no unique constraint — `structural, latent`
+Covered by four assertions in `acceptance_announcements.py` — delete refused,
+row survives, edit still refused, and a draft still deletes normally.
+
+### F-30 · `channels.name` has no unique constraint — `FIXED 2026-09-04`
 
 The whole guarantee that two people have exactly one conversation rests on the
 deterministic name `dm_{lower}_{higher}` plus a `SELECT ... .first()`. Nothing
@@ -575,13 +579,37 @@ when a name matches more than one row, so both the single-pair path and the
 bulk campaign path resolve to the same channel if duplicates ever appear — but
 that is a mitigation, not the constraint.
 
-A partial unique index (`UNIQUE (name) WHERE channel_type = 'DM'`) would make
-it structural, and would also turn a concurrent double-create into a clean
-integrity error instead of a second thread. Not added here because it needs a
-check for existing duplicates in production first, and creating one on a live
-`channels` table is its own small piece of work rather than part of this pass.
+**Fixed** by migration `d1e4f7a2b9c3` plus the matching `__table_args__` on
+the `Channel` model — both, so a database built from the models (every scratch
+and test database) has the constraint too. A constraint that lives only in a
+migration is absent from every database that was never migrated.
 
-### F-31 · The DM recipients drawer runs a correlated EXISTS per row — `performance, watch`
+**The production count, which was the open question.** 1,486 DM channels, 4
+group channels, and **zero duplicate names** — of any kind, in either channel
+type, with zero DM names failing the `dm_<int>_<int>` shape. The assumption
+that `get_or_create_dm` had been racing itself for months turns out not to
+have happened: the race is real in the code, but it needs two people acting in
+the same few milliseconds on the same pair, and that has not occurred. The
+merge step in the migration is a no-op here.
+
+It is written anyway, and it was tested against seeded duplicates rather than
+trusted: three rows named `dm_1_2` and two named `dm_1_3` merge into the lowest
+id of each, messages re-point (3 → the survivor), colliding memberships are
+dropped instead of duplicated, a member found only on a doomed row moves across,
+and the group channel is untouched. The migration runs on restores and clones
+too, and a constraint that fails on real data at 3am is worse than a merge step
+that does nothing.
+
+Both creation paths were hardened to match, because the constraint turns a
+silent split into a raised error and something has to catch it:
+`get_or_create_dm_channel` catches `IntegrityError`, rolls back and returns the
+channel the other writer made; `ensure_dm_channels` inserts with `ON CONFLICT
+DO NOTHING ... RETURNING`, which also fixed a latent bug the change surfaced —
+without `RETURNING` naming the rows *we* actually inserted, a channel created
+concurrently would have been re-read as "new" and given a second set of
+membership rows.
+
+### F-31 · The DM recipients drawer runs a correlated EXISTS per row — `FIXED 2026-09-04`
 
 `_recipients_dm` in `backend/app/routers/announcements.py` answers "did this
 member open it" with an `EXISTS` against `message_reads`, correlated per
@@ -589,10 +617,16 @@ message. It is indexed (`ix_message_reads_message_id`) and fine at the current
 audience size, and it deliberately reuses the read receipts the chat already
 writes rather than inventing a second mechanism for campaigns.
 
-At 20,000 recipients the two unfiltered counts on that endpoint walk the whole
-campaign. If a DM campaign ever goes out at that size, the counts want turning
-into one grouped join rather than an EXISTS per row. Noted rather than
-pre-optimised: the largest audience on this platform today is 1,915.
+**Fixed** while the file was open: the `EXISTS` is now a `LEFT JOIN
+message_reads ON (message_id, user_id)`, evaluated once instead of once per
+row. `message_reads` holds at most one row per (message, member) and the join
+condition pins both, so no recipient can fan out into two rows and
+`count(Message.id)` stays correct — which is the only thing that could have
+gone wrong here.
+
+Same answers, verified by the existing read/unread assertions rather than by
+inspection: one marked read, `state=unread` narrowing to the member who has
+not opened it, and the read rate following.
 
 ### F-32 · The Emails tab has the same RTL bug the Announcements tab just had — `appearance, PRE-EXISTING`
 
@@ -623,3 +657,126 @@ That is the correct direction (the dashboard should be internally consistent,
 and lime should mean "member-facing product"), but it leaves the Emails tab as
 the odd one out until somebody repaints it. Logged rather than done: repainting
 the Emails tab is a change to a screen this pass was asked to leave untouched.
+
+### F-34 · A security pass expires the moment the next router is written — `PROCESS, standing rule`
+
+**FIXED in this pass** (the two endpoints), **standing** (the rule).
+
+`_recipients_bell` and `_recipients_dm` in
+`backend/app/routers/announcements.py` each returned `"email": u.email`
+unconditionally and each let the `search` parameter run an `ilike` against
+`users.email`. Neither asked for `member-contacts`. `admin.py`, `users.py`,
+`projects.py` and `profile.py` all ask; so do `search_members` and
+`resolve_members` fifteen hundred lines up the same file. These two were the
+only doors in the codebase that did not, which means the permission was not
+partially enforced — through that door it did not exist.
+
+Nobody was affected: `announcements` is held by the owner alone today, and the
+owner holds `member-contacts` too. The exposure was conditional on a grant that
+had not happened yet — which is exactly the kind that gets found late, because
+until the grant there is nothing to notice.
+
+Both endpoints now compute `sees_contacts` once in `list_recipients` and pass
+it down. The email is redacted to `None`, **and searching by email is disabled
+with it** — the second half matters more than the first: leaving the search
+live while redacting the display turns the drawer into an email-guessing oracle
+(type an address, see whether a row comes back), which is the precise thing the
+permission exists to prevent. `sees_contacts` is returned in the payload, as
+the picker already does.
+
+**The rule this is logged for.** Phase 3 swept 241 endpoints and found F-C. It
+was accurate on the day it ran. Everything below was written after it and has
+never been through an equivalent sweep:
+
+* announcements Parts 2, 3 and 4 (scheduling, resume, delivery modes),
+* the member picker (`/members/search`, `/members/resolve`),
+* the DM fan-out and `services/dm_service.py`,
+* the recipients drawer — where this finding was found.
+
+Two of those did check `member-contacts` and two did not, and they were written
+in the same feature by the same hand. That is the signal: convention is not a
+control. The rule, for new routers rather than as a one-off:
+
+> **Any endpoint returning a field from `users` states its permission decision
+> explicitly, in code, at the point of return.** Not by convention, not by
+> having copied a neighbouring endpoint. `email`, `phone` and social links are
+> `member-contacts`. If an endpoint returns one without a `has_permission`
+> call in the same function or an explicit flag passed into it, it is a
+> finding.
+
+And the corollary: a security report is a snapshot with a date on it. When a
+phase adds routers, that phase re-runs the contact-field sweep over what it
+added — `git grep -n '"email": ' backend/app/routers/` is thirty seconds and
+would have caught this on the day it was introduced.
+
+**What the sweep found when actually run.** Applying the rule above to the
+whole codebase immediately turned up two more, neither of them in announcements
+and neither fixed here (this pass was handed two endpoints, not a codebase):
+
+* `live.py:232` — `admin_get_attendees` sits behind `live-sessions` and returns
+  `"email": user.email` for every attendee, with an `export` mode. Same class
+  exactly: a permission that is not `member-contacts` opening a door onto
+  member addresses, in bulk, with a CSV on the end of it. **This one should be
+  fixed** — it is the announcements hole with a different permission on the
+  front, and `live-sessions` is a plausible thing to grant a non-owner.
+* `email_campaigns.py:121` — `_serialize_recipient` returns `email` and `phone`
+  behind `emails`. Defensible on purpose (a tab whose entire function is
+  emailing members cannot operate without addresses) but undeclared: it holds
+  by reasoning, not by a line of code. Worth an explicit comment saying
+  `emails` subsumes contact access, so the next sweep does not re-derive it.
+
+`admin.py:404` (`_staff_row`) returns staff emails, not member emails, behind
+the `users` permission — different question, left alone.
+
+Two more in the first thirty seconds is the argument for the rule.
+
+
+### F-35 · 29 DM channels exist with no members, or with one — `data, small`
+
+Found while counting duplicates for F-30. Of 1,486 DM channels in production:
+1,457 have exactly two members, **23 have one**, and **6 have none**.
+
+They are not duplicates and the F-30 migration deliberately leaves them alone —
+deleting rows is not a schema change, and this was a pass about a constraint.
+
+The cause is visible in the code, and has been fixed going forward.
+`get_or_create_dm_channel` used to `commit()` the channel row, then add the two
+`ChatMember` rows, then `commit()` again. Anything interrupting the gap — a
+worker restart (this deployment recycles them every ~8 minutes on
+`max_requests`), an exception, a connection drop — left a channel nobody was in.
+It is now one transaction: `flush()` to get the id, both memberships, one
+`commit()`. They go together or not at all.
+
+What remains is the 29 rows already there. They are invisible rather than
+harmful: a channel with no members appears in nobody's conversation list, and
+`find_dm_channel` will hand one back to the next person who opens that
+conversation — at which point they get an empty thread that never picks up the
+other party.
+
+**The 23 were checked, and they are not cleanup.** Thirteen of them carry real
+messages — 33 in total — and the pattern is identical in all thirteen:
+
+| | |
+|---|---|
+| the member present in the channel | always the **sender** (ids 2, 5, 51, 65, 68, 69 — staff accounts) |
+| the member missing from it | always the **recipient** |
+| messages from the missing party | **0**, in every one |
+
+So: a staff member opened a conversation with a member and wrote to them — up
+to eight messages in one case — and the recipient's `chat_members` row was
+never written. The recipient has never seen any of it. The channel does not
+appear in their messages list, so they were never told there was anything to
+open, and the silence looks to the sender like someone ignoring them.
+
+The oldest is `dm_2_5`, 2026-06-20, eight messages. The six memberless channels
+carry no messages at all and are inert.
+
+**Not fixed here, and deliberately so.** The repair is thirteen `chat_members`
+rows, but writing them would deliver up to eleven-week-old private messages to
+thirteen members with no warning and no context — several of whom may have
+since had the same conversation another way. That is an outward-facing
+consequence and the owner's call to make, not a side effect of a findings
+sweep. What is needed first is a look at what those 33 messages actually say.
+
+The recurrence is closed either way: the two-commit gap that created them is
+now one transaction.

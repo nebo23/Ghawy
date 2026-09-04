@@ -93,6 +93,12 @@ from app.models import (
 from app.routers.users import get_current_user
 from app.services import audience as aud
 from app.services import dm_service
+from app.services.name_utils import (
+    FALLBACK_FIRST_NAME,
+    arabic_first_name,
+    resolves_to_arabic,
+    resolves_to_fallback,
+)
 from app.services.permissions import has_permission, require_permission
 from app.services.ws_manager import manager
 
@@ -238,6 +244,18 @@ def _clean_delivery(raw: Optional[str]) -> str:
 def _chunks(seq: Sequence[int], size: int) -> Iterable[Sequence[int]]:
     for i in range(0, len(seq), size):
         yield seq[i:i + size]
+
+
+def _names_for(db: Session, user_ids: Sequence[int]) -> Dict[int, Optional[str]]:
+    """`{id: full_name}` للدفعة دي — عمودين بس، مش صفوف ORM كاملة.
+
+    الفان-آوت شغّال في ثريد وبيمشي على دفعات؛ قراءة الـ User كامل لكل عضو
+    عشان حقل واحد كانت هتملا الـ identity map بغير لزوم على جمهور كبير.
+    """
+    return {
+        uid: name
+        for uid, name in db.query(User.id, User.full_name).filter(User.id.in_(user_ids)).all()
+    }
 
 
 def _resolve_sender(db: Session, actor: User, delivery: str,
@@ -392,16 +410,66 @@ def _require_sendable(a: Announcement) -> None:
         raise HTTPException(status_code=400, detail="الحملة محتاجة عنوان ونص قبل الإرسال")
 
 
-def _dm_body(a: Announcement) -> str:
+# ══════════════════════════════════════════════════════════════
+#  Personalisation — {{name}}
+# ══════════════════════════════════════════════════════════════
+#
+# توكن واحد بس، وده مقصود. `{{name}}` بيغطي الطلب؛ ولغة قوالب كاملة فيتشر
+# تانية محدش طلبها، وكل توكن زيادة معناه حالة تانية لازم المعاينة تعرف
+# تعرضها والتست يعرف يوافق عليها.
+#
+# الاسم بيتحل وقت الإرسال من `users.full_name` اللي موجود أصلاً — مفيش عمود
+# جديد، مفيش backfill، ومفيش صف بيتكتب في `users`. العضو بيتنادى باسمه، بس
+# اسمه المتخزّن مابيتغيرش.
+#
+# السلسلة هي `name_utils.arabic_first_name` بالحرف — نفس الدالة اللي إيميلات
+# الحملات بتنادي بيها. نسخة تانية هنا كانت هتفترق عن دي أول ما حد يزوّد اسم
+# في ماب واحدة منهم بس.
+
+NAME_TOKEN = "{{name}}"
+
+#: بيقبل مسافات جوه الأقواس (`{{ name }}`) لأن ده اللي حد هيكتبه بالغلط، وبيقبل
+#: أي حالة حروف. غير كده النص بيفضل زي ما هو — مابنخمّنش قصد الكاتب.
+_NAME_TOKEN_RE = re.compile(r"\{\{\s*name\s*\}\}", re.IGNORECASE)
+
+
+def _has_name_token(a: Announcement) -> bool:
+    """هل الحملة دي أصلاً بتنادي حد باسمه؟"""
+    return bool(_NAME_TOKEN_RE.search(f"{a.title or ''}\n{a.body or ''}"))
+
+
+def _personalize(text: Optional[str], full_name: Optional[str]) -> str:
+    """حط اسم العضو مكان `{{name}}`.
+
+    الاستبدال بدالة مش بنص: `re.sub` بنص بيفسّر الـ backslashes في البديل،
+    والبديل هنا اسم بيكتبه العضو بنفسه — `\1` جوه اسم كان هيرمي أو يبلع حروف.
+
+    مفيش هروب HTML هنا عن قصد: القيمة دي بتتحط جوه نص عادي بيتخزّن في
+    `notifications.body` / `messages.content`، ونفس المسار اللي بيعرض باقي
+    النص هو اللي بيهرّب ده — `escapeHtml` في الجرس و`formatChatText` في الشات.
+    هروب هنا كمان كان معناه `&amp;` ظاهرة للعضو في اسمه. المعاينة في الواجهة
+    بتبني HTML فعلاً، وهي بتهرّب القيمة هناك زي أي قيمة تانية.
+    """
+    if not text:
+        return text or ""
+    name = arabic_first_name(full_name)
+    return _NAME_TOKEN_RE.sub(lambda _m: name, text)
+
+
+def _dm_body(a: Announcement, full_name: Optional[str] = None) -> str:
     """نص الرسالة الخاصة زي ما العضو هيقراه.
 
     الرسالة الخاصة مالهاش عنوان منفصل زي الجرس، فالعنوان بيتحط أول سطر.
     واللينك بيتكتب كـ URL كامل عشان الشات بيعمل linkify للـ URLs بس (شوف
     `linkifyText` في utils.js) — مسار نسبي كان هيوصل كنص ميّت.
+
+    `full_name` بتاع المستلم عشان `{{name}}` يتحل. من غيرها النص بيرجع بالتوكن
+    زي ما هو — وده مقصود: مفيش منادي شرعي بيسيبها فاضية، فلو ظهرت التوكن في
+    مكان يبقى فيه منادي ناسي يعدّي المستلم، وده بيبان.
     """
     parts = []
-    title = (a.title or "").strip()
-    body = (a.body or "").strip()
+    title = _personalize(a.title, full_name).strip()
+    body = _personalize(a.body, full_name).strip()
     if title:
         parts.append(title)
     if body:
@@ -412,7 +480,8 @@ def _dm_body(a: Announcement) -> str:
     return "\n\n".join(parts)
 
 
-def _live_item(notif_id: int, user_id: int, a: Announcement) -> Dict[str, Any]:
+def _live_item(notif_id: int, user_id: int, a: Announcement,
+               title: Optional[str] = None, body: Optional[str] = None) -> Dict[str, Any]:
     """الحمولة اللي بتتبعت على الـ WebSocket — ديكشنري عادي، مش صف ORM.
 
     مهم إنها dict: الإرسال الحقيقي بيحصل في ثريد، والـ push بيتنفّذ على الـ
@@ -422,7 +491,12 @@ def _live_item(notif_id: int, user_id: int, a: Announcement) -> Dict[str, Any]:
     return {
         "user_id": user_id,
         "data": {
-            "id": notif_id, "title": a.title, "body": a.body,
+            # المعروض لازم يبقى اللي اتكتب في الصف بالظبط — لو بعتنا
+            # `a.title` هنا، المتصل كان هيشوف `{{name}}` والمنقطع كان هيشوف
+            # اسمه، من نفس الحملة.
+            "id": notif_id,
+            "title": a.title if title is None else title,
+            "body": a.body if body is None else body,
             "type": a.type, "link": a.link, "is_read": False,
         },
     }
@@ -514,7 +588,62 @@ def preview_audience(
             {"id": u.id, "full_name": u.full_name, "is_active": bool(u.is_active)}
             for u in users[:PREVIEW_SAMPLE]
         ],
+        "personalization": _personalization_facts(users),
         **aud.facets(db),
+    }
+
+
+def _personalization_facts(users: Sequence[User]) -> Dict[str, Any]:
+    """«كام واحد من دول مش هيتنادي باسمه؟» — والاتنين اللي المعاينة هتوريهم.
+
+    محسوب من **نفس القائمة اللي الإرسال بيستخدمها**: `preview_audience` و
+    `_begin_real_send` الاتنين بينادوا `aud.resolve_users` على نفس الفلتر،
+    فالرقم اللي المشغّل بيقرره على أساسه مايقدرش يختلف عن اللي هيخرج فعلاً.
+    ده كان ممكن يبقى تقدير من عيّنة الـ ٨؛ التقدير هنا مالوش لازمة — القائمة
+    كاملة في الذاكرة أصلاً عشان الـ count.
+
+    ليه مش `_audience_quality` بتاعة تاب الإيميلات: دي بتشتغل على صفوف حملة
+    إيميل متطبّعة (Name/Email/Governorate)، بتعدّي على `build_template_vars`
+    بـ fallback ممكن المشغّل يغيّره لكل حملة، وبتحسب تلات مقاييس إحنا محتاجين
+    واحد منهم. عشان نستخدمها كنا هنحوّل كل عضو لشكل صف إيميل ونخترع `content`
+    وهمي ونرمي مقياسين — كوبلينج أكتر من الكود اللي بيتوفّر، وأهم من ده:
+    كانت هتربط رقم الإعلانات بدلالات قوالب الإيميل (اللي فيها فرع `صديقي`
+    وفحص `is_valid_contact`)، يعني الرقم يقدر يختلف عن اللي الإعلان بيبعته.
+    اللي بيتشارك فعلاً هو السلسلة نفسها — `name_utils.arabic_first_name` —
+    وهي مش متكررة في المشروع.
+    """
+    total = len(users)
+    arabic, latin, fallback = [], [], []
+    for u in users:
+        if resolves_to_arabic(u.full_name):
+            arabic.append(u)
+        elif resolves_to_fallback(u.full_name):
+            fallback.append(u)          # مفيش اسم خالص → `صديقنا`
+        else:
+            latin.append(u)             # اسم حقيقي بس مش في الماب → زي ما هو
+
+    def _sample(u: Optional[User]) -> Optional[Dict[str, Any]]:
+        if u is None:
+            return None
+        return {"id": u.id, "full_name": u.full_name,
+                "resolved": arabic_first_name(u.full_name)}
+
+    # الحالة المش-مثالية اللي هتتعرض. الأسوأ الأول: `صديقنا` أوقع من اسم
+    # لاتيني، فلو الجمهور فيه الاتنين المشغّل يشوف الأوقع.
+    worst = fallback[0] if fallback else (latin[0] if latin else None)
+
+    return {
+        "total": total,
+        "arabic_count": len(arabic),
+        "latin_count": len(latin),
+        "fallback_count": len(fallback),
+        "fallback_word": FALLBACK_FIRST_NAME,
+        # عضو هيتنادى باسم عربي، وعضو لأ — المعاينة بتوري الاتنين. التاني هو
+        # اللحظة اللي المشغّل بيقرر فيها لو ده مقبول ولا الصياغة محتاجة تتغيّر،
+        # وهي لحظة مابتحصلش لو مشفناش غير الحالة الحلوة.
+        "sample_named": _sample(arabic[0] if arabic else None),
+        "sample_unresolved": _sample(worst),
+        "unresolved_kind": ("fallback" if fallback else ("latin" if latin else None)),
     }
 
 
@@ -937,9 +1066,25 @@ def delete_announcement(
     db: Session = Depends(get_db),
 ):
     """مسح المسودة. اللي وصل للأعضاء **مابيتمسحش** — `announcement_id` بيتظبط
-    SET NULL في الإشعارات والرسايل، فاللي وصله حاجة بيفضل شايفها."""
+    SET NULL في الإشعارات والرسايل، فاللي وصله حاجة بيفضل شايفها.
+
+    الحملة اللي بتتبعت دلوقتي مابتتمسحش (F-29). الوركر ماسك الصف ده وشغّال
+    عليه؛ لو اتمسح من تحته، الـ `row.status = "sent"` بتاعته في الآخر بيعمل
+    commit على صف مش موجود، وبيقع في الـ except اللي بيحاول يكتب "failed" على
+    نفس الصف الميت — والنتيجة سطر لوج بيقول إن الحملة فشلت وهي في الحقيقة
+    وصلت للأعضاء كلهم. مفيش داتا بتضيع (الإشعارات اتكتبت خلاص و
+    `announcement_id` بيتظبط SET NULL)، بس اللي بيقرا اللوج بيتقال له حاجة
+    غلط، واللي ضغط مسح مابياخدش أي رد.
+
+    ثانيتين، وفي إيد الـ owner لوحده النهارده — ومع ذلك دي حالة اللي بيمسح
+    فيها بيحصل حاجة غير اللي طلبها، ودي مستاهلة سطرين.
+    """
     require_permission(current_user, "announcements")
     row = _get_or_404(db, announcement_id)
+    if row.status == "sending":
+        raise HTTPException(
+            status_code=400,
+            detail="الحملة دي بتتبعت دلوقتي — استنى لما تخلص وبعدين امسحها")
     db.delete(row)
     db.commit()
     logger.info("🗑️ حملة #%s اتمسحت بواسطة user_id=%s", announcement_id, current_user.id)
@@ -952,15 +1097,25 @@ def delete_announcement(
 def _fanout_bell(db: Session, row: Announcement, user_ids: List[int], loop) -> int:
     """صفوف إشعارات على دفعات + push للمتصلين. بيرجّع عدد اللي اتكتب."""
     written = 0
+    personalized = _has_name_token(row)
     for chunk in _chunks(user_ids, SEND_CHUNK):
         now = datetime.utcnow()
+        # الأسامي بتتقرا للدفعة دي بس، ولو الحملة فيها `{{name}}` أصلاً. حملة
+        # من غير التوكن مابتدفعش تمن كويري مالهاش لازمة — وده الحال الغالب.
+        names = _names_for(db, chunk) if personalized else {}
+
         # bulk_insert_mappings مش add_all: الـ add_all كان بيمسك صف ORM لكل عضو
         # في الـ identity map عشان يرجّع الـ ids للـ live push. على ٢٠ ألف صف ده
         # ذاكرة مدفوعة عشان حاجة محتاجينها للمتصلين بس — واللي بنقراهم تحت
         # بـ SELECT واحد مفلتر عليهم هُمّ.
+        texts = {
+            uid: (_personalize(row.title, names.get(uid)) if personalized else row.title,
+                  _personalize(row.body, names.get(uid)) if personalized else row.body)
+            for uid in chunk
+        }
         db.bulk_insert_mappings(Notification, [
             {
-                "user_id": uid, "title": row.title, "body": row.body,
+                "user_id": uid, "title": texts[uid][0], "body": texts[uid][1],
                 "type": row.type, "link": row.link,
                 "announcement_id": row.id, "is_read": False, "created_at": now,
             }
@@ -984,7 +1139,7 @@ def _fanout_bell(db: Session, row: Announcement, user_ids: List[int], loop) -> i
                         Notification.user_id.in_(online))
                 .all()
             )
-            items = [_live_item(nid, uid, row) for nid, uid in rows]
+            items = [_live_item(nid, uid, row, *texts[uid]) for nid, uid in rows]
             # الـ push لازم يتنفّذ على الـ loop بتاع التطبيق: الـ WebSockets
             # عايشة هناك، والثريد ده مالوش loop.
             asyncio.run_coroutine_threadsafe(_push_live(items), loop).result(timeout=60)
@@ -1005,8 +1160,9 @@ def _fanout_dm(db: Session, row: Announcement, user_ids: List[int], loop) -> int
     if not sender:
         raise RuntimeError(f"الحملة #{row.id} وضعها DM ومفيش حساب مرسِل")
 
-    content = _dm_body(row)
-    preview = (content or "")[:60]
+    personalized = _has_name_token(row)
+    # النص المشترك للحملة اللي مافيهاش توكن — بيتحسب مرة واحدة زي الأول بالظبط.
+    shared = None if personalized else _dm_body(row)
     written = 0
 
     for chunk in _chunks(user_ids, SEND_CHUNK):
@@ -1016,13 +1172,22 @@ def _fanout_dm(db: Session, row: Announcement, user_ids: List[int], loop) -> int
             db.commit()
             continue
 
+        names = _names_for(db, list(channel_by_recipient)) if personalized else {}
+        # نص لكل مستلم. الحملة اللي مافيهاش `{{name}}` بتاخد نفس الـ string
+        # للكل — من غير تعريب ولا كويري أسامي.
+        content_by_recipient = {
+            rid: (_dm_body(row, names.get(rid)) if personalized else shared)
+            for rid in channel_by_recipient
+        }
+
         db.bulk_insert_mappings(Message, [
             {
-                "channel_id": cid, "sender_id": sender.id, "content": content,
+                "channel_id": cid, "sender_id": sender.id,
+                "content": content_by_recipient[rid],
                 "message_type": MessageType.TEXT, "announcement_id": row.id,
                 "read_count": 0, "is_deleted": False, "created_at": now,
             }
-            for cid in channel_by_recipient.values()
+            for rid, cid in channel_by_recipient.items()
         ])
         db.commit()
         written += len(channel_by_recipient)
@@ -1035,14 +1200,15 @@ def _fanout_dm(db: Session, row: Announcement, user_ids: List[int], loop) -> int
             continue
         # زي مسار الجرس: الرسايل اتحفظت خلاص، واللي بعد كده طبقة سرعة.
         try:
-            _dm_live_push(db, row, sender, content, preview, now, online, loop)
+            _dm_live_push(db, row, sender, content_by_recipient, now, online, loop)
         except Exception:
             logger.exception("📢 حملة #%s: الـ live DM push فشل — الرسايل اتحفظت برضه", row.id)
     return written
 
 
-def _dm_live_push(db: Session, row: Announcement, sender: User, content: str,
-                  preview: str, now: datetime, online: Dict[int, int], loop) -> None:
+def _dm_live_push(db: Session, row: Announcement, sender: User,
+                  content_by_recipient: Dict[int, str],
+                  now: datetime, online: Dict[int, int], loop) -> None:
     """ابعت الرسايل اللي لسه اتحفظت للمتصلين دلوقتي على السوكيت.
 
     بيقرا الـ ids بتاعت المتصلين بس — الباقي هيلاقي المحادثة في قايمة الرسايل
@@ -1060,7 +1226,9 @@ def _dm_live_push(db: Session, row: Announcement, sender: User, content: str,
             "user_id": rid,
             "channel_id": cid,
             "sender_name": sender.full_name,
-            "preview": preview,
+            # المعاينة في قايمة الرسايل لازم تبقى من نص العضو ده هو — مش من
+            # نص عضو تاني اتصادف إنه كان الأول في الدفعة.
+            "preview": (content_by_recipient[rid] or "")[:60],
             "message": {
                 "id": msg_by_channel.get(cid),
                 "channel_id": cid,
@@ -1069,7 +1237,7 @@ def _dm_live_push(db: Session, row: Announcement, sender: User, content: str,
                 "sender_name": sender.full_name,
                 "sender_avatar": sender.avatar_url,
                 "sender_is_admin": bool(sender.is_admin),
-                "content": content,
+                "content": content_by_recipient[rid],
                 "message_type": "text",
                 "file_url": None, "file_name": None, "file_size": None,
                 "reply_to_id": None,
@@ -1269,6 +1437,11 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
     هيشوفه. تست حملة DM كإشعار جرس بيوافق على حاجة تانية.
     """
     delivery = row.delivery or "bell"
+    # التست بيتحل باسم اللي بيجرّب. الغرض من التست إن اللي بيتوافق عليه يبقى
+    # بالظبط اللي العضو هيشوفه — تست بيعرض `{{name}}` خام بيوافق على حاجة
+    # محدش هيستلمها.
+    t_title = _personalize(row.title, actor.full_name)
+    t_body = _personalize(row.body, actor.full_name)
 
     if delivery == "dm":
         sender_id = _resolve_sender(db, actor, "dm", row.sender_id)
@@ -1277,7 +1450,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
             # هنا كان هيعمل تريد الواحد فيه بيكلّم نفسه في قايمة رسايله. بنقول
             # اللي حصل بالظبط بدل ما نسكت.
             notif = Notification(
-                user_id=actor.id, title=row.title, body=row.body,
+                user_id=actor.id, title=t_title, body=t_body,
                 type=row.type, link=row.link, announcement_id=row.id, is_read=False,
             )
             db.add(notif)
@@ -1285,7 +1458,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
             db.refresh(notif)
             return {
                 "mode": "test", "delivery": "bell", "delivered": 1,
-                "live": [_live_item(notif.id, actor.id, row)],
+                "live": [_live_item(notif.id, actor.id, row, t_title, t_body)],
                 "message": ("إنت المرسِل نفسه، ومفيش محادثة خاصة بين الواحد ونفسه — "
                             "بعتنالك النص في الجرس. اختار حساب مرسِل تاني لو عايز "
                             "تشوفها كرسالة خاصة."),
@@ -1293,7 +1466,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
 
         ch, _created = dm_service.get_or_create_dm_channel(db, sender_id, actor.id)
         sender = db.query(User).filter(User.id == sender_id).first()
-        content = _dm_body(row)
+        content = _dm_body(row, actor.full_name)
         msg = Message(
             channel_id=ch.id, sender_id=sender_id, content=content,
             message_type=MessageType.TEXT, announcement_id=row.id,
@@ -1325,7 +1498,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
         }
 
     notif = Notification(
-        user_id=actor.id, title=row.title, body=row.body,
+        user_id=actor.id, title=t_title, body=t_body,
         type=row.type, link=row.link, announcement_id=row.id, is_read=False,
     )
     db.add(notif)
@@ -1333,7 +1506,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
     db.refresh(notif)
     return {
         "mode": "test", "delivery": "bell", "delivered": 1,
-        "live": [_live_item(notif.id, actor.id, row)],
+        "live": [_live_item(notif.id, actor.id, row, t_title, t_body)],
         "message": "الحملة اتبعتت ليك إنت بس — شوفها في الجرس",
     }
 
@@ -1639,26 +1812,33 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
 
     "اتقرت" = فيه صف `MessageRead` من العضو (مش من المرسِل) على الرسالة —
     نفس الآلية اللي الشات بيستخدمها أصلاً، مش آلية تانية اتخترعت للحملات.
+
+    الربط `LEFT JOIN` مش `EXISTS` مرتبط (F-31). الاتنين بيدّوا نفس الإجابة —
+    الفرق إن الـ EXISTS كان بيتنفّذ مرة لكل صف، وفي العدّادين تحت (اللي
+    مابيتفلترش عليهم صفحة) ده معناه مشية على الحملة كلها مضروبة في عدد
+    المستلمين. الربط بيمشي مرة واحدة.
+
+    مفيش خطر تكرار صفوف من الـ join: `message_reads` فيه صف واحد على الأكتر
+    لكل (رسالة، عضو)، وشرط الربط بيثبّت الاتنين — فكل مستلم بيفضل صف واحد زي
+    ما كان بالظبط، وde اللي بيخلي `count(Message.id)` يفضل صح.
     """
-    read_exists = (
-        db.query(MessageRead.message_id)
-        .filter(MessageRead.message_id == Message.id,
-                MessageRead.user_id == ChatMember.user_id)
-        .exists()
-    )
+    read_on = and_(MessageRead.message_id == Message.id,
+                   MessageRead.user_id == ChatMember.user_id)
+    is_read = MessageRead.id.isnot(None)
 
     base = (
-        db.query(Message, User, read_exists.label("is_read"))
+        db.query(Message, User, is_read.label("is_read"))
         .join(ChatMember, ChatMember.channel_id == Message.channel_id)
         .join(User, User.id == ChatMember.user_id)
+        .outerjoin(MessageRead, read_on)
         .filter(Message.announcement_id == row.id,
                 ChatMember.user_id != Message.sender_id)
     )
 
     if state == "read":
-        base = base.filter(read_exists)
+        base = base.filter(is_read)
     elif state == "unread":
-        base = base.filter(~read_exists)
+        base = base.filter(~is_read)
 
     term = (search or "").strip()
     if term:
@@ -1671,12 +1851,13 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
     total = base.with_entities(sql_func.count(Message.id)).scalar() or 0
 
     counted = (
-        db.query(read_exists.label("is_read"), sql_func.count(Message.id))
+        db.query(is_read.label("is_read"), sql_func.count(Message.id))
         .select_from(Message)
         .join(ChatMember, ChatMember.channel_id == Message.channel_id)
+        .outerjoin(MessageRead, read_on)
         .filter(Message.announcement_id == row.id,
                 ChatMember.user_id != Message.sender_id)
-        .group_by(read_exists)
+        .group_by(is_read)
         .all()
     )
     totals = {bool(k): int(v) for k, v in counted}
@@ -1684,7 +1865,7 @@ def _recipients_dm(db: Session, row: Announcement, state: str, search: Optional[
     unread_count = totals.get(False, 0)
 
     rows = (
-        base.order_by(read_exists.asc(), User.full_name.asc())
+        base.order_by(is_read.asc(), User.full_name.asc())
         .offset(offset).limit(limit).all()
     )
 

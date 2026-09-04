@@ -1170,6 +1170,274 @@ check("resolve redacts addresses the same way search does",
       all(u["email"] is None for u in r["items"]), r["items"])
 
 
+# ══════════════════════════════════════════════════════════════
+print("\n=== the recipients drawer honours `member-contacts` (F-34) ===")
+# ══════════════════════════════════════════════════════════════
+# The picker asks for this permission; the drawer did not. Nobody was affected
+# — `announcements` is the owner's alone today — but the exposure was waiting
+# on a grant that had not happened yet, which is the kind that gets noticed
+# late. `sender` is exactly that future person: the announcements permission,
+# and not member-contacts.
+#
+# Driven at the endpoint, not through the screen: hiding a column in the UI
+# while the JSON still carries it is not a fix.
+rc = mkuser("rcpt.one@t.co", name="Recipient One", country="Iceland")
+rc2 = mkuser("rcpt.two@t.co", name="Recipient Two", country="Iceland")
+
+for mode, extra in (("bell", {}), ("dm", {"sender_id": owner.id})):
+    c = mkcampaign(actor=owner, delivery=mode,
+                   audience={"status": "all", "country": "Iceland"}, **extra)
+    send_real(c["id"], actor=owner)
+    st = wait_sent(c["id"])
+    check(f"[{mode}] the fixture campaign sent", st["status"] == "sent", st)
+
+    r = client.get(f"/admin/announcements/{c['id']}/recipients", headers=H(owner))
+    d = r.json()
+    check(f"[{mode}] the owner sees the drawer",
+          r.status_code == 200 and d["total"] >= 1, f"{r.status_code} {d}")
+    check(f"[{mode}] ...with addresses, because the owner holds member-contacts",
+          d["sees_contacts"] is True
+          and any(i["email"] == "rcpt.one@t.co" for i in d["items"]),
+          [i.get("email") for i in d["items"]])
+
+    r = client.get(f"/admin/announcements/{c['id']}/recipients", headers=H(sender))
+    d = r.json()
+    check(f"[{mode}] an operator without member-contacts still sees the drawer",
+          r.status_code == 200 and d["total"] >= 1, f"{r.status_code} {d}")
+    check(f"[{mode}] ...and gets NO addresses at all",
+          d["sees_contacts"] is False and all(i["email"] is None for i in d["items"]),
+          [i.get("email") for i in d["items"]])
+    # The half that matters more: a redacted column with a live email search is
+    # an address oracle — type one in, see whether a row comes back.
+    hit = client.get(f"/admin/announcements/{c['id']}/recipients?search=rcpt.one@t.co",
+                     headers=H(sender)).json()
+    check(f"[{mode}] ...and cannot search BY an address either",
+          hit["items"] == [], [i["user_id"] for i in hit["items"]])
+    named = client.get(f"/admin/announcements/{c['id']}/recipients?search=Recipient One",
+                       headers=H(sender)).json()
+    check(f"[{mode}] ...while searching by NAME still works",
+          any(i["user_id"] == rc.id for i in named["items"]),
+          [i["user_id"] for i in named["items"]])
+    # And the raw body carries no address anywhere, not just in the field we
+    # remembered to look at.
+    raw = client.get(f"/admin/announcements/{c['id']}/recipients", headers=H(sender)).text
+    check(f"[{mode}] no address appears anywhere in the response body",
+          "rcpt.one@t.co" not in raw and "rcpt.two@t.co" not in raw, raw[:200])
+
+check("the drawer still refuses someone without the announcements permission",
+      client.get(f"/admin/announcements/{CID}/recipients", headers=H(nosy)).status_code == 403)
+
+
+# ══════════════════════════════════════════════════════════════
+print("\n=== {{name}} resolves, everywhere, through the one shared chain ===")
+# ══════════════════════════════════════════════════════════════
+from app.services import name_utils as NU                              # noqa: E402
+
+# There must be exactly one implementation. A second copy is the failure this
+# was extracted to prevent, and it would not show up as a broken test — it
+# would show up months later as two greetings that disagree.
+check("email_service re-exports the chain rather than owning a copy",
+      __import__("app.services.email_service", fromlist=["x"]).arabize_first_name
+      is NU.arabize_first_name)
+check("...and the old private name still resolves for existing importers",
+      __import__("app.services.email_service", fromlist=["x"])._first_name
+      is NU.arabic_first_name)
+
+# The chain itself, at its three branches.
+check("a known Latin name arabises", NU.arabic_first_name("Mohamed Ali") == "محمد")
+check("an Arabic name is left alone", NU.arabic_first_name("أحمد سمير") == "أحمد")
+check("an unknown Latin name is shown as written",
+      NU.arabic_first_name("Zzqq Www") == "Zzqq")
+check("no name at all falls back", NU.arabic_first_name("") == "صديقنا"
+      and NU.arabic_first_name(None) == "صديقنا")
+# A name is member-supplied text, and the substitution must not read it as a
+# pattern. `\1` in a regex replacement would swallow or explode.
+check("a name containing a regex backreference survives intact",
+      AN._personalize("hi {{name}}", "X\\1Y x") == "hi X\\1Y")
+
+check("the token is detected in the title or the body, in any spelling",
+      AN._has_name_token(type("R", (), {"title": "أهلاً {{ NAME }}", "body": ""})())
+      and AN._has_name_token(type("R", (), {"title": "", "body": "{{name}}"})())
+      and not AN._has_name_token(type("R", (), {"title": "x", "body": "y"})()))
+
+# ── the four surfaces a member can actually meet it on ──
+gr_known = mkuser("gr.known@t.co", name="Mahmoud Fathy", country="Peru")
+gr_latin = mkuser("gr.latin@t.co", name="Zzqqwww Xyz", country="Peru")
+
+BODY = "يا {{name}}، النهارده فيه درس جديد"
+TITLE = "أهلاً {{name}} 👋"
+
+# 1) bell
+c = mkcampaign(actor=owner, title=TITLE, body=BODY,
+               audience={"status": "all", "country": "Peru"})
+send_real(c["id"], actor=owner)
+check("[bell] the campaign sent", wait_sent(c["id"])["status"] == "sent")
+db.expire_all()
+rows = {n.user_id: n for n in db.query(M.Notification)
+        .filter(M.Notification.announcement_id == c["id"]).all()}
+check("[bell] a known name is arabised in the body",
+      rows[gr_known.id].body == "يا محمود، النهارده فيه درس جديد", rows[gr_known.id].body)
+check("[bell] ...and in the title too",
+      rows[gr_known.id].title == "أهلاً محمود 👋", rows[gr_known.id].title)
+check("[bell] a name that does not arabise is shown as written, never blank",
+      rows[gr_latin.id].body == "يا Zzqqwww، النهارده فيه درس جديد", rows[gr_latin.id].body)
+check("[bell] no member is left holding a literal token",
+      all("{{" not in (n.body or "") + (n.title or "") for n in rows.values()),
+      [n.body for n in rows.values()])
+
+# 2) DM
+c = mkcampaign(actor=owner, title=TITLE, body=BODY, delivery="dm", sender_id=owner.id,
+               audience={"status": "all", "country": "Peru"})
+send_real(c["id"], actor=owner)
+check("[dm] the campaign sent", wait_sent(c["id"])["status"] == "sent")
+db.expire_all()
+msgs = db.query(M.Message).filter(M.Message.announcement_id == c["id"]).all()
+by_user = {}
+for m in msgs:
+    other = (db.query(M.ChatMember)
+             .filter(M.ChatMember.channel_id == m.channel_id,
+                     M.ChatMember.user_id != owner.id).first())
+    if other:
+        by_user[other.user_id] = m.content
+check("[dm] a known name is arabised in the message text",
+      "يا محمود،" in by_user.get(gr_known.id, ""), by_user.get(gr_known.id))
+check("[dm] ...and the title line above it",
+      "أهلاً محمود 👋" in by_user.get(gr_known.id, ""), by_user.get(gr_known.id))
+check("[dm] the unarabised member gets their own name, not somebody else's",
+      "يا Zzqqwww،" in by_user.get(gr_latin.id, ""), by_user.get(gr_latin.id))
+check("[dm] no member is left holding a literal token",
+      all("{{" not in v for v in by_user.values()), list(by_user.values())[:2])
+
+# 3) test send — what the operator approves must be what a member gets
+c = mkcampaign(actor=owner, title=TITLE, body=BODY,
+               audience={"status": "all", "country": "Peru"})
+r = client.post(f"/admin/announcements/{c['id']}/send", headers=H(owner),
+                json={"mode": "test"}).json()
+db.expire_all()
+t = (db.query(M.Notification)
+     .filter(M.Notification.announcement_id == c["id"],
+             M.Notification.user_id == owner.id)
+     .order_by(M.Notification.id.desc()).first())
+check("[test] the test send resolves the token against the operator",
+      t is not None and "{{" not in t.body and "{{" not in t.title,
+      t.body if t else None)
+# The endpoint pops `live` before responding (it pushes it over the socket
+# instead), so the payload is checked at its source. This is the assertion that
+# stops the two halves drifting: an online member sees the WebSocket payload
+# and an offline one sees the stored row, and a campaign where those disagree
+# shows one member a resolved name and another a raw token.
+_row = db.query(M.Announcement).filter(M.Announcement.id == c["id"]).first()
+_live = AN._live_item(t.id, owner.id, _row, t.title, t.body)
+check("[test] the live payload matches the stored row exactly",
+      _live["data"]["body"] == t.body and _live["data"]["title"] == t.title,
+      _live["data"])
+check("[test] ...and neither carries a literal token",
+      "{{" not in _live["data"]["body"] and "{{" not in _live["data"]["title"],
+      _live["data"])
+
+# 4) the preview panel's numbers
+r = client.get("/admin/announcements/audience/preview?status=all&country=Peru",
+               headers=H(owner)).json()
+pz = r["personalization"]
+check("the preview reports personalisation facts", pz["total"] == r["count"], pz)
+check("...counting the member who arabises", pz["arabic_count"] >= 1, pz)
+check("...and the one who does not, separately from the fallback",
+      pz["latin_count"] >= 1 and pz["fallback_count"] == 0, pz)
+check("...the three buckets add up to the whole audience",
+      pz["arabic_count"] + pz["latin_count"] + pz["fallback_count"] == pz["total"], pz)
+check("...it names a real member for each case shown",
+      pz["sample_named"]["resolved"] and pz["sample_unresolved"]["resolved"], pz)
+check("...and the sampled members are IN this audience",
+      {pz["sample_named"]["id"], pz["sample_unresolved"]["id"]}
+      <= {u["id"] for u in client.get(
+          "/admin/announcements/audience/preview?status=all&country=Peru",
+          headers=H(owner)).json()["sample"]} | {gr_known.id, gr_latin.id}, pz)
+
+# The count must be computed from the same list the send walks, or it is a
+# number that describes something else. Proved rather than asserted: resolve
+# the audience the way the sender does and count it the same way.
+import app.services.audience as _AUD                                   # noqa: E402
+_users = _AUD.resolve_users(db, {"status": "all", "country": "Peru"})
+check("the fallback count matches what the send would actually produce",
+      sum(1 for u in _users if NU.resolves_to_fallback(u.full_name)) == pz["fallback_count"]
+      and sum(1 for u in _users if not NU.resolves_to_arabic(u.full_name)
+              and not NU.resolves_to_fallback(u.full_name)) == pz["latin_count"], pz)
+
+# A campaign with no token must be untouched by any of this.
+c = mkcampaign(actor=owner, title="بدون توكن", body="نص عادي",
+               audience={"status": "all", "country": "Peru"})
+send_real(c["id"], actor=owner)
+wait_sent(c["id"])
+db.expire_all()
+plain = db.query(M.Notification).filter(M.Notification.announcement_id == c["id"]).all()
+check("a campaign without the token is delivered byte-for-byte as written",
+      all(n.body == "نص عادي" and n.title == "بدون توكن" for n in plain),
+      [(n.title, n.body) for n in plain[:2]])
+
+
+# ══════════════════════════════════════════════════════════════
+print("\n=== one DM channel per pair, enforced by the schema (F-30) ===")
+# ══════════════════════════════════════════════════════════════
+# The migration adds a partial unique index. `create_all` builds the schema for
+# this script from the models, so the index is only here if the model declares
+# it too — which is the point: a constraint that exists only in a migration is
+# absent from every database built from the models.
+from sqlalchemy import inspect as _inspect                             # noqa: E402
+idx = {i["name"]: i for i in _inspect(engine).get_indexes("channels")}
+check("uq_channels_dm_name exists on channels", "uq_channels_dm_name" in idx, list(idx))
+check("...and it is unique", bool(idx.get("uq_channels_dm_name", {}).get("unique")), idx)
+
+dup_a = mkuser("dup.a@t.co", name="Dup Alpha")
+ch1, made1 = __import__("app.services.dm_service", fromlist=["x"]).get_or_create_dm_channel(
+    db, owner.id, dup_a.id)
+ch2, made2 = __import__("app.services.dm_service", fromlist=["x"]).get_or_create_dm_channel(
+    db, owner.id, dup_a.id)
+check("get_or_create_dm returns the same channel twice, not two",
+      ch1.id == ch2.id and made1 and not made2, (ch1.id, ch2.id, made1, made2))
+check("...and the pair has exactly one channel row",
+      db.query(M.Channel).filter(M.Channel.name == ch1.name).count() == 1)
+check("...with exactly its two members",
+      db.query(M.ChatMember).filter(M.ChatMember.channel_id == ch1.id).count() == 2)
+
+# The fan-out path must reach the SAME channel a member already opened by hand
+# — that is the race the constraint exists for.
+ids = __import__("app.services.dm_service", fromlist=["x"]).ensure_dm_channels(
+    db, owner.id, [dup_a.id])
+db.commit()
+check("the bulk fan-out reuses the channel the member already had",
+      ids[dup_a.id] == ch1.id, (ids, ch1.id))
+check("...and did not add a second set of memberships",
+      db.query(M.ChatMember).filter(M.ChatMember.channel_id == ch1.id).count() == 2)
+
+
+# ══════════════════════════════════════════════════════════════
+print("\n=== a campaign mid-fan-out cannot be deleted (F-29) ===")
+# ══════════════════════════════════════════════════════════════
+# Deleting the row the worker is holding ends with `row.status = "sent"`
+# committing against nothing, landing in the except branch, and logging that
+# the campaign FAILED when in fact every member received it. No data is lost —
+# the notification rows are already written and announcement_id is SET NULL —
+# but the log lies and the operator gets no answer.
+busy = mkcampaign(actor=owner, audience={"status": "all", "country": "Iceland"})
+db.query(M.Announcement).filter(M.Announcement.id == busy["id"]).update({"status": "sending"})
+db.commit()
+
+r = client.delete(f"/admin/announcements/{busy['id']}", headers=H(owner))
+check("delete is refused while the fan-out is running", r.status_code == 400,
+      f"{r.status_code} {r.text[:120]}")
+check("...and the row is still there", db.query(M.Announcement)
+      .filter(M.Announcement.id == busy["id"]).count() == 1)
+r = client.put(f"/admin/announcements/{busy['id']}", headers=H(owner),
+               json={"title": "x", "body": "y"})
+check("edit is refused too (it already was)", r.status_code == 400, r.status_code)
+
+# ...and once it is no longer sending, delete works normally again.
+db.query(M.Announcement).filter(M.Announcement.id == busy["id"]).update({"status": "draft"})
+db.commit()
+check("a draft still deletes",
+      client.delete(f"/admin/announcements/{busy['id']}", headers=H(owner)).status_code in (200, 204))
+
+
 print("\n" + "=" * 72)
 print(f"passed {len(PASS)}   failed {len(FAIL)}")
 for f in FAIL:
