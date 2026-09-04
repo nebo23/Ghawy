@@ -1153,7 +1153,7 @@
 .sh-faq-summary::after {
   content: '\f078';
   /* fa-chevron-down */
-  font-family: 'Font Awesome 6 Free';
+  font-family: "Font Awesome 7 Free", "Font Awesome 6 Free";
   font-weight: 900;
   font-size: 0.8rem;
   color: #888;
