@@ -489,6 +489,9 @@ body.sidebar-anim .dash-main {
 
 .sb-streak-fire {
     font-size: 1.2rem;
+    /* kept from the dashboard.css copy this replaced (P5-3) */
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .sb-streak-sub {
@@ -903,6 +906,8 @@ body.sidebar-anim .dash-main {
                 box-shadow .25s cubic-bezier(.2, .8, .2, 1),
                 background-image .25s cubic-bezier(.2, .8, .2, 1);
     text-decoration: none;
+    /* kept from the dashboard.css copy this replaced (P5-3) */
+    cursor: pointer;
 }
 
 .course-card:hover {
@@ -913,6 +918,8 @@ body.sidebar-anim .dash-main {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09),
                 0 16px 40px rgba(0, 0, 0, .55),
                 0 0 0 1px rgba(193, 255, 17, .1);
+    /* kept from the dashboard.css copy this replaced (P5-3) */
+    border-color: var(--gold-border);
 }
 
 /* ── Thumbnail ── */
@@ -2599,7 +2606,7 @@ html[dir="rtl"] .cc-ring svg {
 
     .dash-grid-side {
         grid-template-columns: 1fr;
-    }
+}
 
     .ai-hero {
         flex-direction: column;
@@ -2703,12 +2710,6 @@ html[dir="rtl"] .cc-ring svg {
     object-fit: cover;
     border-radius: 50%;
 }
-
-.dropdown-profile-info {
-    flex: 1;
-    min-width: 0;
-}
-
 .dropdown-name {
     font-size: .85rem;
     font-weight: 800;
@@ -2756,11 +2757,6 @@ html[dir="rtl"] .cc-ring svg {
     flex-direction: column;
     overflow: hidden;
 }
-
-.notif-panel.open {
-    display: flex;
-}
-
 /* RTL desktop: the bell is at the far LEFT — open the panel to the right */
 @media (min-width: 1025px) {
     [dir="rtl"] .notif-panel {
@@ -2791,19 +2787,7 @@ html[dir="rtl"] .cc-ring svg {
     cursor: pointer;
     font-size: .9rem;
     padding: 4px;
-}
-
-.notif-close-btn:hover {
-    color: #fff;
-}
-
-.notif-panel-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-}
-
-.notif-empty {
+}.notif-empty {
     text-align: center;
     padding: 24px 16px;
     color: var(--txt-muted);
@@ -2847,12 +2831,6 @@ html[dir="rtl"] .cc-ring svg {
         right: 0 !important;
         transform: translateX(100%) !important;
     }
-
-    /* 3. Revealed when JS adds .open */
-    .dash-sidebar.open {
-        transform: translateX(0) !important;
-    }
-
     /* 4. Main: no sidebar margin (RTL selector needed to beat the
        higher-specificity desktop [dir="rtl"] .dash-main margin rule) */
     .dash-main,
@@ -3037,24 +3015,18 @@ html[dir="rtl"] .cc-ring svg {
     .notif-panel-list {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-    }
-
-    /* Keep long notification text inside the panel */
-    .notif-item-text,
-    .notif-item-name {
-        overflow-wrap: break-word;
-        word-break: break-word;
-        min-width: 0;
-    }
-}
+    }}
 
 @media (max-width: 640px) {
+    /* Kept deliberately, though dashboard.css declares the same three
+       properties: in this file the @768 .notif-panel rule sits ABOVE the
+       base rule, so this @640 copy is the last `width` in the cascade at
+       <=640px. Deleting it as a duplicate widens the panel by 16px. */
     .notif-panel {
         width: calc(100vw - 32px);
         max-width: 300px;
         max-height: 60vh;
     }
-
     .notif-item {
         padding: 10px 12px;
     }

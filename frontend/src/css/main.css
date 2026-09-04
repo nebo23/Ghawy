@@ -6885,7 +6885,7 @@ html[dir="rtl"] .gc-card {
 .tr-card-cta::after {
     content: "\f177";
     /* fa-arrow-left — forward in RTL */
-    font-family: "Font Awesome 7 Free", "Font Awesome 6 Free";
+    font-family: "Font Awesome 7 Free";
     font-weight: 900;
     font-size: 0.78em;
     margin-inline-start: 8px;
