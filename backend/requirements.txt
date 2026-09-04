@@ -33,9 +33,6 @@ requests==2.33.0
 # Scheduling
 apscheduler==3.10.4
 
-# Cloud Storage
-boto3==1.35.86
-
 # Image compression / resizing (fast image loading)
 # Parses member-uploaded images, so its image-parsing advisories are directly
 # reachable. Only Image.open / Image.LANCZOS / ImageOps.exif_transpose are used
