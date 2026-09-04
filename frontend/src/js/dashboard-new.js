@@ -881,12 +881,10 @@ function applyOnlineCount(n) {
 }
 
 async function fetchOnlineCount() {
-    try {
-        const res = await api('/chat/online-count');
-        if (!res.ok) return;
-        const data = await res.json();
-        applyOnlineCount(data.online_count);
-    } catch (e) { }
+    // request lives in utils.js (window.getOnlineCount); api() is passed in so
+    // an expired subscription still gets its 402 -> /renewal redirect
+    const n = await window.getOnlineCount(api);
+    if (n !== null) applyOnlineCount(n);
 }
 
 // ═══════════════════════════════════════════════════════

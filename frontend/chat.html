@@ -1617,7 +1617,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=20260903a"></script>
+    <script src="src/js/utils.js?v=20260904a"></script>
 
     <style>
         /* Custom Modal */
@@ -3369,11 +3369,10 @@
         }
 
         async function fetchOnlineCount() {
-            try {
-                const res = await apiFetch('/chat/online-count');
-                const data = await res.json();
-                applyPresenceCount(data.online_count);
-            } catch (e) { }
+            // request lives in utils.js (window.getOnlineCount); apiFetch is
+            // passed in so this page keeps its own 401 handling
+            const n = await window.getOnlineCount(apiFetch);
+            if (n !== null) applyPresenceCount(n);
         }
 
         // ── Channel Selection ──
@@ -5983,7 +5982,7 @@
 
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
-    <script src="src/js/dashboard-new.js?v=20260903b"></script>
+    <script src="src/js/dashboard-new.js?v=20260904a"></script>
 
     <!-- ── Hamburger / Sidebar Toggle (single authoritative binding) ── -->
     <script>

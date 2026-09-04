@@ -971,3 +971,28 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
         }, 1000);
     });
 })();
+
+
+// ── Community online count ──────────────────────────────────────────────
+// One request, three painters. chat.html and direct-messages.html paint the
+// presence pill; the dashboard shell paints #dashOnlineCount — so this returns
+// the number and leaves the painting to the caller.
+//
+// It takes the caller's fetch helper rather than calling fetch() itself,
+// because the two helpers differ where it matters: dashboard-new.js's api()
+// redirects an expired subscription to /renewal on a 402, while the chat
+// pages' apiFetch() only handles 401. Doing the request here with a bare
+// fetch() would quietly drop that redirect.
+//
+// Returns null on any failure, which every caller reads as "leave the count
+// where it is" — a failed poll must never blank a number that was correct.
+window.getOnlineCount = async function (fetcher) {
+    try {
+        const res = await fetcher('/chat/online-count');
+        if (!res || !res.ok) return null;
+        const data = await res.json();
+        return typeof data.online_count === 'number' ? data.online_count : null;
+    } catch (e) {
+        return null;
+    }
+};
