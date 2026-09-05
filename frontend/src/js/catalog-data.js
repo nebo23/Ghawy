@@ -542,13 +542,16 @@
         // `course_time` at all and row 14's was spelled "3h 45min". Both are
         // set in the platform now and these match them exactly, which is what
         // a fallback has to do — load() merges the live value over the top.
+        // ai-thumbnails is 5 and not 7 because two published test lessons were
+        // deleted from the course; they carried 0 minutes, so the runtime
+        // below did not move.
         {
             slug: 'ai-thumbnails',
             courseId: 15,
             title: { ar: 'الثامبنيلز بالذكاء الاصطناعي', en: 'AI Thumbnails' },
             keywords: ['ثامبنيل', 'ثامبنيلز', 'thumbnail', 'thumbnails', 'يوتيوب', 'youtube', 'تصميم', 'design'],
             image: null,
-            lessons: 7,
+            lessons: 5,
             duration: '3h 46m',
             track: 'ai-thumbnails',
             instructor: 'ofa',
