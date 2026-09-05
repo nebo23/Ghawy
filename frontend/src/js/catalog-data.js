@@ -533,52 +533,33 @@
             instructor: 'mohamed-salah',
         },
 
-        // ── Announced, not released ──
-        //
-        // These two are deliberately missing `courseId`, `lessons` and
-        // `duration`, and that absence IS the state: `isSoon()` below treats a
-        // course with no runtime as not-yet-available, and every place that
-        // shows a runtime, a course count or a total reads that flag instead
-        // of guessing from a zero. So the cards say "قريباً" where the hours
-        // would go, the "محتوى الكورس" button is inert, and the two tracks
-        // they belong to keep reading "coming soon" rather than suddenly
-        // claiming "1 course · 0 hours".
-        //
-        // Releasing one is a three-line change here and nothing else: give it
-        // the platform's `courseId` and its static `lessons`/`duration`
-        // fallback. `load()` will then merge the live numbers over the top and
-        // the course flips to available everywhere on the site at once.
-        //
-        // No `image` yet either — `courseMediaHTML` draws the track's icon on
-        // its family gradient until the client sends the thumbnails.
-        // `memberCourseId` — NOT `courseId`.
-        //
-        // These two courses are published in the platform (rows 14 and 15), so
-        // the members' area lists them and needs to know who teaches them and
-        // which track they are in. The public site must NOT learn that: a
-        // course here becomes "released" the moment it has a `courseId`,
-        // because load() then merges the live runtime over it and isSoon()
-        // stops being true — the home page, /courses and the track totals would
-        // all flip to "available" without anybody asking for it.
-        //
-        // So the join key for the members' area is a field of its own, read
-        // only by course-card.js. Giving one of these a real `courseId` stays
-        // the deliberate act that releases it on the public site.
+        // The last two released, and the only two with no `image`: the platform
+        // has a thumbnail for both, so load() fills it in and the null is only
+        // ever seen offline — where `courseMediaHTML` draws the track icon.
         {
             slug: 'ai-thumbnails',
-            memberCourseId: 15,
+            courseId: 15,
             title: { ar: 'الثامبنيلز بالذكاء الاصطناعي', en: 'AI Thumbnails' },
             keywords: ['ثامبنيل', 'ثامبنيلز', 'thumbnail', 'thumbnails', 'يوتيوب', 'youtube', 'تصميم', 'design'],
             image: null,
+            // The platform has no `course_time` for this one, so load() cannot
+            // overwrite the runtime below the way it does for every other
+            // course — this is the number the site shows, not a fallback.
+            // It is the sum of the course's own seven lesson durations
+            // (226 minutes), which is exactly how rows 12 and 14 got theirs.
+            lessons: 7,
+            duration: '3h 46m',
             track: 'ai-thumbnails',
             instructor: 'ofa',
         },
         {
             slug: 'machine-learning',
-            memberCourseId: 14,
+            courseId: 14,
             title: { ar: 'Machine Learning', en: 'Machine Learning' },
             keywords: ['machine learning', 'ml', 'ماشين ليرنينج', 'تعلم الالة', 'تعلم الآلة', 'موديل', 'models', 'نماذج', 'داتا', 'data'],
             image: null,
+            lessons: 12,
+            duration: '3h 45m',
             track: 'machine-learning',
             instructor: 'talkhawy',
         },

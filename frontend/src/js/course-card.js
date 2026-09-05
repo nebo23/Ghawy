@@ -57,14 +57,10 @@
        listed yet) the card simply has no instructor row and no track chip. */
     function data() { return window.GhawyCatalogData || {}; }
 
-    /* `courseId` is the public site's join key; `memberCourseId` is the same
-       join for a course that is live for members but still "coming soon" on the
-       marketing pages (see the note on those entries in catalog-data.js). Both
-       point at the same platform row, so both are accepted here. */
     function catalogEntry(courseId) {
         var list = data().COURSES || [];
         for (var i = 0; i < list.length; i++) {
-            if (list[i].courseId === courseId || list[i].memberCourseId === courseId) return list[i];
+            if (list[i].courseId === courseId) return list[i];
         }
         return null;
     }
