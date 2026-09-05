@@ -111,6 +111,8 @@ ALLOWED_TYPES = {"info", "success", "warning", "promo"}
 DELIVERY_MODES = {"bell", "dm"}
 ALLOWED_STATUSES = {"draft", "scheduled", "sending", "sent", "failed"}
 PREVIEW_SAMPLE = 8
+#: طول اسم الحملة المشتق من أول سطر في النص، قبل ما يتقص بـ "…".
+LABEL_MAX = 70
 LIST_PAGE_DEFAULT = 30
 LIST_PAGE_MAX = 100
 
@@ -145,7 +147,9 @@ _active_send: Dict[str, Any] = {
 # ══════════════════════════════════════════════════════════════
 
 class AnnouncementSave(BaseModel):
-    title: str = Field(default="", max_length=160)
+    # الحملة بقت قطعة نص واحدة — الكومبوزر مابيسألش عن عنوان. الحقل فاضل هنا
+    # عشان الحملات القديمة اللي ليها عنوان تقدر تتحفظ من غير ما تفقده.
+    title: Optional[str] = Field(default=None, max_length=160)
     body: str = ""
     type: str = "info"
     link: Optional[str] = None
@@ -375,6 +379,8 @@ def _serialize(a: Announcement, stats: Optional[Dict[str, int]] = None,
     return {
         "id": a.id,
         "title": a.title,
+        # اللي بيتعرض في اللستة. الحملة من غير عنوان بتتسمّى بأول سطر من نصها.
+        "label": _label(a),
         "body": a.body,
         "type": a.type,
         "link": a.link,
@@ -406,8 +412,22 @@ def _get_or_404(db: Session, announcement_id: int) -> Announcement:
 
 
 def _require_sendable(a: Announcement) -> None:
-    if not (a.title or "").strip() or not (a.body or "").strip():
-        raise HTTPException(status_code=400, detail="الحملة محتاجة عنوان ونص قبل الإرسال")
+    if not (a.body or "").strip():
+        raise HTTPException(status_code=400, detail="الحملة محتاجة نص قبل الإرسال")
+
+
+def _label(a: Announcement) -> str:
+    """اسم الحملة في القوايم — العنوان، وإلا أول سطر من النص.
+
+    الحملة بقت من غير عنوان، والصفوف لازم يفضل ليها اسم يتقري في اللستة وفي
+    سطر التأكيد. أول سطر من النص هو أقرب حاجة للعنوان اللي المشغّل كان بيكتبه،
+    وهو اللي هو نفسه شايفه في المحرّر — يعني مش اسم اخترعناه من ورا.
+    """
+    title = (a.title or "").strip()
+    if title:
+        return title
+    first = (a.body or "").strip().split("\n", 1)[0].strip()
+    return (first[:LABEL_MAX] + "…") if len(first) > LABEL_MAX else first
 
 
 # ══════════════════════════════════════════════════════════════
@@ -434,8 +454,8 @@ _NAME_TOKEN_RE = re.compile(r"\{\{\s*name\s*\}\}", re.IGNORECASE)
 
 
 def _has_name_token(a: Announcement) -> bool:
-    """هل الحملة دي أصلاً بتنادي حد باسمه؟"""
-    return bool(_NAME_TOKEN_RE.search(f"{a.title or ''}\n{a.body or ''}"))
+    """هل الحملة دي أصلاً بتنادي حد باسمه؟ — النص بس، مفيش عنوان يتفحص."""
+    return bool(_NAME_TOKEN_RE.search(a.body or ""))
 
 
 def _personalize(text: Optional[str], full_name: Optional[str]) -> str:
@@ -459,9 +479,11 @@ def _personalize(text: Optional[str], full_name: Optional[str]) -> str:
 def _dm_body(a: Announcement, full_name: Optional[str] = None) -> str:
     """نص الرسالة الخاصة زي ما العضو هيقراه.
 
-    الرسالة الخاصة مالهاش عنوان منفصل زي الجرس، فالعنوان بيتحط أول سطر.
-    واللينك بيتكتب كـ URL كامل عشان الشات بيعمل linkify للـ URLs بس (شوف
+    اللينك بيتكتب كـ URL كامل عشان الشات بيعمل linkify للـ URLs بس (شوف
     `linkifyText` في utils.js) — مسار نسبي كان هيوصل كنص ميّت.
+
+    الحملات القديمة ليها عنوان متخزّن، وهو بيتحط أول سطر زي ما كان — إعادة
+    إرسال حملة اتبعتت قبل كده لازم توصل بنفس النص بالحرف.
 
     `full_name` بتاع المستلم عشان `{{name}}` يتحل. من غيرها النص بيرجع بالتوكن
     زي ما هو — وده مقصود: مفيش منادي شرعي بيسيبها فاضية، فلو ظهرت التوكن في
@@ -469,9 +491,9 @@ def _dm_body(a: Announcement, full_name: Optional[str] = None) -> str:
     """
     parts = []
     title = _personalize(a.title, full_name).strip()
-    body = _personalize(a.body, full_name).strip()
     if title:
         parts.append(title)
+    body = _personalize(a.body, full_name).strip()
     if body:
         parts.append(body)
     if a.link:
@@ -495,7 +517,10 @@ def _live_item(notif_id: int, user_id: int, a: Announcement,
             # `a.title` هنا، المتصل كان هيشوف `{{name}}` والمنقطع كان هيشوف
             # اسمه، من نفس الحملة.
             "id": notif_id,
-            "title": a.title if title is None else title,
+            # `or ""` مش تجميل: الحملة من غير عنوان بتكتب "" في الصف، والـ
+            # push لازم يبعت نفس القيمة — لو بعت None كان التوست في الشات
+            # هيكتب "null: ...".
+            "title": (a.title if title is None else title) or "",
             "body": a.body if body is None else body,
             "type": a.type, "link": a.link, "is_read": False,
         },
@@ -562,6 +587,8 @@ def preview_audience(
     expiring_days: Optional[int] = Query(None, ge=0, le=365),
     include_staff: bool = Query(False),
     member_ids: Optional[List[int]] = Query(None),
+    progress_course_id: Optional[int] = Query(None),
+    progress_min_percent: Optional[int] = Query(None, ge=0, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -576,6 +603,8 @@ def preview_audience(
         "search": search, "country": country, "governorate": governorate,
         "status": status, "plan": plan, "expiring_days": expiring_days,
         "include_staff": include_staff, "member_ids": member_ids,
+        "progress_course_id": progress_course_id,
+        "progress_min_percent": progress_min_percent,
     }
     users = aud.resolve_users(db, filters)
     online = sum(1 for u in users if manager.is_online(u.id))
@@ -955,7 +984,7 @@ def create_announcement(
     sender_id = _resolve_sender(db, current_user, delivery, data.sender_id)
 
     row = Announcement(
-        title=(data.title or "").strip()[:160],
+        title=(data.title or "").strip()[:160] or None,
         body=(data.body or "").strip(),
         type=_clean_type(data.type),
         link=_clean_link(data.link),
@@ -1006,7 +1035,7 @@ def update_announcement(
     delivery = _clean_delivery(data.delivery)
     sender_id = _resolve_sender(db, current_user, delivery, data.sender_id)
 
-    row.title = (data.title or "").strip()[:160]
+    row.title = (data.title or "").strip()[:160] or None
     row.body = (data.body or "").strip()
     row.type = _clean_type(data.type)
     row.link = _clean_link(data.link)
@@ -1043,7 +1072,9 @@ def duplicate_announcement(
     sender_id = _resolve_sender(db, current_user, delivery, sender_id)
 
     row = Announcement(
-        title=f"{src.title} (نسخة)"[:160],
+        # العلامة بتتحط على العنوان اللي موجود بس. اشتقاقها من النص كان
+        # هيدّي النسخة عنوان الأصل مكانش ليه — والجرس بيعرض العنوان ده للعضو.
+        title=f"{src.title} (نسخة)"[:160] if src.title else None,
         body=src.body,
         type=src.type,
         link=src.link,
@@ -1109,7 +1140,7 @@ def _fanout_bell(db: Session, row: Announcement, user_ids: List[int], loop) -> i
         # ذاكرة مدفوعة عشان حاجة محتاجينها للمتصلين بس — واللي بنقراهم تحت
         # بـ SELECT واحد مفلتر عليهم هُمّ.
         texts = {
-            uid: (_personalize(row.title, names.get(uid)) if personalized else row.title,
+            uid: (_personalize(row.title, names.get(uid)) if personalized else (row.title or ""),
                   _personalize(row.body, names.get(uid)) if personalized else row.body)
             for uid in chunk
         }

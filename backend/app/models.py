@@ -1117,7 +1117,12 @@ class Announcement(Base):
     __tablename__ = "announcements"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(160), nullable=False)
+    # Nullable since the composer dropped its title field: a campaign is one
+    # piece of text now. The column stays because campaigns sent before that
+    # carry a real title and the history view reads it, and because the bell
+    # still has a title slot — a title-less campaign writes "" into it and the
+    # renderer promotes the body into the heading.
+    title = Column(String(160), nullable=True)
     body = Column(Text, nullable=False)
     # Drives the icon and accent on the member's bell. Same vocabulary the
     # existing notifications already use, plus "promo" for offers.

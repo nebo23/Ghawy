@@ -104,8 +104,13 @@ img{max-width:100%;display:block}
    here instead of being cut to one. Two classes and not one on purpose:
    chat.html and direct-messages.html each carry their own
    `.notif-item-text { white-space: nowrap }` in an inline <style>, which would
-   win on source order against a single-class rule in this file. */
-.notif-item-text.notif-clamp {
+   win on source order against a single-class rule in this file.
+
+   The heading is on the same rule because a title-less campaign puts its body
+   there (renderGlobalNotifList), and that text has the same no-limit problem.
+   One rule, two slots — not two rules that can drift. */
+.notif-item-text.notif-clamp,
+.notif-item-name.notif-clamp {
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;

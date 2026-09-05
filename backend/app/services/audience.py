@@ -36,10 +36,11 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import or_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 
-from app.models import Payment, PaymentStatus, User
+from app.models import Course, Lesson, Payment, PaymentStatus, User, UserProgress
+from app.services.progress_service import effective_lesson_totals
 
 logger = logging.getLogger("ghawy.audience")
 
@@ -51,6 +52,7 @@ MAX_AUDIENCE = 20000
 ALLOWED_KEYS = {
     "search", "country", "governorate", "status", "plan",
     "expiring_days", "include_staff", "member_ids",
+    "progress_course_id", "progress_min_percent",
 }
 
 # سقف الاختيار اليدوي. الاختيار اليدوي معناه إن حد قعد يدوّر على الناس دول
@@ -107,6 +109,27 @@ def normalize_filters(raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         except (TypeError, ValueError):
             out["expiring_days"] = None
 
+    # فلتر التقدّم: كورس (أو "أي كورس") + أقل نسبة. مفيش مفتاح تالت لـ"خلّص":
+    # ١٠٠٪ هي "خلّص"، وبوليان جنبها كان هيبقى نفس المعنى مكتوب مرتين — واتنين
+    # يقدروا يتناقضوا.
+    pct = out.get("progress_min_percent")
+    if pct in ("", None):
+        out["progress_min_percent"] = None
+    else:
+        try:
+            out["progress_min_percent"] = max(0, min(100, int(pct)))
+        except (TypeError, ValueError):
+            out["progress_min_percent"] = None
+
+    course = out.get("progress_course_id")
+    if course in ("", None, 0, "0"):
+        out["progress_course_id"] = None            # أي كورس
+    else:
+        try:
+            out["progress_course_id"] = int(course)
+        except (TypeError, ValueError):
+            out["progress_course_id"] = None
+
     return out
 
 
@@ -143,6 +166,91 @@ def latest_plan_map(db: Session, user_ids: List[int]) -> Dict[int, Optional[str]
             best_ts[uid] = ts
             plans[uid] = plan_key
     return plans
+
+
+# ══════════════════════════════════════════════════════════════
+#  فلتر التقدّم — "خلّص الكورس" و"وصل ٨٠٪"
+# ══════════════════════════════════════════════════════════════
+#
+# مش من `user_course_progress.percent`. العمود ده اسمه بيقول إنه الإجابة وهو
+# فاضي: مفيش حاجة في المشروع كتبت فيه صف ولا مرة (اتأكد بـ grep)، فالفلتر اللي
+# يتبني عليه بيرجّع صفر عضو، بالسكوت، للأبد.
+#
+# المصدر الحقيقي هو `user_progress` — صف لكل (عضو، درس) خلصه — مقسوم على مقام
+# `progress_service.effective_lesson_totals`، اللي هو التعريف الوحيد لعدد
+# الدروس اللي بتتحسب في الكورس.
+
+
+def _min_lessons_for(db: Session, course_ids: List[int], pct: int):
+    """أقل عدد دروس يخلّي النسبة اللي العضو شايفها توصل `pct`، لكل كورس.
+
+    النسبة اللي العضو بيقراها في صفحته هي `round(done * 100 / total)`
+    (`courses.get_all_progress`)، والمقام هو `effective_lesson_totals`. بنقلب
+    نفس المعادلة هنا لعدد دروس بدل ما نكتب حساب نسبة تاني: نسختين لنفس الرقم
+    هي بالظبط السبب اللي خلّى نسبة الطالب في صفحته تختلف عن نسبته في لوحة
+    الفريق قبل كده، والدوكسترنج بتاعة `effective_lesson_totals` مكتوبة عشان ده.
+
+    وكمان بيخلّي الفلتر مقارنة أرقام صحيحة في الـ SQL — مفيش قسمة ولا تقريب
+    جوّه الكويري يقدر يختلف عن تقريب بايثون عند النص في المية.
+
+    بيرجّع `(needs, ready_counts)`: `needs` هي المطلوب لكل كورس، و`ready_counts`
+    بتقول أي كورس اتحسب مقامه بالدروس الـ ready — عشان البسط يستخدم نفس الفرع.
+    """
+    totals, ready_counts = effective_lesson_totals(db, course_ids)
+    needs = {}
+    for cid in course_ids:
+        total = totals.get(cid) or 0
+        if total <= 0:
+            continue        # كورس من غير دروس: نسبته صفر لكل الناس
+        needs[cid] = next(d for d in range(total + 1) if round(d * 100 / total) >= pct)
+    return needs, ready_counts
+
+
+def _progress_user_ids(db: Session, f: Dict[str, Any]):
+    """كويري فرعية بأرقام الأعضاء اللي وصلوا النسبة — أو None لو مفيش فلتر.
+
+    جوّه الكويري مش بعديها: فلتر الباقة تحت بيتعمل في بايثون بعد `.limit()`،
+    فالسقف بيتطبّق على الجمهور غير المفلتر. ده مقبول هناك لأنه محتاج آخر دفعة
+    مؤكّدة لكل عضو؛ التقدّم مش محتاج كده، فهو `IN (subquery)` عادي والـ LIMIT
+    بيفضل معناه اللي مكتوب.
+    """
+    pct = f.get("progress_min_percent")
+    if not pct:
+        return None         # مفيش نسبة، أو ٠٪ — يعني الكل، يعني مفيش فلتر
+
+    cid = f.get("progress_course_id")
+    course_ids = [cid] if cid else [c for (c,) in db.query(Course.id).all()]
+    needs, ready_counts = _min_lessons_for(db, course_ids, pct)
+    if not needs:
+        return None
+
+    # الكورس اللي مقامه اتحسب بالـ ready، بسطه كمان بيتحسب بالـ ready. اللي
+    # مفيهوش ولا درس ready بيتحسب بكل دروسه في الاتنين. نفس فرع
+    # `courses.get_all_progress` بالحرف.
+    branches = []
+    ready_ids = [c for c in needs if ready_counts.get(c)]
+    all_ids = [c for c in needs if not ready_counts.get(c)]
+    if ready_ids:
+        branches.append(and_(UserProgress.course_id.in_(ready_ids),
+                             Lesson.video_status == "ready"))
+    if all_ids:
+        branches.append(UserProgress.course_id.in_(all_ids))
+
+    done = (
+        db.query(UserProgress.user_id.label("uid"),
+                 UserProgress.course_id.label("cid"),
+                 func.count(UserProgress.id).label("done"))
+        .join(Lesson, Lesson.id == UserProgress.lesson_id)
+        .filter(or_(*branches))
+        .group_by(UserProgress.user_id, UserProgress.course_id)
+        .subquery()
+    )
+    # كورس مش في `needs` بيدّي NULL، و`done >= NULL` مابتطابقش — وده المطلوب.
+    return (
+        db.query(done.c.uid)
+        .filter(done.c.done >= case(needs, value=done.c.cid, else_=None))
+        .scalar_subquery()
+    )
 
 
 def plan_group(plan_key: Optional[str]) -> str:
@@ -205,6 +313,10 @@ def resolve_users(db: Session, filters: Optional[Dict[str, Any]],
             User.end_at <= now + timedelta(days=f["expiring_days"]),
         )
 
+    progress = _progress_user_ids(db, f)
+    if progress is not None:
+        q = q.filter(User.id.in_(progress))
+
     users = q.order_by(User.created_at.desc()).limit(limit).all()
 
     # فلتر الباقة بيتعمل بعد الكويري لأنه محتاج آخر دفعة مؤكّدة لكل عضو.
@@ -219,8 +331,8 @@ def resolve_users(db: Session, filters: Optional[Dict[str, Any]],
     return users
 
 
-def facets(db: Session) -> Dict[str, List[str]]:
-    """قوائم البلاد والمحافظات الموجودة فعلاً — عشان الفلاتر في الواجهة."""
+def facets(db: Session) -> Dict[str, Any]:
+    """قوائم البلاد والمحافظات والكورسات الموجودة فعلاً — عشان الفلاتر في الواجهة."""
     countries = [c[0] for c in db.query(User.country)
                  .filter(User.country != None, User.country != "").distinct().all()]  # noqa: E711
     govs = [g[0] for g in db.query(User.governorate)
@@ -228,4 +340,8 @@ def facets(db: Session) -> Dict[str, List[str]]:
     return {
         "countries": sorted({c for c in countries if c}),
         "governorates": sorted({g for g in govs if g}),
+        # كل الكورسات مش المنشورة بس: عضو ممكن يكون خلّص كورس اتشال من النشر
+        # بعدها، وتقدّمه ده حقيقي وبيتحسب.
+        "courses": [{"id": c.id, "title": c.title}
+                    for c in db.query(Course).order_by(Course.sort_order, Course.id).all()],
     }

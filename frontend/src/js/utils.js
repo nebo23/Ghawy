@@ -614,13 +614,19 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
      // The Arabic layer matches it by pattern, so it stays the backend's
      // English here and gets translated in place.
      const when = n.time_ago ? String(n.time_ago) : '';
-     const body = String(n.body || '');
+     // A title-less notification — an announcements campaign is one piece of
+     // text now — leads with its body instead of drawing an empty bold line
+     // above it. The body then does not repeat on the second line: one message,
+     // shown once. Everything else on the platform still sends a title and is
+     // untouched.
+     const heading = String(n.title || '') || String(n.body || '');
+     const body = String(n.title || '') ? String(n.body || '') : '';
      html += `
         <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${Number(n.id)}, '${link}')">
             <div class="notif-item-av"><i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i></div>
             <div class="notif-item-body">
-                <div class="notif-item-name">${escapeHtml(n.title)}</div>
-                <div class="notif-item-text notif-clamp" title="${escapeHtml(body)}">${escapeHtml(body)}</div>
+                <div class="notif-item-name notif-clamp" title="${escapeHtml(heading)}">${escapeHtml(heading)}</div>
+                ${body ? `<div class="notif-item-text notif-clamp" title="${escapeHtml(body)}">${escapeHtml(body)}</div>` : ''}
                 ${when ? `<div class="notif-item-time">${escapeHtml(when)}</div>` : ''}
             </div>
             ${!n.is_read ? `<div class="notif-item-count">1</div>` : ''}

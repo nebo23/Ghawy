@@ -60,7 +60,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=32" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=33" />
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=19" />
     <link rel="stylesheet" href="src/css/community.css?v=7" />
     <style>
@@ -1617,7 +1617,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=20260904a"></script>
+    <script src="src/js/utils.js?v=20260905a"></script>
 
     <style>
         /* Custom Modal */
@@ -3149,7 +3149,10 @@
                         loadMessages();
                     } else if (msg.event === 'new_notification' || msg.event === 'notification') {
                         loadNotifications();
-                        notifyToast(msg.data.title + ': ' + msg.data.body, 'info');
+                        // An announcements campaign carries no title, so the
+                        // body IS the message — prefixing it with an empty
+                        // heading and a colon read as ": ‏النص".
+                        notifyToast(msg.data.title ? msg.data.title + ': ' + msg.data.body : msg.data.body, 'info');
                     } else if (msg.event === 'reaction_updated' || msg.type === 'reaction_updated') {
                         if (msg.data) applyReactionUpdate(msg.data.message_id, msg.data.reactions_summary || []);
                     } else if (msg.event === 'reaction_error') {
@@ -3183,9 +3186,6 @@
                                 loadInlineComments(msg.data.post_id);
                             }
                         }
-                    } else if (msg.event === 'notification') {
-                        commToast('New Notification: ' + msg.data.title);
-                        loadNotifications();
                     } else if (msg.event === 'message_deleted') {
                         const el = document.getElementById(`msg-${msg.data.message_id}`);
                         if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; setTimeout(() => el.remove(), 300); }

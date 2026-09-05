@@ -285,7 +285,7 @@ function anCardHTML(c) {
     <div class="an-card${isDm ? ' dm' : ''}">
       <div class="an-card-head">
         <span class="an-card-dot" style="background:${meta.color}" title="${escapeHtml(meta.label)}"></span>
-        <div class="an-card-title">${escapeHtml(c.title || '(من غير عنوان)')}</div>
+        <div class="an-card-title">${escapeHtml(c.label || '(فاضية)')}</div>
       </div>
       <div class="an-card-modes">${statusBadge}${modeBadge}</div>
       <div class="an-card-body">${escapeHtml((c.body || '').slice(0, 140))}${(c.body || '').length > 140 ? '…' : ''}</div>
@@ -354,6 +354,12 @@ function anRenderDeliveryState() {
   const editor = document.getElementById('an-editor-view');
   if (wrap) wrap.style.display = dm ? '' : 'none';
   if (warn) warn.style.display = dm ? '' : 'none';
+  // The type drives an icon and an accent colour, and a DM has neither — it is
+  // plain text in a chat bubble. Leaving the field enabled let an operator pick
+  // "تنبيه (أصفر)" and get nothing; a control with no effect is worse than one
+  // that is not there.
+  const typeWrap = document.getElementById('an-type-wrap');
+  if (typeWrap) typeWrap.style.display = dm ? 'none' : '';
   if (editor) editor.classList.toggle('dm-mode', dm);
 
   const sendBtn = document.getElementById('an-send-btn');
@@ -385,19 +391,13 @@ function anRenderDeliveryState() {
 
 function anNewCampaign() {
   anCurrent = null;
-  anSetField('an-title', '');
   anSetField('an-body', '');
   anSetField('an-type', 'info');
   anSetField('an-link', '');
   anSetField('an-delivery', 'bell');
-  anSetField('an-aud-status', 'all');
-  anSetField('an-aud-plan', 'all');
-  anSetField('an-aud-country', '');
-  anSetField('an-aud-gov', '');
-  anSetField('an-aud-expiring', '');
-  anSetField('an-aud-search', '');
-  const staff = document.getElementById('an-aud-staff');
-  if (staff) staff.checked = false;
+  // The empty filter IS the default audience — one writer, so a new campaign
+  // and a re-opened one can never disagree about what a blank panel means.
+  anWriteAudienceFields({});
   anSetField('an-confirm', '');
   anSetField('an-sched-at', '');
   anSetField('an-segment', '');
@@ -422,7 +422,6 @@ async function anOpenCampaign(id) {
   if (!c) return;
   anCurrent = c;
 
-  anSetField('an-title', c.title || '');
   anSetField('an-body', c.body || '');
   anSetField('an-type', c.type || 'info');
   anSetField('an-link', c.link || '');
@@ -430,14 +429,7 @@ async function anOpenCampaign(id) {
   anFillSenders(c.sender_id || ((anSenders.find(s => s.is_self) || {}).id));
 
   const a = c.audience || {};
-  anSetField('an-aud-status', a.status || 'all');
-  anSetField('an-aud-plan', a.plan || 'all');
-  anSetField('an-aud-country', a.country || '');
-  anSetField('an-aud-gov', a.governorate || '');
-  anSetField('an-aud-expiring', a.expiring_days == null ? '' : a.expiring_days);
-  anSetField('an-aud-search', a.search || '');
-  const staff = document.getElementById('an-aud-staff');
-  if (staff) staff.checked = !!a.include_staff;
+  anWriteAudienceFields(a);
   anSetField('an-confirm', '');
   anSetField('an-segment', '');
   anSetField('an-pick-search', '');
@@ -452,7 +444,7 @@ async function anOpenCampaign(id) {
   anRenderSchedState();
   anRenderResumeState();
 
-  document.getElementById('an-editor-title').textContent = '📢 ' + (c.title || 'حملة');
+  document.getElementById('an-editor-title').textContent = '📢 ' + (c.label || 'حملة');
   document.getElementById('an-editor-badge').innerHTML =
     c.status === 'sent' ? '<span class="an-status-badge sent">اتبعتت</span>'
       : c.status === 'failed' ? '<span class="an-status-badge failed">فشلت</span>'
@@ -487,9 +479,10 @@ function anSetField(id, value) {
 
 function anReadForm() {
   const days = (document.getElementById('an-aud-expiring') || {}).value;
+  const course = (document.getElementById('an-aud-course') || {}).value;
+  const pct = (document.getElementById('an-aud-progress') || {}).value;
   const senderRaw = (document.getElementById('an-sender') || {}).value;
   return {
-    title: (document.getElementById('an-title') || {}).value || '',
     body: (document.getElementById('an-body') || {}).value || '',
     type: (document.getElementById('an-type') || {}).value || 'info',
     link: (document.getElementById('an-link') || {}).value || '',
@@ -505,10 +498,35 @@ function anReadForm() {
       country: (document.getElementById('an-aud-country') || {}).value || '',
       governorate: (document.getElementById('an-aud-gov') || {}).value || '',
       expiring_days: days === '' || days == null ? null : Number(days),
+      progress_course_id: course === '' || course == null ? null : Number(course),
+      progress_min_percent: pct === '' || pct == null ? null : Number(pct),
       search: (document.getElementById('an-aud-search') || {}).value || '',
       include_staff: !!(document.getElementById('an-aud-staff') || {}).checked,
     },
   };
+}
+
+// The audience half of the form, written FROM a saved filter. Two callers —
+// opening a campaign and applying a saved segment — and they used to hold the
+// same eight lines each. That is not a style problem: adding a filter to one
+// and not the other means a saved segment silently drops it, the field stays
+// blank, and the campaign goes to everybody. One writer, so a new field can
+// only ever be forgotten in both places at once, which is a bug you see.
+//
+// The mirror of anReadForm().audience — if a field is added there, it is added
+// here.
+function anWriteAudienceFields(f) {
+  f = f || {};
+  anSetField('an-aud-status', f.status || 'all');
+  anSetField('an-aud-plan', f.plan || 'all');
+  anSetField('an-aud-country', f.country || '');
+  anSetField('an-aud-gov', f.governorate || '');
+  anSetField('an-aud-expiring', f.expiring_days == null ? '' : f.expiring_days);
+  anSetField('an-aud-course', f.progress_course_id == null ? '' : f.progress_course_id);
+  anSetField('an-aud-progress', f.progress_min_percent == null ? '' : f.progress_min_percent);
+  anSetField('an-aud-search', f.search || '');
+  const staff = document.getElementById('an-aud-staff');
+  if (staff) staff.checked = !!f.include_staff;
 }
 
 // ═══ PREVIEW ═══
@@ -534,7 +552,7 @@ const AN_NAME_TOKEN_G = /\{\{\s*name\s*\}\}/gi;   // replace
 const AN_NAME_TOKEN = /\{\{\s*name\s*\}\}/i;      // test
 
 function anHasNameToken(f) {
-  return AN_NAME_TOKEN.test(`${f.title || ''}\n${f.body || ''}`);
+  return AN_NAME_TOKEN.test(f.body || '');
 }
 
 // Substitution happens on the RAW text, then the result is escaped as one
@@ -545,14 +563,10 @@ function anFillName(text, name) {
   return String(text || '').replace(AN_NAME_TOKEN_G, name);
 }
 
-// Insert at the caret in whichever field the operator last had focus in,
-// falling back to the body. Appending blindly to the end would drop the token
-// somewhere they did not mean and make the button feel broken.
+// Insert at the caret, not at the end — appending blindly would drop the token
+// somewhere the operator did not mean and make the button feel broken.
 function anInsertNameToken() {
-  const active = document.activeElement;
-  const el = (active && (active.id === 'an-title' || active.id === 'an-body'))
-    ? active
-    : document.getElementById('an-body');
+  const el = document.getElementById('an-body');
   if (!el) return;
 
   const start = el.selectionStart == null ? el.value.length : el.selectionStart;
@@ -579,15 +593,15 @@ function anRenderPreview() {
   let f = anReadForm();
   const meta = anTypeMeta(f.type);
 
-  // Rendered from here so that typing {{name}} into the title or body updates
+  // Rendered from here so that typing {{name}} into the message updates
   // the line under the audience count too — those inputs call this function
   // and nothing else, and a coverage line that only refreshes when a FILTER
   // changes would sit there stale while the operator edits the very text it
   // describes.
   anRenderNameCoverage();
 
-  if (!f.title.trim() && !f.body.trim()) {
-    box.innerHTML = '<div class="an-preview-empty">اكتب العنوان والنص عشان تشوف المعاينة</div>';
+  if (!f.body.trim()) {
+    box.innerHTML = '<div class="an-preview-empty">اكتب الرسالة عشان تشوف المعاينة</div>';
     return;
   }
 
@@ -598,10 +612,7 @@ function anRenderPreview() {
   const personalized = anHasNameToken(f);
   const shownName = personalized ? anPreviewName('named') : null;
   if (personalized && shownName) {
-    f = Object.assign({}, f, {
-      title: anFillName(f.title, shownName),
-      body: anFillName(f.body, shownName),
-    });
+    f = Object.assign({}, f, { body: anFillName(f.body, shownName) });
   }
 
   if (f.delivery === 'dm') {
@@ -610,7 +621,6 @@ function anRenderPreview() {
       <div class="an-dm-preview">
         <div class="an-dm-from"><i data-lucide="user" style="width:12px;height:12px;"></i> ${escapeHtml(from)}</div>
         <div class="an-dm-bubble">
-          ${f.title.trim() ? `<div class="an-dm-line">${escapeHtml(f.title)}</div><div class="an-dm-gap"></div>` : ''}
           <div class="an-dm-line">${escapeHtml(f.body) || '<span style="color:#666">(النص)</span>'}</div>
           ${f.link ? `<div class="an-dm-gap"></div><div class="an-dm-line an-dm-url">${escapeHtml(location.origin + '/' + f.link.replace(/^\//, ''))}</div>` : ''}
         </div>
@@ -626,8 +636,11 @@ function anRenderPreview() {
         <i data-lucide="${meta.icon}" style="width:16px;height:16px;"></i>
       </div>
       <div class="an-preview-text">
-        <div class="an-preview-title">${escapeHtml(f.title) || '<span style="color:#666">(العنوان)</span>'}</div>
-        <div class="an-preview-body">${escapeHtml(f.body) || '<span style="color:#666">(النص)</span>'}</div>
+        <!-- No heading line: the bell promotes the body into the name slot for
+             a title-less notification (renderGlobalNotifList in utils.js), so
+             drawing a second line here would preview a row the member never
+             gets. -->
+        <div class="an-preview-title">${escapeHtml(f.body) || '<span style="color:#666">(الرسالة)</span>'}</div>
         <div class="an-preview-time">دلوقتي حالاً${f.link ? ' · بيروح لـ ' + escapeHtml(f.link) : ''}</div>
       </div>
     </div>` + anNameNoteHTML(personalized, shownName, raw);
@@ -669,7 +682,7 @@ function anNameNoteHTML(personalized, shownName, raw) {
     html += `<div class="an-name-note warn">
       و<b>${n}</b> من <b>${p.total}</b> ${kind}
       — <span class="an-name-src">${escapeHtml(bad.full_name || '')}</span> هيشوف:
-      <div class="an-name-example">${escapeHtml(anFillName(raw.title || raw.body, bad.resolved))}</div>
+      <div class="an-name-example">${escapeHtml(anFillName(raw.body, bad.resolved))}</div>
     </div>`;
   }
   return html;
@@ -702,6 +715,13 @@ async function anLoadAudience() {
   if (a.status) qs.set('status', a.status);
   if (a.plan) qs.set('plan', a.plan);
   if (a.expiring_days != null && !Number.isNaN(a.expiring_days)) qs.set('expiring_days', a.expiring_days);
+  // The percentage carries the filter; the course only narrows it. Sending a
+  // course with no percentage would be a filter that means nothing, and the
+  // server would ignore it anyway.
+  if (a.progress_min_percent != null && !Number.isNaN(a.progress_min_percent)) {
+    qs.set('progress_min_percent', a.progress_min_percent);
+    if (a.progress_course_id) qs.set('progress_course_id', a.progress_course_id);
+  }
   if (a.include_staff) qs.set('include_staff', 'true');
 
   countEl.textContent = '…';
@@ -734,7 +754,7 @@ async function anLoadAudience() {
     anPersonal = d.personalization || null;
     anRenderPreview();          // also refreshes the coverage line
 
-    if (!anFacetsLoaded) { anFillFacets(d.countries, d.governorates); anFacetsLoaded = true; }
+    if (!anFacetsLoaded) { anFillFacets(d); anFacetsLoaded = true; }
   } catch (e) {
     countEl.textContent = '—';
     subEl.textContent = 'مقدرناش نحسب الجمهور';
@@ -905,17 +925,19 @@ async function anLoadPicked(ids) {
   anRenderPicked();
 }
 
-function anFillFacets(countries, govs) {
-  const fill = (id, values) => {
+function anFillFacets(d) {
+  const fill = (id, options, empty) => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const current = sel.value;
-    sel.innerHTML = '<option value="">الكل</option>' +
-      (values || []).map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    sel.innerHTML = `<option value="">${empty}</option>` +
+      options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.text)}</option>`).join('');
     sel.value = current;
   };
-  fill('an-aud-country', countries);
-  fill('an-aud-gov', govs);
+  const plain = v => ({ value: v, text: v });
+  fill('an-aud-country', (d.countries || []).map(plain), 'الكل');
+  fill('an-aud-gov', (d.governorates || []).map(plain), 'الكل');
+  fill('an-aud-course', (d.courses || []).map(c => ({ value: c.id, text: c.title })), 'أي كورس');
 }
 
 // ═══ SAVED SEGMENTS ═══
@@ -949,15 +971,7 @@ function anApplySegment() {
   const del = document.getElementById('an-seg-del');
   if (del) del.style.display = seg ? '' : 'none';
   if (!seg) return;
-  const f = seg.filters || {};
-  anSetField('an-aud-status', f.status || 'all');
-  anSetField('an-aud-plan', f.plan || 'all');
-  anSetField('an-aud-country', f.country || '');
-  anSetField('an-aud-gov', f.governorate || '');
-  anSetField('an-aud-expiring', f.expiring_days == null ? '' : f.expiring_days);
-  anSetField('an-aud-search', f.search || '');
-  const staff = document.getElementById('an-aud-staff');
-  if (staff) staff.checked = !!f.include_staff;
+  anWriteAudienceFields(seg.filters);
   anRefreshAudience();
   showToast(`🎯 اتطبّق المقطع «${seg.name}»`, 'success');
 }
@@ -1001,8 +1015,8 @@ async function anDeleteSegment() {
 
 async function anSaveCampaign() {
   const body = anReadForm();
-  if (!body.title.trim() || !body.body.trim()) {
-    showToast('❌ الحملة محتاجة عنوان ونص', 'error');
+  if (!body.body.trim()) {
+    showToast('❌ الحملة محتاجة نص', 'error');
     return false;
   }
 
@@ -1022,7 +1036,7 @@ async function anSaveCampaign() {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || 'failed');
 
     anCurrent = await res.json();
-    document.getElementById('an-editor-title').textContent = '📢 ' + (anCurrent.title || 'حملة');
+    document.getElementById('an-editor-title').textContent = '📢 ' + (anCurrent.label || 'حملة');
     showToast('✅ اتحفظت — مفيش أي إشعار اتبعت', 'success');
     loadAnnouncementsList();
     return true;
