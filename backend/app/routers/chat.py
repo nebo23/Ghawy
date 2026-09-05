@@ -1163,6 +1163,11 @@ def list_dm_conversations(
                 "full_name": other_user.full_name,
                 "avatar_url": other_user.avatar_url,
                 "badge": other_user.badge or "Member",
+                # The job title the owner grants. The DM inbox pins admins as
+                # rows and labels them with this; without it the client had to
+                # fetch the full member roster to find four titles, which is
+                # also where a pair of hardcoded names had grown.
+                "custom_title": other_user.custom_title,
                 "is_online": is_online,
                 "is_admin": other_user.is_admin,
             },
@@ -1193,6 +1198,7 @@ def list_dm_conversations(
                     "full_name": admin_user.full_name,
                     "avatar_url": admin_user.avatar_url,
                     "badge": admin_user.badge or "Admin",
+                    "custom_title": admin_user.custom_title,
                     "is_online": is_online,
                     "is_admin": True,
                 },
