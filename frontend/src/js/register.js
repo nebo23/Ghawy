@@ -5,7 +5,6 @@ function t(key, fallback) {
 
 let isPasswordStrong = false;
 let isTermsAgreed = false;
-let dialCodeValue = '';
 let inviteToken = null;
 
 // Password toggle
@@ -111,12 +110,21 @@ function updateCheck(id, isValid) {
   }
 }
 
-// IP Geolocation
+// IP Geolocation — fills the two hidden fields this form submits.
+//
+// It used to also write a dial code and a flag emoji into #dialCode and
+// #countryFlag. This page has no phone field and neither element exists, so
+// both writes threw: once in the `try`, and then again in the `catch` on the
+// very same element — which meant the catch died before its own defaults on
+// the lines below it. Whenever ipapi was blocked or rate-limited, that is a
+// registration submitted with country and governorate empty, and 344 of 1945
+// member rows carry exactly that. The dial code itself was dead too: nothing
+// ever read the variable it was assigned to.
+//
+// So this writes the two fields that exist, and both paths leave a value.
 async function getGeoLocation() {
   const countryInput = document.getElementById('country');
   const govInput = document.getElementById('governorate');
-  const dialCodeSpan = document.getElementById('dialCode');
-  const flagSpan = document.getElementById('countryFlag');
 
   try {
     const controller = new AbortController();
@@ -125,22 +133,15 @@ async function getGeoLocation() {
     clearTimeout(timeoutId);
     const data = await res.json();
 
-    if (data.error) throw new Error();
+    // ipapi answers a rate limit with HTTP 429 and CORS headers, so fetch
+    // resolves and this parses — the body carries error:true. Verified live.
+    if (data.error) throw new Error('ipapi unavailable');
 
-    countryInput.value = data.country_name || '';
+    countryInput.value = data.country_name || 'Egypt';
     govInput.value = data.region || data.city || 'Unknown';
-    dialCodeValue = data.country_calling_code || '';
-    dialCodeSpan.innerText = dialCodeValue;
-
-    // Set flag emoji
-    if (data.country_code) {
-      flagSpan.innerText = data.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
-    }
   } catch (err) {
-    // defaults
-    dialCodeSpan.innerText = '+20';
-    flagSpan.innerText = '🇪🇬';
-    dialCodeValue = '+20';
+    // The same defaults the Google signup path applies server-side
+    // (google_auth.py) when its own lookup fails. Never blank.
     countryInput.value = 'Egypt';
     govInput.value = 'Unknown';
   }

@@ -722,8 +722,23 @@ async function getGeoLocation() {
     }
 }
 
-// Call on window load
-window.addEventListener('load', getGeoLocation);
+// Called when the register modal opens — NOT on page load.
+//
+// This sends the visitor's IP to a third party to prefill a form, so it should
+// happen when that form appears, not on every landing-page view by everyone
+// who never opens it. It also stopped being free: ipapi's tier is ~1000 calls
+// a day, and past that it answers 429 — which the page cannot suppress, so it
+// prints "Failed to load resource: 429" in every visitor's console for the
+// rest of the day. Reproduced against production; the request now fires for
+// the small fraction of visitors who actually reach the form.
+//
+// Once per page: reopening the modal must not repeat the lookup.
+let geoRequested = false;
+window.ensureGeoLocation = function () {
+    if (geoRequested) return;
+    geoRequested = true;
+    getGeoLocation();
+};
 
 // Value Stack Animation
 document.addEventListener("DOMContentLoaded", () => {

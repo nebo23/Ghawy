@@ -1480,7 +1480,7 @@
     <script src="src/js/pricing.js?v=20260818d"></script>
     <!-- The FAQ, shared with /pricing for the same reason. -->
     <script src="src/js/faq.js?v=20260808a"></script>
-    <script src="src/js/main.js?v=20260903a"></script>
+    <script src="src/js/main.js?v=20260905a"></script>
     <!-- utils.js is deliberately NOT loaded here. It and main.js each declare a
          top-level `const API`, so loading both threw "Identifier 'API' has
          already been declared" on every visit — a SyntaxError, which meant
@@ -1593,6 +1593,10 @@
         function openAuthModal(type) {
             document.getElementById(type + 'Modal').classList.add('open');
             document.body.style.overflow = 'hidden';
+            // The country/governorate prefill is a third-party IP lookup, so it
+            // runs when the form that needs it opens rather than on every page
+            // view. It also fills the two selects. Guarded to run once.
+            if (type === 'register' && window.ensureGeoLocation) window.ensureGeoLocation();
         }
         function closeAuthModal(type) {
             document.getElementById(type + 'Modal').classList.remove('open');
