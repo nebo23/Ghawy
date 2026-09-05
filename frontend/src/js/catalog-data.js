@@ -536,17 +536,18 @@
         // The last two released, and the only two with no `image`: the platform
         // has a thumbnail for both, so load() fills it in and the null is only
         // ever seen offline — where `courseMediaHTML` draws the track icon.
+        //
+        // Their runtimes were the sum of each course's own lesson
+        // duration_minutes when they shipped, because row 15 had no
+        // `course_time` at all and row 14's was spelled "3h 45min". Both are
+        // set in the platform now and these match them exactly, which is what
+        // a fallback has to do — load() merges the live value over the top.
         {
             slug: 'ai-thumbnails',
             courseId: 15,
             title: { ar: 'الثامبنيلز بالذكاء الاصطناعي', en: 'AI Thumbnails' },
             keywords: ['ثامبنيل', 'ثامبنيلز', 'thumbnail', 'thumbnails', 'يوتيوب', 'youtube', 'تصميم', 'design'],
             image: null,
-            // The platform has no `course_time` for this one, so load() cannot
-            // overwrite the runtime below the way it does for every other
-            // course — this is the number the site shows, not a fallback.
-            // It is the sum of the course's own seven lesson durations
-            // (226 minutes), which is exactly how rows 12 and 14 got theirs.
             lessons: 7,
             duration: '3h 46m',
             track: 'ai-thumbnails',
