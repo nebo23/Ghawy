@@ -1002,3 +1002,43 @@ window.getOnlineCount = async function (fetcher) {
         return null;
     }
 };
+
+// ── Chat shell: the viewport while a keyboard is open ────────────────────
+// `100dvh` sizes the shell to the viewport with the browser chrome retracted,
+// which is right for the URL bar and wrong for the on-screen keyboard: the
+// keyboard is not chrome, so dvh does not shrink for it and the composer ends
+// up underneath. visualViewport is the only thing that reports what is
+// actually visible, so while a keyboard is up the shell is sized from that
+// (`html.kb-open .chat-layout` in community.css).
+//
+// Written once here rather than in each page's inline script: chat.html and
+// direct-messages.html both load this file and both have the same shell. The
+// `.chat-layout` guard is what keeps it inert on the other pages that do.
+(function trackChatViewport() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    // Below this, the difference is the URL bar collapsing or a rounding
+    // wobble, not a keyboard — reacting to those would resize the shell while
+    // somebody is just scrolling.
+    const KEYBOARD_MIN = 120;
+
+    function apply() {
+        if (!document.querySelector('.chat-layout')) return;
+        const hidden = window.innerHeight - vv.height;
+        const root = document.documentElement;
+        if (hidden > KEYBOARD_MIN) {
+            root.style.setProperty('--chat-vvh', vv.height + 'px');
+            root.classList.add('kb-open');
+        } else {
+            root.classList.remove('kb-open');
+        }
+    }
+
+    // `scroll` as well as `resize`: iOS shifts the visual viewport up as the
+    // keyboard animates in and only settles the height partway through.
+    vv.addEventListener('resize', apply);
+    vv.addEventListener('scroll', apply);
+    document.addEventListener('DOMContentLoaded', apply);
+    apply();
+})();

@@ -702,10 +702,12 @@ img{max-width:100%;display:block}
 
   .goh-row::-webkit-scrollbar { display: none; }
 
-  /* Chat layout */
+  /* Chat layout. No `height` here: both chat pages declare `.chat-layout`
+     later in the cascade (community.css), so the 100vh value this rule used to
+     carry never applied — and it said 60px where the topbar is 64. One
+     definition, in dvh, over there. */
   .chat-layout {
     flex-direction: column;
-    height: calc(100vh - 60px);
     overflow: hidden;
     position: relative;
   }
@@ -783,7 +785,12 @@ img{max-width:100%;display:block}
     padding: 10px 14px;
   }
 
-  /* Input bar — fixed at bottom */
+  /* Input bar. No `padding`: community.css sets it for both chat pages — the
+     only pages with a `.chat-input-bar` — so the value here never applied.
+     `position: fixed` does not apply either: utils.js appends
+     `.chat-input-bar { position: relative }` to <head> at runtime, to anchor
+     the @-mentions dropdown, and a runtime <style> wins on source order. Left
+     as it stands rather than pulled apart on the way past. */
   .chat-input-bar {
     position: fixed;
     bottom: 0;
@@ -792,7 +799,6 @@ img{max-width:100%;display:block}
     z-index: 100;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
-    padding: 10px 12px;
     display: flex;
     align-items: center;
     gap: 8px;

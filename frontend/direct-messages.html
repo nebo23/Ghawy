@@ -51,7 +51,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Community Chat — Ghawy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,15 +60,9 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=33" />
-    <link rel="stylesheet" href="src/css/community.css?v=7" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=35" />
+    <link rel="stylesheet" href="src/css/community.css?v=10" />
     <style>
-        .chat-layout {
-            display: flex;
-            height: calc(100vh - var(--topbar-h));
-            overflow: hidden
-        }
-
         /* Left: Channel List */
         .chat-channels {
             width: 240px;
@@ -438,15 +432,6 @@
         }
 
         /* Input */
-        .chat-input-bar {
-            padding: 14px 24px;
-            border-top: 1px solid var(--border);
-            background: var(--bg-secondary);
-            display: flex;
-            gap: 10px;
-            align-items: flex-end
-        }
-
         .chat-input-bar textarea {
             flex: 1;
             background: var(--bg-input);
@@ -870,10 +855,6 @@
 
             .chat-feed-messages {
                 padding: 14px 14px;
-            }
-
-            .chat-input-bar {
-                padding: 10px 12px;
             }
 
             .chat-preview-bar {
@@ -1474,7 +1455,7 @@
         </div>
     </div>
 
-    <script src="src/js/utils.js?v=20260905a"></script>
+    <script src="src/js/utils.js?v=20260905b"></script>
 
     <style>
         /* Custom Modal */
@@ -2643,8 +2624,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             padding: 20px 24px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .dm-inbox-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .dm-inbox-header h2 {
@@ -2809,8 +2798,26 @@
             background: rgba(255, 255, 255, 0.04);
         }
 
-        .dm-inbox-item.has-unread {
+        .dm-inbox-item.has-unread,
+        .dm-team-member.has-unread {
             background: rgba(193, 255, 17, 0.03);
+        }
+
+        /* An admin's DM never appears in Messages — renderInboxList filters
+           admins out, they live in the strip above. So the strip has to carry
+           the unread mark itself, or the message arrives with no signal at all
+           on this page. Same badge as a conversation row, pinned to the
+           avatar because a team card is a column, not a line. */
+        .dm-team-member.has-unread {
+            border-radius: 10px;
+        }
+
+        .dm-team-av .dm-unread-badge {
+            position: absolute;
+            top: -2px;
+            inset-inline-end: -2px;
+            z-index: 2;
+            box-shadow: 0 0 0 2px var(--bg-primary);
         }
 
         .dm-inbox-av {
@@ -2974,6 +2981,86 @@
         /* Neon translucent subtitle — unreadable on the light page */
         :root[data-theme="light"] .ch-item .ch-preview[style*="193,255,17"] {
             color: rgba(74, 112, 0, 0.85) !important;
+        }
+
+        /* ── Inbox on a phone: pin one bar, scroll the rest ──────────────
+           Everything above `.dm-inbox-list` was pinned, and there is a lot of
+           it: the topbar, the wrapped header, the whole Team strip and a second
+           "Messages" heading came to 505px of a 667px screen — measured, not
+           estimated — leaving room for 2.1 conversation rows.
+
+           So on a phone the inbox itself is the scroller and only the header
+           stays put. The Team strip and the subheader are inside that scroll
+           now, the way WhatsApp's archived row scrolls away, without either of
+           them moving in the DOM. The second heading goes entirely: the bar
+           above it already says Messages.
+
+           Desktop is untouched — this whole block is below the breakpoint. */
+        @media (max-width: 768px) {
+            .dm-inbox {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .dm-inbox-header {
+                position: sticky;
+                top: 0;
+                z-index: 3;
+                background: var(--bg-primary, #0a0a0a);
+                padding: 10px 14px;
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+
+            .dm-inbox-header h2 {
+                font-size: 1.05rem;
+                flex-shrink: 0;
+            }
+
+            .dm-inbox-actions {
+                flex: 1;
+                min-width: 0;
+                gap: 8px;
+            }
+
+            .dm-search-bar {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .dm-search-bar input {
+                width: 100%;
+                min-width: 0;
+            }
+
+            /* Icon only — the label is what made the row too wide to fit. */
+            .dm-inbox-new-btn span {
+                display: none;
+            }
+
+            .dm-inbox-new-btn {
+                padding: 8px 11px;
+                flex-shrink: 0;
+            }
+
+            .dm-team-section {
+                padding: 12px 16px;
+            }
+
+            /* The list no longer scrolls on its own — the inbox around it
+               does — so it must not claim the leftover height either. */
+            .dm-inbox-list {
+                flex: none;
+                overflow: visible;
+            }
+
+            .dm-inbox-subheader {
+                display: none;
+            }
+        }
+
+        :root[data-theme="light"] .dm-inbox-header {
+            background: var(--bg-primary, #fff);
         }
     </style>
     <script>
@@ -4929,9 +5016,13 @@
                     if (notifDot) notifDot.style.display = 'none';
                 }
 
-                // If currently viewing inbox, refresh it
+                // If currently viewing inbox, refresh it — both halves. The
+                // strip is where an admin's conversation lives, so refreshing
+                // only the Messages list would leave that message unmarked
+                // until the member navigated away and back.
                 if (currentChannel === 'messages') {
                     renderInboxList(dms);
+                    renderTeamStrip(dms);
                 }
 
                 // Update DM header if currently viewing a DM
@@ -4951,53 +5042,33 @@
             el.innerHTML = '<div style="text-align:center; padding:40px; color:#555;">Loading inbox...</div>';
 
             try {
-                // Fetch members to get real admins
-                const memRes = await apiFetch('/chat/members');
-                let adminsHtml = '';
+                // Both together: renderTeamStrip needs the conversations to
+                // mark, and the list below needs them too — one fetch each,
+                // in parallel, instead of members-then-DMs in series.
+                const [memRes, dmRes] = await Promise.all([
+                    apiFetch('/chat/members'),
+                    apiFetch('/chat/dm/list'),
+                ]);
+                const allDms = dmRes && dmRes.ok ? await dmRes.json() : [];
+
                 let adminsList = [];
                 if (memRes.ok) {
                     const members = await memRes.json();
-                    // Filter admins
                     adminsList = members.filter(m => m.is_admin || getBadgeClass(m.badge || 'Member') === 'admin');
-
-                    adminsHtml = adminsList.map(m => {
-                        const av = safeAvatarUrl(m.avatar_url) || generateInitialsAvatar(m.full_name);
-                        let role = m.badge || 'Admin';
-                        let roleColor = role.toLowerCase().includes('founder') ? 'color:var(--gold);' : '';
-
-                        const nameLower = m.full_name.toLowerCase();
-                        if (nameLower.includes('mohamed salah')) {
-                            role = 'CEO';
-                            roleColor = 'color:var(--gold, #c1ff11);';
-                        } else if (nameLower.includes('nabil')) {
-                            role = 'CTO';
-                            roleColor = 'color:var(--gold, #c1ff11);';
-                        }
-                        if (m.custom_title) role = m.custom_title;
-
-                        return `
-            <div class="dm-team-member" onclick="activeDmUserName='${escHtml(m.full_name).replace(/'/g, "\\\\'")}'; activeDmUserVerified=true; openDmChannel(${m.id})">
-                <div class="dm-team-av">
-                    <img src="${av}" alt="${escHtml(m.full_name)}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(m.full_name)}&background=1a1a1a&color=fff'" />
-                    <i class="fa-solid fa-circle-check dm-team-badge"></i>
-                </div>
-                <div class="dm-team-name">${escHtml(m.full_name)}</div>
-                <div class="dm-team-role" style="${roleColor}">${escHtml(role)}</div>
-            </div>`;
-                    }).join('');
                 }
+                dmTeamAdmins = adminsList;
 
                 el.innerHTML = `
 <div class="dm-inbox">
-    <div class="dm-inbox-header" style="flex-wrap: wrap; gap: 10px;">
+    <div class="dm-inbox-header">
         <h2>Messages</h2>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div class="dm-inbox-actions">
             <div class="dm-search-bar">
                 <i data-lucide="search" size="16"></i>
                 <input type="text" id="dmSearchInput" placeholder="Search messages..." onkeyup="filterDMs()">
             </div>
             <button class="dm-inbox-new-btn" onclick="openNewMessageModal()">
-                <i class="fa-solid fa-pen-to-square"></i> New Message
+                <i class="fa-solid fa-pen-to-square"></i> <span>New Message</span>
             </button>
         </div>
     </div>
@@ -5005,9 +5076,7 @@
     ${adminsList.length > 0 ? `
     <div class="dm-team-section">
         <h3 class="dm-team-title">Team <i class="fa-solid fa-circle-check" style="color:var(--gold);"></i></h3>
-        <div class="dm-team-list">
-            ${adminsHtml}
-        </div>
+        <div class="dm-team-list" id="dmTeamList"></div>
     </div>
     ` : ''}
     
@@ -5019,15 +5088,11 @@
         <div style="text-align:center; padding:40px; color:#555;">Loading messages...</div>
     </div>
 </div>`;
+                renderTeamStrip(allDms);
                 if (window.lucide) lucide.createIcons();
 
-                // Fetch fresh data for DMs list
-                const res = await apiFetch('/chat/dm/list');
-                if (!res.ok) return;
-                let dms = await res.json();
-
                 // Filter out admins from the lower list IF there are no messages between them yet
-                dms = dms.filter(dm => {
+                let dms = allDms.filter(dm => {
                     const u = dm.user;
                     const isVerified = (dm.is_pinned || u.is_admin || getBadgeClass(u.badge) === 'admin');
                     // Hide if it's an admin and there's no chat history
@@ -5054,6 +5119,59 @@
                 }
             });
         };
+
+        // The admins shown in the Team strip. Held between renders so the 30s
+        // DM poll can repaint their unread marks without re-fetching /chat/members.
+        let dmTeamAdmins = [];
+
+        // ── Team strip ──────────────────────────────────────────────
+        // renderInboxList filters admins out of Messages on purpose — they live
+        // up here. That left an admin's DM with nowhere to show: the strip was
+        // built from /chat/members, which knows who the admins are and nothing
+        // about the conversations with them, so a message from one changed
+        // nothing on this page at all.
+        //
+        // The server already returns unread_count and last_message_at per
+        // channel, sorted pinned-then-last-message. This joins the strip to
+        // that instead of deriving a second answer, and reuses the badge and
+        // the row highlight the Messages list has always used.
+        function renderTeamStrip(dms) {
+            const list = document.getElementById('dmTeamList');
+            if (!list) return;
+
+            const byUser = new Map((dms || []).map(d => [d.user.id, d]));
+            const ordered = dmTeamAdmins.slice().sort((a, b) => {
+                const x = byUser.get(a.id) || {}, y = byUser.get(b.id) || {};
+                return ((y.unread_count > 0) - (x.unread_count > 0))
+                    || String(y.last_message_at || '').localeCompare(String(x.last_message_at || ''));
+            });
+
+            list.innerHTML = ordered.map(m => {
+                const av = safeAvatarUrl(m.avatar_url) || generateInitialsAvatar(m.full_name);
+                // custom_title IS the title. It used to be read three lines
+                // after a hardcoded pair of names — 'mohamed salah' → CEO,
+                // 'nabil' → CTO — that it then overrode anyway.
+                //
+                // Not `|| m.badge`: every admin's badge is "Member", which is
+                // the one word this strip must not say about the team. An
+                // admin with no title set is an Admin.
+                const role = m.custom_title || 'Admin';
+                const roleColor = role.toLowerCase().includes('founder') ? 'color:var(--gold);' : '';
+                const unread = (byUser.get(m.id) || {}).unread_count || 0;
+                const name = escHtml(m.full_name);
+
+                return `
+            <div class="dm-team-member ${unread > 0 ? 'has-unread' : ''}" onclick="activeDmUserName='${name.replace(/'/g, "\\'")}'; activeDmUserVerified=true; openDmChannel(${Number(m.id)})">
+                <div class="dm-team-av">
+                    <img src="${av}" alt="${name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(m.full_name)}&background=1a1a1a&color=fff'" />
+                    <i class="fa-solid fa-circle-check dm-team-badge"></i>
+                    ${unread > 0 ? `<span class="dm-unread-badge">${Number(unread)}</span>` : ''}
+                </div>
+                <div class="dm-team-name">${name}</div>
+                <div class="dm-team-role" style="${roleColor}">${escHtml(role)}</div>
+            </div>`;
+            }).join('');
+        }
 
         function renderInboxList(dms) {
             const container = document.getElementById('dmInboxList');

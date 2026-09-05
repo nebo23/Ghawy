@@ -21,6 +21,74 @@
   --accent-gold-border: rgba(92, 138, 0, 0.25);
 }
 
+/* ═══ CHAT SHELL — the viewport, shared by chat.html and direct-messages.html ═══
+
+   Both pages carried a byte-identical `.chat-layout` in their own <style>.
+   It is here once now: the bug below was the same bug twice, and a second copy
+   is a second thing to forget. This file loads after dashboard.css on both
+   pages, exactly where the inline blocks used to sit in the cascade, so
+   nothing else moves.
+
+   `100vh` on a phone is the viewport with the browser chrome hidden — not the
+   viewport you are looking at while the URL bar is showing. The shell was
+   therefore taller than the screen: the input bar sat below the fold and the
+   page scrolled as a whole. `100dvh` is that height as it actually is. The
+   `vh` line stays above it for browsers with no `dvh`, which then get the old
+   behaviour rather than no height at all. */
+.chat-layout {
+  display: flex;
+  height: calc(100vh - var(--topbar-h));
+  height: calc(100dvh - var(--topbar-h));
+  overflow: hidden;
+}
+
+/* `dvh` does not shrink for the on-screen keyboard — it is the viewport with
+   the chrome retracted, and the keyboard is not chrome. So while a keyboard is
+   open the shell is sized from visualViewport instead, which is the only thing
+   that reports what is actually visible. `--chat-vvh` is set in px by
+   trackChatViewport() in utils.js, and the class is only present while the
+   keyboard is up; the rule above owns every other moment. */
+html.kb-open .chat-layout {
+  height: calc(var(--chat-vvh) - var(--topbar-h));
+}
+
+/* Scrolling past the end of a thread chained to the page behind it, which is
+   what made the shell feel loose rather than app-like. Every scroller in it,
+   so reaching the end of one never moves another. */
+.chat-feed-messages,
+.chat-channels,
+.dm-inbox,
+.dm-inbox-list {
+  overscroll-behavior: contain;
+}
+
+/* The composer. Both pages carried this rule and its narrow-screen override
+   identically in their own <style>, and dashboard.css carried a third padding
+   that neither page ever saw. Both live here now — and they have to live in
+   the same file, because a media query adds no specificity: an override here
+   with the base rule still inline in the page would simply lose to it.
+
+   The bottom inset clears the home indicator. The bar is the last row of
+   `.chat-layout`, which is now exactly the visible viewport tall, so its
+   bottom edge IS the bottom of the screen — and on a notched phone that is
+   underneath the indicator. `env()` reads 0 on hardware without one, and read
+   0 everywhere until both pages' viewport meta gained `viewport-fit=cover`,
+   which is what makes the inset resolvable at all. */
+.chat-input-bar {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+@media (max-width: 1024px) {
+  .chat-input-bar {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ═══ LAYOUT ═══ */
 .comm-layout {
   display: flex;
