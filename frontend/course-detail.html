@@ -3456,6 +3456,10 @@
                 certSec.style.display = is_completed ? 'block' : 'none';
                 if (is_completed && certificate_id) {
                     certSec.dataset.certId = certificate_id;
+                } else {
+                    // ماينفعش رقم قديم يفضل متعلّق في الـ dataset بعد تحديث
+                    // مابيرجّعش واحد — الزرار ساعتها بيقع بصوت، وده المطلوب.
+                    delete certSec.dataset.certId;
                 }
             }
         }
@@ -3540,8 +3544,15 @@
             showToast('Preparing your certificate...', 'info');
             try {
                 const certSec = document.getElementById('certificateSection');
-                let certId = certSec ? (certSec.dataset.certId || '') : '';
-                if (!certId) certId = buildFallbackCertId(course.title);
+                const certId = certSec ? (certSec.dataset.certId || '') : '';
+                if (!certId) {
+                    // كان بيخترع رقم في المتصفح هنا. ورقة عليها رقم تحقّق
+                    // متأكّد إنه مش في أي داتابيز أسوأ من إنها ماتتحمّلش خالص —
+                    // شكلها سليم وهي مش سليمة. لو الزرار ظهر من غير رقم يبقى
+                    // فيه حاجة غلط، والمكان الصح إنها تبان مش تتغطّى.
+                    showToast('Your certificate has not been issued yet — please refresh. If it keeps happening, contact support.', 'error');
+                    return;
+                }
                 // Course titles are stored with an ordering prefix ("3- Prompt
                 // Engineering"); the certificate should show only the name
                 const displayTitle = (course.title || '').replace(/^\s*\d+\s*[-–.)]*\s*/, '');
@@ -3550,17 +3561,6 @@
                 console.error('Certificate generation error:', e);
                 showToast('Error generating certificate', 'error');
             }
-        }
-
-        // Fallback certificate ID when the API hasn't issued one yet,
-        // e.g. GH-AIF-2026-0148 (GH + course initials + year + random digits)
-        function buildFallbackCertId(courseTitle) {
-            const initials = (courseTitle || '')
-                .replace(/[^A-Za-z\s]/g, ' ')
-                .split(/\s+/).filter(Boolean)
-                .map(w => w[0].toUpperCase()).join('').slice(0, 3) || 'CRS';
-            const num = String(Math.floor(1000 + Math.random() * 9000));
-            return `GH-${initials}-${new Date().getFullYear()}-${num}`;
         }
 
         // Draw member name, course title and date onto the certificate template

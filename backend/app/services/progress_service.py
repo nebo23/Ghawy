@@ -105,6 +105,43 @@ def calculate_video_streak(user_id: int, db: Session) -> int:
         cursor -= timedelta(days=1)
     return streak
 
+def member_course_progress(db: Session, user_id: int, course_id: int) -> dict:
+    """كام درس خلّص العضو ده في الكورس ده، وبكام في المية. القراءة الوحيدة.
+
+    المقام من `effective_lesson_totals` — القاعدة الوحيدة لعدد الدروس. والبسط
+    من **نفس الفرع بالظبط**: كورس مقامه اتحسب بالدروس الـ ready، بسطه كمان
+    بالـ ready. ده هو بيت القصيد: الحتة دي كانت متكتوبة تلات مرات، والتالتة —
+    اللي في `mark_lesson_complete` — كانت بتعدّ **كل** الدروس. يعني على كورس
+    فيه درس مش ready، العضو يشوف ١٠٠٪ وياخد زرار الشهادة، والباك إند يحسب
+    ٧١٪ فما يعملش صف Certificate خالص. زي ما دوكسترنج `effective_lesson_totals`
+    بتقول: القاعدة اتكتبت مرتين قبل كده وده اللي حصل.
+
+    بيفلتر على `Lesson.course_id` كمان مش على `UserProgress.course_id` بس، عشان
+    صف تايه ما يخليش البسط أكبر من المقام — ده كان طريق تاني لنفس العطل: نسبة
+    فوق المية مابتساويش ١٠٠ فمكانتش بتصدر شهادة برضه.
+    """
+    totals, ready_counts = effective_lesson_totals(db, [course_id])
+    total = totals.get(course_id) or 0
+
+    q = (db.query(UserProgress.lesson_id)
+           .join(Lesson, Lesson.id == UserProgress.lesson_id)
+           .filter(UserProgress.user_id == user_id,
+                   UserProgress.course_id == course_id,
+                   Lesson.course_id == course_id))
+    if ready_counts.get(course_id):
+        q = q.filter(Lesson.video_status == "ready")
+
+    completed_ids = [row[0] for row in q.all()]
+    percentage = round(len(completed_ids) * 100 / total) if total > 0 else 0
+    return {
+        "completed_lesson_ids": completed_ids,
+        "completed_lessons": len(completed_ids),
+        "total_lessons": total,
+        "percentage": percentage,
+        "is_completed": percentage >= 100,
+    }
+
+
 def issue_certificate(user_id: int, course_id: int, db: Session):
     cert = db.query(Certificate).filter_by(user_id=user_id, course_id=course_id).first()
     if not cert:
@@ -141,17 +178,14 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
         db.add(progress)
         db.commit()
 
-    # 2. Calculate Progress
-    total_lessons = db.query(Lesson).filter(Lesson.course_id == course_id).count()
-    completed_lessons = db.query(UserProgress).filter(
-        UserProgress.user_id == user_id,
-        UserProgress.course_id == course_id
-    ).count()
-
-    percentage = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
+    # 2. Calculate Progress — نفس الدالة اللي بتردّ على صفحة الكورس، مش حساب تاني
+    prog = member_course_progress(db, user_id, course_id)
+    total_lessons = prog["total_lessons"]
+    completed_lessons = prog["completed_lessons"]
+    percentage = prog["percentage"]
 
     certificate_url = None
-    if percentage == 100:
+    if prog["is_completed"]:
         cert = issue_certificate(user_id, course_id, db)
         certificate_url = cert.certificate_id
 
@@ -168,24 +202,35 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
             "completed_lessons": completed_lessons,
             "total_lessons": total_lessons,
             "percentage": percentage,
-            "is_completed": percentage == 100,
+            "is_completed": prog["is_completed"],
             "certificate_id": certificate_url
         }
     }
 
 def get_top_students_for_course(course_id: int, current_user_id: int, db: Session, limit: int = 30):
-    total_lessons = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+    # نفس المقام اللي العضو شايفه في صفحته. كان بيعدّ كل الدروس هنا، فالكورس
+    # اللي فيه درس مش ready كان بيدّي اللوحة نسبة تانية غير اللي الطالب قاراها
+    # على نفسه — ونفس الفرع لازم يمشي على البسط كمان.
+    totals, ready_counts = effective_lesson_totals(db, [course_id])
+    total_lessons = totals.get(course_id) or 0
 
-    top_students_query = db.query(
+    q = db.query(
         User.id.label("user_id"),
         User.full_name,
         User.avatar_url,
         func.count(UserProgress.id).label("completed_count")
     ).join(
         UserProgress, User.id == UserProgress.user_id
+    ).join(
+        Lesson, Lesson.id == UserProgress.lesson_id
     ).filter(
-        UserProgress.course_id == course_id
-    ).group_by(
+        UserProgress.course_id == course_id,
+        Lesson.course_id == course_id,
+    )
+    if ready_counts.get(course_id):
+        q = q.filter(Lesson.video_status == "ready")
+
+    top_students_query = q.group_by(
         User.id, User.full_name, User.avatar_url
     ).order_by(
         func.count(UserProgress.id).desc()
@@ -208,7 +253,7 @@ def get_top_students_for_course(course_id: int, current_user_id: int, db: Sessio
             "avatar_url": student.avatar_url,
             "completed_lessons": student.completed_count,
             "total_lessons": total_lessons,
-            "is_completed": student.completed_count == total_lessons if total_lessons > 0 else False,
+            "is_completed": student.completed_count >= total_lessons if total_lessons > 0 else False,
             "is_current_user": student.user_id == current_user_id
         })
 

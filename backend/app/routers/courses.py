@@ -546,43 +546,19 @@ async def get_course_progress(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # بنحسب بس الـ lessons الـ ready، لو ما فيش ready نحسب كل الـ lessons
-    ready_lesson_ids_rows = db.query(Lesson.id).filter(
-        Lesson.course_id == course_id,
-        Lesson.video_status == "ready"
-    ).all()
-    ready_ids_set = {r.id for r in ready_lesson_ids_rows}
-
-    if ready_ids_set:
-        total = len(ready_ids_set)
-        completed_rows = db.query(UserProgress).filter(
-            UserProgress.user_id == current_user.id,
-            UserProgress.course_id == course_id,
-            UserProgress.lesson_id.in_(ready_ids_set)
-        ).all()
-    else:
-        # Fallback: كل الـ lessons
-        total = db.query(Lesson).filter(Lesson.course_id == course_id).count()
-        completed_rows = db.query(UserProgress).filter(
-            UserProgress.user_id == current_user.id,
-            UserProgress.course_id == course_id
-        ).all()
-    completed_ids = [r.lesson_id for r in completed_rows]
-    percentage = round((len(completed_ids) / total) * 100) if total > 0 else 0
+    # الحساب في `progress_service.member_course_progress` — نفس الدالة اللي
+    # `mark_lesson_complete` بيصدر الشهادة بناءً عليها. كان مكتوب هنا بالكامل
+    # مرة تانية، والتالتة اللي بتصدر الشهادة كانت بتعدّ كل الدروس بدل الـ ready،
+    # فالزرار يظهر والشهادة ماتتعملش.
+    from app.services.progress_service import member_course_progress
+    prog = member_course_progress(db, current_user.id, course_id)
 
     cert = db.query(Certificate).filter_by(
         user_id=current_user.id,
         course_id=course_id
     ).first()
 
-    return {
-        "completed_lesson_ids": completed_ids,
-        "completed_lessons": len(completed_ids),
-        "total_lessons": total,
-        "percentage": percentage,
-        "is_completed": percentage == 100,
-        "certificate_id": cert.certificate_id if cert else None
-    }
+    return {**prog, "certificate_id": cert.certificate_id if cert else None}
 
 # ═══════════════════════════════════════════════════════════════
 #  ADMIN ENDPOINTS
