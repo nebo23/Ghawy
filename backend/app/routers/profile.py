@@ -4,7 +4,8 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.name_utils import split_full_name, clean_display_name
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, clean_display_name,
+                                     is_arabic_name, split_full_name)
 from app.services.permissions import has_permission
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
@@ -236,7 +237,17 @@ def update_my_profile(
     db: Session = Depends(get_db),
 ):
     if data.full_name is not None:
-        current_user.full_name = clean_display_name(data.full_name, limit=80)
+        new_name = clean_display_name(data.full_name, limit=80)
+        # سقّاطة، مش قاعدة: بنفرض العربي هنا بس لو الاسم المتخزّن عربي أصلاً.
+        #
+        # `profile.js` بيبعت الفورم كله مع أي حفظ، فـ `full_name` بيترجع مع كل
+        # تعديل بايو أو أفاتار أو لينك. قاعدة «عربي دايماً» هنا كانت هترفض
+        # حفظ البايو لكل عضو اسمه لاتيني — 1,683 واحد — وهم مالهمش دعوة
+        # بالقاعدة دي. بالشكل ده: اسم عربي مايرجعش لاتيني، واسم لاتيني يفضل
+        # شغال زي النهارده ولسه ينفع يتصلّح فيه غلطة إملائية.
+        if is_arabic_name(current_user.full_name) and not is_arabic_name(new_name):
+            raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
+        current_user.full_name = new_name
         # Keep the split columns in step with the display name.
         current_user.first_name, current_user.last_name = split_full_name(current_user.full_name)
     if data.bio is not None:

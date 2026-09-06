@@ -43,7 +43,8 @@ from app.routers.users import (
     set_file_cookie,
 )
 from app.services.email_service import send_atlas_otp_email
-from app.services.name_utils import clean_display_name, split_full_name
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, clean_display_name,
+                                     is_arabic_name, split_full_name)
 from app.services.subscription_service import extend_subscription
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,8 @@ class VerifyOTPRequest(BaseModel):
     # Only read when there is no account yet — see _needs_credentials.
     full_name: str | None = None
     password: str | None = None
+    # «اسمي مش بالعربي» — نفس الباب اللي في فورم التسجيل.
+    latin_name_ok: bool = False
 
 
 # ─── POST /atlas/send-otp ────────────────────────────────────────────────────
@@ -217,6 +220,10 @@ def verify_otp(data: VerifyOTPRequest, response: Response, db: Session = Depends
         password = data.password or ""
         if len(full_name) < 2:
             raise HTTPException(status_code=422, detail="من فضلك اكتب اسمك (حرفين على الأقل).")
+        # الباب ده بيعمل حسابات حقيقية، فنفس قاعدة فورم التسجيل بتنطبق عليه —
+        # ومعاها نفس المخرج لو الاسم مش متكتب بالعربي.
+        if not data.latin_name_ok and not is_arabic_name(full_name):
+            raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
         if len(password) < 6:
             raise HTTPException(status_code=422, detail="كلمة المرور لازم تكون 6 حروف على الأقل.")
 
@@ -228,6 +235,7 @@ def verify_otp(data: VerifyOTPRequest, response: Response, db: Session = Depends
                 last_name=last_name,
                 email=email,
                 hashed_password=hash_password(password),
+                latin_name_ok=bool(data.latin_name_ok),
                 onboarding_completed=False,
             )
             db.add(user)
@@ -240,6 +248,7 @@ def verify_otp(data: VerifyOTPRequest, response: Response, db: Session = Depends
             user.first_name = first_name
             user.last_name = last_name
             user.hashed_password = hash_password(password)
+            user.latin_name_ok = bool(data.latin_name_ok)
             user.onboarding_completed = False
     # else: the member already has an account they can sign into. full_name and
     # password are ignored outright — redeeming an offer is not a password

@@ -16,8 +16,13 @@ from app.services.disposable_emails import (  # noqa: E402
 from app.services.name_utils import (  # noqa: E402
     _AR_FIRST_NAMES,
     _COMPOUND_FIRST_NAMES,
+    ARABIC_LETTER_PATTERN,
+    ARABIC_NAME_MESSAGE,
+    ARABIC_NAME_PATTERN,
     arabic_first_name,
     compose_full_name,
+    is_arabic_name,
+    is_arabic_text,
     first_name_token,
     split_full_name,
 )
@@ -164,6 +169,59 @@ def test_one_fallback_word_everywhere():
     assert get_first_name("") == FALLBACK_FIRST_NAME
     assert get_first_name(None) == FALLBACK_FIRST_NAME
     assert get_first_name("عبد الرحمن علي") == "عبد الرحمن"
+
+
+# ─── Arabic-name validation (new members only) ──────────────
+
+#: One table, used by the Python test and quoted in the JS file's own tests.
+ARABIC_NAME_CASES = [
+    ("محمد أحمد", True),
+    ("عبد الرحمن علي", True),
+    ("مي", True),
+    ("محمـــد", True),          # tatweel
+    ("مُحَمَّد", True),            # harakat
+    ("  محمد   علي  ", True),   # collapsed whitespace
+    ("Mohamed محمد", False),    # half and half — the case is_arabic_text lets through
+    ("Mohamed", False),
+    ("محمد 123", False),
+    ("محمد١", False),           # Arabic-Indic digits are digits
+    ("محمد-علي", False),
+    ("م", False),               # one letter is not a name
+    ("", False),
+    (None, False),
+]
+
+
+def test_is_arabic_name():
+    for value, want in ARABIC_NAME_CASES:
+        assert is_arabic_name(value) is want, repr(value)
+
+
+def test_is_arabic_name_is_not_is_arabic_text():
+    """The detector says yes to a half-Latin name; the validator must not.
+
+    `is_arabic_text` answers "is there any Arabic in here", which is the right
+    question for `arabize_first_name` and the wrong one for a form.
+    """
+    assert is_arabic_text("Mohamed محمد") is True
+    assert is_arabic_name("Mohamed محمد") is False
+
+
+def test_the_js_rule_is_the_python_rule():
+    """The front end must not grow a second, drifting copy of the rule.
+
+    The immediate message the member reads comes from the browser and the
+    refusal comes from here; if the two disagree the form says fine and the
+    server says no. So the patterns are one string, written here and quoted
+    verbatim in the JS — this test is what makes that true rather than hoped.
+    """
+    js_path = os.path.join(os.path.dirname(__file__),
+                           "..", "..", "frontend", "src", "js", "arabic-name.js")
+    with open(js_path, encoding="utf-8") as fh:
+        js = fh.read()
+    assert ARABIC_NAME_PATTERN in js, "the JS name pattern has drifted from the Python one"
+    assert ARABIC_LETTER_PATTERN in js, "the JS letter pattern has drifted from the Python one"
+    assert ARABIC_NAME_MESSAGE in js, "the JS message has drifted from the Python one"
 
 
 def test_compose_full_name():

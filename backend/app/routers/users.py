@@ -19,7 +19,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from app.services.email_service import send_verification_email, send_password_reset_email
 from app.services.disposable_emails import is_disposable_email, is_fake_email_pattern
-from app.services.name_utils import compose_full_name, clean_display_name
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, clean_display_name,
+                                     compose_full_name, is_arabic_name)
 from app.services.turnstile import verify_turnstile
 from app.services.permissions import require_permission, has_permission
 from jose import JWTError
@@ -201,12 +202,23 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
 
     # Checked against the cleaned value, not the raw one — otherwise a name made
     # entirely of markup passes the length rule and is then stored as empty.
-    if len(clean_display_name(data.first_name, limit=40)) < 2 \
-            or len(clean_display_name(data.last_name, limit=40)) < 2:
+    first_clean = clean_display_name(data.first_name, limit=40)
+    last_clean = clean_display_name(data.last_name, limit=40)
+    if len(first_clean) < 2 or len(last_clean) < 2:
         raise HTTPException(
             status_code=422,
             detail="من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).",
         )
+
+    # الاسم بالعربي مطلوب من الأعضاء الجدد — بس مش قفل. اللي اسمه مش متكتب
+    # بالعربي بيعلّم «اسمي مش بالعربي» والفورم بيبعت `latin_name_ok`، فاسمه
+    # بيتخزّن زي ما كتبه ومحدش بيسأله تاني. القاعدة على الأسماء الجديدة بس:
+    # ولا اسم متخزّن دلوقتي على الروستر بيتلمس ولا بيتراجع.
+    #
+    # بيتفحص على القيمة المنضّفة — نفس القيمة اللي هتتخزّن، مش اللي اتبعتت.
+    if not data.latin_name_ok and not (
+            is_arabic_name(first_clean) and is_arabic_name(last_clean)):
+        raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
 
     existing_user = db.query(User).filter(User.email == data.email).first()
 
@@ -217,9 +229,10 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
         if existing_user.is_verified:
             raise HTTPException(status_code=400, detail="This Email Is Already Exists")
 
-        existing_user.first_name = clean_display_name(data.first_name, limit=40)
-        existing_user.last_name = clean_display_name(data.last_name, limit=40)
+        existing_user.first_name = first_clean
+        existing_user.last_name = last_clean
         existing_user.full_name = compose_full_name(data.first_name, data.last_name)
+        existing_user.latin_name_ok = bool(data.latin_name_ok)
         existing_user.hashed_password = hash_password(data.password)
         existing_user.phone = None
         existing_user.country = data.country
@@ -230,8 +243,9 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
     else:
         user = User(
             full_name=compose_full_name(data.first_name, data.last_name),
-            first_name=clean_display_name(data.first_name, limit=40),
-            last_name=clean_display_name(data.last_name, limit=40),
+            first_name=first_clean,
+            last_name=last_clean,
+            latin_name_ok=bool(data.latin_name_ok),
             email=data.email,
             hashed_password=hash_password(data.password),
             phone=None,

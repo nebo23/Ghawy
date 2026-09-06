@@ -16,6 +16,7 @@ Nothing here reads or writes the database. Resolution happens in memory, at
 send time, from whatever `full_name` already holds — being addressed by name
 never alters a stored one.
 """
+import re
 import unicodedata
 
 
@@ -338,8 +339,54 @@ _AR_FIRST_NAMES = {
 
 
 def is_arabic_text(s: str) -> bool:
-    """صح لو النص فيه أي حرف عربي."""
+    """صح لو النص فيه **أي** حرف عربي. ده كاشف، مش مدقّق.
+
+    `Mohamed محمد` بيعدّي من هنا. الفرق ده مقصود: `arabize_first_name` عايزة
+    تعرف «أستنى، ده عربي أصلاً؟» عشان ماتدوّرش في ماب اللاتيني. لو عايز تسأل
+    «هل الاسم ده مكتوب بالعربي؟» فدي `is_arabic_name` تحت، وهي حاجة تانية خالص.
+    """
     return bool(s) and any("؀" <= ch <= "ۿ" for ch in s)
+
+
+#: القاعدة نفسها بالحرف للواجهة. الواجهة مش حدود أمان — الباك إند هو اللي
+#: بيرفض — بس الرسالة الفورية لازم تقول نفس كلام السيرفر، وقاعدتين بتفرقوا
+#: يعني عضو الفورم بتقوله «تمام» والسيرفر بيرفضه. النمط متكتوب هنا مرة واحدة،
+#: و`src/js/arabic-name.js` بياخد نفس السطر بالحرف — وفيه اختبار بيقارنهم.
+#:
+#: النطاقات: حروف عربية أساسية وممتدة + التشكيل + التطويل + المسافة. الأرقام
+#: (اللاتيني والعربي-الهندي ٠-٩ و ۰-۹) برّه النطاقات دي عن قصد.
+ARABIC_NAME_PATTERN = (
+    r"^[\u0621-\u063A\u0641-\u064A\u066E-\u06D3"
+    r"\u0750-\u077F\u08A0-\u08BF\u064B-\u0652\u0640 ]+$"
+)
+#: الحروف اللي بتتعدّ — من غير مسافة ولا تطويل ولا تشكيل. حرف واحد مش اسم.
+ARABIC_LETTER_PATTERN = (
+    r"[\u0621-\u063A\u0641-\u064A\u066E-\u06D3\u0750-\u077F\u08A0-\u08BF]"
+)
+
+_ARABIC_NAME_RE = re.compile(ARABIC_NAME_PATTERN)
+_ARABIC_LETTER_RE = re.compile(ARABIC_LETTER_PATTERN)
+
+#: اللي بيتقال للعضو لما الاسم مش بالعربي. رسالة واحدة لكل الأبواب — العضو
+#: لازم يقرا نفس الجملة سواء اتكلم مع الفورم أو مع السيرفر.
+ARABIC_NAME_MESSAGE = "اكتب اسمك بالعربي 🙏"
+
+
+def is_arabic_name(value: str | None) -> bool:
+    """هل ده اسم **مكتوب بالعربي**؟ — كل حرف فيه عربي، مش حرف واحد بس.
+
+    مش `is_arabic_text`: دي بترجّع True لـ `Mohamed محمد`، وده اسم نص نص. هنا
+    القاعدة إن كل حرف عربي؛ المسافة والتطويل والتشكيل ماشيين، والحروف اللاتينية
+    والأرقام مرفوضة.
+
+    حرفين على الأقل: `م` مش اسم، والفورم أصلاً بيطلب حرفين لكل خانة.
+    """
+    s = " ".join((value or "").split())
+    if not s:
+        return False
+    if not _ARABIC_NAME_RE.match(s):
+        return False
+    return len(_ARABIC_LETTER_RE.findall(s)) >= 2
 
 
 def _norm_latin_name(s: str) -> str:

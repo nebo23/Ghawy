@@ -25,7 +25,8 @@ from app.services.permissions import (
     permissions_for, has_permission, require_permission,
     normalize_permissions, dump_permissions, role_preset, role_labels,
 )
-from app.services.name_utils import split_full_name, clean_display_name
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, clean_display_name,
+                                     is_arabic_name, split_full_name)
 from app.services.subscription_service import extend_subscription
 
 logger = logging.getLogger(__name__)
@@ -201,6 +202,10 @@ def add_user(
 
     admin_full_name = clean_display_name(data.full_name)
     admin_first, admin_last = split_full_name(admin_full_name)
+    # تحذير، مش رفض. الأدمن ساعات بيعمل حساب لعضو اسمه مش متكتب بالعربي، وده
+    # الباب اللي لازم يفضل مفتوح عشان كده. الرسالة بترجع في الرد عشان اللي
+    # عامل الحساب يشوفها ويقرر — مش عشان تتصرف من ورا.
+    name_warning = None if is_arabic_name(admin_full_name) else ARABIC_NAME_MESSAGE
     new_user = User(
         full_name=admin_full_name,
         first_name=admin_first,
@@ -224,6 +229,7 @@ def add_user(
         "is_active": new_user.is_active,
         "is_admin": new_user.is_admin,
         "message": "User created successfully",
+        "name_warning": name_warning,
     }
 
 

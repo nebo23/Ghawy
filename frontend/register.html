@@ -291,6 +291,16 @@
         </div>
       </div>
 
+      <!-- المخرج. الاسم بالعربي مطلوب، بس مش قفل: اللي اسمه مش متكتب بالعربي
+           بيعلّم هنا وبيكمّل باسمه زي ما هو. مخفي لحد ما القاعدة تقع فعلاً —
+           محدش محتاج يقرا الاستثناء قبل ما يبقى محتاجه. -->
+      <div class="mb-4 hidden" id="latin-name-row">
+        <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+          <input type="checkbox" id="latinNameOk" class="accent-[#AAFF00] w-4 h-4">
+          <span data-i18n="latinNameOptOut">اسمي مش بالعربي</span>
+        </label>
+      </div>
+
       <!-- Email Address -->
       <div class="mb-4">
         <label class="block text-xs font-medium text-gray-400 mb-1" data-i18n="emailAddress">البريد الإلكتروني</label>
@@ -416,6 +426,7 @@
     </div>
   </div>
 
+  <script src="src/js/arabic-name.js?v=20260906a"></script>
   <script src="src/js/utils.js?v=20260905b"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/register.js?v=20260905a"></script>

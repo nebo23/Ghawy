@@ -78,6 +78,15 @@ class User(Base):
     full_name = Column(String, nullable=False)
     first_name = Column(String, nullable=True)   # nullable: pre-split accounts
     last_name = Column(String, nullable=True)
+    # العضو قال «اسمي مش بالعربي». الاسم بالعربي مطلوب من الأعضاء الجدد، بس
+    # الطلب ده مايقدرش يبقى قفل: فيه أعضاء اسمهم مش متكتب بالعربي أصلاً، وهم
+    # مش هيقدروا يمتثلوا مهما حصل. العلامة دي بتخزّن الاسم اللاتيني وبتسكّت
+    # السؤال — في الفورم وفي الأونبوردنج — فمحدش بيتقفل برّه حسابه.
+    #
+    # ملهاش أي علاقة بالأسماء القديمة: الـ 1,683 اسم اللاتيني اللي على
+    # الروستر النهارده مالهمش دعوة بالقاعدة دي أصلاً وماتسألوش.
+    latin_name_ok = Column(Boolean, nullable=False,
+                           server_default=text('false'), default=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     phone = Column(String, unique=True, nullable=True)

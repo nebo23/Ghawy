@@ -264,6 +264,19 @@ async function submitRegister() {
     showFormMessage(t('errNameRequired'), 'error');
     return;
   }
+  // الاسم بالعربي. القاعدة الحقيقية على السيرفر — دي عشان العضو يعرف دلوقتي
+  // بدل ما يستنى رد، وهي نفس القاعدة بالحرف (src/js/arabic-name.js).
+  //
+  // لو الملف مش محمّل لأي سبب (كاش قديم مثلاً) بنعدّي: السيرفر هو اللي بيرفض،
+  // والواجهة عمرها ما تبقى هي اللي واقفة قدام حد يسجّل.
+  const latinNameOk = !!document.getElementById('latinNameOk')?.checked;
+  if (!inviteToken && !latinNameOk && typeof window.isArabicName === 'function'
+      && !(window.isArabicName(firstName) && window.isArabicName(lastName))) {
+    // أول ما القاعدة تقع، المخرج بيظهر — قبل كده مالوش لازمة.
+    document.getElementById('latin-name-row')?.classList.remove('hidden');
+    showFormMessage(t('errArabicName'), 'error');
+    return;
+  }
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const country = document.getElementById('country').value.trim();
@@ -334,6 +347,7 @@ async function submitRegister() {
           password,
           country,
           governorate,
+          latin_name_ok: latinNameOk,
           turnstile_token: captchaToken
         })
       });

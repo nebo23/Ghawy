@@ -16,6 +16,10 @@ class UserRegister(BaseModel):
     country: Optional[str] = None
     governorate: str
     turnstile_token: Optional[str] = None
+    # «اسمي مش بالعربي» — العضو قال إن اسمه مش متكتب بالعربي، فالقاعدة
+    # بتتخطى ليه والاسم بيتخزّن زي ما كتبه. بيتحفظ على الحساب عشان
+    # الأونبوردنج ما يسألوش تاني.
+    latin_name_ok: bool = False
 
 class SendPhoneOTP(BaseModel):
     phone: str
