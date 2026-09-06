@@ -18,6 +18,8 @@ from app.database import get_db
 # sixteen still listed here were already unused before this phase — see F-17.
 from app.models import User, Payment, ChatMember, MemberRole, MessageRead, Message, PostReaction, CommentReaction, ManualPaymentRequest, LiveAttendee, LiveSession, AiUpdatePost, AiUpdatePoll, AiUpdatePollOption, AiUpdatePollVote, AiUpdateReaction, AiUpdateComment, CommunityFeedback
 from app.routers.users import get_current_user, get_current_admin_user
+from app.routers.profile import needs_arabic_name
+from app.services.name_utils import ARABIC_NAME_MESSAGE
 from pathlib import Path
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
@@ -235,6 +237,20 @@ def complete_onboarding_patch(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """يرفع علامة إنهاء الأونبوردنج — بنفس شرط الخطوة اللي بتسأل عن الاسم.
+
+    العلامة دي هي اللي الحارس في `utils.js` بيقرأها؛ عضو عليها بيدخل المنصة.
+    فالباب ده كان بيلغي قاعدة الاسم العربي كلها: `POST /profile/complete-
+    onboarding` يرفض `Nabil Ahmed` بـ422، وبعدين نداء واحد هنا يرفع العلامة
+    ويدخل نفس العضو بنفس الاسم اللاتيني من غير ما حد يسأله. الشرط بيتسأل من
+    `needs_arabic_name` نفسها اللي الخطوة بتستعملها، مش من نسخة تانية منه.
+
+    اللي مش مطلوب منه اسم عربي — اسمه عربي أصلاً أو علّم «اسمي مش بالعربي» —
+    بيعدّي زي ما كان بالظبط. والفرونت بينادي الباب ده بعد ما البوست ينجح، يعني
+    الاسم يبقى اتظبط خلاص قبل ما نوصل هنا.
+    """
+    if needs_arabic_name(current_user):
+        raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
     current_user.onboarding_completed = True
     db.commit()
     return {"message": "onboarding completed"}

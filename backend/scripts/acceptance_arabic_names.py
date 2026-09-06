@@ -299,11 +299,42 @@ st = c.get("/profile/onboarding-status", headers=token_for(noread)).json()
 check("[G10] an unknown name is not guessed at — the field is left empty",
       st.get("needs_arabic_name") is True and st.get("suggested_name") == "", st)
 
+print("\n── Door 6: the flag itself — PATCH /users/me/complete-onboarding ─")
+
+# العلامة دي هي اللي الحارس بيقرأها. باب تاني بيرفعها من غير شرط الاسم معناه
+# إن الباب الأول اللي بيرفض مالوش أي لازمة — العضو بينده على ده وخلاص.
+flagger = mkuser("flag@t.co", "Karim Latin", onboarding_completed=False)
+hf = token_for(flagger)
+r = c.patch("/users/me/complete-onboarding", headers=hf)
+db.refresh(flagger)
+check("[F1] a member who still owes an Arabic name cannot raise the flag directly",
+      r.status_code == 422 and flagger.onboarding_completed is False,
+      (r.status_code, flagger.onboarding_completed))
+
+r = c.post("/profile/complete-onboarding", headers=hf, json={"full_name": "كريم سمير"})
+db.refresh(flagger)
+check("[F2] …and once the name is Arabic the same call goes through",
+      r.status_code == 200 and c.patch("/users/me/complete-onboarding", headers=hf).status_code == 200,
+      (r.status_code, flagger.full_name))
+
+opted = mkuser("flagopt@t.co", "Latin Optout", latin_name_ok=True, onboarding_completed=False)
+r = c.patch("/users/me/complete-onboarding", headers=token_for(opted))
+db.refresh(opted)
+check("[F3] the opt-out is not blocked by the new gate",
+      r.status_code == 200 and opted.onboarding_completed is True and opted.full_name == "Latin Optout",
+      (r.status_code, opted.full_name))
+
+arabic_flag = mkuser("flagar@t.co", "هدى سمير", onboarding_completed=False)
+r = c.patch("/users/me/complete-onboarding", headers=token_for(arabic_flag))
+db.refresh(arabic_flag)
+check("[F4] an Arabic-named member is unaffected",
+      r.status_code == 200 and arabic_flag.onboarding_completed is True, r.status_code)
+
 print("\n── No stored name is ever rewritten ─────────────────────────────")
 
 # Every name written by a fixture, against every name in the table now. The
 # only rows allowed to differ are the ones a member changed on purpose above.
-MEMBER_CHANGED = {"google@t.co", "arabmember@t.co", "latinmember@t.co"}
+MEMBER_CHANGED = {"google@t.co", "arabmember@t.co", "latinmember@t.co", "flag@t.co"}
 drift = {}
 for u in db.query(M.User).all():
     if u.email in MEMBER_CHANGED:

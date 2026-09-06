@@ -342,11 +342,15 @@ def upload_avatar(
     return {"avatar_url": avatar_url}
 
 
-def _needs_arabic_name(user: User) -> bool:
+def needs_arabic_name(user: User) -> bool:
     """هل نسأل العضو ده يكتب اسمه بالعربي؟
 
     الشرط على الاسم نفسه مش على طريقة التسجيل. حالة واحدة نفكر فيها بدل
     اتنين، وبتمسك كمان أي حساب اتعمل من فورم وعدّى بطريقة ما.
+
+    عامة مش خاصة: `main.py` بيسأل نفس السؤال قبل ما يرفع علامة
+    `onboarding_completed`. نسخة تانية من الشرط ده هي بالظبط اللي بتخلّي باب
+    يرفض وباب يسمح.
     """
     return not user.latin_name_ok and not is_arabic_name(user.full_name)
 
@@ -354,7 +358,7 @@ def _needs_arabic_name(user: User) -> bool:
 # ─── Onboarding Status ────────────────────────────────────
 @router.get("/onboarding-status")
 def get_onboarding_status(current_user: User = Depends(get_current_active_member)):
-    needs = _needs_arabic_name(current_user)
+    needs = needs_arabic_name(current_user)
     return {
         "onboarding_completed": bool(current_user.onboarding_completed),
         "needs_arabic_name": needs,
