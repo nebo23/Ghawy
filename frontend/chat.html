@@ -62,7 +62,7 @@
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
     <link rel="stylesheet" href="src/css/dashboard.css?v=36" />
     <link rel="stylesheet" href="src/css/dashboard-new.css?v=19" />
-    <link rel="stylesheet" href="src/css/community.css?v=11" />
+    <link rel="stylesheet" href="src/css/community.css?v=12" />
     <style>
         /* Left: Channel List */
         .chat-channels {
@@ -1597,6 +1597,7 @@
         </div>
     </div>
 
+    <script src="src/js/campaign-type.js?v=20260906a"></script>
     <script src="src/js/utils.js?v=20260905b"></script>
 
     <style>
@@ -3869,7 +3870,27 @@
                 </div>
             `;
 
-            return `<div class="${msgClass}" id="msg-${m.id}" data-message-id="${m.id}" ${msgDataAttr}>
+
+            // A DM campaign carries its type into the conversation: a left
+            // accent stripe in the type colour and a small chip. NOT a
+            // recoloured bubble — the member is receiving a private message
+            // from a named admin, and repainting the whole bubble makes it
+            // read as an automated notification, which is the opposite of why
+            // DM delivery exists.
+            //
+            // isCampaignType, not campaignType: an ordinary message has no
+            // campaign type, and campaignType()'s info default would put a
+            // blue stripe on every message a person typed. When there is no
+            // type all three of these are empty strings, so the markup below
+            // is byte-identical to what it was before.
+            const camp = (window.isCampaignType && window.isCampaignType(m.campaign_type))
+                ? window.campaignType(m.campaign_type) : null;
+            const campClass = camp ? ' msg-campaign' : '';
+            const campStyle = camp ? ` style="--campaign-color:${camp.color}"` : '';
+            const campChip = camp
+                ? `<span class="msg-campaign-chip"><i class="fa-solid ${camp.faIcon}"></i>${escHtml(camp.label)}</span>`
+                : '';
+            return `<div class="${msgClass}${campClass}" id="msg-${m.id}" data-message-id="${m.id}" ${msgDataAttr}${campStyle}>
                 <div class="msg-avatar-wrap msg-user-trigger" data-user-id="${m.author_id}" onclick="openUserProfile(${m.author_id})">
                     <div class="msg-av">${avatarHtml}</div>
                 </div>
@@ -3880,6 +3901,7 @@
                         ${badgeHtml}
                         <span class="msg-ts">${formatTime(m.created_at)}</span>
                         <span class="msg-edited" id="msg-edited-${m.id}" title="Edited"${m.edited_at ? '' : ' style="display:none"'}>edited</span>
+                        ${campChip}
                     </div>
                     <div class="msg-content-row">
                         ${contentHtml}

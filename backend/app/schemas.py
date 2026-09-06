@@ -317,6 +317,12 @@ class MessageOut(BaseModel):
     sender_is_admin: bool = False
     channel_name: Optional[str] = None
     reactions_summary: Optional[list[dict]] = []
+    # Set when this message was fanned out by a DM campaign — the campaign's
+    # resolved type ("info"/"success"/"warning"/"promo"), never the
+    # announcement id: the id would invite the client to go and fetch a
+    # campaign it has no permission to read, and the only thing the chat needs
+    # is which colour to draw.
+    campaign_type: Optional[str] = None
 
     class Config:
         from_attributes = True

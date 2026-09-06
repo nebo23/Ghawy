@@ -525,22 +525,16 @@ async function fetchGlobalNotifications() {
   } catch (e) { console.error('Global notif error:', e); }
 }
 
-// The four types an admin can pick in the announcements composer, drawn with
-// the palette the composer previews (AN_TYPE_META in team-announcements.js) so
-// what the admin chose is what the member gets. Font Awesome and not Lucide on
-// purpose: FA draws from a class name, so it survives the bell being
-// re-rendered, while a Lucide icon would need createIcons() called again on
-// every poll. A campaign is still an ordinary notification — this table only
-// changes the glyph and its colour, never the row.
-const NOTIF_TYPE_META = {
-  info:    { icon: 'fa-circle-info',          color: '#3f8ff9' },
-  success: { icon: 'fa-circle-check',         color: '#22c55e' },
-  warning: { icon: 'fa-triangle-exclamation', color: '#f59e0b' },
-  promo:   { icon: 'fa-gift',                 color: '#c1ff11' },
-};
-// Anything else — an unknown type, or a system notification that never set one
-// — keeps the gold bell the platform has always drawn.
-const NOTIF_TYPE_FALLBACK = { icon: 'fa-bell', color: 'var(--gold)' };
+// The type palette lives in campaign-type.js, loaded before this file — it is
+// shared with the composer and the chat, so what the admin chose is what the
+// member gets on all three. The copy that used to be here and the copy in
+// team-announcements.js were identical by hand.
+//
+// A campaign is still an ordinary notification: the type only changes the
+// glyph and its colour, never the row. Anything else — an unknown type, or a
+// system notification that never set one — keeps the gold bell the platform
+// has always drawn, which is why this is not `campaignType()`'s info default.
+const NOTIF_TYPE_FALLBACK = { faIcon: 'fa-bell', color: 'var(--gold)' };
 
 function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
   const el = document.getElementById('notifList');
@@ -608,7 +602,7 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
      // Only ever the table's own constants reach the HTML here — n.type is a
      // lookup key, never interpolated — so the icon and colour cannot carry
      // anything a user wrote.
-     const meta = NOTIF_TYPE_META[n.type] || NOTIF_TYPE_FALLBACK;
+     const meta = (window.CAMPAIGN_TYPES || {})[n.type] || NOTIF_TYPE_FALLBACK;
      // time_ago has been in the payload since the endpoint was written and the
      // bell threw it away, so "5 minutes ago" and "last month" looked alike.
      // The Arabic layer matches it by pattern, so it stays the backend's
@@ -623,7 +617,7 @@ function renderGlobalNotifList(dms, notifs, communityUnread, aiUpdatesUnread) {
      const body = String(n.title || '') ? String(n.body || '') : '';
      html += `
         <div class="notif-item" style="cursor:pointer;" onclick="window.markNotifRead(${Number(n.id)}, '${link}')">
-            <div class="notif-item-av"><i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i></div>
+            <div class="notif-item-av"><i class="fa-solid ${meta.faIcon}" style="color:${meta.color}"></i></div>
             <div class="notif-item-body">
                 <div class="notif-item-name notif-clamp" title="${escapeHtml(heading)}">${escapeHtml(heading)}</div>
                 ${body ? `<div class="notif-item-text notif-clamp" title="${escapeHtml(body)}">${escapeHtml(body)}</div>` : ''}

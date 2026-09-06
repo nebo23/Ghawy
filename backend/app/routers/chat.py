@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.services.ws_manager import manager
-from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRole, ChannelType, MessageType, Post, PostChannelRead
+from app.models import User, Channel, ChatMember, Message, MessageRead, MemberRole, ChannelType, MessageType, Post, PostChannelRead, Announcement
 from app.schemas import ChannelCreate, ChannelOut, MessageCreate, MessageOut, ChatMemberOut
 from app.routers.users import get_current_user, get_current_active_member
 from app.services.file_service import save_upload
@@ -175,6 +175,19 @@ def get_messages_simple(
 
     reactions_map = get_reaction_summaries(db, msg_ids, current_user.id)
 
+    # ── Campaign types for the page, one query ──
+    # This is the endpoint both chat.html and direct-messages.html actually
+    # read (`/chat/messages?channel=`), so a DM campaign's colour has to be
+    # resolved here as well as in the typed `/channels/{id}/messages` route
+    # above. Batched for the same reason every other lookup on this page is:
+    # a per-message query would put 50 round trips back into the loop below.
+    # Usually empty — an ordinary conversation has no campaign messages at all.
+    ann_ids = {m.announcement_id for m in msgs if m.announcement_id is not None}
+    ann_types = dict(
+        db.query(Announcement.id, Announcement.type)
+        .filter(Announcement.id.in_(ann_ids)).all()
+    ) if ann_ids else {}
+
     # ── Online status: single query ──
     one_min_ago = datetime.utcnow() - timedelta(seconds=60)
     online_user_ids = set(
@@ -207,6 +220,9 @@ def get_messages_simple(
             "read_by": read_by,
             "is_online": msg.sender_id in online_user_ids,
             "reactions_summary": reactions_map.get(msg.id, []),
+            # Null for every message a person typed — the chat draws a stripe
+            # only when this is a type it knows, never on a default.
+            "campaign_type": ann_types.get(msg.announcement_id),
         })
     return result
 
@@ -675,6 +691,17 @@ def list_messages(
         for u in (db.query(User).filter(User.id.in_(sender_ids)).all() if sender_ids else [])
     }
 
+    # Campaign types for the whole page in one query, same reason as `senders`
+    # above: a per-message lookup here would put the round trips straight back
+    # into the loop the comment above removed them from. Usually empty — an
+    # ordinary conversation has no campaign messages in it at all, and then
+    # this costs nothing.
+    ann_ids = {msg.announcement_id for msg in messages if msg.announcement_id is not None}
+    ann_types = dict(
+        db.query(Announcement.id, Announcement.type)
+        .filter(Announcement.id.in_(ann_ids)).all()
+    ) if ann_ids else {}
+
     result = []
     for msg in messages:
         sender = senders.get(msg.sender_id)
@@ -695,6 +722,7 @@ def list_messages(
             sender_badge=sender.badge if sender else "Member",
             sender_is_admin=sender.is_admin if sender else False,
             reactions_summary=reactions_map.get(msg.id, []),
+            campaign_type=ann_types.get(msg.announcement_id),
         ))
 
     return result

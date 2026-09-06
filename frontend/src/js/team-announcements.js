@@ -51,14 +51,12 @@ let anPersonal = null;
 let anList = { q: '', status: 'all', delivery: 'all', offset: 0, limit: 30, total: 0, hasMore: false };
 let anListTimer = null;
 
-const AN_TYPE_META = {
-  info:    { icon: 'info',          color: '#3f8ff9', label: 'معلومة' },
-  success: { icon: 'check-circle',  color: '#22c55e', label: 'خبر كويس' },
-  warning: { icon: 'alert-triangle', color: '#f59e0b', label: 'تنبيه' },
-  promo:   { icon: 'gift',          color: '#c1ff11', label: 'عرض' },
-};
-
-function anTypeMeta(t) { return AN_TYPE_META[t] || AN_TYPE_META.info; }
+// The palette is in campaign-type.js, loaded before this file and shared with
+// the bell and the chat bubble. It used to be written out here as well, byte
+// for byte identical to the copy in utils.js — so the composer could have
+// previewed one amber while the member was shown another, and both would have
+// looked yellow to whoever checked.
+function anTypeMeta(t) { return window.campaignType(t); }
 
 function anDelivery() {
   const el = document.getElementById('an-delivery');
@@ -633,7 +631,7 @@ function anRenderPreview() {
   box.innerHTML = `
     <div class="an-preview-row" style="border-inline-start:3px solid ${meta.color}">
       <div class="an-preview-icon" style="background:${meta.color}1f;color:${meta.color}">
-        <i data-lucide="${meta.icon}" style="width:16px;height:16px;"></i>
+        <i data-lucide="${meta.lucideIcon}" style="width:16px;height:16px;"></i>
       </div>
       <div class="an-preview-text">
         <!-- No heading line: the bell promotes the body into the name slot for

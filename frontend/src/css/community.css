@@ -2278,3 +2278,54 @@ details[open].sh-faq-item .sh-faq-summary::after {
     left: -100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   رسالة جاية من حملة — النوع بيوصل للمحادثة
+   ═══════════════════════════════════════════════════════════
+   العضو بيستقبل رسالة خاصة من أدمن باسمه. تلوين الفقاعة كلها كان
+   هيخليها تتقرا كإشعار أوتوماتيك — وده بالظبط عكس السبب اللي الإرسال
+   بالـ DM موجود عشانه. فالفقاعة زي ما هي، والنوع بيتقال بشريطة على
+   الجنب وشارة صغيرة.
+
+   اللون بييجي من `--campaign-color` المتحطّة على صف الرسالة نفسه من
+   `campaign-type.js` — مفيش لون مكتوب هنا، عشان اللي المشغّل اختاره
+   واللي العضو بيشوفه يفضلوا نفس القيمة.
+
+   الرسالة العادية (`announcement_id` فاضية) مابتاخدش الكلاس ده أصلاً،
+   فالماركب بتاعها مالوش أي فرق عن قبل التغيير ده.
+
+   الملف ده بيتحمّل في chat.html و direct-messages.html الاتنين، عشان
+   السطرين دول ما يتكتبوش مرتين. */
+
+.msg.msg-campaign .msg-body-wrap {
+    border-inline-start: 3px solid var(--campaign-color);
+    padding-inline-start: 10px;
+}
+
+.msg-campaign-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .66rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    color: var(--campaign-color);
+    background: color-mix(in srgb, var(--campaign-color) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--campaign-color) 34%, transparent);
+}
+
+/* color-mix ماشية في كل المتصفحات اللي بندعمها، بس لو متصفح قديم ماعرفهاش
+   الشارة بتفضل مقروءة: نص ملوّن على خلفية شفافة من غير إطار. */
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+    .msg-campaign-chip {
+        background: transparent;
+        border-color: var(--campaign-color);
+    }
+}
+
+.msg-campaign-chip i {
+    font-size: .62rem;
+}

@@ -1280,6 +1280,10 @@ def _dm_live_push(db: Session, row: Announcement, sender: User,
                 "created_at": now.isoformat(),
                 "author_id": sender.id,
                 "reactions_summary": [],
+                # Same field `MessageOut` carries, so a message that arrives
+                # live is drawn exactly like one that arrives on reload. Miss
+                # it here and the campaign is grey until the member refreshes.
+                "campaign_type": row.type,
             },
         }
         for rid, cid in online.items()
@@ -1528,6 +1532,7 @@ def _send_test(db: Session, row: Announcement, actor: User) -> Dict[str, Any]:
                     "reply_to_id": None,
                     "created_at": msg.created_at.isoformat() if msg.created_at else None,
                     "author_id": sender_id, "reactions_summary": [],
+                    "campaign_type": row.type,
                 },
             }],
             "message": "الحملة اتبعتت ليك إنت بس كرسالة خاصة — شوفها في الرسايل",
