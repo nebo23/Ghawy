@@ -439,6 +439,38 @@ def is_arabic_name(value: str | None) -> bool:
     return len(_ARABIC_LETTER_RE.findall(s)) >= 2
 
 
+def arabic_name_suggestion(full_name: str | None) -> str:
+    """اقتراح اسم عربي للعرض في خانة الأونبوردنج — عربي بالكامل أو ولا حاجة.
+
+    الاقتراح ده قيمة الخانة الافتراضية، يعني العضو ممكن يبعته زي ما هو. فلازم
+    يعدّي `is_arabic_name` — وإلا الفورم بيدّي العضو قيمة بترفضها قاعدته هو.
+    وأهم من كده: مايطلعش نص نص. اسم نصه عربي ونصه لاتيني ماينفعش يتخزّن، فما
+    ينفعش كمان يتعرض كاقتراح — الفورم اللي بيملي `محمد Salah` بيعلّم الشكل
+    اللي المفروض مايوجدش.
+
+    تلات نتايج بس:
+      * الكلمتين اتعرفوا     → الاسم العربي كامل (`Nabil Ahmed` → `نبيل أحمد`)
+      * الاسم الأول بس       → الاسم الأول لوحده (`Mohamed Elsayed` → `محمد`)
+      * ولا واحد             → `""`، مفيش اقتراح خالص
+
+    الحالة التانية بتسيب العضو يكتب كلمة واحدة بدل الاسم كله؛ ده أقل شغل من
+    إنه يمسح اقتراح غلط ويكتب من الأول.
+    """
+    first = arabize_first_name(full_name or "")
+    if not first or not is_arabic_name(first):
+        return ""
+    _first, last = split_full_name(full_name)
+    arabized = []
+    for tok in last.split():
+        ar = arabize_name_token(tok)
+        if not ar:
+            # كلمة واحدة ماعرفناهاش بتوقّف اسم العيلة كله. نص الاسم بالعربي
+            # ونصه لاتيني هو اللي احنا بنمنعه — الاسم الأول لوحده أنضف.
+            return compose_full_name(first, "")
+        arabized.append(ar)
+    return compose_full_name(first, " ".join(arabized))
+
+
 def _norm_latin_name(s: str) -> str:
     """تطبيع اسم لاتيني للبحث في الماب: إزالة التشكيل + حروف بس + lowercase."""
     s = unicodedata.normalize("NFKD", s or "")
@@ -501,6 +533,26 @@ def arabize_first_name(name: str):
         return None
     tok = first_name_token(name)
     if is_arabic_text(tok):
+        return tok
+    return _AR_FIRST_NAMES.get(_norm_latin_name(tok))
+
+
+def arabize_name_token(token: str | None) -> str | None:
+    """الصيغة العربية لكلمة واحدة من الاسم — أو None لو مش معروفة.
+
+    `arabize_first_name` بتاخد اسم كامل وبتطلّع الاسم الأول منه؛ دي بتشتغل على
+    كلمة واحدة اتقسمت خلاص، عشان اسم العيلة يتعرّب بنفس الماب اللي بتعرّب
+    الاسم الأول. أغلب أسامي العيلة المصرية هي أصلاً أسامي أولى (`صلاح`، `حسن`،
+    `أحمد`) فهي موجودة في الماب من غير ما نضيف حاجة.
+
+    بتقيس بـ `is_arabic_name` مش `is_arabic_text`: كلمة زي `Mohamedمحمد` فيها
+    حروف عربية بس مش مكتوبة بالعربي، والرجوع بيها كأنها عربية هو بالظبط الشكل
+    نص نص اللي مالوش مكان في أي اسم.
+    """
+    tok = (token or "").strip()
+    if not tok:
+        return None
+    if is_arabic_name(tok):
         return tok
     return _AR_FIRST_NAMES.get(_norm_latin_name(tok))
 

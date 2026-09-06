@@ -4,9 +4,9 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.name_utils import (ARABIC_NAME_MESSAGE, arabize_first_name,
-                                     clean_display_name, compose_full_name,
-                                     is_arabic_name, split_full_name)
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, arabic_name_suggestion,
+                                     clean_display_name, is_arabic_name,
+                                     split_full_name)
 from app.services.permissions import has_permission
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
 from app.schemas import UserMemberOut, UserProfileUpdate, OnboardingUpdate
@@ -342,20 +342,6 @@ def upload_avatar(
     return {"avatar_url": avatar_url}
 
 
-def _arabic_name_suggestion(full_name: str | None) -> str:
-    """`Mohamed Salah` → `محمد Salah`. `""` لو الاسم الأول مش في الماب.
-
-    الفكرة إن العضو يصلّح كلمة بدل ما يكتب اسمه من الأول — ده اللي الـ ٢٥٠ اسم
-    اللي في الماب بيعملوه هنا. بيرجع نص للعرض بس: اللي بيتخزّن هو اللي العضو
-    بيبعته بعد ما يشوفه، مش ده.
-    """
-    ar = arabize_first_name(full_name or "")
-    if not ar:
-        return ""
-    _first, last = split_full_name(full_name)
-    return compose_full_name(ar, last)
-
-
 def _needs_arabic_name(user: User) -> bool:
     """هل نسأل العضو ده يكتب اسمه بالعربي؟
 
@@ -372,7 +358,7 @@ def get_onboarding_status(current_user: User = Depends(get_current_active_member
     return {
         "onboarding_completed": bool(current_user.onboarding_completed),
         "needs_arabic_name": needs,
-        "suggested_name": _arabic_name_suggestion(current_user.full_name) if needs else "",
+        "suggested_name": arabic_name_suggestion(current_user.full_name) if needs else "",
         "current_name": current_user.full_name or "",
     }
 
@@ -439,7 +425,21 @@ def complete_onboarding(
         db.add(welcome_msg)
         db.commit()
 
-    return {"success": True, "redirect": "dashboard.html"}
+    # الاسم بيرجع مع الرد عشان المتصفح يحدّث النسخة المخزّنة عنده فوراً.
+    # `onboarding.js` بيكتب `localStorage['user']` من هنا: من غير كده العضو
+    # بيكتب اسمه بالعربي، الصف بيتصلّح، والمتصفح يفضل شايل الاسم اللاتيني
+    # القديم لحد ما يخرج ويدخل تاني — والشهادة بتتسحب بالاسم ده.
+    #
+    # القيم من الصف نفسه مش من اللي اتبعت: `clean_display_name` ممكن تكون
+    # نضّفت، و`split_full_name` هي الوحيدة اللي بتعرف تقسم اسم مركّب. الفرونت
+    # ماعندوش الماب دي، فالسيرفر هو اللي بيقول الاسم اتخزّن إزاي.
+    return {
+        "success": True,
+        "redirect": "dashboard.html",
+        "full_name": current_user.full_name or "",
+        "first_name": current_user.first_name or "",
+        "last_name": current_user.last_name or "",
+    }
 
 
 # ─── Upload Avatar (Onboarding) ──────────────────────────

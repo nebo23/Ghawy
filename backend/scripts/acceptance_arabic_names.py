@@ -36,7 +36,8 @@ from app.models import Base
 from app import models as M
 from app.routers import users as users_router
 from app.routers import atlas as atlas_router
-from app.services.name_utils import ARABIC_NAME_MESSAGE
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, arabic_name_suggestion,
+                                     is_arabic_name)
 
 PASS, FAIL = [], []
 def check(name, cond, detail=""):
@@ -113,6 +114,17 @@ check("[1e] the opt-out stores the Latin name as typed and is remembered",
 
 r = signup("محمد1", "علي", "digits@t.co")
 check("[1f] digits in a name are rejected", r.status_code == 422, (r.status_code,))
+
+# نص الاسم عربي ونصه لاتيني — الشكل اللي المالك قال إنه مايوجدش في أي باب.
+# الفحص هنا على كل خانة لوحدها، فالاتنين دول لازم يقعوا حتى وإن كل خانة
+# فيهم لوحدها سليمة في لغتها.
+r = signup("محمد", "Salah", "arfirst@t.co")
+check("[1g] an Arabic first name with a Latin surname is rejected",
+      r.status_code == 422 and ARABIC_NAME_MESSAGE in r.text, (r.status_code, r.text[:120]))
+
+r = signup("Mohamed", "صلاح", "arlast@t.co")
+check("[1h] a Latin first name with an Arabic surname is rejected",
+      r.status_code == 422 and ARABIC_NAME_MESSAGE in r.text, (r.status_code, r.text[:120]))
 
 print("\n── Door 3: atlas offer redemption ───────────────────────────────")
 
@@ -192,7 +204,24 @@ hg = token_for(goog)
 st = c.get("/profile/onboarding-status", headers=hg).json()
 check("[G1] a Latin-named member is asked", st.get("needs_arabic_name") is True, st)
 check("[G2] the field is prefilled with the map's reading — a correction, not a typing task",
-      st.get("suggested_name") == "محمد Salah", st)
+      st.get("suggested_name") == "محمد صلاح", st)
+
+# الاقتراح هو قيمة الخانة الافتراضية، يعني ممكن يتبعت زي ما هو. فلازم يعدّي
+# نفس القاعدة اللي بترفض — واقتراح نص نص كان بيعلّم الشكل الممنوع نفسه.
+mixed = []
+for stored in ("Mohamed Salah", "Nabil Ahmed", "Mohamed Elsayed", "Radhouane Bouzid",
+               "محمد Salah", "Mohamed محمد", "Abdelrahman Salah", "ALAA S. N. AL-ZAYYAN"):
+    sug = arabic_name_suggestion(stored)
+    if sug and not is_arabic_name(sug):
+        mixed.append((stored, sug))
+check("[G2b] no suggestion is ever half-Arabic — it is a full Arabic name or nothing",
+      not mixed, mixed)
+check("[G2c] both tokens known → the whole name is suggested",
+      arabic_name_suggestion("Nabil Ahmed") == "نبيل أحمد", arabic_name_suggestion("Nabil Ahmed"))
+check("[G2d] only the first known → the surname is left for the member to type",
+      arabic_name_suggestion("Mohamed Elsayed") == "محمد", arabic_name_suggestion("Mohamed Elsayed"))
+check("[G2e] neither known → no prefill at all",
+      arabic_name_suggestion("Radhouane Bouzid") == "", arabic_name_suggestion("Radhouane Bouzid"))
 
 r = c.post("/profile/complete-onboarding", headers=hg,
            json={"full_name": "Mohamed Salah", "social_media_url": "https://x.com/a"})
@@ -201,13 +230,40 @@ check("[G3] a Latin name is refused at the step",
       r.status_code == 422 and goog.full_name == "Mohamed Salah" and not goog.onboarding_completed,
       (r.status_code, goog.full_name, goog.onboarding_completed))
 
+# نفس الاسم اللي الفورم بيقترحه غلط كان هيبقى مقبول لو الباب ده بيسيب النص
+# نص يعدّي. مش بيعدّي — والاتنين دول هما الحالة اللي المالك سمّاها بالظبط.
+r = c.post("/profile/complete-onboarding", headers=hg,
+           json={"full_name": "محمد Salah", "social_media_url": "https://x.com/a"})
+db.refresh(goog)
+check("[G3b] `محمد Salah` is refused at the step — half a name is not an Arabic name",
+      r.status_code == 422 and goog.full_name == "Mohamed Salah" and not goog.onboarding_completed,
+      (r.status_code, goog.full_name))
+
+r = c.post("/profile/complete-onboarding", headers=hg,
+           json={"full_name": "Mohamed محمد", "social_media_url": "https://x.com/a"})
+db.refresh(goog)
+check("[G3c] `Mohamed محمد` is refused too — the order does not save it",
+      r.status_code == 422 and goog.full_name == "Mohamed Salah" and not goog.onboarding_completed,
+      (r.status_code, goog.full_name))
+
 r = c.post("/profile/complete-onboarding", headers=hg,
            json={"full_name": "محمد صلاح", "social_media_url": "https://x.com/a"})
 db.refresh(goog)
 check("[G4] the member's own Arabic name is stored, and onboarding completes",
       r.status_code == 200 and goog.full_name == "محمد صلاح"
-      and goog.first_name == "محمد" and goog.onboarding_completed is True,
-      (r.status_code, goog.full_name, goog.first_name))
+      and goog.first_name == "محمد" and goog.last_name == "صلاح"
+      and goog.onboarding_completed is True,
+      (r.status_code, goog.full_name, goog.first_name, goog.last_name))
+check("[G4b] every one of the three stored name columns is Arabic",
+      all(is_arabic_name(v) for v in (goog.full_name, goog.first_name, goog.last_name)),
+      (goog.full_name, goog.first_name, goog.last_name))
+
+# الرد بيرجّع الاسم عشان المتصفح يحدّث نسخته المخزّنة على طول. من غير الحتة
+# دي الشهادة اللي تتسحب قبل تسجيل خروج بتطلع بالاسم اللاتيني القديم.
+body = r.json()
+check("[G4c] the response carries the stored name back for the browser cache",
+      body.get("full_name") == "محمد صلاح" and body.get("first_name") == "محمد"
+      and body.get("last_name") == "صلاح", body)
 
 st = c.get("/profile/onboarding-status", headers=hg).json()
 check("[G5] …and is not asked again", st.get("needs_arabic_name") is False, st)

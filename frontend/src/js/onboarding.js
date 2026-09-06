@@ -311,13 +311,28 @@ async function submitStep3() {
     });
 
     if (res.ok) {
+      // اللي السيرفر خزّنه فعلاً — الاسم بيرجع مع الرد. لو الرد ماتقراش لأي
+      // سبب بنكمّل بالفاضي، لأن العلامة تحت أهم من الاسم.
+      let saved = {};
+      try { saved = await res.json(); } catch (err) { saved = {}; }
+
       // Onboarding is now completed on the backend. Immediately sync the
       // cached user state so the dashboard's synchronous auth guard (which
       // reads localStorage['user']) doesn't see a stale onboarding_completed
       // = false and bounce the user straight back to onboarding (the loop).
+      //
+      // والاسم معاها. العضو لسه كاتب اسمه بالعربي دلوقتي، والنسخة المخزّنة
+      // هنا لسه فيها الاسم اللاتيني اللي جوجل بعته. الصفحات بتقراها من غير ما
+      // تسأل السيرفر — أوضحهم `course-detail.html` وهو بيرسم الشهادة — يعني
+      // شهادة تتسحب قبل ما العضو يخرج ويدخل كانت هتطلع بالاسم القديم.
       try {
         const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
         cachedUser.onboarding_completed = true;
+        if (saved.full_name) {
+          cachedUser.full_name = saved.full_name;
+          cachedUser.first_name = saved.first_name || '';
+          cachedUser.last_name = saved.last_name || '';
+        }
         localStorage.setItem('user', JSON.stringify(cachedUser));
       } catch (err) {
         localStorage.setItem('user', JSON.stringify({ onboarding_completed: true }));
