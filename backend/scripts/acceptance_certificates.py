@@ -130,6 +130,48 @@ c4 = db.query(M.Certificate).filter_by(user_id=u4.id, course_id=course4.id).firs
 check("[C8] all three count, member reaches 100%, certificate issued",
       p4["total_lessons"] == 3 and p4["percentage"] == 100 and c4 is not None, p4)
 
+print("\n── §4 The name the certificate was issued under ─────────────────")
+
+cert1 = db.query(M.Certificate).filter_by(user_id=u.id, course_id=course.id).first()
+check("[N1] the name is snapshotted at issue time",
+      cert1.full_name_at_issue == "محمد صلاح", cert1.full_name_at_issue)
+
+# The member renames themselves — allowed at any time via PUT /profile/me.
+u.full_name = "محمد صلاح الشبراوي"
+u.first_name, u.last_name = "محمد", "صلاح الشبراوي"
+db.commit()
+
+db.refresh(cert1)
+check("[N2] renaming the member does not move the snapshot",
+      cert1.full_name_at_issue == "محمد صلاح", cert1.full_name_at_issue)
+
+# Marking another lesson (a re-watch) must not quietly re-stamp it either.
+PS.mark_lesson_complete(course.id, ready[0].id, u.id, db)
+db.refresh(cert1)
+check("[N3] a later completion call does not re-stamp it",
+      cert1.full_name_at_issue == "محمد صلاح", cert1.full_name_at_issue)
+
+prog_after = PS.member_course_progress(db, u.id, course.id)
+check("[N4] the member is still at 100% after the rename", prog_after["is_completed"], prog_after)
+
+# The download draws `certificate_name` and falls back to the live name only
+# when it is null — the state every row was in before the column existed.
+cert1.full_name_at_issue = None
+db.commit()
+db.refresh(cert1)
+check("[N5] a null snapshot is allowed, and means 'use the live name'",
+      cert1.full_name_at_issue is None and u.full_name == "محمد صلاح الشبراوي")
+
+# A certificate issued now carries the name the member holds now.
+u5 = mkuser("renamer@t.co")
+u5.full_name = "Youssef Sabet"; db.commit()
+course5, ready5, _ = mkcourse("One Lesson", ready=1)
+PS.mark_lesson_complete(course5.id, ready5[0].id, u5.id, db)
+cert5 = db.query(M.Certificate).filter_by(user_id=u5.id, course_id=course5.id).first()
+check("[N6] a Latin-named member's certificate snapshots their name too",
+      cert5 and cert5.full_name_at_issue == "Youssef Sabet",
+      cert5.full_name_at_issue if cert5 else None)
+
 print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
 if FAIL:
     print("FAILED:"); [print("   -", f) for f in FAIL]

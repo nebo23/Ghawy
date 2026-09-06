@@ -707,6 +707,13 @@ class Certificate(Base):
     course_id = Column(Integer, ForeignKey("courses.id"))
     certificate_id = Column(String, unique=True)  # GHAWY-2026-XXXXXX
     issued_at = Column(DateTime, default=datetime.utcnow)
+    # الاسم اللي كان على الحساب ساعة ما الشهادة اتصدرت. الشهادة بتترسم على
+    # الكانفاس وقت التحميل من `users.full_name` الحيّ، فمن غير العمود ده العضو
+    # اللي غيّر اسمه بينزّل ورقة مكتوب عليها اسم غير اللي على نسخته القديمة —
+    # وتحت نفس رقم التحقق. `PUT /profile/me` بيسمح بتغيير الاسم في أي وقت.
+    # nullable: الصفوف القديمة اتملت من الاسم الحالي وقت الميجريشن، وأي صف
+    # فاضي بيقع على الاسم الحيّ زي الأول.
+    full_name_at_issue = Column(String, nullable=True)
     completion_email_sent_at = Column(DateTime, nullable=True)  # إيميل "شهادتك جاهزة" — مرة واحدة لكل كورس
     __table_args__ = (UniqueConstraint("user_id", "course_id"),)
 

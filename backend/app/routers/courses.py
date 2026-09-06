@@ -558,7 +558,11 @@ async def get_course_progress(
         course_id=course_id
     ).first()
 
-    return {**prog, "certificate_id": cert.certificate_id if cert else None}
+    # `certificate_name` هو الاسم اللي الشهادة اتصدرت بيه — الرسم بيستخدمه،
+    # وبيقع على الاسم الحيّ لو فاضي (صف قديم اتصدر قبل العمود).
+    return {**prog,
+            "certificate_id": cert.certificate_id if cert else None,
+            "certificate_name": cert.full_name_at_issue if cert else None}
 
 # ═══════════════════════════════════════════════════════════════
 #  ADMIN ENDPOINTS

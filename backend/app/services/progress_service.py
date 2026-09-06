@@ -146,7 +146,12 @@ def issue_certificate(user_id: int, course_id: int, db: Session):
     cert = db.query(Certificate).filter_by(user_id=user_id, course_id=course_id).first()
     if not cert:
         cert_id = f"GHAWY-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
-        cert = Certificate(user_id=user_id, course_id=course_id, certificate_id=cert_id)
+        # الاسم بيتصوّر هنا. الورقة بتترسم من `full_name` الحيّ وقت التحميل،
+        # فمن غير الصورة دي العضو اللي غيّر اسمه بينزّل ورقة تانية تحت نفس رقم
+        # التحقق. بيتاخد مرة واحدة، ساعة الإصدار، وعمره ما بيتحدّث بعد كده.
+        holder = db.query(User).filter(User.id == user_id).first()
+        cert = Certificate(user_id=user_id, course_id=course_id, certificate_id=cert_id,
+                           full_name_at_issue=(holder.full_name if holder else None))
         db.add(cert)
         db.commit()
         db.refresh(cert)
@@ -185,9 +190,11 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
     percentage = prog["percentage"]
 
     certificate_url = None
+    certificate_name = None
     if prog["is_completed"]:
         cert = issue_certificate(user_id, course_id, db)
         certificate_url = cert.certificate_id
+        certificate_name = cert.full_name_at_issue
 
     # 2b. Automated lifecycle emails — never let a mail issue break completion
     try:
@@ -203,7 +210,8 @@ def mark_lesson_complete(course_id: int, lesson_id: int, user_id: int, db: Sessi
             "total_lessons": total_lessons,
             "percentage": percentage,
             "is_completed": prog["is_completed"],
-            "certificate_id": certificate_url
+            "certificate_id": certificate_url,
+            "certificate_name": certificate_name
         }
     }
 

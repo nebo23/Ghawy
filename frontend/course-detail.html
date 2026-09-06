@@ -3431,7 +3431,7 @@
         }
 
         function updateProgressUI(progress) {
-            const { completed_lessons, total_lessons, percentage, is_completed, certificate_id } = progress;
+            const { completed_lessons, total_lessons, percentage, is_completed, certificate_id, certificate_name } = progress;
 
             const pt = document.getElementById('progressText');
             const pp = document.getElementById('progressPercent');
@@ -3456,10 +3456,15 @@
                 certSec.style.display = is_completed ? 'block' : 'none';
                 if (is_completed && certificate_id) {
                     certSec.dataset.certId = certificate_id;
+                    // الاسم اللي الشهادة اتصدرت بيه. الورقة لازم تفضل تقرا نفس
+                    // الاسم لو العضو غيّر اسمه بعد كده — نفس الرقم، نفس الاسم.
+                    if (certificate_name) certSec.dataset.certName = certificate_name;
+                    else delete certSec.dataset.certName;
                 } else {
                     // ماينفعش رقم قديم يفضل متعلّق في الـ dataset بعد تحديث
                     // مابيرجّعش واحد — الزرار ساعتها بيقع بصوت، وده المطلوب.
                     delete certSec.dataset.certId;
+                    delete certSec.dataset.certName;
                 }
             }
         }
@@ -3532,7 +3537,13 @@
                 return;
             }
 
-            let memberName = (currentUserData && currentUserData.full_name) || '';
+            // الاسم اللي الشهادة اتصدرت بيه أولاً، وبعدين الاسم الحيّ. الترتيب
+            // ده هو اللي بيخلّي نسختين من نفس الشهادة تحت نفس الرقم يقروا نفس
+            // الاسم حتى لو العضو غيّر اسمه بينهم. الصفوف القديمة اتملت في
+            // الميجريشن، والفاضي بيقع على السلوك القديم.
+            const certSecName = document.getElementById('certificateSection');
+            let memberName = (certSecName && certSecName.dataset.certName) || '';
+            if (!memberName) memberName = (currentUserData && currentUserData.full_name) || '';
             if (!memberName) {
                 try { memberName = (JSON.parse(localStorage.getItem('user') || '{}').full_name) || ''; } catch (e) { }
             }
