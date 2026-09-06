@@ -3577,10 +3577,20 @@
         // Draw member name, course title and date onto the certificate template
         // image, then download the result as a PNG.
         async function generateCertificate(tplUrl, memberName, courseTitle, certId) {
-            // Cairo renders both Arabic and Latin names correctly
+            // Cairo renders both Arabic and Latin names correctly — but Google
+            // Fonts ships it as unicode-range subsets, and `fonts.load()` with no
+            // text argument only resolves the LATIN one. So an Arabic name used to
+            // be drawn on the first download in whatever fallback the browser
+            // picks (measurably: 363px against Cairo's 390px, which also feeds the
+            // shrink loop), and only came out right on a second download once the
+            // Arabic subset had happened to arrive. Passing the actual strings is
+            // what asks for the subsets they need.
             try {
-                await document.fonts.load('700 60px Cairo');
-                await document.fonts.load('600 40px Cairo');
+                await Promise.all([
+                    document.fonts.load('700 60px Cairo', memberName),
+                    document.fonts.load('600 40px Cairo', courseTitle),
+                    document.fonts.load('600 40px Cairo', String(certId || '')),
+                ]);
             } catch (e) { }
 
             const img = await new Promise((resolve, reject) => {
