@@ -58,6 +58,10 @@ let uploadedFile = null;
 let birthDate = null;
 let socialMediaUrl = null;
 let userName = '';
+// هل نسأل العضو ده يكتب اسمه بالعربي؟ السيرفر بيقرر — على الاسم المتخزّن، مش
+// على طريقة التسجيل — وبيبعت معاها الاقتراح اللي الخانة بتتملي بيه.
+let needsArabicName = false;
+let latinNameOk = false;
 
 // ── Load user name ──
 (async function loadUserName() {
@@ -68,6 +72,23 @@ let userName = '';
       userName = u.full_name || '';
     }
   } catch(e) {}
+})();
+
+// ── Arabic-name step: shown only when the stored name is not Arabic ──
+(async function loadNameStep() {
+  try {
+    const res = await fetch(`${API}/profile/onboarding-status`, { headers });
+    if (!res.ok) return;
+    const st = await res.json();
+    if (!st.needs_arabic_name) return;
+    needsArabicName = true;
+    const group = document.getElementById('arabicNameGroup');
+    const input = document.getElementById('arabicNameInput');
+    if (group) group.style.display = '';
+    // الاقتراح للعرض بس. اللي بيتخزّن هو اللي العضو بيسيبه في الخانة بعد ما
+    // يشوفه — عمرنا ما بنكتب اسم مولّد من غير ما صاحبه يوافق عليه.
+    if (input && st.suggested_name) input.value = st.suggested_name;
+  } catch (e) {}
 })();
 
 // ═══ STEP NAVIGATION ═══
@@ -218,6 +239,22 @@ function submitStep2() {
   }
   errorEl.classList.remove('show');
 
+  // الاسم بالعربي. نفس قاعدة السيرفر بالحرف (src/js/arabic-name.js)؛ لو الملف
+  // مش محمّل بنعدّي والسيرفر هو اللي بيقرر.
+  if (needsArabicName) {
+    latinNameOk = !!document.getElementById('latinNameOk')?.checked;
+    const nameEl = document.getElementById('arabicNameInput');
+    const nameErr = document.getElementById('arabicNameError');
+    const typed = (nameEl?.value || '').trim();
+    if (!latinNameOk && typeof window.isArabicName === 'function' && !window.isArabicName(typed)) {
+      if (nameErr) nameErr.classList.add('show');
+      nameEl?.focus();
+      return;
+    }
+    if (nameErr) nameErr.classList.remove('show');
+    if (!latinNameOk && typed) userName = typed;
+  }
+
   socialMediaUrl = social;
 
   // Format birth date to DD/MM/YYYY if provided
@@ -262,6 +299,10 @@ async function submitStep3() {
       avatar_url: uploadedAvatarUrl || (selectedAvatar ? `${window.location.origin}/imgs/avatars/${selectedAvatar}` : null),
       selected_avatar: selectedAvatar || null,
     };
+    if (needsArabicName) {
+      if (latinNameOk) body.latin_name_ok = true;
+      else body.full_name = (document.getElementById('arabicNameInput')?.value || '').trim();
+    }
 
     const res = await fetch(`${API}/profile/complete-onboarding`, {
       method: 'POST',

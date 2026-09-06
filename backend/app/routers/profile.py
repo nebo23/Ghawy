@@ -4,7 +4,8 @@ Profile Router — User profile management
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.name_utils import (ARABIC_NAME_MESSAGE, clean_display_name,
+from app.services.name_utils import (ARABIC_NAME_MESSAGE, arabize_first_name,
+                                     clean_display_name, compose_full_name,
                                      is_arabic_name, split_full_name)
 from app.services.permissions import has_permission
 from app.models import User, Channel, Message, MessageType, ChannelType, Post, Payment, PaymentStatus
@@ -341,10 +342,39 @@ def upload_avatar(
     return {"avatar_url": avatar_url}
 
 
+def _arabic_name_suggestion(full_name: str | None) -> str:
+    """`Mohamed Salah` → `محمد Salah`. `""` لو الاسم الأول مش في الماب.
+
+    الفكرة إن العضو يصلّح كلمة بدل ما يكتب اسمه من الأول — ده اللي الـ ٢٥٠ اسم
+    اللي في الماب بيعملوه هنا. بيرجع نص للعرض بس: اللي بيتخزّن هو اللي العضو
+    بيبعته بعد ما يشوفه، مش ده.
+    """
+    ar = arabize_first_name(full_name or "")
+    if not ar:
+        return ""
+    _first, last = split_full_name(full_name)
+    return compose_full_name(ar, last)
+
+
+def _needs_arabic_name(user: User) -> bool:
+    """هل نسأل العضو ده يكتب اسمه بالعربي؟
+
+    الشرط على الاسم نفسه مش على طريقة التسجيل. حالة واحدة نفكر فيها بدل
+    اتنين، وبتمسك كمان أي حساب اتعمل من فورم وعدّى بطريقة ما.
+    """
+    return not user.latin_name_ok and not is_arabic_name(user.full_name)
+
+
 # ─── Onboarding Status ────────────────────────────────────
 @router.get("/onboarding-status")
 def get_onboarding_status(current_user: User = Depends(get_current_active_member)):
-    return {"onboarding_completed": bool(current_user.onboarding_completed)}
+    needs = _needs_arabic_name(current_user)
+    return {
+        "onboarding_completed": bool(current_user.onboarding_completed),
+        "needs_arabic_name": needs,
+        "suggested_name": _arabic_name_suggestion(current_user.full_name) if needs else "",
+        "current_name": current_user.full_name or "",
+    }
 
 
 # ─── Complete Onboarding ──────────────────────────────────
@@ -354,6 +384,21 @@ def complete_onboarding(
     current_user: User = Depends(get_current_active_member),
     db: Session = Depends(get_db),
 ):
+    # الاسم بالعربي أول حاجة، قبل أي تعديل تاني: لو اترفض، مفيش نص تغيير
+    # اتساب وراه على الحساب.
+    #
+    # مفيش رفض للإنهاء نفسه لو الاسم ماجاش خالص. الصفحة هي اللي بتسأل، والعضو
+    # اللي وصله كلاينت قديم مايتقفلش برّه حسابه عشان كده — يفضل باسمه اللاتيني،
+    # وهي نفس نتيجة إنه يعلّم «اسمي مش بالعربي».
+    if data.latin_name_ok:
+        current_user.latin_name_ok = True
+    elif data.full_name is not None and data.full_name.strip():
+        new_name = clean_display_name(data.full_name, limit=80)
+        if not is_arabic_name(new_name):
+            raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
+        current_user.full_name = new_name
+        current_user.first_name, current_user.last_name = split_full_name(new_name)
+
     # Update birth_date
     if data.birth_date:
         try:

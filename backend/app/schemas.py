@@ -66,6 +66,11 @@ class OnboardingUpdate(BaseModel):
     social_media_url: Optional[str] = None
     avatar_url: Optional[str] = None        # uploaded photo URL
     selected_avatar: Optional[str] = None   # preset avatar filename
+    # الاسم بالعربي — بيتسأل هنا لأن اللي داخل بجوجل مفيش فورم يرفض اسمه فيه.
+    # اللي بيتخزّن هو اللي العضو بعته؛ الاقتراح اللي الشاشة بتملاه مايتكتبش
+    # لوحده أبداً من غير ما العضو يشوفه ويوافق عليه.
+    full_name: Optional[str] = None
+    latin_name_ok: Optional[bool] = None
 
 # دا الحساب الشخصي 
 class UserMemberOut(BaseModel):

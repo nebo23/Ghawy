@@ -228,6 +228,22 @@
 
         <hr class="ob-divider" />
 
+        <!-- الاسم بالعربي — بيظهر بس لو الاسم المتخزّن مش بالعربي. اللي داخل
+             بجوجل مفيش فورم اترفض فيه اسمه، فده مكان السؤال. الخانة بتيجي
+             مليانة باقتراح (محمد Salah) عشان يبقى تصحيح كلمة مش كتابة اسم. -->
+        <div class="ob-input-group" id="arabicNameGroup" style="display:none">
+          <label><span data-ar="اسمك بالعربي" data-en="Your name in Arabic">Your name in Arabic</span> <span class="required">*</span></label>
+          <input type="text" class="ob-input" id="arabicNameInput" dir="rtl"
+                 data-ar-placeholder="مثلا: محمد أحمد" data-en-placeholder="e.g. محمد أحمد"
+                 placeholder="مثلا: محمد أحمد" />
+          <div class="ob-helper-text" data-ar="ده الاسم اللي هنناديك بيه في الرسايل والشهادات." data-en="This is the name we'll use in messages and certificates.">This is the name we'll use in messages and certificates.</div>
+          <div class="ob-error" id="arabicNameError">اكتب اسمك بالعربي 🙏</div>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.85rem;cursor:pointer;">
+            <input type="checkbox" id="latinNameOk" style="width:16px;height:16px;accent-color:#AAFF00;">
+            <span data-ar="اسمي مش بالعربي" data-en="My name isn't written in Arabic">اسمي مش بالعربي</span>
+          </label>
+        </div>
+
         <div class="ob-input-group">
           <label data-ar="تاريخ الميلاد" data-en="Birth Date">Birth Date</label>
           <input type="date" class="ob-input" id="birthDateInput" placeholder="DD / MM / YYYY" />
@@ -277,8 +293,9 @@
        ويلاقيها إنجليزي. لازم يسبق onboarding.js عشان L() تلاقي currentLang(). -->
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/utils.js?v=20260905b"></script>
+  <script src="src/js/arabic-name.js?v=20260906a"></script>
 
-  <script src="src/js/onboarding.js?v=5"></script>
+  <script src="src/js/onboarding.js?v=6"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());
