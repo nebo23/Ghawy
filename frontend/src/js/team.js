@@ -247,6 +247,7 @@ async function loadTeamPage() {
   });
 
   // Set up listeners for Users tab
+  onUserSearchInput('search-input', handleSearch);
   document.getElementById('search-input')?.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') { currentPage = 1; loadUsersTab(); }
   });
@@ -520,6 +521,37 @@ function sortUsers(arr) {
 }
 
 let searchTimeout;
+// Only a person typing may start a search.
+//
+// Chrome writes into text inputs on its own — saved form data, a back
+// navigation, the autofill dropdown — and `autocomplete="off"` does not stop
+// it. What it writes here is the operator's own name, and a debounced `input`
+// handler turned that into a real search: the table quietly narrowed to one
+// row nobody asked for, over and over.
+//
+// Clearing the boxes at load (above) was not enough, because the browser fills
+// them *after* that runs. The thing that actually separates a person from the
+// browser is a key, a paste, a cut or a composition on the box itself —
+// nothing else marks it as edited. An `input` that arrives before any of those
+// is the browser's, so its value is dropped and no search is scheduled.
+//
+// Enter still works either way: if the operator wants what is in the box, they
+// can say so, and that is a deliberate act too.
+function onUserSearchInput(id, run, delay) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  let edited = false;
+  let timer;
+  ['keydown', 'paste', 'cut', 'compositionstart'].forEach(ev =>
+    box.addEventListener(ev, () => { edited = true; }));
+  box.addEventListener('input', () => {
+    if (!edited) { box.value = ''; return; }
+    if (!delay) { run(box.value); return; }
+    clearTimeout(timer);
+    timer = setTimeout(() => run(box.value), delay);
+  });
+}
+
 function handleSearch(val) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -1119,7 +1151,6 @@ document.querySelectorAll('.modal-overlay-team').forEach(overlay => {
 
 let payCurrentPage = 1;
 const PAY_LIMIT = 20;
-let paySearchTimeout;
 
 // What the rail is CALLED on screen. The API stopped saying "manual" — that
 // was two different wallets under one word, and an admin looking at a row
@@ -1142,14 +1173,10 @@ async function loadPaymentsTab() {
 }
 
 function initPaymentFilters() {
-  const searchInput = document.getElementById('pay-search');
   const statusFilter = document.getElementById('pay-status-filter');
   const methodFilter = document.getElementById('pay-method-filter');
 
-  searchInput.addEventListener('input', () => {
-    clearTimeout(paySearchTimeout);
-    paySearchTimeout = setTimeout(() => { payCurrentPage = 1; loadPayments(); }, 400);
-  });
+  onUserSearchInput('pay-search', () => { payCurrentPage = 1; loadPayments(); }, 400);
   statusFilter.addEventListener('change', () => { payCurrentPage = 1; loadPayments(); });
   methodFilter.addEventListener('change', () => { payCurrentPage = 1; loadPayments(); });
 }
@@ -1395,10 +1422,7 @@ async function loadStudentsProgressTab() {
 
   if (!spListenersBound) {
     spListenersBound = true;
-    let t;
-    document.getElementById('sp-search')?.addEventListener('input', () => {
-      clearTimeout(t); t = setTimeout(() => { spPage = 1; applySpFilters(); }, 300);
-    });
+    onUserSearchInput('sp-search', () => { spPage = 1; applySpFilters(); }, 300);
     ['sp-course-filter', 'sp-status-filter', 'sp-sort'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', () => { spPage = 1; applySpFilters(); });
     });
