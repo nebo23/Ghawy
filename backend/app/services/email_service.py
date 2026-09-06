@@ -964,9 +964,11 @@ def send_winback_email(to_email: str, full_name: str, governorate: str = None) -
     """إيميل شخصي من محمد للي سجل وموصلش لآخر خطوة — بيتبعت مرة واحدة بس."""
     gov_ar = _governorate_to_arabic(governorate or "")
     greeting = f"حبايبنا والله اهل {gov_ar}" if gov_ar else "حبايبنا والله ❤️"
-    # أول اسم بس عشان التحية تطلع طبيعية (الاسم الكامل بيبقى تلات/أربع كلمات)
-    first_name = (full_name or "").strip().split()[0] if (full_name or "").strip() else ""
-    hello = f"ازيك يا {first_name}،" if first_name else "ازيك،"
+    # نفس السلسلة اللي كل إيميل تاني بيندَه بيها. كانت هنا `.split()[0]` —
+    # فـ`عبد الرحمن` كان بيبقى «ازيك يا عبد،»، و`Mohamed Salah` بيبقى «ازيك يا
+    # Mohamed،»: اسم لاتيني في نص عربي موقّع باسم شخص. ودي أكتر إيميل الغلطة
+    # دي بتبان فيه — رسالة شخصية من محمد لحد سجّل وموصلش لآخر خطوة.
+    hello = f"ازيك يا {_first_name(full_name)}،"
 
     subject = "خدت بالي إنك وقفت في آخر خطوة… 🤍"
 

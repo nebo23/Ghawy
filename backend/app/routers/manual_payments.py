@@ -22,6 +22,7 @@ from app.routers.users import get_current_user
 from app.services.payment_service import to_cairo_iso, CAIRO_TZ
 from app.services.subscription_service import extend_subscription
 from app.services import coupon_service
+from app.services.name_utils import arabic_first_name
 from app.services.permissions import require_permission, has_permission
 from app.services.email_service import (
     send_admin_payment_notification,
@@ -647,8 +648,11 @@ def approve_request(
             phone = "20" + phone[1:]
         return phone
 
+    # نفس السلسلة اللي كل حتة تانية بتنادي بيها العضو: الاسم الأول، معرّب لو
+    # عرفناه. `req.full_name` هنا كان بيحط `Mohamed Salah` كامل جوه جملة
+    # عربية، والاسم المركّب مابيتقصّرش.
     whatsapp_message = (
-        f"مرحباً {req.full_name} 👋\n\n"
+        f"مرحباً {arabic_first_name(req.full_name)} 👋\n\n"
         f"تم التحقق من دفعتك بنجاح! 🎉\n\n"
         f"تم تفعيل حسابك، وتقدر تدخل على المنصة دلوقتي من الرابط التالي:\n"
         f"{login_url}\n\n"
