@@ -291,14 +291,14 @@
         </div>
       </div>
 
-      <!-- المخرج. الاسم بالعربي مطلوب، بس مش قفل: اللي اسمه مش متكتب بالعربي
-           بيعلّم هنا وبيكمّل باسمه زي ما هو. مخفي لحد ما القاعدة تقع فعلاً —
-           محدش محتاج يقرا الاستثناء قبل ما يبقى محتاجه. -->
-      <div class="mb-4 hidden" id="latin-name-row">
-        <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
-          <input type="checkbox" id="latinNameOk" class="accent-[#AAFF00] w-4 h-4">
-          <span data-i18n="latinNameOptOut">اسمي مش بالعربي</span>
-        </label>
+      <!-- التنبيه ظاهر من الأول، مش بعد ما القاعدة تقع. الرفض بيوصل بعد ما
+           العضو يكون كتب اسمه خلاص؛ السطر ده بيوصل قبلها، وهو الفرق بين إنه
+           يكتب اسمه صح من أول مرة وبين إنه يمسح ويعيد. -->
+      <div class="mb-4 -mt-2">
+        <p class="text-xs text-[#AAFF00]/80 flex items-start gap-1.5">
+          <i class="fa-regular fa-circle-info mt-0.5"></i>
+          <span data-i18n="arabicNameHint">مهم: اكتب اسمك بالعربي — ده الاسم اللي هيظهر في شهاداتك وفي رسايلنا ليك.</span>
+        </p>
       </div>
 
       <!-- Email Address -->
@@ -429,8 +429,8 @@
   <script src="src/js/arabic-name.js?v=20260906a"></script>
   <script src="src/js/campaign-type.js?v=20260906a"></script>
   <script src="src/js/utils.js?v=20260905b"></script>
-  <script src="src/js/i18n.js?v=20260818a"></script>
-  <script src="src/js/register.js?v=20260905a"></script>
+  <script src="src/js/i18n.js?v=20260906b"></script>
+  <script src="src/js/register.js?v=20260906b"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());

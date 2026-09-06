@@ -131,7 +131,7 @@ const i18nDict = {
     errTermsRequired: { ar: 'لازم توافق على الشروط والأحكام.', en: 'You must agree to the Terms and Conditions.' },
     errNameRequired:  { ar: 'من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).', en: 'Please enter your first and last name (at least 2 characters each).' },
     errArabicName:    { ar: 'اكتب اسمك بالعربي 🙏', en: 'Please write your name in Arabic 🙏' },
-    latinNameOptOut:  { ar: 'اسمي مش بالعربي',            en: "My name isn't written in Arabic" },
+    arabicNameHint:   { ar: 'مهم: اكتب اسمك بالعربي — ده الاسم اللي هيظهر في شهاداتك وفي رسايلنا ليك.', en: 'Important: write your name in Arabic — this is the name on your certificates and in our messages to you.' },
     errCaptcha:       { ar: "من فضلك أكمل التحقق من إنك مش روبوت.", en: "Please complete the 'I'm not a robot' verification." },
     errGeneric:       { ar: 'حصل خطأ. حاول تاني.',         en: 'An error occurred. Please try again.' },
     errFakeEmail:     { ar: 'من فضلك سجّل بإيميل حقيقي — الإيميلات المؤقتة أو التجريبية مش مقبولة.', en: 'Please sign up with a real email — temporary or test addresses are not accepted.' },

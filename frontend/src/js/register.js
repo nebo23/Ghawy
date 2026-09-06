@@ -269,11 +269,8 @@ async function submitRegister() {
   //
   // لو الملف مش محمّل لأي سبب (كاش قديم مثلاً) بنعدّي: السيرفر هو اللي بيرفض،
   // والواجهة عمرها ما تبقى هي اللي واقفة قدام حد يسجّل.
-  const latinNameOk = !!document.getElementById('latinNameOk')?.checked;
-  if (!inviteToken && !latinNameOk && typeof window.isArabicName === 'function'
+  if (!inviteToken && typeof window.isArabicName === 'function'
       && !(window.isArabicName(firstName) && window.isArabicName(lastName))) {
-    // أول ما القاعدة تقع، المخرج بيظهر — قبل كده مالوش لازمة.
-    document.getElementById('latin-name-row')?.classList.remove('hidden');
     showFormMessage(t('errArabicName'), 'error');
     return;
   }
@@ -347,7 +344,6 @@ async function submitRegister() {
           password,
           country,
           governorate,
-          latin_name_ok: latinNameOk,
           turnstile_token: captchaToken
         })
       });

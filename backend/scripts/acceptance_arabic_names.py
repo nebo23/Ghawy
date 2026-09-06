@@ -7,8 +7,13 @@ Runs against a throwaway DB, same shape as the other scripts here:
 
 What the owner decided, and what is therefore checked:
 
-  * Arabic is required from NEW members, with an opt-out — «اسمي مش بالعربي»
-    stores the Latin name as typed and nothing asks again.
+  * Arabic is required from NEW members, with NO opt-out. «اسمي مش بالعربي»
+    existed until 2026-09-06 and was removed at the owner's request: every
+    door that creates an account now refuses a name that is not written in
+    Arabic. The old `latin_name_ok` flag is no longer read by anything, so
+    sending it changes nothing — several checks below exist to prove exactly
+    that, because a flag that is ignored looks identical to a flag that works
+    until somebody tests it.
   * No existing name changes. Not by script, not by migration, not by prompt.
     [N] below is the one that proves it: every stored name is compared before
     and after the whole run.
@@ -16,7 +21,9 @@ What the owner decided, and what is therefore checked:
 The doors are checked one by one because they enforce differently on purpose:
 the signup form and the offer redemption refuse, the admin door only warns,
 and the member's own profile is a ratchet rather than a rule — [R] is the case
-that would have broken 1,683 people's bio saves if it were a plain rule.
+that would have broken 1,683 people's bio saves if it were a plain rule. That
+ratchet is deliberately NOT tightened along with the rest: the hard rule is on
+new names, and existing Latin-named members must still be able to save a bio.
 
 Turnstile is stubbed out, not worked around: it sits in front of the name check
 in the real endpoint, so leaving it live would mean every signup here failed
@@ -108,9 +115,9 @@ check("[1d] a compound Arabic name is accepted and kept whole",
 
 r = signup("Mohamed", "Ali", "optout@t.co", latin_name_ok=True)
 u = db.query(M.User).filter_by(email="optout@t.co").first()
-check("[1e] the opt-out stores the Latin name as typed and is remembered",
-      r.status_code == 201 and u and u.full_name == "Mohamed Ali" and u.latin_name_ok is True,
-      (r.status_code, u.full_name if u else None))
+check("[1e] the old opt-out flag is ignored — no account, same refusal",
+      r.status_code == 422 and ARABIC_NAME_MESSAGE in r.text and u is None,
+      (r.status_code, r.text[:120]))
 
 r = signup("محمد1", "علي", "digits@t.co")
 check("[1f] digits in a name are rejected", r.status_code == 422, (r.status_code,))
@@ -144,7 +151,14 @@ if code:
     r = c.post("/atlas/verify-otp", json={"email": "offer@t.co", "otp": code,
                                           "full_name": "Mohamed Ali", "password": "Str0ng!pw",
                                           "latin_name_ok": True})
-    check("[3b] offer redemption honours the opt-out", r.status_code == 200, (r.status_code, r.text[:120]))
+    check("[3b] the old opt-out flag is ignored here too",
+          r.status_code == 422 and ARABIC_NAME_MESSAGE in r.text, (r.status_code, r.text[:120]))
+    r = c.post("/atlas/verify-otp", json={"email": "offer@t.co", "otp": code,
+                                          "full_name": "منى صلاح", "password": "Str0ng!pw"})
+    u = db.query(M.User).filter_by(email="offer@t.co").first()
+    check("[3c] …and an Arabic name still redeems the offer",
+          r.status_code == 200 and u and u.full_name == "منى صلاح",
+          (r.status_code, u.full_name if u else None, r.text[:120]))
 else:
     check("[3] atlas OTP store not reachable — door not exercised", False, "could not read the OTP")
 
@@ -268,18 +282,34 @@ check("[G4c] the response carries the stored name back for the browser cache",
 st = c.get("/profile/onboarding-status", headers=hg).json()
 check("[G5] …and is not asked again", st.get("needs_arabic_name") is False, st)
 
-# The opt-out, at the same step.
+# There is no way out of the step any more. This member's name genuinely is
+# not written in Arabic, which used to be the whole reason the opt-out existed.
 optg = mkuser("optgoogle@t.co", "ALAA S. N. AL-ZAYYAN", onboarding_completed=False)
 ho = token_for(optg)
 r = c.post("/profile/complete-onboarding", headers=ho,
            json={"latin_name_ok": True, "social_media_url": "https://x.com/a"})
 db.refresh(optg)
-check("[G6] the opt-out completes onboarding and leaves the name exactly as it was",
-      r.status_code == 200 and optg.full_name == "ALAA S. N. AL-ZAYYAN"
-      and optg.latin_name_ok is True and optg.onboarding_completed is True,
-      (r.status_code, optg.full_name, optg.latin_name_ok))
+check("[G6] the old opt-out flag does not complete onboarding any more",
+      r.status_code == 422 and optg.onboarding_completed is False
+      and optg.full_name == "ALAA S. N. AL-ZAYYAN",
+      (r.status_code, optg.full_name, optg.onboarding_completed))
 st = c.get("/profile/onboarding-status", headers=ho).json()
-check("[G7] …and stops the question for good", st.get("needs_arabic_name") is False, st)
+check("[G7] …and the member is still asked", st.get("needs_arabic_name") is True, st)
+
+# Sending nothing at all is the same back door the PATCH was: the step used to
+# complete regardless, which was harmless only while «اسمي مش بالعربي» was a
+# legitimate answer. It is not an answer any more.
+r = c.post("/profile/complete-onboarding", headers=ho,
+           json={"social_media_url": "https://x.com/a"})
+db.refresh(optg)
+check("[G7b] completing with no name at all is refused",
+      r.status_code == 422 and optg.onboarding_completed is False, r.status_code)
+
+r = c.post("/profile/complete-onboarding", headers=ho, json={"full_name": "علاء زيان"})
+db.refresh(optg)
+check("[G7c] …and writing the name in Arabic finishes it",
+      r.status_code == 200 and optg.full_name == "علاء زيان"
+      and optg.onboarding_completed is True, (r.status_code, optg.full_name))
 
 # Already Arabic: never asked at all.
 ar2 = mkuser("alreadyarabic@t.co", "سمير أحمد", onboarding_completed=False)
@@ -289,9 +319,19 @@ check("[G8] an Arabic-named member is never asked",
 
 # Onboarding sits behind payment — the owner accepted that a Google signup who
 # never pays keeps their Latin name and is never asked.
+# The owner was explicit about this one: a Google signup who never paid keeps
+# their Latin name and is left alone. The hard rule did not change that — the
+# step sits behind payment, so nobody asks, nothing is renamed, and nothing
+# blocks them. They are asked the first time they pay and land in onboarding.
 unpaid = mkuser("unpaid@t.co", "Karim Latin", is_active=False, onboarding_completed=False)
-r = c.get("/profile/onboarding-status", headers=token_for(unpaid))
+hu = token_for(unpaid)
+r = c.get("/profile/onboarding-status", headers=hu)
 check("[G9] an unpaid member never reaches the step (402)", r.status_code == 402, r.status_code)
+r2 = c.post("/profile/complete-onboarding", headers=hu, json={"full_name": "كريم عربي"})
+db.refresh(unpaid)
+check("[G9b] …and nothing renames them while they have not paid",
+      r2.status_code == 402 and unpaid.full_name == "Karim Latin",
+      (r2.status_code, unpaid.full_name))
 
 # A name with no reading in the map: the field comes up empty, nothing invented.
 noread = mkuser("noread@t.co", "Radhouane Bouzid", onboarding_completed=False)
@@ -317,12 +357,15 @@ check("[F2] …and once the name is Arabic the same call goes through",
       r.status_code == 200 and c.patch("/users/me/complete-onboarding", headers=hf).status_code == 200,
       (r.status_code, flagger.full_name))
 
+# A row carrying the retired flag. Nothing reads it any more, so it no longer
+# buys an exemption — and the member's stored name is still not touched.
 opted = mkuser("flagopt@t.co", "Latin Optout", latin_name_ok=True, onboarding_completed=False)
 r = c.patch("/users/me/complete-onboarding", headers=token_for(opted))
 db.refresh(opted)
-check("[F3] the opt-out is not blocked by the new gate",
-      r.status_code == 200 and opted.onboarding_completed is True and opted.full_name == "Latin Optout",
-      (r.status_code, opted.full_name))
+check("[F3] a row with the retired opt-out flag is no longer exempt",
+      r.status_code == 422 and opted.onboarding_completed is False
+      and opted.full_name == "Latin Optout",
+      (r.status_code, opted.full_name, opted.onboarding_completed))
 
 arabic_flag = mkuser("flagar@t.co", "هدى سمير", onboarding_completed=False)
 r = c.patch("/users/me/complete-onboarding", headers=token_for(arabic_flag))
@@ -334,7 +377,8 @@ print("\n── No stored name is ever rewritten ──────────�
 
 # Every name written by a fixture, against every name in the table now. The
 # only rows allowed to differ are the ones a member changed on purpose above.
-MEMBER_CHANGED = {"google@t.co", "arabmember@t.co", "latinmember@t.co", "flag@t.co"}
+MEMBER_CHANGED = {"google@t.co", "arabmember@t.co", "latinmember@t.co", "flag@t.co",
+                  "optgoogle@t.co", "offer@t.co"}
 drift = {}
 for u in db.query(M.User).all():
     if u.email in MEMBER_CHANGED:

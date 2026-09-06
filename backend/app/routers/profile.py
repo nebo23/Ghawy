@@ -348,11 +348,15 @@ def needs_arabic_name(user: User) -> bool:
     الشرط على الاسم نفسه مش على طريقة التسجيل. حالة واحدة نفكر فيها بدل
     اتنين، وبتمسك كمان أي حساب اتعمل من فورم وعدّى بطريقة ما.
 
+    كانت بتستثني اللي معلّم `latin_name_ok`. المخرج ده اتشال في 2026-09-06،
+    فالسؤال بقى على الاسم لوحده — عربي أو هيتسأل. العمود لسه موجود كسجل
+    تاريخي بس مابيدخلش في القرار ده.
+
     عامة مش خاصة: `main.py` بيسأل نفس السؤال قبل ما يرفع علامة
     `onboarding_completed`. نسخة تانية من الشرط ده هي بالظبط اللي بتخلّي باب
     يرفض وباب يسمح.
     """
-    return not user.latin_name_ok and not is_arabic_name(user.full_name)
+    return not is_arabic_name(user.full_name)
 
 
 # ─── Onboarding Status ────────────────────────────────────
@@ -376,18 +380,22 @@ def complete_onboarding(
 ):
     # الاسم بالعربي أول حاجة، قبل أي تعديل تاني: لو اترفض، مفيش نص تغيير
     # اتساب وراه على الحساب.
-    #
-    # مفيش رفض للإنهاء نفسه لو الاسم ماجاش خالص. الصفحة هي اللي بتسأل، والعضو
-    # اللي وصله كلاينت قديم مايتقفلش برّه حسابه عشان كده — يفضل باسمه اللاتيني،
-    # وهي نفس نتيجة إنه يعلّم «اسمي مش بالعربي».
-    if data.latin_name_ok:
-        current_user.latin_name_ok = True
-    elif data.full_name is not None and data.full_name.strip():
+    if data.full_name is not None and data.full_name.strip():
         new_name = clean_display_name(data.full_name, limit=80)
         if not is_arabic_name(new_name):
             raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
         current_user.full_name = new_name
         current_user.first_name, current_user.last_name = split_full_name(new_name)
+
+    # وبعد كده: العضو اللي المفروض يتسأل مايخلّصش من غير ما يجاوب.
+    #
+    # قبل ما المخرج يتشال كان الإنهاء بيعدّي حتى لو الاسم ماجاش خالص — اللي
+    # ماكانش بيفرق وقتها لأن «اسمي مش بالعربي» كانت نتيجة مشروعة. دلوقتي مفيش
+    # نتيجة تانية غير اسم عربي، فالإنهاء من غير اسم هو نفسه الباب الخلفي اللي
+    # الـ PATCH كان بيفتحه. الصفحة بتطلب الخانة دي وهي required، والرسالة
+    # بتقول اعمل إيه؛ الحساب نفسه مش متقفل — بيرجع لنفس الخطوة.
+    if needs_arabic_name(current_user):
+        raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
 
     # Update birth_date
     if data.birth_date:

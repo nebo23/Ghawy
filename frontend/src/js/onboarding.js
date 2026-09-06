@@ -61,7 +61,6 @@ let userName = '';
 // هل نسأل العضو ده يكتب اسمه بالعربي؟ السيرفر بيقرر — على الاسم المتخزّن، مش
 // على طريقة التسجيل — وبيبعت معاها الاقتراح اللي الخانة بتتملي بيه.
 let needsArabicName = false;
-let latinNameOk = false;
 
 // ── Load user name ──
 (async function loadUserName() {
@@ -242,17 +241,16 @@ function submitStep2() {
   // الاسم بالعربي. نفس قاعدة السيرفر بالحرف (src/js/arabic-name.js)؛ لو الملف
   // مش محمّل بنعدّي والسيرفر هو اللي بيقرر.
   if (needsArabicName) {
-    latinNameOk = !!document.getElementById('latinNameOk')?.checked;
     const nameEl = document.getElementById('arabicNameInput');
     const nameErr = document.getElementById('arabicNameError');
     const typed = (nameEl?.value || '').trim();
-    if (!latinNameOk && typeof window.isArabicName === 'function' && !window.isArabicName(typed)) {
+    if (typeof window.isArabicName === 'function' && !window.isArabicName(typed)) {
       if (nameErr) nameErr.classList.add('show');
       nameEl?.focus();
       return;
     }
     if (nameErr) nameErr.classList.remove('show');
-    if (!latinNameOk && typed) userName = typed;
+    if (typed) userName = typed;
   }
 
   socialMediaUrl = social;
@@ -300,8 +298,7 @@ async function submitStep3() {
       selected_avatar: selectedAvatar || null,
     };
     if (needsArabicName) {
-      if (latinNameOk) body.latin_name_ok = true;
-      else body.full_name = (document.getElementById('arabicNameInput')?.value || '').trim();
+      body.full_name = (document.getElementById('arabicNameInput')?.value || '').trim();
     }
 
     const res = await fetch(`${API}/profile/complete-onboarding`, {

@@ -210,14 +210,16 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
             detail="من فضلك اكتب اسمك الأول والأخير (حرفين على الأقل لكل واحد).",
         )
 
-    # الاسم بالعربي مطلوب من الأعضاء الجدد — بس مش قفل. اللي اسمه مش متكتب
-    # بالعربي بيعلّم «اسمي مش بالعربي» والفورم بيبعت `latin_name_ok`، فاسمه
-    # بيتخزّن زي ما كتبه ومحدش بيسأله تاني. القاعدة على الأسماء الجديدة بس:
-    # ولا اسم متخزّن دلوقتي على الروستر بيتلمس ولا بيتراجع.
+    # الاسم بالعربي مطلوب من الأعضاء الجدد — من غير استثناء. كان فيه مخرج
+    # («اسمي مش بالعربي») واتشال في 2026-09-06 بقرار المالك: كل حاجة في اسم
+    # العضو بالعربي. القاعدة على الأسماء الجديدة بس: ولا اسم متخزّن دلوقتي
+    # على الروستر بيتلمس ولا بيتراجع.
+    #
+    # كل خانة لوحدها، مش الاسم كله مع بعضه: كده `محمد` + `Salah` بتقع، وهي
+    # الحالة اللي كل خانة فيها سليمة في لغتها والاسم النهائي نص نص.
     #
     # بيتفحص على القيمة المنضّفة — نفس القيمة اللي هتتخزّن، مش اللي اتبعتت.
-    if not data.latin_name_ok and not (
-            is_arabic_name(first_clean) and is_arabic_name(last_clean)):
+    if not (is_arabic_name(first_clean) and is_arabic_name(last_clean)):
         raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
 
     existing_user = db.query(User).filter(User.email == data.email).first()
@@ -232,7 +234,6 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
         existing_user.first_name = first_clean
         existing_user.last_name = last_clean
         existing_user.full_name = compose_full_name(data.first_name, data.last_name)
-        existing_user.latin_name_ok = bool(data.latin_name_ok)
         existing_user.hashed_password = hash_password(data.password)
         existing_user.phone = None
         existing_user.country = data.country
@@ -245,7 +246,6 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
             full_name=compose_full_name(data.first_name, data.last_name),
             first_name=first_clean,
             last_name=last_clean,
-            latin_name_ok=bool(data.latin_name_ok),
             email=data.email,
             hashed_password=hash_password(data.password),
             phone=None,

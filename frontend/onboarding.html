@@ -238,10 +238,6 @@
                  placeholder="مثلا: محمد أحمد" />
           <div class="ob-helper-text" data-ar="ده الاسم اللي هنناديك بيه في الرسايل والشهادات." data-en="This is the name we'll use in messages and certificates.">This is the name we'll use in messages and certificates.</div>
           <div class="ob-error" id="arabicNameError">اكتب اسمك بالعربي 🙏</div>
-          <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.85rem;cursor:pointer;">
-            <input type="checkbox" id="latinNameOk" style="width:16px;height:16px;accent-color:#AAFF00;">
-            <span data-ar="اسمي مش بالعربي" data-en="My name isn't written in Arabic">اسمي مش بالعربي</span>
-          </label>
         </div>
 
         <div class="ob-input-group">
@@ -291,12 +287,12 @@
   <!-- محرك اللغة الوحيد (ghawy_lang). الصفحة كانت <html lang="en" dir="ltr">
        متسمّرة ومن غير أي محرك، فاللي مختار عربي كان بيوصلها بعد التسجيل
        ويلاقيها إنجليزي. لازم يسبق onboarding.js عشان L() تلاقي currentLang(). -->
-  <script src="src/js/i18n.js?v=20260818a"></script>
+  <script src="src/js/i18n.js?v=20260906b"></script>
   <script src="src/js/campaign-type.js?v=20260906a"></script>
   <script src="src/js/utils.js?v=20260905b"></script>
   <script src="src/js/arabic-name.js?v=20260906a"></script>
 
-  <script src="src/js/onboarding.js?v=7"></script>
+  <script src="src/js/onboarding.js?v=8"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());

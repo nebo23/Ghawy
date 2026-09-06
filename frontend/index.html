@@ -457,13 +457,11 @@
                     </div>
                 </div>
 
-                <!-- المخرج — مخفي لحد ما القاعدة تقع. نفس اللي في register.html. -->
-                <div id="latinNameRow" style="display: none; margin-bottom: 16px;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9ca3af; cursor: pointer;">
-                        <input type="checkbox" id="registerModalLatinNameOk"
-                               style="width: 16px; height: 16px; accent-color: #AAFF00;">
-                        <span data-ar="اسمي مش بالعربي" data-en="My name isn't written in Arabic">اسمي مش بالعربي</span>
-                    </label>
+                <!-- التنبيه ظاهر من الأول. نفس اللي في register.html. -->
+                <div style="margin: -4px 0 16px;">
+                    <p style="font-size: 12px; color: rgba(170,255,0,0.8); margin: 0;"
+                       data-ar="مهم: اكتب اسمك بالعربي — ده الاسم اللي هيظهر في شهاداتك وفي رسايلنا ليك."
+                       data-en="Important: write your name in Arabic — this is the name on your certificates and in our messages to you.">مهم: اكتب اسمك بالعربي — ده الاسم اللي هيظهر في شهاداتك وفي رسايلنا ليك.</p>
                 </div>
 
                 <div style="margin-bottom: 16px;">
@@ -1477,7 +1475,7 @@
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
     <script src="src/js/arabic-name.js?v=20260906a"></script>
-    <script src="src/js/i18n.js?v=20260818a"></script>
+    <script src="src/js/i18n.js?v=20260906b"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
     <script src="src/js/catalog-data.js?v=4"></script>
@@ -1805,11 +1803,8 @@
             // الاسم بالعربي — نفس قاعدة السيرفر بالحرف (src/js/arabic-name.js).
             // لو الملف مش محمّل بنعدّي: السيرفر هو اللي بيرفض، والواجهة عمرها
             // ما تبقى هي اللي واقفة قدام حد يسجّل.
-            const latinNameOk = !!document.getElementById('registerModalLatinNameOk')?.checked;
-            if (!latinNameOk && typeof window.isArabicName === 'function'
+            if (typeof window.isArabicName === 'function'
                 && !(window.isArabicName(firstName) && window.isArabicName(lastName))) {
-                const row = document.getElementById('latinNameRow');
-                if (row) row.style.display = 'block';
                 alertEl.style.display = 'block';
                 alertEl.style.backgroundColor = 'rgba(153,27,27,0.5)';
                 alertEl.style.color = '#f87171';
@@ -1825,7 +1820,7 @@
             try {
                 const res = await fetch(`${API}/auth/register`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, phone, country, governorate, latin_name_ok: latinNameOk })
+                    body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password, phone, country, governorate })
                 });
                 const data = await res.json();
                 if (res.ok) {
