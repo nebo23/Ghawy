@@ -36,7 +36,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import and_, case, func, or_
+from sqlalchemy import and_, case, false, func, or_
 from sqlalchemy.orm import Session
 
 from app.models import Course, Lesson, Payment, PaymentStatus, User, UserProgress
@@ -181,7 +181,31 @@ def latest_plan_map(db: Session, user_ids: List[int]) -> Dict[int, Optional[str]
 # الدروس اللي بتتحسب في الكورس.
 
 
-def _min_lessons_for(db: Session, course_ids: List[int], pct: int):
+# «بدأ الكورس» — درس واحد على الأقل، مش نسبة. ١٪ في كورس ٥٠ درس بيتقرّب لدرس
+# واحد، وفي كورس ٢٠٠ درس بيتقرّب لدرسين — و«بدأ» معناها واحد في الاتنين، فهي
+# ثابت مستقل مش نسبة صغيرة.
+STARTED = "started"
+
+# البنود اللي بتتعرض تحت عدّاد الجمهور لما يتحدد كورس. الترتيب هو ترتيب العرض:
+# من أضيق جمهور لأوسع، عشان القراءة تبقى «٣٤ خلّصوه، ٦١ فوق ٧٥٪، …».
+BANDS = (("done", 100), ("p75", 75), ("p50", 50), ("started", STARTED))
+
+
+def _lessons_for_pct(total: int, pct) -> Optional[int]:
+    """أقل عدد دروس يخلّي النسبة اللي العضو شايفها توصل `pct`.
+
+    المعادلة دي في مكان واحد بس — الفلتر والبنود اللي تحت العدّاد الاتنين
+    بينادوها. لو اتكتبت مرتين يبقى ممكن البند يقول ٣٤ والإرسال يوصل ٣١، وساعتها
+    كل رقم في الشاشة يبقى مش موثوق.
+    """
+    if total <= 0:
+        return None                 # كورس من غير دروس: نسبته صفر لكل الناس
+    if pct is STARTED:
+        return 1
+    return next(d for d in range(total + 1) if round(d * 100 / total) >= pct)
+
+
+def _min_lessons_for(db: Session, course_ids: List[int], pct):
     """أقل عدد دروس يخلّي النسبة اللي العضو شايفها توصل `pct`، لكل كورس.
 
     النسبة اللي العضو بيقراها في صفحته هي `round(done * 100 / total)`
@@ -199,34 +223,21 @@ def _min_lessons_for(db: Session, course_ids: List[int], pct: int):
     totals, ready_counts = effective_lesson_totals(db, course_ids)
     needs = {}
     for cid in course_ids:
-        total = totals.get(cid) or 0
-        if total <= 0:
-            continue        # كورس من غير دروس: نسبته صفر لكل الناس
-        needs[cid] = next(d for d in range(total + 1) if round(d * 100 / total) >= pct)
+        need = _lessons_for_pct(totals.get(cid) or 0, pct)
+        if need is not None:
+            needs[cid] = need
     return needs, ready_counts
 
 
-def _progress_user_ids(db: Session, f: Dict[str, Any]):
-    """كويري فرعية بأرقام الأعضاء اللي وصلوا النسبة — أو None لو مفيش فلتر.
+def _done_per_course(db: Session, needs: Dict[int, int], ready_counts: Dict[int, int]):
+    """كويري فرعية (عضو، كورس، عدد الدروس اللي خلّصها) — بنفس الدروس اللي المقام بيعدّها.
 
-    جوّه الكويري مش بعديها: فلتر الباقة تحت بيتعمل في بايثون بعد `.limit()`،
-    فالسقف بيتطبّق على الجمهور غير المفلتر. ده مقبول هناك لأنه محتاج آخر دفعة
-    مؤكّدة لكل عضو؛ التقدّم مش محتاج كده، فهو `IN (subquery)` عادي والـ LIMIT
-    بيفضل معناه اللي مكتوب.
+    الكورس اللي مقامه اتحسب بالـ ready، بسطه كمان بيتحسب بالـ ready. اللي
+    مفيهوش ولا درس ready بيتحسب بكل دروسه في الاتنين. نفس فرع
+    `courses.get_all_progress` بالحرف.
+
+    مستخرجة عشان الفلتر والبنود اللي تحت العدّاد يعدّوا نفس الدروس بالظبط.
     """
-    pct = f.get("progress_min_percent")
-    if not pct:
-        return None         # مفيش نسبة، أو ٠٪ — يعني الكل، يعني مفيش فلتر
-
-    cid = f.get("progress_course_id")
-    course_ids = [cid] if cid else [c for (c,) in db.query(Course.id).all()]
-    needs, ready_counts = _min_lessons_for(db, course_ids, pct)
-    if not needs:
-        return None
-
-    # الكورس اللي مقامه اتحسب بالـ ready، بسطه كمان بيتحسب بالـ ready. اللي
-    # مفيهوش ولا درس ready بيتحسب بكل دروسه في الاتنين. نفس فرع
-    # `courses.get_all_progress` بالحرف.
     branches = []
     ready_ids = [c for c in needs if ready_counts.get(c)]
     all_ids = [c for c in needs if not ready_counts.get(c)]
@@ -236,7 +247,7 @@ def _progress_user_ids(db: Session, f: Dict[str, Any]):
     if all_ids:
         branches.append(UserProgress.course_id.in_(all_ids))
 
-    done = (
+    return (
         db.query(UserProgress.user_id.label("uid"),
                  UserProgress.course_id.label("cid"),
                  func.count(UserProgress.id).label("done"))
@@ -245,12 +256,140 @@ def _progress_user_ids(db: Session, f: Dict[str, Any]):
         .group_by(UserProgress.user_id, UserProgress.course_id)
         .subquery()
     )
+
+
+def _progress_intent(f: Dict[str, Any]):
+    """يعني إيه الكورس + النسبة اللي المشغّل ساب المربعين عليهم.
+
+    ده المكان الوحيد اللي بيقرر ده، عشان الجملة اللي بتتعرض في الشاشة
+    (`progress_label`) والفلتر اللي بيتنفّذ ما يقدروش يقولوا حاجتين مختلفين.
+
+    بيرجّع `(course_id, pct)` أو `None` لو مفيش فلتر تقدّم أصلاً:
+
+      كورس + نسبة   → اللي وصلوا النسبة دي في الكورس ده
+      كورس من غير نسبة → اللي بدأوا الكورس ده (درس واحد على الأقل).
+          ده كان بيلغي اختيار الكورس بالكامل ويبعت للجمهور كله من غير ما حد
+          ياخد باله — تحكّم بيبان شغّال وهو مش عامل حاجة.
+      نسبة من غير كورس → اللي وصلوا النسبة دي في كورس واحد على الأقل
+      ولا حاجة      → مفيش فلتر
+    """
+    pct = f.get("progress_min_percent")
+    cid = f.get("progress_course_id")
+    if not pct:
+        # صفر بالمية في أي كورس = الكل = مش فلتر. بس مع كورس محدد، القراءة
+        # المفيدة الوحيدة هي «بدأ الكورس ده».
+        return (cid, STARTED) if cid else None
+    return (cid, pct)
+
+
+def _progress_user_ids(db: Session, f: Dict[str, Any]):
+    """كويري فرعية بأرقام الأعضاء اللي مطابقين فلتر التقدّم — أو None لو مفيش فلتر.
+
+    جوّه الكويري مش بعديها: فلتر الباقة تحت بيتعمل في بايثون بعد `.limit()`،
+    فالسقف بيتطبّق على الجمهور غير المفلتر. ده مقبول هناك لأنه محتاج آخر دفعة
+    مؤكّدة لكل عضو؛ التقدّم مش محتاج كده، فهو `IN (subquery)` عادي والـ LIMIT
+    بيفضل معناه اللي مكتوب.
+    """
+    intent = _progress_intent(f)
+    if intent is None:
+        return None
+    cid, pct = intent
+
+    course_ids = [cid] if cid else [c for (c,) in db.query(Course.id).all()]
+    needs, ready_counts = _min_lessons_for(db, course_ids, pct)
+    if not needs:
+        # مفيش كورس ليه دروس تتحسب — يعني مفيش عضو يقدر يطابق الفلتر. لازم
+        # ترجع صفر عضو، مش الجمهور كله: كورس لسه مفيهوش دروس بيظهر في القايمة
+        # عادي، واختياره كان بيلغي الفلتر بالسكوت ويبعت للكل — نفس شكل الباج
+        # اللي اترقّع فوق، في ركن تاني.
+        return db.query(User.id).filter(false()).scalar_subquery()
+
+    done = _done_per_course(db, needs, ready_counts)
     # كورس مش في `needs` بيدّي NULL، و`done >= NULL` مابتطابقش — وده المطلوب.
     return (
         db.query(done.c.uid)
         .filter(done.c.done >= case(needs, value=done.c.cid, else_=None))
         .scalar_subquery()
     )
+
+
+_AR_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+
+
+def progress_label(db: Session, filters: Optional[Dict[str, Any]]) -> Optional[str]:
+    """الفلتر ده معناه إيه، بالعربي — الجملة اللي بتتعرض جنب العدّاد.
+
+    رقم من غير جملة جنبه هو بالظبط اللي خلّى اختيار الكورس لوحده يتشحن وهو
+    مش عامل حاجة: العدّاد ما اتحركش، ومحدش عرف ليه. الجملة بتتبني من نفس
+    `_progress_intent` اللي الفلتر بيتنفّذ بيها، فهي مش وصف مكتوب على الجنب —
+    هي نفس القرار.
+    """
+    f = normalize_filters(filters)
+    intent = _progress_intent(f)
+    if intent is None:
+        return None
+    cid, pct = intent
+
+    title = None
+    if cid:
+        row = db.query(Course.title).filter(Course.id == cid).first()
+        title = row[0] if row else None
+    if cid and not title:
+        # كورس اتمسح وفاضل في مقطع محفوظ. الفلتر بيرجّع صفر عضو (صح)، بس صفر
+        # من غير سبب هو نفس المشكلة اللي القسم ده كله عنه.
+        return "الكورس اللي الفلتر ده مبني عليه اتمسح — اختار كورس تاني"
+
+    if pct is STARTED:
+        return f"الأعضاء اللي بدأوا كورس «{title}» — درس واحد على الأقل"
+
+    shown = str(pct).translate(_AR_DIGITS)
+    if cid and pct >= 100:
+        return f"الأعضاء اللي خلّصوا كورس «{title}»"
+    if cid:
+        return f"الأعضاء اللي وصلوا ٪{shown} على الأقل في كورس «{title}»"
+    if pct >= 100:
+        return "الأعضاء اللي خلّصوا كورس واحد على الأقل (أي كورس)"
+    return f"الأعضاء اللي وصلوا ٪{shown} على الأقل في كورس واحد على الأقل (أي كورس)"
+
+
+def progress_bands(db: Session, filters: Optional[Dict[str, Any]]) -> Optional[Dict[str, int]]:
+    """توزيع التقدّم في الكورس المختار، جوّه نفس باقي الفلاتر.
+
+    الهدف إن المشغّل يشوف التوزيع قبل ما يختار العتبة، فالعتبة تبقى قرار مش
+    تخمين.
+
+    الأرقام دي لازم تبقى نفس اللي هيوصله لو ضغط على البند، فبتتحسب على نفس
+    الجمهور بالظبط: `resolve_users` — الفنكشن اللي الإرسال نفسه بينده عليها —
+    بنفس الفلتر وفلتر التقدّم مشال منه، وبعدين بنقسّم الناس دول بـ
+    `_lessons_for_pct` و`_done_per_course`، نفس المعادلة ونفس الدروس اللي
+    الفلتر بيعدّها. مفيش عدّ تاني ولا تقريب تاني.
+
+    بتتحسب لما يبقى في كورس محدد بس — «أي كورس» مالوش توزيع يتقرا.
+    """
+    f = normalize_filters(filters)
+    cid = f.get("progress_course_id")
+    if not cid:
+        return None
+
+    totals, ready_counts = effective_lesson_totals(db, [cid])
+    total = totals.get(cid) or 0
+    if total <= 0:
+        return None                 # كورس من غير دروس
+
+    base = dict(f, progress_course_id=None, progress_min_percent=None)
+    uids = {u.id for u in resolve_users(db, base)}
+    if not uids:
+        return {name: 0 for name, _ in BANDS}
+
+    done = _done_per_course(db, {cid: 1}, ready_counts)
+    rows = [(uid, n) for uid, n in db.query(done.c.uid, done.c.done)
+            .filter(done.c.cid == cid).all() if uid in uids]
+
+    out = {}
+    for name, pct in BANDS:
+        need = _lessons_for_pct(total, pct)
+        out[name] = sum(1 for _, n in rows if n >= need)
+    return out
 
 
 def plan_group(plan_key: Optional[str]) -> str:

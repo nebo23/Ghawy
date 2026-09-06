@@ -613,6 +613,11 @@ def preview_audience(
         "count": len(users),
         "online_now": online,
         "truncated": len(users) >= aud.MAX_AUDIENCE,
+        # الفلتر ده معناه إيه بالعربي، و — لو في كورس محدد — توزيع التقدّم
+        # فيه. الاتنين محسوبين من نفس الفلتر ونفس `resolve_users` اللي الإرسال
+        # بينده عليها، مش من إندبوينت تاني يقدر يفرق عنها.
+        "progress_label": aud.progress_label(db, filters),
+        "progress_bands": aud.progress_bands(db, filters),
         "sample": [
             {"id": u.id, "full_name": u.full_name, "is_active": bool(u.is_active)}
             for u in users[:PREVIEW_SAMPLE]

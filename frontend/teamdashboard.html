@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
   <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
   <link rel="stylesheet" href="src/css/dashboard.css?v=36" />
-  <link rel="stylesheet" href="src/css/team.css?v=20260904a" />
+  <link rel="stylesheet" href="src/css/team.css?v=20260906a" />
   <style>
     /* ── Team Page ─────────────────────────────────────── */
     .team-stats {
@@ -2312,7 +2312,7 @@
                                placeholder="١٠٠ = خلّص الكورس" oninput="anRefreshAudience()" />
                       </div>
                     </div>
-                    <div class="an-hint">سيبها فاضية لو مش عايز الفلتر ده. النسبة محسوبة على الدروس الجاهزة زي ما العضو شايفها بالظبط في صفحة الكورسات بتاعته.</div>
+                    <div class="an-hint">كورس من غير نسبة = اللي بدأوه. نسبة من غير كورس = اللي وصلوها في كورس واحد على الأقل. سيبهم فاضيين لو مش عايز الفلتر ده. النسبة محسوبة على الدروس الجاهزة زي ما العضو شايفها بالظبط في صفحة الكورسات بتاعته.</div>
 
                     <label class="an-label">بحث بالاسم أو الإيميل</label>
                     <input type="text" id="an-aud-search" class="an-input"
@@ -2347,6 +2347,10 @@
                       <!-- كام واحد من دول مش هيتنادى باسمه بالعربي. بيظهر لما
                            الحملة تبقى فيها {{name}} بس — غير كده مالوش معنى. -->
                       <div class="an-aud-names" id="an-aud-names" style="display:none"></div>
+                      <!-- فلتر التقدّم بالكلام + توزيع الكورس المختار. تحت
+                           الرقم بالظبط: ده مكان القرار. البنود دوس عليها
+                           بتظبط الفلتر، فالرقم اللي بيتقرا هو نفسه التحكّم. -->
+                      <div class="an-aud-prog" id="an-aud-prog" style="display:none"></div>
                       <div class="an-aud-sample" id="an-aud-sample"></div>
                     </div>
                   </div>
@@ -3140,7 +3144,7 @@
     <script src="src/js/dashboard-new.js?v=20260904a"></script>
   <script src="src/js/i18n.js?v=20260818a"></script>
   <script src="src/js/team.js?v=20260903b"></script>
-  <script src="src/js/team-announcements.js?v=20260905a"></script>
+  <script src="src/js/team-announcements.js?v=20260906a"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="src/vendor/lucide/lucide.min.js?v=1270" onload="lucide.createIcons()"></script>
 

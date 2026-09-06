@@ -715,13 +715,16 @@ async function anLoadAudience() {
   if (a.status) qs.set('status', a.status);
   if (a.plan) qs.set('plan', a.plan);
   if (a.expiring_days != null && !Number.isNaN(a.expiring_days)) qs.set('expiring_days', a.expiring_days);
-  // The percentage carries the filter; the course only narrows it. Sending a
-  // course with no percentage would be a filter that means nothing, and the
-  // server would ignore it anyway.
+  // Both halves go, independently. The course used to be sent only alongside a
+  // percentage, and the server used to return early on a missing percentage —
+  // so picking a course and leaving the percentage empty selected a course and
+  // then mailed everybody. Each half now means something on its own (a course
+  // alone = whoever started it), and the server says which reading it took in
+  // `progress_label`, which this panel prints.
   if (a.progress_min_percent != null && !Number.isNaN(a.progress_min_percent)) {
     qs.set('progress_min_percent', a.progress_min_percent);
-    if (a.progress_course_id) qs.set('progress_course_id', a.progress_course_id);
   }
+  if (a.progress_course_id) qs.set('progress_course_id', a.progress_course_id);
   if (a.include_staff) qs.set('include_staff', 'true');
 
   countEl.textContent = '…';
@@ -752,6 +755,7 @@ async function anLoadAudience() {
     // actually goes out. Stored for the composer preview, which resolves
     // {{name}} against these very members.
     anPersonal = d.personalization || null;
+    anRenderProgress(d);
     anRenderPreview();          // also refreshes the coverage line
 
     if (!anFacetsLoaded) { anFillFacets(d); anFacetsLoaded = true; }
@@ -760,6 +764,7 @@ async function anLoadAudience() {
     subEl.textContent = 'مقدرناش نحسب الجمهور';
     sampleEl.innerHTML = '';
     anPersonal = null;
+    anRenderProgress(null);      // a stale band under a failed count is a lie
     anRenderNameCoverage();      // clear the stale line; the preview text stands
   }
 }
@@ -798,6 +803,57 @@ function anRenderNameCoverage() {
     return;
   }
   el.innerHTML = `<span class="warn">${bits.join(' · ')}</span>`;
+}
+
+// The progress filter, in words and in numbers.
+//
+// Two things, both under the count:
+//
+//   the sentence the server resolved the two boxes to. A course with no
+//   percentage and a percentage with no course both read as something the
+//   operator did not necessarily mean ("أي كورس" reads as "all courses" just
+//   as easily as "any one course"), and a number with no sentence next to it
+//   is how the course selection shipped inert in the first place.
+//
+//   the distribution, when a course is picked — what the owner asked for:
+//   «يظهرلي ال course progress وانا اختار بناءا عليه». He picks the threshold
+//   after seeing the shape, not before. The bands are clickable, so reading
+//   the number and typing it back in is not a step.
+function anRenderProgress(d) {
+  const el = document.getElementById('an-aud-prog');
+  if (!el) return;
+
+  if (!d || !d.progress_label) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+
+  el.style.display = '';
+  let html = `<div class="an-prog-label">${escapeHtml(d.progress_label)}</div>`;
+
+  const b = d.progress_bands;
+  if (b) {
+    // Same order as audience.BANDS: narrowest audience first.
+    const bands = [
+      ['done', 100, 'خلّصوه'],
+      ['p75', 75, 'فوق ٧٥٪'],
+      ['p50', 50, 'فوق ٥٠٪'],
+      ['started', null, 'بدأوه'],
+    ];
+    html += '<div class="an-prog-bands">' + bands.map(([key, pct, label]) =>
+      `<button type="button" class="an-prog-band" onclick="anSetProgress(${pct == null ? "''" : pct})">`
+      + `<b>${Number(b[key] || 0).toLocaleString('ar-EG')}</b> ${label}</button>`
+    ).join('') + '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// Clicking a band IS setting the filter — the display is the control. Empty
+// percentage means "started it", which is exactly what the «بدأوه» band counts.
+function anSetProgress(pct) {
+  anSetField('an-aud-progress', pct === '' || pct == null ? '' : pct);
+  anRefreshAudience();
 }
 
 // ═══ MEMBER PICKER ═══

@@ -3316,6 +3316,50 @@
     color: #ddd;
 }
 
+/* فلتر التقدّم بالكلام، وتوزيع الكورس تحته. نفس مكان سطر الأسماء وبنفس
+   المنطق: الحقيقة اللي بتوصل بعد ما القرار يتاخد مش بتوصل. */
+.an-aud-prog {
+    margin-top: 8px;
+}
+
+.an-prog-label {
+    font-size: .72rem;
+    color: #9aa;
+    line-height: 1.7;
+}
+
+.an-prog-bands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+
+/* بند = زرار. دوس عليه يظبط العتبة — عشان ما يبقاش في خطوة «اقرا الرقم وبعدين
+   اكتبه». */
+.an-prog-band {
+    font-size: .68rem;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid rgba(63, 143, 249, .3);
+    background: rgba(63, 143, 249, .1);
+    color: #9dc2fb;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.an-prog-band:hover {
+    background: rgba(63, 143, 249, .2);
+    color: #cfe1fd;
+}
+
+.an-prog-band b {
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    font-weight: 800;
+}
+
 .an-aud-sample {
     display: flex;
     flex-wrap: wrap;
