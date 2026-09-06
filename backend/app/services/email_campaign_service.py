@@ -45,6 +45,7 @@ from app.services.email_service import (
     FROM_NAME,
     FONT_STACK,
 )
+from app.services.name_utils import FALLBACK_FIRST_NAME, first_name_token
 from app.database import SessionLocal
 from app.models import EmailCampaignSend
 
@@ -69,13 +70,6 @@ MAX_DELAY_SECONDS = 9
 DEFAULT_TEST_EMAILS = [
     "mohamedsalaahh7@gmail.com",
     "cmosalahh@gmail.com",
-]
-
-COMPOUND_FIRST_NAMES = [
-    "عبد الله", "عبد الرحمن", "عبد الرحيم", "عبد العزيز", "عبد الحميد",
-    "عبد الفتاح", "عبد الحكيم", "عبد المجيد", "عبد الوهاب", "عبد الستار",
-    "عبد الغني", "عبد اللطيف", "عبد الحق", "عبد النور", "عبد السلام",
-    "ضيف الله", "نصر الله", "سعد الدين", "نور الدين", "صلاح الدين",
 ]
 
 # صور البراند (inline في الإيميل عبر Content-ID)
@@ -104,13 +98,17 @@ _ASSET_FILES = {
 # ============================================================
 
 def get_first_name(full_name: str) -> str:
-    if not full_name:
-        return "صديقي"
-    name = str(full_name).strip()
-    for compound in COMPOUND_FIRST_NAMES:
-        if name.startswith(compound):
-            return compound
-    return name.split()[0] if name.split() else "صديقي"
+    """الاسم الأول زي ما هو مكتوب — من غير تعريب. `صديقنا` لو مفيش اسم.
+
+    القسمة بقت في `name_utils.first_name_token`. كانت هنا ومعاها ليستة أسماء
+    مركّبة مكتوبة بالإيد، وكانت ناقصة تلاتة الماب بتطلّعهم — دلوقتي الست
+    مشتقّة من الماب نفسها فمفيش حاجة تنساها.
+
+    الكلمة الاحتياطية كانت `صديقي` هنا و`صديقنا` في كل حتة تانية: نفس العضو
+    يتنادى باسمين حسب اللي باعت الرسالة. بقت `صديقنا` — وهي اللي شاشة
+    الإعلانات بتعدّها وبتعرضها قبل الإرسال.
+    """
+    return first_name_token(full_name) or FALLBACK_FIRST_NAME
 
 
 def is_valid_contact(name: str, email: str) -> bool:
@@ -328,9 +326,9 @@ def build_template_vars(row: dict, content: Optional["EmailContent"] = None) -> 
     fallback_word = (content.name_ar_fallback if content and content.name_ar_fallback else None) or "صديقنا"
     if name_ar_explicit:
         first_name_ar = name_ar_explicit
-    elif arabized and arabized != "صديقي":
+    elif arabized and arabized != FALLBACK_FIRST_NAME:
         first_name_ar = arabized
-    elif is_valid_contact(name, row.get("Email", "")) and first_name and first_name != "صديقي":
+    elif is_valid_contact(name, row.get("Email", "")) and first_name and first_name != FALLBACK_FIRST_NAME:
         first_name_ar = first_name
     else:
         first_name_ar = fallback_word

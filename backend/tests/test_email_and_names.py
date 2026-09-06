@@ -13,7 +13,14 @@ from app.services.disposable_emails import (  # noqa: E402
     is_disposable_email,
     is_fake_email_pattern,
 )
-from app.services.name_utils import compose_full_name, split_full_name  # noqa: E402
+from app.services.name_utils import (  # noqa: E402
+    _AR_FIRST_NAMES,
+    _COMPOUND_FIRST_NAMES,
+    arabic_first_name,
+    compose_full_name,
+    first_name_token,
+    split_full_name,
+)
 
 
 # ─── Blocked: disposable domains ────────────────────────────
@@ -89,6 +96,76 @@ def test_split_full_name():
     assert split_full_name(None) == ("", "")
 
 
+def test_compound_first_names_are_not_split():
+    """`عبد الرحمن علي` is greeted أهلاً عبد الرحمن, not أهلاً عبد.
+
+    Two words, one first name. Every door that names a member goes through the
+    same tokenizer, so this holds for the greeting and for the stored columns.
+    """
+    assert first_name_token("عبد الرحمن علي") == "عبد الرحمن"
+    assert split_full_name("عبد الله محمد") == ("عبد الله", "محمد")
+    assert split_full_name("عبد الرحمن علي حسن") == ("عبد الرحمن", "علي حسن")
+    assert arabic_first_name("عبد الرحمن علي") == "عبد الرحمن"
+    assert arabic_first_name("نور الدين حسن") == "نور الدين"
+    # Latin spellings, both as one token and as two
+    assert arabic_first_name("Abdelrahman Ali") == "عبد الرحمن"
+    assert arabic_first_name("Abdel Salam Ahmed") == "عبد السلام"
+    assert split_full_name("Abdel Rahman Ali") == ("Abdel Rahman", "Ali")
+
+
+def test_a_prefix_never_merges_two_tokens():
+    """`Abd El Hameed` is عبد الحميد, and must never become عبد الرحمن.
+
+    `abdel` on its own is a prefix, not a name; the map guesses the commonest
+    reading for a bare token, which is fine for a bare token and wrong the
+    moment it is allowed to swallow the word after it. Longest join first, and
+    a prefix key is skipped outright — a confidently wrong name is worse than
+    the truncated one this whole change exists to fix.
+    """
+    assert arabic_first_name("Abd El Hameed Mohsen") == "عبد الحميد"
+    assert arabic_first_name("Abd El Kader Sayed") == "عبد القادر"
+    assert arabic_first_name("Seif El Din Tarek") == "سيف الدين"
+    assert split_full_name("Abd El Hameed Mohsen") == ("Abd El Hameed", "Mohsen")
+    # a bare `Abdel` keeps the map's guess — one token, nothing to swallow
+    assert arabic_first_name("Abdel") == "عبد الرحمن"
+
+
+def test_two_tokens_merge_only_into_a_compound():
+    """`Nour Hany` is two people's worth of name, not نورهان."""
+    assert split_full_name("Nour Hany") == ("Nour", "Hany")
+    assert split_full_name("Salah Ahmed") == ("Salah", "Ahmed")
+    assert split_full_name("محمد أحمد علي") == ("محمد", "أحمد علي")
+
+
+def test_compound_set_is_derived_from_the_map():
+    """One source of truth: a compound is a map value with a space in it.
+
+    A second hand-written list is what drifted — the one in
+    `email_campaign_service` was missing three names the map produces.
+    """
+    assert _COMPOUND_FIRST_NAMES == frozenset(
+        v for v in _AR_FIRST_NAMES.values() if " " in v
+    )
+    for name in ("عبد الرؤوف", "عبد المحسن", "عبد المنعم", "عبد السلام", "صلاح الدين"):
+        assert name in _COMPOUND_FIRST_NAMES, name
+        assert arabic_first_name(f"{name} محمد") == name
+
+
+def test_one_fallback_word_everywhere():
+    """`صديقي` used to be the email-campaign fallback and `صديقنا` everyone
+    else's — the same member addressed two ways depending on the sender."""
+    from app.services.name_utils import FALLBACK_FIRST_NAME
+
+    assert FALLBACK_FIRST_NAME == "صديقنا"
+    try:
+        from app.services.email_campaign_service import get_first_name
+    except ModuleNotFoundError:      # host run: the email stack needs dotenv/jinja
+        return
+    assert get_first_name("") == FALLBACK_FIRST_NAME
+    assert get_first_name(None) == FALLBACK_FIRST_NAME
+    assert get_first_name("عبد الرحمن علي") == "عبد الرحمن"
+
+
 def test_compose_full_name():
     assert compose_full_name("محمد", "أحمد") == "محمد أحمد"
     assert compose_full_name("Mohamed", "") == "Mohamed"
@@ -97,7 +174,8 @@ def test_compose_full_name():
 
 
 def test_split_compose_roundtrip():
-    for name in ["محمد أحمد علي", "Mohamed Salah", "Nour"]:
+    for name in ["محمد أحمد علي", "Mohamed Salah", "Nour",
+                 "عبد الرحمن علي", "Abdel Rahman Ali", "نور الدين حسن"]:
         assert compose_full_name(*split_full_name(name)) == name
 
 

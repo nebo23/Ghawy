@@ -20,16 +20,22 @@ import unicodedata
 
 
 def split_full_name(full_name: str | None) -> tuple[str, str]:
-    """Split a display name on the FIRST space.
+    """Split a display name into (first, last).
 
-    "محمد أحمد علي" -> ("محمد", "أحمد علي")
+    Where the first name ends is `first_name_token`'s call, not this function's
+    — compound names are two words. Splitting on the first space unconditionally
+    is what stored `عبد الله محمد` as first name `عبد`, and every Google signup
+    is named by this function.
+
+    "محمد أحمد علي"  -> ("محمد", "أحمد علي")
+    "عبد الرحمن علي" -> ("عبد الرحمن", "علي")
     "Mohamed"        -> ("Mohamed", "")
     """
     clean = " ".join((full_name or "").split())
     if not clean:
         return "", ""
-    first, _, last = clean.partition(" ")
-    return first, last
+    first = first_name_token(clean)
+    return first, clean[len(first):].strip()
 
 
 def compose_full_name(first_name: str | None, last_name: str | None) -> str:
@@ -115,6 +121,35 @@ _AR_FIRST_NAMES = {
     "abdelaziz": "عبد العزيز", "abdulaziz": "عبد العزيز", "abdualaziz": "عبد العزيز",
     "abdulmajeed": "عبد المجيد", "abdulmajid": "عبد المجيد",
     "abdelfattah": "عبد الفتاح", "abdo": "عبده", "abdu": "عبده", "abdel": "عبد الرحمن",
+    # باقي أسماء «عبد الـ» و«الله» و«الدين». مالهمش تهجئة لاتينية كتير في
+    # الروستر، بس مكانهم هنا مش في ليستة جنبية: `_COMPOUND_FIRST_NAMES` تحت
+    # مشتقّة من قيم الماب دي، فاسم مركّب مش مكتوب هنا بيتقسم نصين عند المناداة.
+    "abdelhakim": "عبد الحكيم", "abdulhakim": "عبد الحكيم", "abdelhakeem": "عبد الحكيم",
+    "abdelwahab": "عبد الوهاب", "abdulwahab": "عبد الوهاب", "abdelwahhab": "عبد الوهاب",
+    "abdelsattar": "عبد الستار", "abdulsattar": "عبد الستار", "abdelsatar": "عبد الستار",
+    "abdellatif": "عبد اللطيف", "abdullatif": "عبد اللطيف", "abdelatif": "عبد اللطيف",
+    "abdelhaq": "عبد الحق", "abdelhak": "عبد الحق",
+    "abdelnour": "عبد النور", "abdelnoor": "عبد النور",
+    "abdelsalam": "عبد السلام", "abdulsalam": "عبد السلام", "abdessalam": "عبد السلام",
+    "daifallah": "ضيف الله", "deifallah": "ضيف الله",
+    "nasrallah": "نصر الله", "nasrullah": "نصر الله",
+    "saadeldin": "سعد الدين", "saadeddine": "سعد الدين",
+    "salaheldin": "صلاح الدين", "salaheddine": "صلاح الدين",
+    # تهجئات تانية لنفس الأسماء — الضم بيدوّر على الشكل الملزوق («Abd El
+    # Hameed» → `abdelhameed`)، فاللي مش هنا بيقع على البادئة `abdel`.
+    "abdelhameed": "عبد الحميد", "abdulhameed": "عبد الحميد",
+    "abdelraheem": "عبد الرحيم", "abdulrahim": "عبد الرحيم",
+    "abdelazeez": "عبد العزيز", "abdelmageed": "عبد المجيد", "abdelmagid": "عبد المجيد",
+    "abdelmohsen": "عبد المحسن", "abdelraoof": "عبد الرؤوف",
+    "abdelmonem": "عبد المنعم", "abdelmoneem": "عبد المنعم",
+    "abdelghany": "عبد الغني", "abdelfatah": "عبد الفتاح", "abdelnasser": "عبد الناصر",
+    "abdelhalim": "عبد الحليم", "abdelhaleem": "عبد الحليم",
+    "abdelkader": "عبد القادر", "abdelqader": "عبد القادر",
+    "abdelbaset": "عبد الباسط", "abdelbasit": "عبد الباسط",
+    "abdelkhalek": "عبد الخالق", "abdelkhaleq": "عبد الخالق",
+    "seifeldin": "سيف الدين", "saifeldin": "سيف الدين", "seifeddine": "سيف الدين",
+    "alaaeldin": "علاء الدين", "alaaeddine": "علاء الدين",
+    "gamaleldin": "جمال الدين", "gamaleddine": "جمال الدين",
     # علي / علاء / عمار / أنس
     "ali": "علي", "aly": "علي",
     "alaa": "علاء", "aalaa": "علاء", "ala": "علاء",
@@ -315,6 +350,49 @@ def _norm_latin_name(s: str) -> str:
     return s.lower().strip()
 
 
+#: الأسماء الأولى المركّبة — مشتقّة من قيم الماب نفسها. أي قيمة فيها مسافة هي
+#: اسم أول من كلمتين، فإضافة اسم جديد للماب بتعلّم القسمة عنه لوحدها. كانت فيه
+#: ليستة مكتوبة بالإيد في `email_campaign_service` وفعلاً باظت: الماب بتطلّع
+#: عبد الرؤوف وعبد المحسن وعبد المنعم، والليستة ماكانتش تعرف واحد فيهم.
+_COMPOUND_FIRST_NAMES = frozenset(v for v in _AR_FIRST_NAMES.values() if " " in v)
+
+#: مفاتيح لاتينية هي بادئة، مش اسم. `abdel` لوحدها ممكن تكون عبد الرحمن أو عبد
+#: الحميد أو أي حاجة؛ الماب بتخمّن أشهرهم لما تيجي توكن لوحدها وده تخمين مقبول.
+#: لكنها ماينفعش تضم كلمتين: `Abd El Hameed` كان بيطلع «عبد الرحمن» — اسم غلط
+#: بثقة، وده أوحش من «عبد» المقطوعة اللي بنصلّحها.
+_AMBIGUOUS_LATIN_PREFIXES = frozenset({"abdel", "abd", "abdul", "abdal"})
+
+
+def first_name_token(full_name: str | None) -> str:
+    """الاسم الأول كامل: كلمة، أو كلمتين/تلاتة لو الاسم مركّب. `""` لو مفيش اسم.
+
+    دي القسمة الوحيدة في المشروع. `عبد الرحمن علي` اسمه الأول `عبد الرحمن` مش
+    `عبد` — والقسمة على أول مسافة كانت بتخلّي التحية «أهلاً عبد»، وكانت بتخزّن
+    `first_name = "عبد"` لكل واحد داخل بجوجل.
+
+    بتشتغل على الشكلين: العربي بالمطابقة على الست، واللاتيني بضم الكلمات
+    وسؤال الماب (`Abd El Hameed` → `abdelhameed` → `عبد الحميد`). الضم بيحصل
+    بس لما الناتج يكون اسم مركّب فعلاً، فـ `Nour Hany` مابتتضمّش لـ `نورهان`.
+    """
+    parts = (full_name or "").split()
+    if not parts:
+        return ""
+    # الأطول الأول: `Abd El Hameed` تلات كلمات لاسم واحد، ولو جرّبنا كلمتين
+    # الأول كانوا هيبقوا `Abd El` — وهي بادئة مش اسم.
+    for n in (3, 2):
+        if len(parts) < n:
+            continue
+        head = " ".join(parts[:n])
+        if head in _COMPOUND_FIRST_NAMES:
+            return head
+        key = _norm_latin_name(head)
+        if key in _AMBIGUOUS_LATIN_PREFIXES:
+            continue
+        if _AR_FIRST_NAMES.get(key) in _COMPOUND_FIRST_NAMES:
+            return head
+    return parts[0]
+
+
 def arabize_first_name(name: str):
     """
     يرجّع الصيغة العربية لاسم أول واحد:
@@ -324,7 +402,7 @@ def arabize_first_name(name: str):
     """
     if not name or not name.strip():
         return None
-    tok = name.strip().split()[0]
+    tok = first_name_token(name)
     if is_arabic_text(tok):
         return tok
     return _AR_FIRST_NAMES.get(_norm_latin_name(tok))
@@ -351,7 +429,7 @@ def arabic_first_name(full_name: str | None) -> str:
     name = (full_name or "").strip()
     if not name:
         return FALLBACK_FIRST_NAME
-    tok = name.split()[0]
+    tok = first_name_token(name)
     return arabize_first_name(tok) or tok
 
 
@@ -369,7 +447,7 @@ def resolves_to_arabic(full_name: str | None) -> bool:
     name = (full_name or "").strip()
     if not name:
         return False
-    return arabize_first_name(name.split()[0]) is not None
+    return arabize_first_name(name) is not None
 
 
 def resolves_to_fallback(full_name: str | None) -> bool:
