@@ -251,3 +251,117 @@ a NULL (`ResponseValidationError: 'badge' should be a valid string`). **No real
 member is affected** — all 1,957 rows have `Member`, because registration sets
 it. It only surfaced because the test row was inserted directly. Worth a default
 on the column if rows are ever created outside the app again.
+
+---
+
+## §6 — The opt-out is removed: Arabic, no exceptions
+
+Owner, 2026-09-06, after §5 shipped: **«شيل الـ اسمي مش بالعربي دي وشيلها برضو
+في الـ onboarding — انا عايز كل حاجة تبقي بالعربي»**, plus *add a notice on the
+signup form that the name must be in Arabic*, and *confirm the Arabic name is
+what lands in the team dashboard — but a Google signup who hasn't paid can stay
+in English, because they haven't paid.*
+
+This reverses the earlier decision recorded in §2 (Arabic **with** an opt-out).
+Status: **live on production**, commit `2ed735d`.
+
+### What it cost
+
+Almost nothing, which is worth knowing before worrying about it:
+
+| | |
+| --- | --- |
+| members who ever ticked «اسمي مش بالعربي» | **1** |
+| of those, still mid-onboarding | 0 |
+| active members mid-onboarding with a Latin name (now required to write Arabic) | 5 |
+
+The original fear behind the opt-out — locking out the ~12 members who
+genuinely cannot write their name in Arabic — did not materialise, because
+essentially nobody used it.
+
+### Removed from
+
+| surface | what went |
+| --- | --- |
+| `register.html` + `register.js` | the checkbox, its reveal-on-failure, and `latin_name_ok` in the POST body |
+| `index.html` signup modal | the same, inline |
+| `onboarding.html` + `onboarding.js` | the checkbox and the whole `latinNameOk` branch |
+| `schemas.py` | `UserRegister.latin_name_ok`, `OnboardingUpdate.latin_name_ok` |
+| `users.py`, `atlas.py` | the exemption and both writes of the column |
+| `profile.py` | the opt-out branch; `needs_arabic_name` is now the name alone |
+
+An older cached client that still posts `latin_name_ok` is **not** humoured —
+the field is gone from the schemas, pydantic drops it, and the name is judged on
+its own. Checks `[1e]`, `[3b]`, `[G6]` and `[F3]` exist precisely to prove that,
+because a flag nobody reads looks exactly like a flag that still works until
+something tests it.
+
+**The column stays on `users`.** Nothing writes it, nothing reads it in a
+decision. It is the record of the one account created while the opt-out existed;
+dropping it would erase that and buy nothing.
+
+### A hole closed on the way
+
+`complete_onboarding` used to finish even when no name was sent at all. That was
+harmless only while «اسمي مش بالعربي» was a legitimate second answer. With no
+second answer left it was the same back door as the ungated PATCH in §5.5, so it
+now refuses (`[G7b]`). The page's field is `required` and the message says what
+to do; nobody is locked out of their account, they land back on the same step.
+
+### Two things deliberately unchanged
+
+**The profile ratchet.** `PUT /profile/me` still enforces Arabic only when the
+stored name is already Arabic. A plain rule there would reject the bio save of
+every one of the 1,683 Latin-named members, for a field they never touched. The
+hard rule is on *new* names. `[R]`, `[5b]`, `[5c]` pin it.
+
+**The admin door still warns rather than blocks.** It is the owner's own tool
+for adding someone by hand, sometimes a guest who has no Arabic name. It returns
+`name_warning` and creates the account (`[4a]`–`[4c]`).
+
+### Unpaid Google signups stay in English — verified
+
+The step sits behind `get_current_active_member`, so nobody asks them, nothing
+renames them, nothing blocks them. They are asked the first time they pay and
+land in onboarding. `[G9]`/`[G9b]` pin it, and it was checked live against two
+accounts built the way `google_auth.py` builds one:
+
+```
+paid   (is_active=true)  GET /profile/onboarding-status
+  → {"needs_arabic_name":true,"suggested_name":"يوسف عماد","current_name":"Youssef Emad"}
+unpaid (is_active=false) GET /profile/onboarding-status
+  → 402  حسابك غير مفعل — يرجى تجديد الاشتراك
+POST /profile/complete-onboarding as the unpaid member → 402, name unchanged
+```
+
+### The Arabic name reaches the team dashboard — verified
+
+The paid Google account was driven through onboarding in a real browser: the
+opt-out checkbox is gone from the page, the field came up holding `يوسف عماد`,
+and the member typed their own name. Then, signed in as the owner, the team
+dashboard's Members tab was searched for both accounts:
+
+| | team dashboard shows | source |
+| --- | --- | --- |
+| paid, completed onboarding | `يوسف عماد` | `GET /admin/users` → `users.full_name` |
+| unpaid, never asked | `Karim Fathy` | same |
+
+`team.js:349` renders `user.full_name`, which is the column `complete_onboarding`
+writes — so nothing extra was needed to make the Arabic name land there; it was
+confirmed rather than built.
+
+### The notice on the signup form
+
+Both signup surfaces now carry it up front, above the fold, in both languages:
+
+> مهم: اكتب اسمك بالعربي — ده الاسم اللي هيظهر في شهاداتك وفي رسايلنا ليك.
+> *Important: write your name in Arabic — this is the name on your certificates
+> and in our messages to you.*
+
+It replaces a checkbox that only appeared **after** the rule had already fired.
+A refusal reaches the member once they have typed their name; the notice reaches
+them before. (Use an icon from the free FontAwesome set — `fa-regular
+fa-circle-info` is Pro-only and renders as an empty box.)
+
+Full suite after this change: **45 checks, 45 passing.** Test accounts deleted
+afterwards, scoped by user; community counts unchanged at 1,502 / 5,215 / 1,957.
