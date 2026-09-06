@@ -1088,10 +1088,18 @@ function formatBirthDate(dateStr) {
   return `<div style="font-size:13px">${dateTxt}</div><div style="font-size:11px;color:#888">${age} yrs</div>`;
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// escapeHtml مالهاش نسخة هنا عن قصد. utils.js بتعرّف window.escapeHtml،
+// والملف ده بيتحمّل بعديها — فأي `function escapeHtml` هنا مابتعملش نسخة تانية،
+// دي بتستبدل بتاعت utils.js على كل الصفحة.
+//
+// النسخة اللي كانت هنا كانت `str.replace(...)` من غير String()، فأي رقم كان
+// بيرمي TypeError. وده اللي كان بيكسّر لوحة الجمهور في تاب الإعلانات: قايمة
+// الكورسات بتتبني بـ escapeHtml(course.id) — رقم — فالمعاينة كلها كانت بتقع في
+// الـ catch، العدّاد يفضل «—» وقايمة الكورسات تفضل فاضية. وكانت كمان مش
+// بتهرّب ' (خطر في جوه attribute).
+//
+// `escapeHtmlTeam` كانت نسخة تالتة اتكتبت للالتفاف حول نفس المشكلة بدل ما
+// الظل ده يتشال. الاتنين اتشالوا؛ الباقي هو دالة واحدة في utils.js.
 
 function showTableLoading() {
   document.getElementById('users-tbody').innerHTML = `<tr><td colspan="11" style="text-align:center;color:#888;padding:40px">Loading...</td></tr>`;
@@ -2840,7 +2848,7 @@ async function loadLiveSessionsTab() {
       const dt = s.scheduled_at ? new Date(s.scheduled_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBD';
       return `
       <tr>
-        <td style="color:#fff;font-weight:500;">${escapeHtmlTeam(s.title)}</td>
+        <td style="color:#fff;font-weight:500;">${escapeHtml(s.title)}</td>
         <td style="color:#888;">${dt}</td>
         <td>
           <label class="t-switch">
@@ -2866,14 +2874,6 @@ async function loadLiveSessionsTab() {
     console.error(e);
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#ef4444;">Failed to load sessions</td></tr>';
   }
-}
-
-function escapeHtmlTeam(str) {
-  if (!str) return '';
-  // الاقتباسات لازم تتهرّب هي كمان: نفس الدالة بتتحط جوه title="..."
-  // و value="..."، وبدونها اسم فيه " بيخرج من الخاصية ويكتب خاصية جديدة.
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ─── Add Session ─────────────────────────────────────
@@ -3036,8 +3036,8 @@ async function viewAttendees(sessionId) {
           </tr></thead>
           <tbody>${data.attendees.map(a => `
             <tr style="border-bottom:1px solid #1e1e1e;">
-              <td style="padding:8px;color:#fff;">${escapeHtmlTeam(a.full_name)}</td>
-              <td style="padding:8px;color:#888;">${escapeHtmlTeam(a.email)}</td>
+              <td style="padding:8px;color:#fff;">${escapeHtml(a.full_name)}</td>
+              <td style="padding:8px;color:#888;">${escapeHtml(a.email)}</td>
               <td style="padding:8px;color:#555;">${new Date(a.registered_at).toLocaleDateString()}</td>
             </tr>`).join('')}
           </tbody>
