@@ -87,6 +87,18 @@ let needsArabicName = false;
     // الاقتراح للعرض بس. اللي بيتخزّن هو اللي العضو بيسيبه في الخانة بعد ما
     // يشوفه — عمرنا ما بنكتب اسم مولّد من غير ما صاحبه يوافق عليه.
     if (input && st.suggested_name) input.value = st.suggested_name;
+
+    // الغلط بيبان مع أول حرف مش عربي، مش لما يضغط «كمّل». نفس السبب اللي في
+    // فورم التسجيل: `hasNonArabicChar` مش `!isArabicName`، عشان `م` لوحدها
+    // مش غلط — هي بداية اسم.
+    const nameErr = document.getElementById('arabicNameError');
+    if (input && nameErr) {
+      input.addEventListener('input', () => {
+        const bad = typeof window.hasNonArabicChar === 'function'
+          && window.hasNonArabicChar(input.value);
+        nameErr.classList.toggle('show', bad);
+      });
+    }
   } catch (e) {}
 })();
 

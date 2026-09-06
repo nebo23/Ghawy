@@ -428,7 +428,7 @@
                     <div>
                         <label
                             style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;"
-                            data-ar="الاسم الأول" data-en="First Name">الاسم الأول</label>
+                            data-ar="الاسم الأول بالعربية" data-en="First Name (in Arabic)">الاسم الأول بالعربية</label>
                         <!-- عربي بس، فـ RTL في اللغتين — مش تبع لغة الصفحة. -->
                         <div style="position: relative;" dir="rtl">
                             <div
@@ -438,13 +438,13 @@
                             <input type="text" id="registerModalFirstName" data-ar-placeholder="مثلا: محمد"
                                 data-en-placeholder="محمد" placeholder="مثلا: محمد"
                                 style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; padding-inline-start: 36px; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s;"
-                                onfocus="this.style.borderColor='#AAFF00'" onblur="this.style.borderColor='#333'">
+                                onfocus="if (!this.dataset.invalid) this.style.borderColor='#AAFF00'" onblur="if (!this.dataset.invalid) this.style.borderColor='#333'">
                         </div>
                     </div>
                     <div>
                         <label
                             style="display: block; font-size: 12px; font-weight: 500; color: #9ca3af; margin-bottom: 6px;"
-                            data-ar="الاسم الأخير" data-en="Last Name">الاسم الأخير</label>
+                            data-ar="الاسم الأخير بالعربية" data-en="Last Name (in Arabic)">الاسم الأخير بالعربية</label>
                         <!-- عربي بس، فـ RTL في اللغتين — مش تبع لغة الصفحة. -->
                         <div style="position: relative;" dir="rtl">
                             <div
@@ -454,16 +454,17 @@
                             <input type="text" id="registerModalLastName" data-ar-placeholder="مثلا: احمد"
                                 data-en-placeholder="احمد" placeholder="مثلا: احمد"
                                 style="width: 100%; background-color: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; padding-inline-start: 36px; border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.2s;"
-                                onfocus="this.style.borderColor='#AAFF00'" onblur="this.style.borderColor='#333'">
+                                onfocus="if (!this.dataset.invalid) this.style.borderColor='#AAFF00'" onblur="if (!this.dataset.invalid) this.style.borderColor='#333'">
                         </div>
                     </div>
                 </div>
 
-                <!-- التنبيه ظاهر من الأول. نفس اللي في register.html. -->
-                <div style="margin: -4px 0 16px;">
-                    <p style="font-size: 12px; color: rgba(170,255,0,0.8); margin: 0;"
-                       data-ar="مهم: اكتب اسمك بالعربي"
-                       data-en="Important: write your name in Arabic">مهم: اكتب اسمك بالعربي</p>
+                <!-- الليبل بقى بيقول الشرط، فالسطر الأخضر اتشال. اللي فاضل هو
+                     الغلط، وبيظهر أول ما يتكتب حرف مش عربي. نفس register.html. -->
+                <div id="registerModalNameError" style="display: none; margin: -4px 0 16px;">
+                    <p style="font-size: 12px; color: #f87171; margin: 0;"
+                       data-ar="برجاء كتابة الاسم باللغة العربية"
+                       data-en="Please write your name in Arabic">برجاء كتابة الاسم باللغة العربية</p>
                 </div>
 
                 <div style="margin-bottom: 16px;">
@@ -1476,8 +1477,8 @@
     <!-- Language engine — shared with every other page (single 'ghawy_lang' key,
          Arabic by default). Loads before catalog.js and main.js so anything
          they render is built in the language already applied to the document. -->
-    <script src="src/js/arabic-name.js?v=20260906a"></script>
-    <script src="src/js/i18n.js?v=20260906d"></script>
+    <script src="src/js/arabic-name.js?v=20260906e"></script>
+    <script src="src/js/i18n.js?v=20260906e"></script>
     <!-- Courses, instructors and tracks — the single data source shared with
          /courses, /course-details and /instructors. -->
     <script src="src/js/catalog-data.js?v=4"></script>
@@ -1757,6 +1758,31 @@
             }
         }
 
+        // الغلط بيبان مع أول حرف مش عربي. `hasNonArabicChar` مش `!isArabicName`
+        // عشان `م` لوحدها مش غلط — هي بداية اسم. نفس اللي في register.js.
+        (function wireModalNameCheck() {
+            const first = document.getElementById('registerModalFirstName');
+            const last = document.getElementById('registerModalLastName');
+            const err = document.getElementById('registerModalNameError');
+            if (!first || !last || !err) return;
+
+            const bad = (el) => typeof window.hasNonArabicChar === 'function'
+                && window.hasNonArabicChar(el.value);
+
+            const check = () => {
+                const badFirst = bad(first);
+                const badLast = bad(last);
+                [[first, badFirst], [last, badLast]].forEach(([el, isBad]) => {
+                    if (isBad) { el.dataset.invalid = '1'; el.style.borderColor = '#dc2626'; }
+                    else { delete el.dataset.invalid; el.style.borderColor = (document.activeElement === el) ? '#AAFF00' : '#333'; }
+                });
+                err.style.display = (badFirst || badLast) ? 'block' : 'none';
+            };
+
+            first.addEventListener('input', check);
+            last.addEventListener('input', check);
+        })();
+
         async function modalRegister() {
             const isTermsAgreed = document.getElementById('regTerms') ? document.getElementById('regTerms').checked : false;
             const alertEl = document.getElementById('registerModalAlert');
@@ -1805,6 +1831,9 @@
             // الاسم بالعربي — نفس قاعدة السيرفر بالحرف (src/js/arabic-name.js).
             // لو الملف مش محمّل بنعدّي: السيرفر هو اللي بيرفض، والواجهة عمرها
             // ما تبقى هي اللي واقفة قدام حد يسجّل.
+            //
+            // ده فحص وقت الإرسال — بيمسك «الاسم قصير» و«فاضي» كمان. الحرف
+            // المش عربي بيتقال عليه قبل كده بكتير، وإنت بتكتب.
             if (typeof window.isArabicName === 'function'
                 && !(window.isArabicName(firstName) && window.isArabicName(lastName))) {
                 alertEl.style.display = 'block';

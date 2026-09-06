@@ -102,6 +102,13 @@
       border-color: #AAFF00;
     }
 
+    /* الخانة اللي فيها حرف مش عربي — بتفضل حمرا حتى وهي focused، عشان
+       الحدود الخضرا بتاعة الـ focus ماتقولش «تمام» والرسالة تحتها بتقول لأ. */
+    .input-field.input-invalid,
+    .input-field.input-invalid:focus {
+      border-color: #dc2626;
+    }
+
     .input-icon {
       color: #888;
     }
@@ -270,7 +277,7 @@
       <!-- Name (first + last) -->
       <div class="mb-4 name-row" id="name-section">
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1" data-i18n="firstName">الاسم الأول</label>
+          <label class="block text-xs font-medium text-gray-400 mb-1" data-i18n="firstName">الاسم الأول بالعربية</label>
           <!-- الخانة دي عربي بس، فهي RTL في اللغتين — مش تبع لغة الصفحة.
                الـ dir على الحاوية عشان الأيقونة والحشو يقلبوا مع بعض. -->
           <div class="relative" dir="rtl">
@@ -282,7 +289,7 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1" data-i18n="lastName">الاسم الأخير</label>
+          <label class="block text-xs font-medium text-gray-400 mb-1" data-i18n="lastName">الاسم الأخير بالعربية</label>
           <!-- الخانة دي عربي بس، فهي RTL في اللغتين — مش تبع لغة الصفحة.
                الـ dir على الحاوية عشان الأيقونة والحشو يقلبوا مع بعض. -->
           <div class="relative" dir="rtl">
@@ -295,13 +302,14 @@
         </div>
       </div>
 
-      <!-- التنبيه ظاهر من الأول، مش بعد ما القاعدة تقع. الرفض بيوصل بعد ما
-           العضو يكون كتب اسمه خلاص؛ السطر ده بيوصل قبلها، وهو الفرق بين إنه
-           يكتب اسمه صح من أول مرة وبين إنه يمسح ويعيد. -->
-      <div class="mb-4 -mt-2">
-        <p class="text-xs text-[#AAFF00]/80 flex items-start gap-1.5">
-          <i class="fa-solid fa-circle-info mt-0.5"></i>
-          <span data-i18n="arabicNameHint">مهم: اكتب اسمك بالعربي</span>
+      <!-- كان هنا سطر أخضر بيقول «اكتب اسمك بالعربي». اتشال: الصفحة فيها أخضر
+           كتير أصلاً فالسطر كان بيتوه وسطهم، والليبل نفسه بقى بيقول الشرط.
+           اللي فاضل هو الغلط، وهو بيظهر أول ما يتكتب حرف مش عربي — مش بعد
+           الضغط على زرار التسجيل. -->
+      <div class="mb-4 -mt-2 hidden" id="nameError">
+        <p class="text-xs text-red-400 flex items-start gap-1.5">
+          <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+          <span data-i18n="errArabicName">برجاء كتابة الاسم باللغة العربية</span>
         </p>
       </div>
 
@@ -430,11 +438,11 @@
     </div>
   </div>
 
-  <script src="src/js/arabic-name.js?v=20260906a"></script>
+  <script src="src/js/arabic-name.js?v=20260906e"></script>
   <script src="src/js/campaign-type.js?v=20260906a"></script>
   <script src="src/js/utils.js?v=20260905b"></script>
-  <script src="src/js/i18n.js?v=20260906d"></script>
-  <script src="src/js/register.js?v=20260906b"></script>
+  <script src="src/js/i18n.js?v=20260906e"></script>
+  <script src="src/js/register.js?v=20260906e"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => window.lucide && window.lucide.createIcons());

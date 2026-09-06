@@ -394,6 +394,33 @@ document.addEventListener('languagechange', () => {
   if (pwd && pwd.value) pwd.dispatchEvent(new Event('input'));
 });
 
+// الغلط بيبان مع أول حرف مش عربي، مش بعد ما العضو يملا الفورم كله ويضغط.
+//
+// الشرط هنا `hasNonArabicChar` مش `!isArabicName`: التانية بتطلب حرفين عربي،
+// يعني أول ما تكتب `م` تبقى غلط — والرسالة تظهر في وش واحد بيكتب اسمه صح.
+// اللي ينفع يترد عليه فوراً هو حرف مايصحش أصلاً؛ «الاسم قصير» سؤال وقت
+// الإرسال. والرسالة بتختفي لوحدها أول ما الخانتين ينضفوا.
+(function wireLiveNameCheck() {
+  const first = document.getElementById('firstName');
+  const last = document.getElementById('lastName');
+  const err = document.getElementById('nameError');
+  if (!first || !last || !err) return;
+
+  const bad = (el) => typeof window.hasNonArabicChar === 'function'
+    && window.hasNonArabicChar(el.value);
+
+  const check = () => {
+    const badFirst = bad(first);
+    const badLast = bad(last);
+    first.classList.toggle('input-invalid', badFirst);
+    last.classList.toggle('input-invalid', badLast);
+    err.classList.toggle('hidden', !(badFirst || badLast));
+  };
+
+  first.addEventListener('input', check);
+  last.addEventListener('input', check);
+})();
+
 function googleSignIn() {
   // Trigger google sign in flow
   const apiBase = (typeof API !== 'undefined') ? API : '/api';
