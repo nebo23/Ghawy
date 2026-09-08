@@ -3284,9 +3284,7 @@
                         // Update if stored duration was 0 OR display is empty/missing
                         if (durEl && !row.dataset.durationUpdated && (storedMins === 0 || !durEl.textContent.trim())) {
                             row.dataset.durationUpdated = '1';
-                            const totalMins = Math.floor(duration / 60);
-                            const totalSecs = Math.floor(duration % 60);
-                            durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
+                            durEl.textContent = formatVideoTime(duration);
                             // Persist to DB silently
                             apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(duration)}`, { method: 'PATCH' }).catch(() => { });
                         }
@@ -3340,9 +3338,7 @@
                                 const storedMins = parseFloat(row.dataset.duration || '0');
                                 if (durEl && !row.dataset.durationUpdated && (storedMins === 0 || !durEl.textContent.trim() || durEl.textContent === '0:00')) {
                                     row.dataset.durationUpdated = '1';
-                                    const totalMins = Math.floor(dur / 60);
-                                    const totalSecs = Math.floor(dur % 60);
-                                    durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
+                                    durEl.textContent = formatVideoTime(dur);
                                     // Persist to DB silently
                                     apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(dur)}`, { method: 'PATCH' }).catch(() => { });
                                 }
@@ -4407,10 +4403,7 @@
             const mins = l.duration_minutes || 0;
             let durStr = '';
             if (mins > 0) {
-                const totalSecs = Math.round(mins * 60);
-                const m = Math.floor(totalSecs / 60);
-                const s = totalSecs % 60;
-                durStr = `${m}:${s.toString().padStart(2, '0')}`;
+                durStr = formatVideoTime(Math.round(mins * 60));
             }
             const projectBtn = l.is_project
                 ? `<button class="lesson-project-btn" onclick="event.stopPropagation(); goToProjectsTab();" title="This lesson has a project"><i class="fa-solid fa-diagram-project"></i> Project</button>`
@@ -4605,9 +4598,7 @@
                                                 const durEl = row.querySelector('.lesson-dur');
                                                 const storedMins = parseFloat(row.dataset.duration || '0');
                                                 if (durEl && (storedMins === 0 || !durEl.textContent.trim() || durEl.textContent === '0:00')) {
-                                                    const totalMins = Math.floor(dur / 60);
-                                                    const totalSecs = Math.floor(dur % 60);
-                                                    durEl.textContent = `${totalMins}:${totalSecs.toString().padStart(2, '0')}`;
+                                                    durEl.textContent = formatVideoTime(dur);
                                                     apiFetch(`/courses/${courseId}/lessons/${currentLessonId}/duration?duration_seconds=${Math.round(dur)}`, { method: 'PATCH' }).catch(() => { });
                                                 }
                                             }

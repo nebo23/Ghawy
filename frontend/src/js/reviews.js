@@ -376,10 +376,15 @@
 
     // ─── Video card ─────────────────────────────────────────────
 
-    /** 131 → "2:11". */
+    /** 131 → "2:11", 3720 → "1:02:00". YouTube's rule: the hour only shows up
+     *  once there is one. No filmed review is that long today — this is here so
+     *  the first one that is does not render as "62:00". */
     function clock(seconds) {
-        const s = Math.max(0, Math.round(Number(seconds) || 0));
-        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+        const t = Math.max(0, Math.round(Number(seconds) || 0));
+        const h = Math.floor(t / 3600);
+        const m = Math.floor((t % 3600) / 60);
+        const s = String(t % 60).padStart(2, '0');
+        return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
     }
 
     /**
