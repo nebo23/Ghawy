@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
+    <meta name="robots" content="noindex, nofollow" />
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -488,7 +489,7 @@
                         </h3>
                         <div class="form-group">
                             <label for="settingsName" data-i18n="fullName">Full Name</label>
-                            <input type="text" id="settingsName" placeholder="Your name" />
+                            <input type="text" id="settingsName" placeholder="Your name" autocomplete="off" />
                         </div>
                         <div class="form-group">
                             <label for="settingsBio" data-i18n="bio">Bio</label>
@@ -553,18 +554,35 @@
                             <label data-i18n="email">Email</label>
                             <input type="email" id="settingsEmail" readonly />
                         </div>
+                        <!-- A real <form> around the password fields, for the same reason as the
+                             two on the team dashboard: with no form anywhere on the document,
+                             Chrome reads the whole page as one credential context, decides it is a
+                             sign-in surface for ghawy.ai, and fills the saved username into the
+                             best text candidate it can find. Here that candidate is #settingsName
+                             (#settingsEmail is readonly, so it is skipped) — and profile.js posts
+                             #settingsName as `full_name` on every save, so a member changing their
+                             avatar could have their display name overwritten with their own email
+                             address, which then follows them into the community, campaign
+                             greetings and their certificate.
+
+                             display:contents is deliberate: form ownership is a DOM relationship,
+                             so the inputs leave the document-wide unowned group either way, while
+                             the form itself contributes no box and the section's existing layout
+                             is untouched. -->
+                        <form autocomplete="off" onsubmit="return false" style="display:contents">
                         <div class="form-group">
                             <label for="currentPw" data-i18n="currentPassword">Current Password</label>
-                            <input type="password" id="currentPw" placeholder="••••••••" />
+                            <input type="password" id="currentPw" placeholder="••••••••" autocomplete="current-password" />
                         </div>
                         <div class="form-group">
                             <label for="newPw" data-i18n="newPassword">New Password</label>
-                            <input type="password" id="newPw" placeholder="••••••••" />
+                            <input type="password" id="newPw" placeholder="••••••••" autocomplete="new-password" />
                         </div>
                         <div class="form-group">
                             <label for="confirmPw" data-i18n="confirmPassword">Confirm Password</label>
-                            <input type="password" id="confirmPw" placeholder="••••••••" />
+                            <input type="password" id="confirmPw" placeholder="••••••••" autocomplete="new-password" />
                         </div>
+                        </form>
                         <button class="btn-gold" id="changePwBtn"><i data-lucide="key" size="14"></i> <span
                                 data-i18n="changePassword">Change Password</span></button>
                         <span id="pwStatus" style="margin-right:12px;font-size:.82rem;display:none"></span>

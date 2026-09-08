@@ -162,11 +162,19 @@ function updateFeaturedHero(g) {
   const sidebarHero = document.getElementById('featuredHeroCard');
   if (sidebarHero) {
       sidebarHero.style.display = 'block';
-      document.getElementById('heroName').innerHTML = `${g.name}`;
+      // textContent: a guest's name is text and needs no markup. It was
+      // innerHTML, which parsed staff-entered names as HTML — and with a
+      // 30-day non-revocable token sitting in localStorage (F-10), any
+      // injection on this page is worth far more than its own severity.
+      document.getElementById('heroName').textContent = g.name;
       document.getElementById('heroTitle').textContent = g.title;
       document.getElementById('heroBio').textContent = g.bio || '';
       if(document.getElementById('heroCompany')) {
-          document.getElementById('heroCompany').innerHTML = `<i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span>${g.company || 'Industry Leader'}</span>`;
+          // The icon is markup and has to stay innerHTML; the company is
+          // data and goes in through textContent afterwards.
+          const companyEl = document.getElementById('heroCompany');
+          companyEl.innerHTML = '<i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> <span></span>';
+          companyEl.querySelector('span').textContent = g.company || 'Industry Leader';
       }
       
       let finalAvatar = '';
