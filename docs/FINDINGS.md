@@ -780,3 +780,86 @@ sweep. What is needed first is a look at what those 33 messages actually say.
 
 The recurrence is closed either way: the two-commit gap that created them is
 now one transaction.
+
+---
+
+### F-36 · Four more pages have password fields in no form at all — `PARTIALLY FIXED 2026-09-08`
+
+The team dashboard autofill bug (d7563c2) was not one page's problem. The
+shape that causes it — a password input with no `<form>` owner anywhere on the
+document — is present on six pages in total. Two are now fixed:
+
+| page | password inputs | forms | status |
+|---|---|---|---|
+| `teamdashboard.html` | 2 | 0 → 2 | fixed d7563c2 |
+| `profile-settings.html` | 3 | 0 → 1 | fixed c48bc7e |
+| `index.html` | 2 (login + register modals) | 0 | **open** |
+| `atlas.html` | 2 | 0 | **open** |
+| `login.html` | 1 | 0 | **open** |
+| `reset-password.html` | 2 | 0 | **open** |
+
+Not found by reading — Chrome reports it itself. A CDP capture of
+`https://ghawy.ai/` logged out returns two `[DOM] Password field is not
+contained in a form` recommendations from the browser.
+
+`index.html` is the one that matches the original bug most closely: it carries
+a login modal AND a register modal, both with password fields, with no form
+boundary between them. That is the same "the whole document is one credential
+context" condition that let Chrome fill the wrong field on the team dashboard.
+
+**Deliberately not fixed in this pass.** The remaining four are genuine sign-in
+and password-reset surfaces, where a `<form>` changes what the Enter key does.
+Each needs its existing submit handling read first — that is a different piece
+of work from the two admin pages, where nothing was a real credential form and
+the fix could not alter any behaviour anyone relied on.
+
+The `<form autocomplete="off" onsubmit="return false" style="display:contents">`
+used on profile-settings is the pattern: `display:contents` keeps form
+ownership (a DOM relationship) while contributing no box, so no layout moves.
+
+---
+
+### F-37 · The Report-Only CSP reports to nobody — `measured 2026-09-08`
+
+`security_headers.conf` ships two policies. The enforced one allows
+`'unsafe-inline'` in `script-src`; the Report-Only one does not, and is there
+to size the inline-script migration.
+
+It cannot, because there is nowhere for a report to go. Measured on the live
+site: zero `report-uri`, zero `report-to`, zero `Reporting-Endpoints` in the
+response headers, so every violation is written to the visitor's own console
+and discarded.
+
+Volume, measured rather than estimated: `https://ghawy.ai/` logged out
+produces **9** `security:info` entries, all "Executing inline script violates
+the following Content Security Policy directive". Not the ~159 that had been
+assumed — the homepage is nine inline scripts away from the stricter policy,
+which is a much smaller migration than the number suggested.
+
+Two directions, and the decision is which: add a collector so the header earns
+its keep, or drop it until the migration is real. Nine is small enough that
+finishing the migration is now a credible third option.
+
+Separately, `img-src 'self' data: blob: https:` allows every host on the web.
+That is the gap that leaves a beacon sent as an image unblocked no matter what
+`connect-src` says.
+
+---
+
+### F-38 · Two live-site measurements worth recording — `informational 2026-09-08`
+
+**The unidentified GTM `/events` endpoints were not attempted.** A logged-out
+CDP capture of `/`, `/register`, `/teamdashboard` and `/build-with-me`, with
+every outbound request recorded, shows no `*.run.app` and no `*.on.aws`
+origin. Every third-party origin contacted was accounted for: GTM, GA4
+(`region1.*`), Facebook, Clarity, Google Fonts, Plyr, Tailwind CDN, Cloudflare
+Turnstile, `ipapi.co`, Bunny CDN and jsDelivr. This does not clear them — a
+tag can be scoped to a trigger these four pages do not fire, and the GTM
+version history still needs reading — but they are not firing on page load.
+
+**`X-Frame-Options` and `frame-ancestors` disagree.** The response sends
+`x-frame-options: SAMEORIGIN` and `frame-ancestors 'none'`. Modern browsers
+take the CSP directive, so the effective policy is the stricter `'none'` and
+nothing is broken; the header is simply stating something weaker than the
+truth. Worth aligning so a future reader is not misled about which one is
+load-bearing.
