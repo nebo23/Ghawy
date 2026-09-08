@@ -61,7 +61,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="src/vendor/fontawesome/7.0.0/css/all.min.css?v=700" />
     <link rel="icon" type="image/png" href="./imgs/community-logo.png" />
-    <link rel="stylesheet" href="src/css/dashboard.css?v=36" />
+    <link rel="stylesheet" href="src/css/dashboard.css?v=37" />
 
     <script>
         (function () {
@@ -81,7 +81,7 @@
             } catch (e) { }
         })();
     </script>
-    <link rel="stylesheet" href="src/css/dashboard-new.css?v=20" />
+    <link rel="stylesheet" href="src/css/dashboard-new.css?v=21" />
 
     <!-- ── Achievements page responsive fixes (mobile/tablet only) ──
          Desktop (≥1025px) is untouched. These classes live only on this page. -->
@@ -103,11 +103,27 @@
             .quick-stats-row { grid-template-columns: 1fr; padding-left: 12px; padding-right: 12px; gap: 12px; }
             .stats-grid-premium { grid-template-columns: 1fr; }
 
-            /* Achievement cards stack to a single column */
-            #achievements .achievements-grid-premium { grid-template-columns: 1fr; }
+            /* Achievement cards: two per row rather than one. A single column
+               turned seven badges into seven full-width blocks and pushed the
+               rest of the page off the bottom of the phone; 150px is the
+               narrowest a card renders cleanly at, and auto-fill drops back to
+               one column on the very smallest handsets on its own. */
+            #achievements .achievements-grid-premium {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            }
+            .achievement-card { padding: 14px 10px; gap: 8px; }
 
             /* Profile header reflows cleanly */
             .profile-header-top { gap: 14px; }
+
+            /* The name, the badge and "Member since ..." shared one flex line,
+               so on a phone the name broke across two lines and the date —
+               pushed to the far edge by its margin-left:auto — collapsed into a
+               one-word-per-line column. Stack the three instead. */
+            .profile-title-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+            .profile-info-premium h2 { font-size: 1.15rem; line-height: 1.35; }
+            .member-since { margin-left: 0; margin-inline-start: 0; }
 
             /* Next-achievement widget: stack instead of side-by-side */
             .next-achievement-widget { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -121,7 +137,11 @@
 
             /* Comfortable touch targets (min 44px) */
             .q-stat-card { min-height: 44px; }
-            #editProfileBtn { margin-left: 0; align-self: stretch; min-height: 44px; justify-content: center; }
+            /* flex-basis 100% puts the button on a row of its own: sharing the
+               avatar's row left the name column ~120px wide, which broke a
+               two-word name across two lines. */
+            #editProfileBtn { flex: 1 0 100%; margin-left: 0; align-self: stretch; min-height: 44px; justify-content: center; }
+            .stat-badge-inline { white-space: nowrap; }
 
             /* Keep fonts readable (min ~13px) */
             .ach-info .ach-name { font-size: 14px; }
@@ -130,7 +150,7 @@
             .q-stat-card { font-size: 14px; }
         }
     </style>
-    <script src="src/js/community-i18n.js?v=20260903a"></script>
+    <script src="src/js/community-i18n.js?v=20260908a"></script>
 </head>
 
 <body>

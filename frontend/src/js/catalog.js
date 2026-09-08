@@ -79,6 +79,7 @@
     const coursesWord = DATA.coursesWord;
     const lessonsWord = DATA.lessonsWord;
     const hoursWord = DATA.hoursWord;
+    const runtimeWord = DATA.runtimeWord;
     const soonMoreWord = DATA.soonMoreWord;
 
 
@@ -720,14 +721,15 @@
         const href = soon ? null : `/course-details?course=${encodeURIComponent(course.slug)}`;
         const title = L(course.title);
 
-        // The reference writes the runtime as whole hours ("12 ساعة"), not as
-        // the platform's "12h 3m". `hoursWord` handles the Arabic dual/plural.
-        // With no runtime the slot says "قريباً" — never "0 ساعة", and never
-        // an empty gap where a number should be.
+        // The runtime is spelled out in words rather than left as the
+        // platform's "12h 3m", and it carries the minutes: whole hours alone
+        // rounded 3h 46m up to "4 ساعات". `runtimeWord` handles the Arabic
+        // dual/plural on both halves. With no runtime the slot says "قريباً" —
+        // never "0 ساعة", and never an empty gap where a number should be.
         const mins = durationToMinutes(course.duration);
         const hours = soon
             ? SOON
-            : (mins ? hoursWord(Math.round(mins / 60)) : { ar: course.duration, en: course.duration });
+            : (mins ? runtimeWord(mins) : { ar: course.duration, en: course.duration });
 
         // "10 دروس" — the count and its Arabic plural come out of lessonsWord()
         // as ONE string, so nothing below splits them; the chip's flex `gap`
@@ -1150,7 +1152,7 @@
         yearsLineFor,
         familyList, trackList, trackHref,
         coursesInTrack, trackStats, trackListWithStats,
-        coursesWord, lessonsWord, hoursWord, SOON,
+        coursesWord, lessonsWord, hoursWord, runtimeWord, SOON,
         courseCardHTML, instructorCardHTML, linksHTML,
         homeInstructorCardHTML, renderHomeInstructors,
         instructorBarHTML, factsHTML, clientsHTML,

@@ -2852,6 +2852,18 @@ html[dir="rtl"] .cc-ring svg {
         right: 0 !important;
         transform: translateX(100%) !important;
     }
+
+    /* 3. Sidebar: slid in while open. This step used to be missing, and the
+       copy of it in dashboard.css does not survive here: `.dash-sidebar.open`
+       there ties on specificity with the `[dir="rtl"] .dash-sidebar` rule
+       above and loses on order (this file loads second), so in Arabic the
+       hamburger added `.open` and the drawer never moved. Both directions are
+       spelled out so neither can lose that tie again. */
+    .dash-sidebar.open,
+    [dir="rtl"] .dash-sidebar.open {
+        transform: translateX(0) !important;
+    }
+
     /* 4. Main: no sidebar margin (RTL selector needed to beat the
        higher-specificity desktop [dir="rtl"] .dash-main margin rule) */
     .dash-main,

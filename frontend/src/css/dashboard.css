@@ -341,6 +341,16 @@ img{max-width:100%;display:block}
 .stat-card-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
 .stat-card-value { font-size: 0.75rem; font-weight: 700; color: var(--gold); font-family: 'IBM Plex Mono', monospace; }
 
+/* "26 / 71" is three neutral-separated runs, so an RTL page reorders it to
+   "71 / 26" and the card claims a total it does not have. Each pair is its
+   own isolated LTR run instead — the numbers keep meaning done/total in
+   Arabic exactly as they do in English. */
+.stat-card-value,
+.xp-values {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 .stat-progress-bg { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
 .stat-progress-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
 .stat-progress-fill.blue { background: var(--accent); box-shadow: 0 0 10px rgba(63, 143, 249, 0.2); }

@@ -37,7 +37,7 @@
  * is now ONE phrase — "10 دروس" — because an Arabic count and its noun change
  * form together at 1, at 2 and above 10, and there is no word that can sit
  * next to a "2" on its own. A phrase is not a dictionary key, so the wording
- * comes from lessonsWord() / hoursWord() in catalog-data.js, which both this
+ * comes from lessonsWord() / runtimeWord() in catalog-data.js, which both this
  * card and the public one call. (The DICT entries stay — the courses page's
  * filter dropdowns still use them.)
  *
@@ -240,12 +240,13 @@
             ? L(words.lessonsWord(lessons))
             : lessons + (lessons === 1 ? ' lesson' : ' lessons');
 
-        /* Whole hours, like the public card — but only when there IS a whole
-           hour to say. hoursWord(0) reads "0 ساعات", so a 40-minute course
-           keeps the platform's own "40m" instead. */
+        /* Hours AND minutes, like the public card — runtimeWord() says the
+           minutes rather than rounding them into the hour, and answers a
+           sub-hour course in minutes alone. Without catalog-data.js the
+           platform's own "3h 46m" stands. */
         var mins = durationToMinutes(course.course_time);
-        var timeTxt = (words.hoursWord && mins >= 60)
-            ? L(words.hoursWord(Math.round(mins / 60)))
+        var timeTxt = (words.runtimeWord && mins)
+            ? L(words.runtimeWord(mins))
             : course.course_time;
 
         var timePill = course.course_time

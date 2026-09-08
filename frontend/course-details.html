@@ -167,8 +167,8 @@
          content in whatever language i18n.js has just applied. -->
     <script src="src/js/i18n.js?v=20260906e"></script>
     <!-- The single source for course + instructor data. -->
-    <script src="src/js/catalog-data.js?v=20260908a"></script>
-    <script src="src/js/catalog.js?v=20260908a"></script>
+    <script src="src/js/catalog-data.js?v=20260908c"></script>
+    <script src="src/js/catalog.js?v=20260908b"></script>
     <script src="src/js/campaign-type.js?v=20260906a"></script>
     <script src="src/js/utils.js?v=20260905b"></script>
     <script>
@@ -366,6 +366,10 @@
                     ar: `${course.lessons} درس`,
                     en: `${course.lessons} lessons`,
                 };
+                // The runtime is spoken here the same way the cards speak it
+                // ("12 ساعة و3 دقايق"), out of the same helper — this used to
+                // print the platform's raw "12h 3m" in both languages.
+                const runtimeWord = C.runtimeWord(C.durationToMinutes(course.duration));
                 document.getElementById('cdMeta').innerHTML = soon
                     ? `
                     <span class="cd-meta-item cd-meta-soon">
@@ -379,7 +383,7 @@
                     </span>
                     <span class="cd-meta-item">
                         <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                        <span>${C.esc(course.duration)}</span>
+                        <span ${C.i18nAttrs(runtimeWord)}>${C.esc(C.L(runtimeWord))}</span>
                     </span>`;
 
                 // Instructor bar — the shared component, full variant

@@ -597,7 +597,6 @@
         'Reach the top of the leaderboard': 'وصّل لقمة لوحة الصدارة',
         'Progress:': 'التقدم:',
         '100% Progress': 'تقدم 100%',
-        '0 / 7 Unlocked': '0 / 7 مفتوحة',
         '/ 7 Days': '/ 7 أيام',
         '12 Days': '12 يوم',
 
@@ -750,6 +749,11 @@
         [/^just now$/i, 'دلوقتي حالاً'],
         [/^(\d+) [Ll]essons?$/, '$1 درس'],
         [/^(\d+) results?$/, '$1 نتيجة'],
+        /* profile.js rewrites this counter after the page loads ("3 / 7
+           Unlocked"), so it arrives through the observer, not the DICT.
+           Phrased with a word between the numbers on purpose: "3 / 7" in an
+           RTL line renders as "7 / 3". */
+        [/^(\d+) \/ (\d+) Unlocked$/, 'فتحت $1 من $2'],
         [/^(\d+)% complete$/i, 'مكتمل $1%'],
         [/^(\d+)% Complete$/, 'مكتمل $1%'],
         [/^Completed (\d+) of (\d+) lessons$/, 'أكملت $1 من $2 درس'],

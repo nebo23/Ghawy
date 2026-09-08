@@ -603,6 +603,34 @@
         return { ar, en: n === 1 ? '1 hour' : `${n} hours` };
     }
 
+    function minutesWord(n) {
+        const ar = n === 1 ? 'دقيقة' : n === 2 ? 'دقيقتين' : n <= 10 ? `${n} دقايق` : `${n} دقيقة`;
+        return { ar, en: n === 1 ? '1 min' : `${n} min` };
+    }
+
+    /**
+     * "3 ساعات و46 دقيقة" — a course runtime, hours AND minutes.
+     *
+     * hoursWord() on its own rounds, and rounding a runtime misleads in the
+     * direction that matters: 3h 46m printed as "4 ساعات" promises fourteen
+     * minutes that are not in the course, and 12h 3m quietly drops three.
+     * The minutes are the point of this one, so it never rounds them away —
+     * but it does leave out a part that is zero ("3 ساعات", never "3 ساعات و0
+     * دقيقة"), and a course under an hour is minutes alone.
+     */
+    function runtimeWord(mins) {
+        const total = Math.max(0, Math.round(mins || 0));
+        const h = Math.floor(total / 60);
+        const m = total % 60;
+        if (!h) return minutesWord(m);
+        if (!m) return hoursWord(h);
+        const hw = hoursWord(h);
+        const mw = minutesWord(m);
+        // The waw is spaced off the number — "3 ساعات و 45 دقيقة", not
+        // "و45" — at the client's request.
+        return { ar: `${hw.ar} و ${mw.ar}`, en: `${hw.en} ${mw.en}` };
+    }
+
     /** "وكورس كمان قريباً" — the tail on a track that is partly released. */
     function soonMoreWord(n) {
         const ar = n === 1 ? 'وكورس كمان قريباً'
@@ -616,6 +644,6 @@
     // directly. One definition, two consumers.
     window.GhawyCatalogData = {
         INSTRUCTORS, TRACKS, COURSES, FAMILIES,
-        coursesWord, lessonsWord, hoursWord, soonMoreWord,
+        coursesWord, lessonsWord, hoursWord, minutesWord, runtimeWord, soonMoreWord,
     };
 })();
