@@ -28,6 +28,8 @@ import time
 import random
 import base64
 import smtplib
+import socket
+import logging
 from dataclasses import dataclass, field
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -62,6 +64,44 @@ BRAND_GREEN = "#D0FA06"
 # تأخير عشوائي بين كل إيميل والتاني (بالثواني) — Gmail بيبلّظ الحساب لو الإرسال سريع جداً
 MIN_DELAY_SECONDS = 4
 MAX_DELAY_SECONDS = 9
+
+# حملة لـ 2000 عضو × ~6.5 ثانية = ~3.5 ساعة. مفيش سيرفر بريد بيسيب اتصال واحد
+# مفتوح المدة دي — بيقع في نص الإرسال (idle timeout / سقف اتصالات / restart عندهم).
+# فبدل ما نستنى الوقوع، بنقفل ونفتح تاني كل شوية: ثانية واحدة تمن، وبتشيل نوع
+# العطل ده من أصله.
+RECONNECT_EVERY = 100
+
+# لما الاتصال يقع، ده مش «الإيميل ده غلط» — ده الترانسبورت راح. بنفتح تاني
+# ونعيد المحاولة لنفس الشخص، بحد أقصى، وبعدين نسيبه ونكمّل بالباقي.
+MAX_SEND_ATTEMPTS = 3
+RECONNECT_BACKOFF_SECONDS = 5
+
+# لو فشلنا نفتح اتصال جديد كذا مرة ورا بعض، يبقى السيرفر واقع مش الاتصال —
+# بنوقف الجولة كلها. الباقيين مايتسجّلش ليهم أي صف، فالتشغيلة الجاية بتاخدهم
+# من الأول (وده بالظبط اللي بيخلي الوقفة قابلة للاستكمال).
+MAX_RECONNECT_FAILURES = 3
+
+# ⚠️ الفخ: `smtplib.SMTPException` نفسها بترث من `OSError`. يعني أي `except
+# OSError` بيبلع كمان رفض المستلم (550) ويعامله كأن الاتصال مات — فالعنوان
+# الغلط الواحد بيقفل الاتصال ويفتحه تلات مرات على الفاضي. عشان كده الرفض
+# على مستوى الرسالة **لازم** يتمسك الأول، قبل أعطال الترانسبورت.
+_RECIPIENT_ERRORS = (
+    smtplib.SMTPRecipientsRefused,
+    smtplib.SMTPSenderRefused,
+    smtplib.SMTPDataError,
+    smtplib.SMTPNotSupportedError,
+)
+
+# دي أعطال ترانسبورت حقيقية (السوكيت مات). لازم تتمسك قبل الـ except العام،
+# وإلا الحملة بتفضل «تبعت» على سوكيت ميت وتسجّل الباقي كله فشل.
+_TRANSPORT_ERRORS = (
+    smtplib.SMTPServerDisconnected,
+    smtplib.SMTPConnectError,
+    socket.timeout,
+    OSError,  # ConnectionResetError / BrokenPipeError / TimeoutError
+)
+
+logger = logging.getLogger(__name__)
 
 # الاسم الظاهر جنب الإيميل الباعت موحّد من email_service.FROM_NAME ("Ghawy Team")
 # (support@ghawy.ai بييجي من SMTP_FROM_EMAIL) — مفيش اسم باعت مكرّر هنا.
@@ -483,14 +523,28 @@ def render_preview(content: EmailContent, sample_row: Optional[dict] = None) -> 
 # سجل الإرسال (جدول EmailCampaignSend — يمنع تكرار الإرسال لنفس الشخص في نفس الحملة)
 # ============================================================
 
+# الحالة اللي بتتكتب عند النجاح. ثابت واحد عشان القراية والكتابة ما يفترقوش:
+# `load_sent_log` بتقارن بيه بالظبط، و`append_to_log` بتكتبه.
+SENT_STATUS = "sent"
+
+
 def load_sent_log(campaign_id: str, session_factory=None) -> set:
-    """كل الإيميلات اللي اتسجّلت قبل كده في الحملة دي (نجحت أو فشلت) — يتخطّوا عند الاستكمال."""
+    """اللي **وصلهم** الإيميل فعلاً في الحملة دي — دول بس اللي يتخطّوا عند الاستكمال.
+
+    الصف المكتوب `failed:` معناه عضو **مـ**وصلوش الإيميل. لو رجّعناه هنا كان
+    هيتشال من قايمة الإرسال في التشغيلة الجاية — يعني اتصال وقع في نص الحملة
+    كان بيتحوّل من «وقفت، شغّلها تاني» لـ «الناس دي راحت وعمرها ما هتوصل».
+    المقارنة بالقيمة بالظبط مش `not like 'failed%'` عشان أي حالة جديدة تتضاف
+    بعدين ما تتحسبش نجاح بالغلط."""
     SF = session_factory or SessionLocal
     db = SF()
     try:
         rows = (
             db.query(EmailCampaignSend.email)
-            .filter(EmailCampaignSend.campaign_id == campaign_id)
+            .filter(
+                EmailCampaignSend.campaign_id == campaign_id,
+                EmailCampaignSend.status == SENT_STATUS,
+            )
             .all()
         )
         return {r[0].lower() for r in rows if r[0]}
@@ -515,12 +569,37 @@ def append_to_log(campaign_id: str, email: str, status: str, session_factory=Non
 # الإرسال الفعلي
 # ============================================================
 
+def _open_smtp(smtp_host, smtp_port, smtp_user, smtp_password):
+    """اتصال جاهز للإرسال (starttls + login)."""
+    server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
+    server.starttls()
+    server.login(smtp_user, smtp_password)
+    return server
+
+
+def _close_smtp(server) -> None:
+    """قفل هادي: الاتصال ممكن يكون ميت أصلاً و`quit` نفسها بترمي وقتها."""
+    if server is None:
+        return
+    try:
+        server.quit()
+    except Exception:
+        try:
+            server.close()
+        except Exception:
+            pass
+
+
 @dataclass
 class SendResult:
     success_count: int = 0
     fail_count: int = 0
     failures: list = field(default_factory=list)
     skipped_already_sent: int = 0
+    # الترانسبورت وقع ومرجعش. الباقيين بيتسجّلوا `failed:` بسرعة من غير إعادة
+    # محاولة — ودي صفوف قابلة لإعادة الإرسال، فتشغيل الحملة تاني بياخدهم.
+    transport_failed: bool = False
+    transport_error: str = ""
 
 
 def send_campaign(
@@ -567,31 +646,114 @@ def send_campaign(
     if not send_list:
         return result
 
-    server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
+    def _fail(to_email: str, err) -> None:
+        result.fail_count += 1
+        result.failures.append((to_email, str(err)))
+        if not test_mode:
+            append_to_log(campaign_name, to_email, f"failed: {err}", session_factory)
+
+    # أول اتصال برّه الحلقة عن قصد: لو الإعدادات نفسها غلط (باسورد/بورت)،
+    # لازم يرمي فوراً زي الأول — ده اللي بيخلي وضع التست يرجّع 502 صريح بدل
+    # ما يعدّي كأنه اتبعت.
+    server = _open_smtp(smtp_host, smtp_port, smtp_user, smtp_password)
+    sent_on_connection = 0
+    reconnect_failures = 0
+    transport_down = False
+    last_transport_error = None
+
     try:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-
         for i, (to_email, row) in enumerate(send_list, start=1):
-            try:
-                msg = build_message(to_email, row, content, smtp_from)
-                server.sendmail(smtp_from, to_email, msg.as_string())
-                result.success_count += 1
-                if not test_mode:
-                    append_to_log(campaign_name, to_email, "sent", session_factory)
-            except Exception as e:
-                result.fail_count += 1
-                result.failures.append((to_email, str(e)))
-                if not test_mode:
-                    append_to_log(campaign_name, to_email, f"failed: {e}", session_factory)
+            # صيانة دورية قبل ما الاتصال يقع لوحده.
+            if server is not None and sent_on_connection >= RECONNECT_EVERY:
+                logger.info("♻️ SMTP reconnect after %s messages", sent_on_connection)
+                _close_smtp(server)
+                server = None
 
-            if i < len(send_list):
+            # البناء برّه حلقة إعادة المحاولة: محتوى بايظ لشخص ده فشل فردي
+            # مرة واحدة، مش حاجة تتعاد تلات مرات على اتصال سليم.
+            try:
+                payload = build_message(to_email, row, content, smtp_from).as_string()
+            except Exception as e:
+                _fail(to_email, e)
+                if i < len(send_list):
+                    time.sleep(random.uniform(MIN_DELAY_SECONDS, MAX_DELAY_SECONDS))
+                continue
+
+            # الترانسبورت وقع خلاص: مفيش فايدة من إعادة محاولة لكل واحد
+            # بـ backoff (على 2000 عضو دي ساعات وقوف على الفاضي). بنصرّف
+            # الباقي بسرعة كـ `failed:` — وهي صفوف بتترجع في التشغيلة الجاية.
+            if transport_down:
+                _fail(to_email, last_transport_error)
+                continue
+
+            last_error = None
+            for attempt in range(1, MAX_SEND_ATTEMPTS + 1):
+                if server is None:
+                    try:
+                        server = _open_smtp(smtp_host, smtp_port, smtp_user, smtp_password)
+                        sent_on_connection = 0
+                        reconnect_failures = 0
+                    except Exception as e:
+                        last_error = e
+                        reconnect_failures += 1
+                        logger.warning(
+                            "🔌 SMTP reconnect failed (%s/%s): %s",
+                            reconnect_failures, MAX_RECONNECT_FAILURES, e,
+                        )
+                        if reconnect_failures >= MAX_RECONNECT_FAILURES:
+                            break
+                        time.sleep(RECONNECT_BACKOFF_SECONDS * attempt)
+                        continue
+
+                try:
+                    server.sendmail(smtp_from, to_email, payload)
+                    result.success_count += 1
+                    sent_on_connection += 1
+                    last_error = None
+                    if not test_mode:
+                        append_to_log(campaign_name, to_email, SENT_STATUS, session_factory)
+                    break
+                except _RECIPIENT_ERRORS as e:
+                    # العنوان ده مرفوض — الاتصال سليم تماماً. فشل فردي زي
+                    # الأول بالظبط، والباقيين بيكملوا على نفس الاتصال.
+                    last_error = e
+                    break
+                except _TRANSPORT_ERRORS as e:
+                    # السوكيت مات — مالوش علاقة بالعنوان ده. نقفل، نفتح تاني،
+                    # ونعيد لنفس الشخص. من غير ده الحملة بتفضل «تبعت» على
+                    # اتصال ميت وتسجّل كل الباقي فشل.
+                    last_error = e
+                    logger.warning(
+                        "🔌 SMTP transport error on %s (attempt %s/%s): %s",
+                        to_email, attempt, MAX_SEND_ATTEMPTS, e,
+                    )
+                    _close_smtp(server)
+                    server = None
+                except Exception as e:
+                    # أي حاجة تانية مش من عيلة smtplib — فشل فردي، والاتصال
+                    # يفضل شغّال للباقيين.
+                    last_error = e
+                    break
+
+            if reconnect_failures >= MAX_RECONNECT_FAILURES and not transport_down:
+                # فتحنا وفشلنا كذا مرة ورا بعض — السيرفر واقع، مش الاتصال.
+                transport_down = True
+                last_transport_error = last_error
+                result.transport_failed = True
+                result.transport_error = str(last_error)
+                logger.error(
+                    "🛑 SMTP unreachable during campaign %s after %s sent — %s",
+                    campaign_name, result.success_count, last_error,
+                )
+
+            if last_error is not None:
+                _fail(to_email, last_error)
+
+            # مفيش داعي للمهلة لو مفيش إرسال بيحصل أصلاً.
+            if i < len(send_list) and not transport_down:
                 time.sleep(random.uniform(MIN_DELAY_SECONDS, MAX_DELAY_SECONDS))
     finally:
-        try:
-            server.quit()
-        except Exception:
-            pass
+        _close_smtp(server)
 
     return result
 
