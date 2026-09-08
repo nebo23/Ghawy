@@ -724,12 +724,6 @@ async function submitExtend() {
 // الأونر فاضل ليه علامة صغيرة (👑) من غير زرار: من غير أي علامة خالص، صاحب
 // المنصة بيبان في الجدول كأنه عضو عادي وده مربك للي بيقرا الجدول. لو العميل
 // عايزها تتشال خالص، امسح فرع `user.is_owner` اللي تحت وبس.
-const ROLE_COLORS = {
-  community_manager: 'community_manager',
-  technical_engineer: 'technical_engineer',
-  customer_success: 'customer_success',
-};
-
 // كتالوج الأدوار والصلاحيات من السيرفر (GET /admin/staff/roles). بيتجاب مرة
 // واحدة أول ما الـ owner يفتح المودال، عشان مانجيبوش حاجة لحد ما يحتاجها.
 let teamRoles = null;
@@ -760,7 +754,7 @@ function roleCellHtml(user) {
   const badge = user.is_owner
     ? `<span class="role-badge owner" title="Owner"><i data-lucide="crown" style="width:13px;height:13px;"></i> Owner</span>`
     : key
-      ? `<span class="rc-role-badge ${escapeHtml(ROLE_COLORS[key] || '')}">${escapeHtml(roleLabelFor(user))}</span>`
+      ? `<span class="rc-role-badge ${escapeHtml(window.teamRoleClass(key))}">${escapeHtml(roleLabelFor(user))}</span>`
       : user.is_admin
         ? `<span class="role-badge no-role" title="Has dashboard access but no named role yet">No role</span>`
         : `<span class="role-badge member">Member</span>`;
@@ -827,7 +821,7 @@ function renderRoleOptions() {
     <button type="button" class="role-opt ${roleModalChoice === null ? 'selected' : ''}"
             onclick="pickRole(null)">
       <div class="role-opt-head">
-        <span class="role-opt-name">Member</span>
+        <span class="role-opt-name"><span class="role-opt-dot" style="background:${window.teamRole('member').color}"></span>Member</span>
         ${roleModalChoice === null ? '<span class="role-opt-tick">✓</span>' : ''}
       </div>
       <div class="role-opt-note">مفيش أي وصول للوحة الفريق.</div>
@@ -837,7 +831,7 @@ function renderRoleOptions() {
     <button type="button" class="role-opt ${roleModalChoice === r.key ? 'selected' : ''}"
             onclick="pickRole('${escapeHtml(r.key)}')">
       <div class="role-opt-head">
-        <span class="role-opt-name">${escapeHtml(r.label_ar || r.label)}</span>
+        <span class="role-opt-name"><span class="role-opt-dot" style="background:${window.teamRole(r.key).color}"></span>${escapeHtml(r.label_ar || r.label)}</span>
         ${roleModalChoice === r.key ? '<span class="role-opt-tick">✓</span>' : ''}
       </div>
       <div class="role-opt-perms">
@@ -6314,7 +6308,7 @@ function renderPermCard(u) {
     <div class="perm-card" id="perm-card-${u.id}">
       <div class="perm-card-head">
         <div class="perm-who">
-          <div class="perm-name">${escapeHtml(u.full_name || '—')} <span class="perm-role">${escapeHtml(u.team_role ? roleLabelFor(u) : 'Admin')}</span></div>
+          <div class="perm-name">${escapeHtml(u.full_name || '—')} <span class="perm-role ${escapeHtml(u.team_role ? window.teamRoleClass(u.team_role) : 'no-role')}">${escapeHtml(u.team_role ? roleLabelFor(u) : 'No role')}</span></div>
           <div class="perm-email">${escapeHtml(u.email || '')}</div>
         </div>
         <div class="perm-head-actions">

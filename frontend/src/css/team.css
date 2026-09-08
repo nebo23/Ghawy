@@ -1854,13 +1854,13 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 #tab-permissions .perm-name {
   color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;
 }
+/* Base = the fallback for a role src/js/team-roles.js has no row for. The
+   role's own colour is generated from that table, so this tab agrees with the
+   members table instead of painting every non-owner the same blue. */
 #tab-permissions .perm-role {
   font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
   padding: 2px 8px; border-radius: 999px;
-  background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3);
-}
-#tab-permissions .perm-role.owner {
-  background: rgba(168,85,247,0.14); color: #c084fc; border-color: rgba(168,85,247,0.4);
+  background: rgba(255,255,255,0.07); color: #aaa; border: 1px solid rgba(255,255,255,0.12);
 }
 #tab-permissions .perm-email { color: #777; font-size: 12px; margin-top: 3px; direction: ltr; }
 #tab-permissions .perm-owner-note { color: #c4b5fd; font-size: 13px; margin-top: 10px; line-height: 1.8; }
@@ -1911,9 +1911,12 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 #tab-permissions .perm-item-label { color: #ddd; font-size: 13px; }
 #tab-permissions .perm-item.on .perm-item-label { color: #fff; }
 #tab-permissions .perm-item-sub { color: #666; font-size: 10.5px; direction: ltr; text-align: start; }
+/* The owner's badge on this tab. Purple = the `owner` row in
+   src/js/team-roles.js; it was #ddd6fe here and #a855f7 in the members table,
+   so the same person was two different purples depending on the tab. */
 #tab-permissions .perm-owner-chip {
   display: inline-block; margin: 0 4px; padding: 2px 10px; border-radius: 999px;
-  background: rgba(168,85,247,0.14); color: #ddd6fe; border: 1px solid rgba(168,85,247,0.3);
+  background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.30);
   font-size: 12px;
 }
 #perm-no-access {
@@ -2457,7 +2460,11 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 .role-opt-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.role-opt-name { color: #fff; font-size: 14px; font-weight: 700; }
+.role-opt-name { color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; }
+/* The colour this role will actually render as, shown where it is chosen.
+   Value comes from src/js/team-roles.js — never write one here. */
+.role-opt-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  margin-inline-end: 7px; flex-shrink: 0; }
 .role-opt-tick { color: #3f8ff9; font-size: 15px; font-weight: 800; }
 .role-opt-note { color: #777; font-size: 12px; margin-top: 5px; }
 /* الصلاحيات اللي الدور بيفتحها، بأسمائها مش بمفاتيحها — الفرق بين
@@ -2481,6 +2488,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 
 /* الملكية مش دور — عشان كده مكانها الفوتر، بعيد عن كروت الاختيار. دي كانت
    زرار على كل صف في الجدول وبقت هنا. */
+/* Owner purple again — src/js/team-roles.js, the `owner` row. */
 .role-owner-btn {
   background: transparent; border: 1px solid rgba(168,85,247,.35); color: #a855f7;
   border-radius: 8px; padding: 8px 14px; font-family: inherit; font-size: 12.5px;
@@ -2489,10 +2497,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 .role-owner-btn:hover { background: rgba(168,85,247,.1); }
 /* أدمن من قبل الأدوار: داخل اللوحة بالفعل بس مفيش دور مكتوب عليه. لونه
    مختلف عن Member عشان الفرق بينهم هو الفرق بين "عنده وصول" و"مالوش". */
-.role-badge.no-role {
-  background: rgba(245,158,11,.12); color: #f59e0b;
-  border: 1px solid rgba(245,158,11,.25);
-}
+/* colour: src/js/team-roles.js — the `no-role` row */
 /* ══════════════════════════════════════════════════════════
    COMMUNITY ANNOUNCEMENTS — in-app member campaigns
 
