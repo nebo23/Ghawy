@@ -370,6 +370,25 @@ class EmailCampaignSend(Base):
     created_at = Column(DateTime, server_default=func.now(), default=datetime.utcnow)
 
 
+class ScheduledJobRun(Base):
+    """صف واحد لكل مرة اشتغل فيها job من الـ scheduler.
+
+    من غيره سؤال زي «إيميلات عيد الميلاد طلعت يوم التلات؟» مالوش إجابة أصلاً:
+    الـ jobs بتكتب INFO والـ logger في الإنتاج على WARNING، ولوج الكونتينر
+    بيتلف كل ~17 ساعة (30MB وسط زحمة الـ polling). يعني اليوم اللي فات
+    مبيسيبش أثر في أي مكان.
+
+    مش نظام قياس — بس اللي حد ممكن يسأل عنه: اشتغلت امتى، خلصت امتى، كام
+    واحد لمست، والخطأ لو رمت."""
+    __tablename__ = "scheduled_job_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(100), index=True, nullable=False)
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    finished_at = Column(DateTime, nullable=True)   # NULL = اتقطعت في النص
+    touched = Column(Integer, nullable=True)        # كام صف/إيميل الـ job عملها
+    error = Column(Text, nullable=True)
+
 
 # ═══════════════════════════════════════════
 #  COMMUNITY — Categories, Posts, Comments, Likes

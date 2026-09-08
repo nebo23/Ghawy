@@ -9,6 +9,7 @@ APScheduler daily jobs:
 synchronous (زي pool checkout وقت الزحمة أو SMTP بطيء) بيجمّد الموقع بالكامل.
 """
 import asyncio
+import functools
 import logging
 import os
 import time
@@ -16,11 +17,97 @@ from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import extract
 from app.database import SessionLocal
-from app.models import User, Payment, PaymentStatus, UserCourseProgress, Announcement
+from app.models import (
+    User, Payment, PaymentStatus, UserCourseProgress, Announcement,
+    ScheduledJobRun,
+)
 
 logger = logging.getLogger(__name__)
 
-scheduler = AsyncIOScheduler(timezone="Africa/Cairo")
+# APScheduler بيسيب الـ job لو الميعاد فات بأكتر من `misfire_grace_time`،
+# والافتراضي **ثانية واحدة**. يعني الوركر لو كان مشغول أو بيقوم وقت 09:00
+# بتوقيت القاهرة، تذكيرات التجديد وتنبيهات الانتهاء وإيميلات عيد الميلاد
+# بتتلغي لليوم ده وسطر لوج واحد هو كل اللي بيفضل.
+#
+# ساعة كاملة سماح لأنها jobs يومية — تشتغل متأخرة ساعة أحسن بكتير من إنها
+# ماتشتغلش. و`coalesce` عشان لو اتأجّلت أكتر من مرة تشتغل مرة واحدة بس.
+#
+# ⚠️ السماح ده بيغطي «الـ scheduler شغال بس اتأخر» بس. لو العملية نفسها
+# قامت من جديد بعد الميعاد (deploy مثلاً)، الـ scheduler الجديد بيحسب أقرب
+# ميعاد جاي من لحظة الإقلاع — يعني ميعاد النهاردة عمره ما كان موجود عنده
+# أصلاً وبالتالي مفيش misfire يتسجّل. اللي بيخلي اليوم ده يبان هو جدول
+# التشغيلات تحت، مش السماح ده.
+scheduler = AsyncIOScheduler(
+    timezone="Africa/Cairo",
+    job_defaults={
+        "misfire_grace_time": 3600,
+        "coalesce": True,
+        "max_instances": 1,
+    },
+)
+
+
+# ─── Run log ───────────────────────────────────────────────
+def _run_started(job_id: str):
+    """Sync — runs in a thread. Returns the row id, or None if the write failed."""
+    db = SessionLocal()
+    try:
+        row = ScheduledJobRun(job_id=job_id, started_at=datetime.utcnow())
+        db.add(row)
+        db.commit()
+        return row.id
+    except Exception as e:
+        db.rollback()
+        logger.warning("📓 Could not open a run row for %s: %s", job_id, e)
+        return None
+    finally:
+        db.close()
+
+
+def _run_finished(run_id, touched, error) -> None:
+    """Sync — runs in a thread."""
+    if run_id is None:
+        return
+    db = SessionLocal()
+    try:
+        row = db.query(ScheduledJobRun).filter(ScheduledJobRun.id == run_id).first()
+        if row is None:
+            return
+        row.finished_at = datetime.utcnow()
+        row.touched = touched if isinstance(touched, int) else None
+        row.error = (error or None) and str(error)[:2000]
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.warning("📓 Could not close run row %s: %s", run_id, e)
+    finally:
+        db.close()
+
+
+def logged_job(job_id: str):
+    """كل تشغيلة بتسيب صف في `scheduled_job_runs`.
+
+    الـ job بترجّع رقم (كام واحد لمست) والرقم ده بيتسجّل. الكتابة نفسها في
+    ثريد — أي شغل DB على الـ event loop بيجمّد الموقع، ودي بالظبط الغلطة
+    اللي عملت انهيار 2026-07-21.
+
+    فشل الكتابة مبيوقّفش الـ job أبداً: الجدول ده بيسجّل الشغل، مش بيقرره."""
+    def decorator(fn):
+        @functools.wraps(fn)
+        async def wrapper(*args, **kwargs):
+            run_id = await asyncio.to_thread(_run_started, job_id)
+            touched, error = None, None
+            try:
+                touched = await fn(*args, **kwargs)
+            except Exception as e:
+                # الـ jobs بتمسك استثناءاتها جوه أصلاً؛ ده الشبكة الأخيرة.
+                error = f"{type(e).__name__}: {e}"
+                logger.exception("💥 Job %s raised", job_id)
+            finally:
+                await asyncio.to_thread(_run_finished, run_id, touched, error)
+            return touched
+        return wrapper
+    return decorator
 
 
 # ─── Deactivate Expired Subscriptions ──────────────────────
@@ -47,7 +134,8 @@ def _deactivate_expired_users() -> list[int]:
         db.close()
 
 
-@scheduler.scheduled_job("cron", hour=9, minute=0)
+@scheduler.scheduled_job("cron", hour=9, minute=0, id="daily_subscription_check")
+@logged_job("daily_subscription_check")
 async def daily_subscription_check_job():
     logger.info("⏰ Scheduler: Starting daily subscription check...")
     try:
@@ -60,12 +148,14 @@ async def daily_subscription_check_job():
             for uid in deactivated_ids:
                 await ws_manager.disconnect_user(uid)
                 logger.info("⚡ Force-disconnected WS for user_id=%s", uid)
+        return len(deactivated_ids)
     except Exception as e:
         logger.error("💥 Scheduler error: %s", e)
+        return None
 
 
 # ─── Renewal Reminder (2 days before expiry) ──────────────
-def _send_renewal_reminders() -> None:
+def _send_renewal_reminders() -> int:
     """Sync body — runs in a thread (DB + SMTP)."""
     from app.services.email_service import send_renewal_reminder_email
 
@@ -84,6 +174,7 @@ def _send_renewal_reminders() -> None:
 
         logger.info("📧 Found %s expiring subscriptions", len(expiring_users))
 
+        sent = 0
         for user in expiring_users:
             try:
                 # جيب آخر plan_key
@@ -102,28 +193,37 @@ def _send_renewal_reminders() -> None:
                     plan_key=plan_key,
                     subscription_end=user.end_at
                 )
+                sent += 1
                 logger.info("✅ Reminder sent to %s — %s days left", user.email, days_left)
 
             except Exception as e:
                 logger.error("❌ Failed to send reminder to %s: %s", user.email, e)
+        return sent
     finally:
         db.close()
 
 
-@scheduler.scheduled_job("cron", hour=9, minute=0, id="renewal_reminder")
+# 09:05 مش 09:00. الاستعلامين متباعدين فعلاً — إلغاء التفعيل بياخد
+# `end_at <= now` والتذكير بياخد `end_at >= now` — فمحدش بيسحب من التاني،
+# ودي اتأكّدت بالقراية مش بالافتراض. بس الاتنين كانوا بيولعوا في نفس اللحظة
+# على نفس الـ event loop وكل واحد بيحسب `now` بتاعه، يعني الإجابة كانت
+# معتمدة على الترتيب. خمس دقايق بتشيل السؤال من أصله.
+@scheduler.scheduled_job("cron", hour=9, minute=5, id="renewal_reminder")
+@logged_job("renewal_reminder")
 async def check_expiring_subscriptions():
     """
     بيدور على المستخدمين اللي اشتراكهم هينتهي خلال يومين ويبعتلهم إيميل
     """
     logger.info("📧 Scheduler: Checking for expiring subscriptions...")
     try:
-        await asyncio.to_thread(_send_renewal_reminders)
+        return await asyncio.to_thread(_send_renewal_reminders)
     except Exception as e:
         logger.error("💥 Renewal reminder error: %s", e)
+        return None
 
 
 # ─── 5-Day Expiry Reminder (exactly 5 days before expiry) ──
-def _send_5day_expiry_reminders() -> None:
+def _send_5day_expiry_reminders() -> int:
     """Sync body — runs in a thread (DB + SMTP).
     بيبعت إيميل 'باقي 5 أيام' مرة واحدة لكل فترة اشتراك. الـ guard
     (expiry5_email_sent_for == end_at) بيمنع التكرار ويتصفّر تلقائياً مع
@@ -163,18 +263,21 @@ def _send_5day_expiry_reminders() -> None:
                 logger.error("❌ 5-day expiry email failed for %s: %s", user.email, e)
 
         logger.info("📧 5-day expiry done: sent %s/%s", sent, len(candidates))
+        return sent
     finally:
         db.close()
 
 
 @scheduler.scheduled_job("cron", hour=9, minute=15, id="expiry_5day_reminder")
+@logged_job("expiry_5day_reminder")
 async def check_5day_expiry():
     """بيدور يومياً على اللي باقي على اشتراكهم 5 أيام ويبعتلهم تنبيه — مرة واحدة."""
     logger.info("📧 Scheduler: Checking for 5-day expiry reminders...")
     try:
-        await asyncio.to_thread(_send_5day_expiry_reminders)
+        return await asyncio.to_thread(_send_5day_expiry_reminders)
     except Exception as e:
         logger.error("💥 5-day expiry reminder error: %s", e)
+        return None
 
 
 # ─── Birthday Email (هدية 7 أيام) ─────────────────────────
@@ -230,18 +333,21 @@ def _send_birthday_emails() -> None:
                 logger.error("❌ Birthday email failed for %s: %s", user.email, e)
 
         logger.info("🎂 Birthday emails done: sent %s/%s", sent, len(candidates))
+        return sent
     finally:
         db.close()
 
 
 @scheduler.scheduled_job("cron", hour=9, minute=30, id="birthday_email")
+@logged_job("birthday_email")
 async def check_birthdays():
     """بيدور يومياً على أعياد ميلاد النهاردة ويبعت تهنئة + هدية 7 أيام."""
     logger.info("🎂 Scheduler: Checking for birthdays...")
     try:
-        await asyncio.to_thread(_send_birthday_emails)
+        return await asyncio.to_thread(_send_birthday_emails)
     except Exception as e:
         logger.error("💥 Birthday email error: %s", e)
+        return None
 
 
 # ─── 6-Day Inactivity Nudge ("افتكر اللي بدأت عشانه") ─────
@@ -296,18 +402,21 @@ def _send_inactive_6day_emails() -> None:
                 logger.error("❌ Inactive-6d email failed for %s: %s", user.email, e)
 
         logger.info("😴 Inactive-6d done: sent %s/%s", sent, len(candidates))
+        return sent
     finally:
         db.close()
 
 
 @scheduler.scheduled_job("cron", hour=9, minute=45, id="inactive_6day")
+@logged_job("inactive_6day")
 async def check_inactive_6day():
     """بيدور يومياً على المشتركين اللي غابوا 6 أيام+ ويبعتلهم تذكير يرجعوا."""
     logger.info("😴 Scheduler: Checking for 6-day inactive subscribers...")
     try:
-        await asyncio.to_thread(_send_inactive_6day_emails)
+        return await asyncio.to_thread(_send_inactive_6day_emails)
     except Exception as e:
         logger.error("💥 Inactive-6d error: %s", e)
+        return None
 
 
 # ─── Winback Email (registered but never activated, 24h+) ──
@@ -317,7 +426,7 @@ WINBACK_MIN_CREATED_AT = datetime(2026, 7, 3)
 WINBACK_BATCH_SIZE = 30
 
 
-def _send_winback_batch() -> None:
+def _send_winback_batch() -> int:
     """Sync body — runs in a thread (DB + SMTP)."""
     from app.services.email_service import send_winback_email
 
@@ -340,7 +449,7 @@ def _send_winback_batch() -> None:
         ).order_by(User.created_at.asc()).limit(WINBACK_BATCH_SIZE).all()
 
         if not candidates:
-            return
+            return 0
 
         logger.info("💌 Found %s winback candidates", len(candidates))
         sent = 0
@@ -356,6 +465,7 @@ def _send_winback_batch() -> None:
                 logger.error("❌ Winback email failed for %s: %s", user.email, e)
 
         logger.info("💌 Winback done: sent %s/%s emails", sent, len(candidates))
+        return sent
     finally:
         db.close()
 
@@ -368,6 +478,7 @@ def _send_winback_batch() -> None:
     id="winback_email",
     next_run_time=datetime.now(timezone.utc) + timedelta(seconds=120),
 )
+@logged_job("winback_email")
 async def send_winback_emails():
     """
     بيدور على اللي سجلوا وعدّى عليهم 24 ساعة من غير ما يتفعلوا (مدفعوش)
@@ -375,9 +486,10 @@ async def send_winback_emails():
     """
     logger.info("💌 Scheduler: Checking for winback candidates...")
     try:
-        await asyncio.to_thread(_send_winback_batch)
+        return await asyncio.to_thread(_send_winback_batch)
     except Exception as e:
         logger.error("💥 Winback scheduler error: %s", e)
+        return None
 
 
 # ─── Scheduled In-App Campaigns ────────────────────────────
@@ -453,6 +565,7 @@ def _expire_stale_scheduled() -> list[int]:
     id="scheduled_announcements",
     next_run_time=datetime.now(timezone.utc) + timedelta(seconds=45),
 )
+@logged_job("scheduled_announcements")
 async def fire_scheduled_announcements():
     """يبعت الحملات اللي جه ميعادها.
 
@@ -472,17 +585,18 @@ async def fire_scheduled_announcements():
         due = await asyncio.to_thread(_due_scheduled_announcements)
     except Exception as e:
         logger.error("💥 Scheduled announcements lookup failed: %s", e)
-        return
+        return None
     if not due:
-        return
+        return 0
 
+    started = 0
     loop = asyncio.get_running_loop()
     for announcement_id in due:
         # نفس القفل بتاع الإرسال اليدوي: إرسالة حقيقية واحدة في نفس الوقت.
         # لو في واحدة شغالة بنسيب الباقي للمسحة الجاية بعد دقيقة.
         if not _send_lock.acquire(blocking=False):
             logger.info("📅 في إرسالة شغالة — الحملات المجدولة هتستنى الدورة الجاية")
-            return
+            return started
 
         db = SessionLocal()
         try:
@@ -492,6 +606,7 @@ async def fire_scheduled_announcements():
                 _send_lock.release()
                 continue
             outcome = _begin_real_send(db, row, loop)   # الثريد هو اللي بيفك القفل
+            started += 1
             logger.info("📅 حملة #%s المجدولة بدأت الإرسال لـ %s عضو (جمهور %s)",
                         announcement_id, outcome["pending"], outcome["audience"])
         except Exception as e:
@@ -512,3 +627,5 @@ async def fire_scheduled_announcements():
                 logger.exception("📅 حملة #%s: مقدرناش نسجّلها failed", announcement_id)
         finally:
             db.close()
+
+    return started
