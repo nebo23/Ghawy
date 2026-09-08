@@ -2,6 +2,37 @@
    TEAM DASHBOARD — Sections Sidebar Layout
    ══════════════════════════════════════════ */
 
+/* ── Search boxes are type="search", and that is load-bearing ──
+   Every filter box on this page is `type="search"`, not `type="text"`.
+   Chrome classifies a text input with the word "email" in its placeholder as
+   a username field and fills it with a saved credential — the operator's own
+   address — during page restore, without firing an `input` event and after
+   the on-load blanking. `autocomplete="off"` does not stop it; three previous
+   attempts (the attributes on the markup, the blanking in team.js, and the
+   `edited` guard in onUserSearchInput) each failed for that reason. Chrome's
+   heuristics skip search inputs, so the type is the fix. The JS guards stay:
+   they cost nothing and they cover the password managers that do fire events.
+
+   What the type brings with it is the UA clear button, which Chrome paints as
+   a near-black glyph — invisible on a #1a1a1a field. It is genuinely useful on
+   a filter box, so it is kept and drawn here in the same grey as the rest of
+   this dashboard's secondary text rather than hidden. */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-inline-start: 6px;
+  cursor: pointer;
+  opacity: 0.65;
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 4l8 8M12 4l-8 8'/%3E%3C/svg%3E") center / 12px no-repeat;
+  transition: opacity 0.15s;
+}
+
+input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1;
+}
+
 /* ── Two-column layout: sections nav + content ── */
 .team-layout {
   display: flex;

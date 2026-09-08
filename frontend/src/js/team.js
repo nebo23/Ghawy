@@ -537,6 +537,13 @@ let searchTimeout;
 //
 // Enter still works either way: if the operator wants what is in the box, they
 // can say so, and that is a deliberate act too.
+//
+// And this guard is the SECOND line, not the first. The autofill that kept
+// coming back was a saved *credential*, written during page restore with no
+// `input` event at all — nothing here can see it. What stops that one is the
+// boxes being `type="search"`, which Chrome's username heuristics skip; see the
+// note at the top of team.css. If a box ever goes back to `type="text"`, the
+// operator's own email returns to it and none of this runs.
 function onUserSearchInput(id, run, delay) {
   const box = document.getElementById(id);
   if (!box) return;
