@@ -569,8 +569,53 @@
         },
     ];
 
+    // ─── Counting things in Arabic ──────────────────────────────
+    // "3 دروس" is not "3" plus "دروس": Arabic has a singular, a dual and two
+    // plural forms, and which one a number takes changes at 1, at 2 and again
+    // above 10. Each of these returns the WHOLE phrase as one {ar, en} string
+    // for that reason — a caller that renders the number and the word as two
+    // nodes has already lost, because there is no word to put next to "2".
+    //
+    // They live here rather than in catalog.js because both renderers need
+    // them: the public card (catalog.js) and the members' card
+    // (course-card.js), which cannot load catalog.js — see the note at the top
+    // of this file. One implementation, two consumers, same as the data.
+
+    /** "٣ كورسات" / "3 courses" */
+    function coursesWord(n) {
+        const ar = n === 1 ? 'كورس واحد'
+            : n === 2 ? 'كورسين'
+                : n <= 10 ? `${n} كورسات`
+                    : `${n} كورس`;
+        return { ar, en: n === 1 ? '1 course' : `${n} courses` };
+    }
+
+    function lessonsWord(n) {
+        const ar = n === 1 ? 'درس واحد'
+            : n === 2 ? 'درسين'
+                : n <= 10 ? `${n} دروس`
+                    : `${n} درس`;
+        return { ar, en: n === 1 ? '1 lesson' : `${n} lessons` };
+    }
+
+    function hoursWord(n) {
+        const ar = n === 1 ? 'ساعة' : n === 2 ? 'ساعتين' : n <= 10 ? `${n} ساعات` : `${n} ساعة`;
+        return { ar, en: n === 1 ? '1 hour' : `${n} hours` };
+    }
+
+    /** "وكورس كمان قريباً" — the tail on a track that is partly released. */
+    function soonMoreWord(n) {
+        const ar = n === 1 ? 'وكورس كمان قريباً'
+            : n === 2 ? 'وكورسين كمان قريباً'
+                : `و${n} كورسات كمان قريباً`;
+        return { ar, en: n === 1 ? '1 more coming soon' : `${n} more coming soon` };
+    }
+
     // The public site reads these through catalog.js, which assigns them
     // straight off this object; the community courses page reads this object
     // directly. One definition, two consumers.
-    window.GhawyCatalogData = { INSTRUCTORS, TRACKS, COURSES, FAMILIES };
+    window.GhawyCatalogData = {
+        INSTRUCTORS, TRACKS, COURSES, FAMILIES,
+        coursesWord, lessonsWord, hoursWord, soonMoreWord,
+    };
 })();

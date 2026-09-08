@@ -14,8 +14,12 @@
  * ── The card ──
  * A 16:9 thumbnail with the track name over it and, once the member has
  * started, a progress ring; the title; who teaches it; then the two numbers
- * that people actually scan for — lessons and runtime — as pills big enough
- * to read at a glance instead of the 0.7rem grey line they used to be.
+ * that people actually scan for — lessons and runtime — as chips, on their own
+ * row under a hairline seam. Both the chips and the card's surface are the
+ * public card's (.gc-* in main.css): the client wanted one card, so the
+ * treatment is copied from there rather than invented here, and the two grids
+ * now differ only in what is genuinely the member's — the progress ring and
+ * the progress bar, which have no counterpart on the public site.
  *
  * ── Why the whole card is not an <a> ──
  * The instructor's name links to their page, and an <a> inside an <a> is
@@ -28,9 +32,14 @@
  * with no JS at all. No role="link", no keydown handler, no stopPropagation.
  *
  * ── Two kinds of text, two ways of translating them ──
- * The generic vocabulary this card emits — "Lessons", "Duration" — is written
- * in English and translated by community-i18n.js, like every other word in the
- * community. Its DICT has an entry for each.
+ * The chips used to emit the bare words "Lessons" and "Duration" for
+ * community-i18n.js to translate out of its DICT. They do not any more: a chip
+ * is now ONE phrase — "10 دروس" — because an Arabic count and its noun change
+ * form together at 1, at 2 and above 10, and there is no word that can sit
+ * next to a "2" on its own. A phrase is not a dictionary key, so the wording
+ * comes from lessonsWord() / hoursWord() in catalog-data.js, which both this
+ * card and the public one call. (The DICT entries stay — the courses page's
+ * filter dropdowns still use them.)
  *
  * The catalog's own strings — the course title, the track name, the
  * instructor's name — are NOT. They already exist in both languages, written
@@ -213,10 +222,36 @@
               esc(L(inst.name)) + '</a></div>'
             : '';
 
+        /* The two numbers, each as ONE localised string — "10 دروس", "12 ساعة"
+           — which is the shape the public card uses and the reason the pills
+           are one line rather than a number stacked over a word.
+           The phrasing comes from catalog-data.js. An Arabic count and its
+           noun are a single phrase whose form changes at 1, at 2 and again
+           above 10, so the number cannot be split from the word and handed to
+           a dictionary: once the phrase is one text node there is no bare
+           "Lessons" left for community-i18n.js to match on. Hence the shared
+           helpers rather than data-ar/data-en on this markup — one
+           implementation of "10 دروس", the same one the landing prints.
+           Without catalog-data.js — this card still draws for a course the
+           client has not listed — both fall back to what the platform already
+           gives us: the English plural, and the raw runtime string. */
+        var words = data();
+        var lessonsTxt = words.lessonsWord
+            ? L(words.lessonsWord(lessons))
+            : lessons + (lessons === 1 ? ' lesson' : ' lessons');
+
+        /* Whole hours, like the public card — but only when there IS a whole
+           hour to say. hoursWord(0) reads "0 ساعات", so a 40-minute course
+           keeps the platform's own "40m" instead. */
+        var mins = durationToMinutes(course.course_time);
+        var timeTxt = (words.hoursWord && mins >= 60)
+            ? L(words.hoursWord(Math.round(mins / 60)))
+            : course.course_time;
+
         var timePill = course.course_time
             ? '<div class="cc-pill cc-pill-time">' +
               '<span class="cc-pill-ico"><i class="fa-regular fa-clock"></i></span>' +
-              '<span class="cc-pill-txt"><b>' + esc(course.course_time) + '</b><i>Duration</i></span>' +
+              '<span class="cc-pill-txt">' + esc(timeTxt) + '</span>' +
               '</div>'
             : '';
 
@@ -236,7 +271,7 @@
                 '<div class="cc-stats">' +
                   '<div class="cc-pill cc-pill-lessons">' +
                     '<span class="cc-pill-ico"><i class="fa-solid fa-book"></i></span>' +
-                    '<span class="cc-pill-txt"><b>' + lessons + '</b><i>Lessons</i></span>' +
+                    '<span class="cc-pill-txt">' + esc(lessonsTxt) + '</span>' +
                   '</div>' +
                   timePill +
                 '</div>' +

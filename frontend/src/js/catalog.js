@@ -73,6 +73,14 @@
     const TRACKS = DATA.TRACKS || {};
     const COURSES = DATA.COURSES || [];
 
+    // The Arabic count-words moved there too — "3 دروس" is one string, not a
+    // number and a noun, and the members' card needs the same phrasing without
+    // being able to load this file. See the block above their definitions.
+    const coursesWord = DATA.coursesWord;
+    const lessonsWord = DATA.lessonsWord;
+    const hoursWord = DATA.hoursWord;
+    const soonMoreWord = DATA.soonMoreWord;
+
 
     // The comparison table on /tracks: one row per key, both families side by
     // side. The question each row answers is the row label — they are written
@@ -785,36 +793,6 @@
             paint();
         };
         document.addEventListener('languagechange', onLang);
-    }
-
-    /** "٣ كورسات" / "3 courses" — Arabic counts are not just N + a noun. */
-    function coursesWord(n) {
-        const ar = n === 1 ? 'كورس واحد'
-            : n === 2 ? 'كورسين'
-                : n <= 10 ? `${n} كورسات`
-                    : `${n} كورس`;
-        return { ar, en: n === 1 ? '1 course' : `${n} courses` };
-    }
-
-    function lessonsWord(n) {
-        const ar = n === 1 ? 'درس واحد'
-            : n === 2 ? 'درسين'
-                : n <= 10 ? `${n} دروس`
-                    : `${n} درس`;
-        return { ar, en: n === 1 ? '1 lesson' : `${n} lessons` };
-    }
-
-    function hoursWord(n) {
-        const ar = n === 1 ? 'ساعة' : n === 2 ? 'ساعتين' : n <= 10 ? `${n} ساعات` : `${n} ساعة`;
-        return { ar, en: n === 1 ? '1 hour' : `${n} hours` };
-    }
-
-    /** "وكورس كمان قريباً" — the tail on a track that is partly released. */
-    function soonMoreWord(n) {
-        const ar = n === 1 ? 'وكورس كمان قريباً'
-            : n === 2 ? 'وكورسين كمان قريباً'
-                : `و${n} كورسات كمان قريباً`;
-        return { ar, en: n === 1 ? '1 more coming soon' : `${n} more coming soon` };
     }
 
     const SOON = { ar: 'قريباً', en: 'Coming soon' };

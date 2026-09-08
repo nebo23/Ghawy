@@ -891,11 +891,23 @@ body.sidebar-anim .dash-main {
     /* Solid colour first — it is what a browser without backdrop-filter (and
        every browser with it, behind the translucent layer) actually paints. */
     background: var(--bg-card);
+    /* The first TWO layers are the public card's surface, copied from .gc-card
+       in main.css unchanged: two soft directional washes so the card catches
+       light from the top-left instead of sitting as one flat slab next to its
+       neighbours. The client wanted one card across the site, so this is a
+       copy, not a second version of the same idea.
+       The THIRD layer is not part of that port — it is this card's own
+       gradient border, which is why it is the only one clipped to border-box
+       while the washes stop at the padding box. Add or remove a layer here and
+       the background-clip list has to move with it, or the border layer gets
+       clipped to the surface and the edge vanishes. Same for :hover below,
+       which replaces all three. */
     background-image:
-        linear-gradient(160deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .015)),
+        linear-gradient(189deg, rgb(0 0 0 / 5%), rgba(255, 255, 255, .015)),
+        linear-gradient(238deg, rgb(0 0 0 / 14%), rgba(255, 255, 255, .04)),
         linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .04));
     background-origin: border-box;
-    background-clip: padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
     border: 1px solid transparent;
     border-radius: 18px;
     overflow: hidden;
@@ -912,8 +924,10 @@ body.sidebar-anim .dash-main {
 
 .course-card:hover {
     transform: translateY(-4px);
+    /* The same two washes a notch lighter, then the border layer goes gold. */
     background-image:
-        linear-gradient(160deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02)),
+        linear-gradient(189deg, rgb(0 0 0 / 3%), rgba(255, 255, 255, .03)),
+        linear-gradient(238deg, rgb(0 0 0 / 9%), rgba(255, 255, 255, .055)),
         linear-gradient(160deg, rgba(193, 255, 17, .28), rgba(193, 255, 17, .06));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09),
                 0 16px 40px rgba(0, 0, 0, .55),
@@ -1142,61 +1156,63 @@ html[dir="rtl"] .cc-ring svg {
     border-radius: 3px;
 }
 
-/* ── Stat pills ──
-   The two numbers people scan for. They used to be a 0.7rem grey line that
-   read as decoration; here each gets an icon in a tinted disc and a number at
-   ~35% larger with its own colour, so the card answers "how long is this?"
-   from across the room. */
+/* ── Stat chips ──
+   The two numbers people scan for, in the public card's shape (.gc-stats /
+   .gc-stat in main.css): one chip on each edge, each a single line reading
+   "10 دروس", with the icon in a tinted disc beside it.
+   `space-between` mirrors itself with the document direction, so no [dir] rule
+   is needed — in Arabic the lessons chip lands on the right. `flex-wrap` stays
+   as insurance: this grid goes down to a 270px column, which the public one
+   never does.
+   The top border is the seam between the instructor row and this one — the
+   same seam, in the same place, as on the public card (it sits on .gc-stats
+   there for the same reason: it belongs to whichever row is second). */
 .cc-stats {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     flex-wrap: wrap;
+    border-block-start: 1px solid var(--border-light-new);
+    padding-block-start: 12px;
 }
 
 .cc-pill {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 10px 6px 6px;
-    padding-inline: 6px 10px;
-    border-radius: 12px;
+    padding-block: 4px;
+    padding-inline: 5px 10px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, .035);
     border: 1px solid rgba(255, 255, 255, .06);
+    color: var(--txt-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
     min-width: 0;
 }
 
+/* A plain 24px disc holding the glyph, no border of its own — the chip is
+   already a bordered box, and a second outline 5px inside it reads as a
+   rendering mistake at this size. */
 .cc-pill-ico {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    font-size: 15px;
+    border: 0;
+    font-size: .8rem;
 }
 
+/* One line, one string. This used to be a column that stacked a bold number
+   over a small grey word; the number and its word are a single phrase now (see
+   the note in course-card.js), so there is nothing left to stack. */
 .cc-pill-txt {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.15;
     min-width: 0;
-}
-
-.cc-pill-txt b {
-    font-size: .95rem;
-    font-weight: 800;
-    color: var(--txt-primary);
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
-.cc-pill-txt i {
-    font-style: normal;
-    font-size: .7rem;
-    font-weight: 600;
-    color: var(--txt-muted);
-    white-space: nowrap;
 }
 
 .cc-pill-lessons .cc-pill-ico {
@@ -1260,15 +1276,20 @@ html[dir="rtl"] .cc-ring svg {
 .cc-sk-title { width: 82%; }
 .cc-sk-inst  { width: 46%; height: 9px; }
 
+/* Mirrors `.cc-stats` — the seam and the chip height are part of the card's
+   height, so the skeleton carries both or the grid jumps when the real cards
+   land. 34px is the chip: 24px disc + 4px above and below + its 1px border. */
 .cc-sk-pills {
     display: flex;
     gap: 8px;
+    border-block-start: 1px solid var(--border-light-new);
+    padding-block-start: 12px;
 }
 
 .cc-sk-pill {
-    height: 42px;
+    height: 34px;
     flex: 1;
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, .05);
 }
 
