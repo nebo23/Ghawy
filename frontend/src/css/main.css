@@ -5883,15 +5883,25 @@ html[dir="rtl"] .gc-card {
     color: var(--white);
 }
 
-/* Lesson count on one edge, runtime on the other. `space-between` on a flex
+/* The numbers row, and the SECOND of the two rows under the title — the
+   instructor sits above it, which is the order the members' dashboard card
+   uses (src/js/course-card.js) and the order the client wants everywhere.
+   Lesson count on one edge, runtime on the other. `space-between` on a flex
    row mirrors itself with the document direction, so this needs no [dir] rule
    — in Arabic the lessons land on the right and the clock on the left. The
-   same reasoning as .gc-meta below, and the reason neither uses a margin. */
+   same reasoning as .gc-meta above, and the reason neither uses a margin.
+   The top border is the seam between the two rows, and it belongs to whichever
+   row is second: it moved here from .gc-meta when the order flipped. --border
+   (0.08), not the 0.16 used under .gc-media — that one has to stay legible
+   against a near-black thumbnail, this one separates two text rows on the same
+   surface and belongs at the same weight as the card's own edge. */
 .gc-stats {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    border-block-start: 1px solid var(--border);
+    padding-block-start: 16px;
 }
 
 /* One chip: a 24px icon square, then the label. `gap` is what separates them
@@ -5934,19 +5944,15 @@ html[dir="rtl"] .gc-card {
     font-size: 0.8rem;
 }
 
-/* Instructor on its own row under the stats. `space-between` for the same
-   mirroring reason as .gc-stats above.
-   The top border is the seam between the two rows. --border (0.08), not the
-   0.16 used under .gc-media: that one has to stay legible against a near-black
-   thumbnail, this one separates two text rows on the same surface and belongs
-   at the same weight as the card's own edge. */
+/* Instructor on its own row, directly under the title and above the stats.
+   `space-between` for the same mirroring reason as .gc-stats below.
+   No border here: this row now sits against the title, and the seam belongs
+   between the two rows — it lives on .gc-stats. */
 .gc-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    border-block-start: 1px solid var(--border);
-    padding-block-start: 16px;
 }
 
 /* Photo then name, in that order in the markup, so the row reads correctly in
@@ -6079,12 +6085,15 @@ html[dir="rtl"] .gc-card {
     background: none;
 }
 
-/* Mirrors `.gc-stats` — the row of two chips above the instructor. */
+/* Mirrors `.gc-stats` — the row of two chips UNDER the instructor, seam and
+   all, or the grid jumps by the height of that border when the cards land. */
 .gc-sk-stats {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    border-block-start: 1px solid var(--border);
+    padding-block-start: 16px;
 }
 
 .gc-sk-chip {
@@ -6093,15 +6102,13 @@ html[dir="rtl"] .gc-card {
     border-radius: 10px;
 }
 
-/* Mirrors `.gc-meta` so the skeleton has the real card's height — including
-   the seam and the space under it, or the grid jumps when the cards land. */
+/* Mirrors `.gc-meta` — the instructor row, first of the two and with no seam
+   of its own. */
 .gc-sk-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    border-block-start: 1px solid var(--border);
-    padding-block-start: 16px;
 }
 
 .gc-sk-line {

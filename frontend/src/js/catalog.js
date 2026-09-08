@@ -747,15 +747,15 @@
         ${courseMediaHTML(course, href)}
         <div class="gc-body">
             <h3 class="gc-title" ${i18nAttrs(course.title)}>${esc(title)}</h3>
+            <div class="gc-meta">
+                ${cardInstructorHTML(inst)}
+            </div>
             <div class="gc-stats">
                 ${lessonChip}
                 <span class="gc-stat gc-hours${soon ? ' gc-hours-soon' : ''}">
                     <span class="gc-stat-ico"><i class="fa-regular fa-${soon ? 'hourglass-half' : 'clock'}" aria-hidden="true"></i></span>
                     <span ${i18nAttrs(hours)}>${esc(L(hours))}</span>
                 </span>
-            </div>
-            <div class="gc-meta">
-                ${cardInstructorHTML(inst)}
             </div>
             ${btn}
         </div>
@@ -1059,12 +1059,12 @@
         <div class="gc-media gc-sk"></div>
         <div class="gc-body">
             <div class="gc-sk gc-sk-line gc-sk-title"></div>
+            <div class="gc-sk-meta">
+                <div class="gc-sk gc-sk-inst"></div>
+            </div>
             <div class="gc-sk-stats">
                 <div class="gc-sk gc-sk-chip"></div>
                 <div class="gc-sk gc-sk-chip"></div>
-            </div>
-            <div class="gc-sk-meta">
-                <div class="gc-sk gc-sk-inst"></div>
             </div>
             <div class="gc-sk gc-sk-btn"></div>
         </div>
