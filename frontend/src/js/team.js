@@ -540,10 +540,12 @@ let searchTimeout;
 //
 // And this guard is the SECOND line, not the first. The autofill that kept
 // coming back was a saved *credential*, written during page restore with no
-// `input` event at all — nothing here can see it. What stops that one is the
-// boxes being `type="search"`, which Chrome's username heuristics skip; see the
-// note at the top of team.css. If a box ever goes back to `type="text"`, the
-// operator's own email returns to it and none of this runs.
+// `input` event at all — nothing here can see it, and nothing done to these
+// boxes ever stopped it. Its cause was elsewhere on the page: two password
+// inputs with no autocomplete hint and no <form> around them, which let Chrome
+// read the whole document as one sign-in surface and hunt for a field to put
+// the username in. That is fixed in teamdashboard.html, on those inputs. The
+// note at the top of team.css has the full story; do not re-litigate it here.
 function onUserSearchInput(id, run, delay) {
   const box = document.getElementById(id);
   if (!box) return;
