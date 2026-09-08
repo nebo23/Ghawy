@@ -4231,6 +4231,68 @@ html[dir="ltr"] .ghawy-pricing-cards .pricing-card {
     border-color: rgba(239, 68, 68, 0.4);
 }
 
+/* ── The member's face in the nav ──
+   A logged-in visitor's way back into the product. It is the LAST child of
+   #navLoggedIn, which puts it against the page edge in both directions —
+   .nav-auth is a plain flex row and follows the document direction, so its last
+   child is the outer one whether the page reads left-to-right or right-to-left.
+   The brand colour is the CHIP's, not the photo's: most members have no
+   avatar_url, so the letter-on-lime version is the common case and an <img>
+   simply covers it when there is one. Nothing here reaches a third party for
+   that fallback — see the note in layout.js. */
+.nav-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--gold);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.nav-avatar:hover {
+    border-color: var(--border-gold);
+    box-shadow: 0 0 14px var(--gold-glow);
+}
+
+.nav-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nav-avatar-txt {
+    font-family: "Cairo", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #000;
+    text-transform: uppercase;
+}
+
+/* The drawer's copy. On a phone this is the only place the avatar can live, and
+   a bare circle in a column of words reads as an ornament — so it carries its
+   label. `gap` mirrors itself with the direction; no [dir] rule needed. */
+.mobile-drawer .mobile-profile-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    font-weight: 700;
+    color: var(--off-white);
+    text-decoration: none;
+}
+
+.mobile-drawer .mobile-profile-link:hover {
+    color: var(--gold-light);
+}
+
 /* Hamburger */
 .hamburger {
     display: none;

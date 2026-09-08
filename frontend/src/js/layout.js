@@ -50,6 +50,98 @@
 
     const active = currentSection();
 
+    // ─── The member's avatar ─────────────────────────────────────
+    //
+    // People sign up, pay, and then ask where to go: the hero's "الذهاب للوحة
+    // التحكم" is not enough, because nobody looks there. So a logged-in visitor
+    // gets their own face in the nav, on the edge, linking to /profile.
+    //
+    // It is READ, never fetched. `updateNavAuth()` below already decides the
+    // logged-in state from the token in localStorage; the name and the avatar
+    // come from the `user` object cached next to it. No request:
+    //   - There is no shared authFetch here. The marketing pages deliberately
+    //     do not load utils.js (see the note near the bottom of index.html:
+    //     both it and main.js declare a top-level `const API`, so loading both
+    //     threw a SyntaxError on every visit).
+    //   - GET /profile/me answers 402 for a member whose subscription lapsed,
+    //     and the shared handler sends a 402 to /renewal. Someone whose
+    //     subscription ran out must be able to open the home page without being
+    //     thrown into a payment flow.
+    // A cached value can be stale — that is a known property of this cache —
+    // and a face and a first letter are exactly the kind of thing that can be.
+
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:8000'
+        : '/api';
+
+    /** The cached member, or null. A corrupt entry is not worth a thrown nav. */
+    function cachedUser() {
+        try {
+            const raw = localStorage.getItem('user');
+            const u = raw ? JSON.parse(raw) : null;
+            return (u && typeof u === 'object') ? u : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Both of these exist in utils.js and are re-stated here for the one reason
+    // above: this file cannot load it. Keep them in step with the originals —
+    // they are the same allow-list, not a looser one.
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /**
+     * A member-chosen avatar_url that is safe in src="..." — validated, not
+     * escaped, and only in the three shapes the server actually issues.
+     * Anything else returns '' and the initials chip is drawn instead.
+     */
+    function safeAvatar(raw) {
+        const v = String(raw == null ? '' : raw).trim();
+        if (!v || !/^[^"'<>`\\\s]+$/.test(v)) return '';
+        if (/^\/(uploads|static|files)\/avatars\/[A-Za-z0-9._-]+$/.test(v)) return API_BASE + v;
+        if (/^\/imgs\/avatars\/[A-Za-z0-9._-]+$/.test(v)) return v;
+        if (/^https:\/\/(www\.)?ghawy\.ai\/[A-Za-z0-9._~\/-]+$/.test(v)) return v;
+        return '';
+    }
+
+    /**
+     * What goes inside the avatar link.
+     *
+     * Most members have no avatar_url, so the fallback is the common case, not
+     * the exception: a local chip with the first letter of their name on the
+     * brand colour. Deliberately NOT the third-party initials-avatar service
+     * this codebase uses as an onerror fallback elsewhere — that is an external
+     * request carrying the member's name in the URL, sent on every page view,
+     * for something a <span> and one letter already do. It should not spread.
+     *
+     * With no cached user at all the chip is drawn empty rather than the link
+     * hidden: the whole point is that a member can always find the way in.
+     */
+    function initialsHTML(name) {
+        return `<span class="nav-avatar-txt">${esc([...String(name || '').trim()][0] || '')}</span>`;
+    }
+
+    /**
+     * Paint one avatar element.
+     *
+     * The error handler is attached here rather than written as an inline
+     * onerror so it survives a stricter CSP, and it matters more than it looks:
+     * an avatar whose file has moved would otherwise leave an empty brand-
+     * coloured disc, and the member's initial is a better answer than nothing.
+     */
+    function paintAvatar(el) {
+        const u = cachedUser() || {};
+        const src = safeAvatar(u.avatar_url);
+        if (!src) { el.innerHTML = initialsHTML(u.full_name); return; }
+        el.innerHTML = `<img src="${esc(src)}" alt="" />`;
+        const img = el.firstElementChild;
+        img.addEventListener('error', () => { el.innerHTML = initialsHTML(u.full_name); });
+    }
+
     function navLinks(mobile) {
         return NAV_ITEMS.map(item => {
             const isActive = item.match === active;
@@ -80,9 +172,18 @@ ${navLinks(false)}
                 <a href="login.html" class="nav-auth-btn ghost" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
                 <a href="register.html" class="nav-auth-btn primary" data-ar="ابدا الان" data-en="Start Now">ابدا الان</a>
             </div>
-            <!-- Logged in state -->
+            <!-- Logged in state.
+                 The avatar is the LAST child on purpose: .nav-auth is a plain
+                 flex row that follows the document direction, so its last child
+                 is the one against the page edge in BOTH directions (measured:
+                 in Arabic it lands leftmost, in English rightmost). Filled by
+                 updateNavAuth(), not here, so it follows the cached user rather
+                 than whatever was true when this string was built. -->
             <div id="navLoggedIn" style="display:none; align-items:center; gap:12px;">
                 <button class="nav-auth-btn danger" onclick="logout()" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
+                <a class="nav-avatar" id="navAvatar" href="/profile"
+                   data-ar-aria="حسابك ولوحة التحكم" data-en-aria="Your account and dashboard"
+                   aria-label="حسابك ولوحة التحكم"></a>
             </div>
         </div>
         <button class="hamburger" id="hamburgerBtn" aria-label="القائمة">
@@ -97,6 +198,10 @@ ${navLinks(true)}
                data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</a>
         </div>
         <div id="mobileAuthLoggedIn" style="display:none">
+            <a class="mobile-profile-link" id="mobileProfileLink" href="/profile" onclick="closeDrawer()">
+                <span class="nav-avatar" id="mobileAvatar" aria-hidden="true"></span>
+                <span data-ar="حسابك" data-en="Your account">حسابك</span>
+            </a>
             <button onclick="closeDrawer();logout()" style="color:var(--red)" data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</button>
         </div>
         <div class="mobile-lang-row">
@@ -303,6 +408,14 @@ ${navLinks(true)}
         show('navLoggedIn', !!token, 'flex');
         show('mobileAuthLoggedOut', !token, 'block');
         show('mobileAuthLoggedIn', !!token, 'block');
+        // Built here rather than in headerHTML() so a second pass (index.html
+        // runs its own) repaints it from whatever the cache holds by then.
+        if (token) {
+            ['navAvatar', 'mobileAvatar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) paintAvatar(el);
+            });
+        }
         const cta = document.querySelector('.mobile-cta');
         if (cta) cta.style.display = token ? 'none' : 'block';
     }
