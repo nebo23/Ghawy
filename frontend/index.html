@@ -799,9 +799,15 @@
             </div><!-- /hero-split -->
 
             <!-- Stats — full-width band under the WHOLE hero (they used to sit
-                 inside .hero-left, squeezed into half the page). Same six cards,
-                 same order, same copy. The member count is still filled from
-                 GET /stats/public; see loadPublicStats() in src/js/main.js. -->
+                 inside .hero-left, squeezed into half the page). The member
+                 count is still filled from GET /stats/public; see
+                 loadPublicStats() in src/js/main.js.
+                 Two shapes of card live here, and which one a card uses is not
+                 a style choice: a card with a .hero-stat-num says a NUMBER and
+                 names it underneath ("+1976 / عضو"), and a card without one is
+                 a single claim in a single .hero-stat-value. The certificate
+                 card is the second kind — there is no number in "شهادة بعد
+                 إكمال كل كورس" — so it carries no empty .hero-stat-num. -->
             <div class="hero-stats-cards">
                 <div class="hero-stat-card">
                     <i class="fa-solid fa-arrows-rotate"></i>
@@ -818,11 +824,9 @@
                         data-en="More than 10 AI courses">أكثر من 10 دورات AI</span>
                 </div>
                 <div class="hero-stat-card">
-                    <i class="fa-solid fa-code-fork"></i>
-                    <span class="hero-stat-value">
-                        <span class="hero-stat-num">25+</span>
-                        <span class="hero-stat-lbl" data-ar="مشروع عملي" data-en="Hands-on projects">مشروع عملي</span>
-                    </span>
+                    <i class="fa-solid fa-award"></i>
+                    <span class="hero-stat-value" data-ar="شهادة بعد إكمال كل كورس"
+                        data-en="A certificate after every course">شهادة بعد إكمال كل كورس</span>
                 </div>
                 <div class="hero-stat-card">
                     <i class="fa-solid fa-users"></i>
