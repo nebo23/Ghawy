@@ -160,7 +160,7 @@
     }
     </script>
 
-    <link rel="stylesheet" href="src/css/main.css?v=20260903a">
+    <link rel="stylesheet" href="src/css/main.css?v=20260908a">
 
     <script src="src/vendor/lucide/lucide.min.js?v=1270"></script>
 
@@ -684,12 +684,20 @@
                          own data-ar/data-en so the split follows the language.
                          NOTE: the <h1> itself deliberately has NO data-ar/data-en —
                          applyLanguage() writes textContent on any element that has
-                         them, which would wipe the two spans. -->
+                         them, which would wipe the two spans.
+                         Each span therefore holds its Arabic TWICE: once in
+                         data-ar and once as its inline text, which is what paints
+                         before JS runs. The two must stay identical, and on one
+                         source line — two copies that differ by a word make the
+                         headline change wording on every load.
+                         The lead has no "الـ" before AI on purpose: it is one word
+                         narrower that way, and the lead has to hold a single line
+                         at every width (the sizes that enforce that are in
+                         main.css, in the hero responsive block at the end). -->
                     <h1 class="hero-heading-split hero-heading-single">
                         <span class="hero-heading-lead"
-                            data-ar="تعلّم كل مجالات الـ AI في مكان واحد."
-                            data-en="Learn every field of AI in one place.">تعلّم كل مجالات الـ AI في مكان
-                            واحد.</span>
+                            data-ar="تعلّم كل مجالات AI في مكان واحد."
+                            data-en="Learn every field of AI in one place.">تعلّم كل مجالات AI في مكان واحد.</span>
                         <span class="hero-heading-tail"
                             data-ar="كورسات بتتحدّث باستمرار، باشتراك واحد فقط."
                             data-en="Continuously updated courses, on a single subscription.">كورسات بتتحدّث

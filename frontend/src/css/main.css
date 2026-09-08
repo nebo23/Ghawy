@@ -9265,9 +9265,22 @@ html[dir="rtl"] .hero-left {
         Kept in one block at the end of the file on purpose: the hero rules
         above are spread across a dozen breakpoint blocks, and the headline
         and the stat grid have to stay in step across all of them.
-        Breakpoints mirror the ones already used in this file:
-        1440+ / 1280-1439 / 1025-1279 / 769-1024 / 481-768 / 361-480 / <=360
-   ════════════════════════════════════════════════════════ */
+        Bands: 1440+ / 1280-1439 / 1024-1279 / 769-1023 / 481-768 /
+        361-480 / <=360. The seam is 1024, NOT the 1025 this block used to
+        carry: the hero drops to one column at `max-width: 1023px` (further
+        up), so 1024px — an iPad in landscape — is a two-column width, and it
+        was getting the one-column type scale. That put a 36.8px headline in a
+        413px column, the worst case on the whole site.
+
+        Every font-size below answers ONE question: does `.hero-heading-lead`
+        hold a single line? It is one sentence and it is the first thing anyone
+        reads; broken in half it reads as a layout that gave up. Arabic is what
+        each size is set against — the same sentence needs ~8% more width in
+        Arabic than in English — and the binding width is the BOTTOM of each
+        band, where the hero column is narrowest. Each value clears the largest
+        size that still fits by ~5%, so a late or fallback font cannot tip it
+        over. Raise one of these and you have to re-measure the Arabic at that
+        band's low end. */
 
 /* Every stat card is a grid item — none of them may push the row wider than
    the column, which is what causes horizontal scroll on narrow screens. */
@@ -9296,7 +9309,7 @@ html[dir="ltr"] .hero-stats-cards {
 /* XL desktop */
 @media (min-width: 1440px) {
     h1.hero-heading-single {
-        font-size: 2.35rem;
+        font-size: 2.15rem;
     }
 
     .hero-stats-cards {
@@ -9308,7 +9321,7 @@ html[dir="ltr"] .hero-stats-cards {
 /* Large laptop */
 @media (min-width: 1280px) and (max-width: 1439px) {
     h1.hero-heading-single {
-        font-size: 2.15rem;
+        font-size: 1.8rem;
     }
 
     .hero-stats-cards {
@@ -9318,9 +9331,9 @@ html[dir="ltr"] .hero-stats-cards {
 
 /* Small laptop — the band spans the page now, so three across still fits
    comfortably (it used to be two, back when it lived in the hero column). */
-@media (min-width: 1025px) and (max-width: 1279px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
     h1.hero-heading-single {
-        font-size: 2.05rem;
+        font-size: 1.65rem;
     }
 
     .hero-stats-cards {
@@ -9337,7 +9350,7 @@ html[dir="ltr"] .hero-stats-cards {
 
 /* Tablet — two columns: three across at this width squeezes the longer
    labels ("تخصصات AI لكل المجالات") onto three cramped lines. */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (min-width: 769px) and (max-width: 1023px) {
     h1.hero-heading-single {
         font-size: clamp(1.9rem, 3.6vw, 2.3rem);
         text-align: center;
@@ -9392,7 +9405,7 @@ html[dir="ltr"] .hero-stats-cards {
    which would push the video and the buttons below the fold. */
 @media (max-width: 480px) {
     h1.hero-heading-single {
-        font-size: clamp(1.35rem, 6.4vw, 1.7rem);
+        font-size: clamp(1.15rem, 5.75vw, 1.7rem);
         line-height: 1.4;
         text-align: center;
         margin-inline: auto;
@@ -9436,7 +9449,7 @@ html[dir="ltr"] .hero-stats-cards {
 /* Very small phones */
 @media (max-width: 360px) {
     h1.hero-heading-single {
-        font-size: 1.3rem;
+        font-size: clamp(1rem, 5.5vw, 1.3rem);
     }
 
     .hero-stats-cards {
