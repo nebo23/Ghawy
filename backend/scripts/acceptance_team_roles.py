@@ -264,6 +264,79 @@ check("they keep the pre-feature default permissions",
       client.get("/admin/users", headers=H(oldadmin)).status_code == 200)
 
 
+print("\n=== `member-contacts` is a FIELD permission, not a tab permission (F-34) ===")
+# The live-sessions tab hands back an attendee roster. Its only gate was the
+# tab permission, so an operator with `live-sessions` and without
+# `member-contacts` could export every attendee's address — through the CSV
+# especially, which is the door that empties the roster in one click. Every
+# other surface that returns a member field (admin.py, users.py, projects.py,
+# profile.py, announcements.py) already honours the field permission; this one
+# never did.
+import datetime as _dt
+_sess = M.LiveSession(title="Acceptance session", slug="acceptance-session",
+                      scheduled_at=_dt.datetime.utcnow(), is_published=True)
+db.add(_sess); db.commit(); db.refresh(_sess)
+db.add(M.LiveAttendee(session_id=_sess.id, user_id=plain.id)); db.commit()
+
+# The section above cleared this account's role, which took its admin access
+# with it — give it a role back before testing what the role can reach.
+client.put(f"/admin/users/{staff.id}/team-role", json={"role": TE}, headers=H(owner))
+
+# live-sessions WITHOUT member-contacts
+client.put(f"/admin/staff/{staff.id}/permissions",
+           json={"permissions": ["live-sessions"]}, headers=H(owner))
+r = client.get(f"/admin/live/sessions/{_sess.id}/attendees", headers=H(staff))
+check("the tab permission alone still opens the attendee list", r.status_code == 200, r.text[:200])
+body = r.json() if r.status_code == 200 else {}
+rows = body.get("attendees", [])
+check("...but the address is redacted without member-contacts",
+      bool(rows) and rows[0].get("email") is None, rows[:1])
+check("...and the member is still identifiable by name",
+      bool(rows) and rows[0].get("full_name"), rows[:1])
+r = client.get(f"/admin/live/sessions/{_sess.id}/attendees?export=csv", headers=H(staff))
+check("the CSV export drops the Email column entirely",
+      r.status_code == 200 and "Email" not in r.text.splitlines()[0]
+      and plain.email not in r.text, r.text[:160])
+
+# the same operator, now WITH member-contacts
+client.put(f"/admin/staff/{staff.id}/permissions",
+           json={"permissions": ["live-sessions", "member-contacts"]}, headers=H(owner))
+r = client.get(f"/admin/live/sessions/{_sess.id}/attendees", headers=H(staff))
+rows = r.json().get("attendees", []) if r.status_code == 200 else []
+check("with member-contacts the address comes back",
+      bool(rows) and rows[0].get("email") == plain.email, rows[:1])
+r = client.get(f"/admin/live/sessions/{_sess.id}/attendees?export=csv", headers=H(staff))
+check("...and the CSV carries it too",
+      r.status_code == 200 and "Email" in r.text.splitlines()[0] and plain.email in r.text,
+      r.text[:160])
+
+# and the tab permission is still required at all
+client.put(f"/admin/staff/{staff.id}/permissions",
+           json={"permissions": ["member-contacts"]}, headers=H(owner))
+check("member-contacts alone does NOT open the live tab",
+      client.get(f"/admin/live/sessions/{_sess.id}/attendees",
+                 headers=H(staff)).status_code == 403)
+
+
+print("\n=== member deletion has ONE door (owner-only, with cleanup) ===")
+# main.py used to declare a second DELETE /users/{id} straight on the FastAPI
+# app: any admin, no self-delete guard, no WebSocket disconnect and none of the
+# cleanup for tables without ON DELETE CASCADE. It sat outside app/routers/,
+# which is the directory every permission sweep reads.
+# 404/405 both mean "no such route"; what matters is that it is not 200.
+_r = client.delete(f"/users/{plain.id}", headers=H(owner))
+check("the bare DELETE /users/{id} no longer exists", _r.status_code in (404, 405), _r.status_code)
+check("the admin route is owner-only",
+      client.delete(f"/admin/users/{plain.id}", headers=H(staff)).status_code == 403)
+check("the member survived both attempts",
+      db.query(M.User).filter(M.User.id == plain.id).first() is not None)
+# the four routes that moved keep their exact paths
+check("GET / still answers (the container healthcheck curls it)",
+      client.get("/").status_code == 200)
+check("GET /config/payment-info still answers",
+      client.get("/config/payment-info").status_code == 200)
+
+
 print("\n" + "=" * 60)
 print(f"  {len(PASS)} passed, {len(FAIL)} failed")
 if FAIL:

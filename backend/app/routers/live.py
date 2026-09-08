@@ -15,6 +15,7 @@ from sqlalchemy import desc
 from app.database import get_db, SessionLocal
 from app.models import User, LiveSession, LiveAttendee, SessionBooking, SessionReminder, LiveSessionStatus
 from app.routers.users import get_current_user, get_current_admin_user, require_perm
+from app.services.permissions import has_permission
 
 # صلاحية تاب اللايفات — الـ owner بيعدّي دايماً
 PERM_LIVE = require_perm("live-sessions")
@@ -213,6 +214,15 @@ def admin_get_attendees(
     admin: User = Depends(PERM_LIVE),  # 🔒 صلاحية التاب
     db: Session = Depends(get_db),
 ):
+    """قايمة الحاضرين لجلسة.
+
+    الإيميل بيمشي على نفس قاعدة باقي اللوحة بالحرف (شوف `GET /admin/users` في
+    admin.py): صلاحية التاب `live-sessions` بتفتح الشاشة، بس الإيميل نفسه
+    حقل ليه صلاحيته `member-contacts`. من غيرها الشاشة بتشتغل عادي والإيميل
+    بيتحجب — في الـ JSON **وفي تصدير الـ CSV**، لأن التصدير هو الباب اللي
+    بيطلّع الروستر كله مرة واحدة."""
+    sees_contacts = has_permission(admin, "member-contacts")
+
     session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -229,7 +239,7 @@ def admin_get_attendees(
             "id": att.id,
             "user_id": user.id,
             "full_name": user.full_name,
-            "email": user.email,
+            "email": user.email if sees_contacts else None,
             "registered_at": att.registered_at.isoformat() if att.registered_at else None,
         })
 
@@ -241,11 +251,17 @@ def admin_get_attendees(
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Name", "Email", "Registered At"])
+        # بدون `member-contacts` عمود الإيميل مش بيتحجب بس — بيختفي خالص، عشان
+        # الملف ما يخرجش وفيه عمود فاضي اسمه Email يوحي إن فيه حاجة اتشالت.
+        writer.writerow(["Name", "Email", "Registered At"] if sees_contacts else ["Name", "Registered At"])
         for a in result:
             # Same formula-injection guard as the payments export: these names
             # are member-supplied and this file opens in someone's spreadsheet.
-            writer.writerow([_csv_safe(a["full_name"]), _csv_safe(a["email"]), a["registered_at"]])
+            row = [_csv_safe(a["full_name"])]
+            if sees_contacts:
+                row.append(_csv_safe(a["email"]))
+            row.append(a["registered_at"])
+            writer.writerow(row)
         output.seek(0)
         return StreamingResponse(
             iter([output.getvalue()]),
@@ -253,7 +269,7 @@ def admin_get_attendees(
             headers={"Content-Disposition": f"attachment; filename=attendees-session-{session_id}.csv"},
         )
 
-    return {"attendees": result, "total": len(result)}
+    return {"attendees": result, "total": len(result), "sees_contacts": sees_contacts}
 
 
 # ═══════════════════════════════════════════════════════════════

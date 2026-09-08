@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, atlas, help_center, exams, birthday, email_campaigns, stats, coupons, files, announcements
+from app.routers import users, payment, webhooks, chat, ws, google_auth, dashboard, courses, profile, admin, guests, posts, manual_payments, live, ai_updates, notifications, projects, reports, feedbacks, atlas, help_center, exams, birthday, email_campaigns, stats, coupons, files, announcements, root
 from app.routers.files import PUBLIC_CATEGORIES as PUBLIC_UPLOAD_CATEGORIES
 from app.seed import run_startup_seed
 import os
@@ -201,73 +201,7 @@ app.include_router(birthday.router)
 app.include_router(email_campaigns.router)
 app.include_router(announcements.router)
 app.include_router(stats.router)
-
-@app.get("/")
-def root():
-    return {"message": "Community API Is Working"}
-
-@app.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 محمي بـ admin auth + audit log
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    logger.warning(
-        "🗑️ ADMIN DELETE USER | admin_id=%s admin_email=%s | target_user_id=%s target_email=%s",
-        current_user.id, current_user.email, user.id, user.email
-    )
-    db.delete(user)
-    db.commit()
-    return {"message": "User deleted successfully"}
-
-@app.delete("/payments/{payment_id}")
-def delete_payment(payment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)): # 🔒 محمي بـ admin auth + audit log
-    payment = db.query(Payment).filter(Payment.id == payment_id).first()
-    if not payment:
-        raise HTTPException(status_code=404, detail="Payment not found")
-    logger.warning(
-        "🗑️ ADMIN DELETE PAYMENT | admin_id=%s admin_email=%s | payment_id=%s amount=%s currency=%s user_id=%s",
-        current_user.id, current_user.email, payment.id, payment.amount, payment.currency, payment.user_id
-    )
-    db.delete(payment)
-    db.commit()
-    return {"message": "Payment deleted successfully"}
-
-@app.patch("/users/me/complete-onboarding")
-def complete_onboarding_patch(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """يرفع علامة إنهاء الأونبوردنج — بنفس شرط الخطوة اللي بتسأل عن الاسم.
-
-    العلامة دي هي اللي الحارس في `utils.js` بيقرأها؛ عضو عليها بيدخل المنصة.
-    فالباب ده كان بيلغي قاعدة الاسم العربي كلها: `POST /profile/complete-
-    onboarding` يرفض `Nabil Ahmed` بـ422، وبعدين نداء واحد هنا يرفع العلامة
-    ويدخل نفس العضو بنفس الاسم اللاتيني من غير ما حد يسأله. الشرط بيتسأل من
-    `needs_arabic_name` نفسها اللي الخطوة بتستعملها، مش من نسخة تانية منه.
-
-    اللي مش مطلوب منه اسم عربي — اسمه عربي أصلاً أو علّم «اسمي مش بالعربي» —
-    بيعدّي زي ما كان بالظبط. والفرونت بينادي الباب ده بعد ما البوست ينجح، يعني
-    الاسم يبقى اتظبط خلاص قبل ما نوصل هنا.
-    """
-    if needs_arabic_name(current_user):
-        raise HTTPException(status_code=422, detail=ARABIC_NAME_MESSAGE)
-    current_user.onboarding_completed = True
-    db.commit()
-    return {"message": "onboarding completed"}
-
-@app.get("/config/payment-info")
-def get_payment_info():
-    """Public endpoint to get payment details for manual flow."""
-    return {
-        "instapay_number": os.getenv("INSTAPAY_NUMBER", "xxxx"),
-        # The second manual rail. Same contract as the Instapay value above:
-        # the page ships with the real number hardcoded and only swaps it out
-        # when this env var carries something other than the placeholder, so a
-        # missing variable can never blank the number a payer needs.
-        "vodafone_cash_number": os.getenv("VODAFONE_CASH_NUMBER", "xxxx"),
-        "subscription_price": os.getenv("SUBSCRIPTION_PRICE", "600"),
-        "currency": "EGP"
-    }
+app.include_router(root.router)
 
 # Force Reload
 
